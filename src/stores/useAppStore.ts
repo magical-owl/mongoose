@@ -1,0 +1,84 @@
+/**
+ * App Store
+ *
+ * Global application state using Zustand.
+ * Manages theme mode, onboarding status, and session state.
+ */
+
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { MMKV } from 'react-native-mmkv';
+import type { ThemeMode } from '@/providers/ThemeProvider';
+
+const storage = new MMKV({ id: 'app-store' });
+
+/**
+ * Onboarding status.
+ */
+export type OnboardingStatus = 'not_started' | 'in_progress' | 'completed';
+
+/**
+ * Session state.
+ */
+export type SessionState = 'idle' | 'active' | 'expired';
+
+/**
+ * App state interface.
+ */
+export interface AppState {
+  // State
+  themeMode: ThemeMode;
+  onboardingStatus: OnboardingStatus;
+  sessionState: SessionState;
+  isOnboarded: boolean;
+
+  // Actions
+  setThemeMode: (mode: ThemeMode) => void;
+  setOnboardingStatus: (status: OnboardingStatus) => void;
+  setSessionState: (state: SessionState) => void;
+  reset: () => void;
+}
+
+const initialState: Pick<AppState, 'themeMode' | 'onboardingStatus' | 'sessionState' | 'isOnboarded'> = {
+  themeMode: 'system',
+  onboardingStatus: 'not_started',
+  sessionState: 'idle',
+  isOnboarded: false,
+};
+
+/**
+ * Zustand store for global app state.
+ * Persisted to MMKV for offline availability.
+ */
+export const useAppStore = create<AppState>()(
+  persist(
+    (set) => ({
+      ...initialState,
+
+      setThemeMode: (themeMode: ThemeMode) => set({ themeMode }),
+
+      setOnboardingStatus: (onboardingStatus: OnboardingStatus) =>
+        set({
+          onboardingStatus,
+          isOnboarded: onboardingStatus === 'completed',
+        }),
+
+      setSessionState: (sessionState: SessionState) => set({ sessionState }),
+
+      reset: () => set(initialState),
+    }),
+    {
+      name: 'app-store',
+      storage: createJSONStorage(() => ({
+        getItem: (key: string) => storage.getString(key) ?? null,
+        setItem: (key: string, value: string) => storage.set(key, value),
+        removeItem: (key: string) => storage.delete(key),
+      })),
+      partialize: (state) => ({
+        themeMode: state.themeMode,
+        onboardingStatus: state.onboardingStatus,
+        isOnboarded: state.isOnboarded,
+      }),
+    }
+  )
+);

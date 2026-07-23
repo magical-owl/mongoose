@@ -1,0 +1,57 @@
+/** @type {import('jest').Config} */
+module.exports = {
+  preset: 'jest-expo',
+  transform: {
+    '^.+\\.(ts|tsx)$': [
+      '@swc/jest',
+      {
+        jsc: {
+          parser: {
+            syntax: 'typescript',
+            tsx: true,
+          },
+          transform: {
+            react: {
+              runtime: 'automatic',
+            },
+          },
+        },
+      },
+    ],
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|@tanstack/react-query|react-native-mmkv|react-native-gesture-handler|react-native-reanimated|react-native-safe-area-context|react-native-screens|react-native-web)/)',
+  ],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@app/(.*)$': '<rootDir>/app/$1',
+    '^@features/(.*)$': '<rootDir>/src/features/$1',
+    '^@shared/(.*)$': '<rootDir>/src/shared/$1',
+    '^@services/(.*)$': '<rootDir>/src/services/$1',
+    '^@repositories/(.*)$': '<rootDir>/src/repositories/$1',
+    '^@api/(.*)$': '<rootDir>/src/api/$1',
+    '^@ai/(.*)$': '<rootDir>/src/ai/$1',
+    '^@stores/(.*)$': '<rootDir>/src/stores/$1',
+    '^@hooks/(.*)$': '<rootDir>/src/hooks/$1',
+    '^@providers/(.*)$': '<rootDir>/src/providers/$1',
+    '^@theme/(.*)$': '<rootDir>/src/theme/$1',
+    '^@config/(.*)$': '<rootDir>/src/config/$1',
+    '^@constants/(.*)$': '<rootDir>/src/constants/$1',
+    '^@database/(.*)$': '<rootDir>/src/database/$1',
+    '^@utils/(.*)$': '<rootDir>/src/utils/$1',
+    '^@tests/(.*)$': '<rootDir>/tests/$1',
+  },
+  setupFilesAfterSetup: ['<rootDir>/tests/setup.ts'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  testMatch: ['**/__tests__/**/*.test.(ts|tsx)', '**/?(*.)+(spec|test).(ts|tsx)'],
+  testEnvironment: 'node',
+  clearMocks: true,
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/__tests__/**',
+  ],
+  coverageDirectory: '<rootDir>/coverage',
+  coverageReporters: ['json', 'lcov', 'text', 'clover'],
+  cacheDirectory: '<rootDir>/.jest/cache',
+};
