@@ -44,6 +44,7 @@ import { RadioButton } from '@/shared/components/RadioButton';
 import { ProgressBar } from '@/shared/components/ProgressBar';
 import { SegmentedControl } from '@/shared/components/SegmentedControl';
 import { FAB } from '@/shared/components/FAB';
+import { Modal } from '@/shared/components/Modal';
 import { spacing } from '@/theme';
 
 // ---------------------------------------------------------------------------
@@ -486,6 +487,27 @@ function FABSection(): React.JSX.Element {
 }
 
 // ---------------------------------------------------------------------------
+// Section: Modal
+// ---------------------------------------------------------------------------
+
+function ModalSection(): React.JSX.Element {
+  const [visible, setVisible] = useState(false);
+  return (
+    <Card padding="lg" style={{ marginBottom: spacing.lg }}>
+      <Text preset="label" color="textTertiary" style={{ marginBottom: spacing.md }}>🪟 MODAL — Bottom Sheet</Text>
+      <Button label="Open Modal" variant="primary" size="md" onPress={() => setVisible(true)} />
+      <Modal visible={visible} onDismiss={() => setVisible(false)} title="Demo Modal" accessibilityLabel="Demo modal">
+        <Text preset="body" style={{ marginBottom: spacing.md }}>This is a themed bottom sheet modal with drag handle, backdrop, and close button.</Text>
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          <Button label="Confirm" variant="primary" size="sm" onPress={() => { setVisible(false); Alert.alert('Modal', 'Confirmed'); }} />
+          <Button label="Cancel" variant="outline" size="sm" onPress={() => setVisible(false)} />
+        </View>
+      </Modal>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Section: Interactive Demos
 // ---------------------------------------------------------------------------
 
@@ -655,6 +677,7 @@ export default function HomeScreen(): React.JSX.Element {
       <ProgressBarSection />
       <SegmentedControlSection />
       <FABSection />
+      <ModalSection />
       <Divider label="App Features" />
       <ProfileFormSection />
       <ThemeSwitcherSection />
