@@ -1,5 +1,7 @@
 # AI Agent Feature Development Instructions
 
+> **See also:** `docs/CreatingAnApp.md` for the complete human-readable guide with code examples for every layer.
+
 ## Overview
 
 Building a feature in Meadow follows a **9-step process** that mirrors the layered architecture. Every step produces artifacts (code, tests, documentation) that build on the previous step. Do not skip steps. Do not parallelize — each layer depends on the layer below it.
