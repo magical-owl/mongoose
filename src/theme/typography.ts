@@ -5,7 +5,7 @@
  * Supports Dynamic Type on iOS for accessibility.
  */
 
-import { Platform, TextStyle } from 'react-native';
+import { TextStyle } from 'react-native';
 
 /**
  * Font size scale.

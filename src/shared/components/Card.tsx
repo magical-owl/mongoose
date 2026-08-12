@@ -5,7 +5,7 @@
  * and optional press handler.
  */
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   TouchableOpacity,

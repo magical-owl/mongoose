@@ -5,8 +5,6 @@
  * All log output goes through this service — never use console.log directly.
  */
 
-import { Platform } from 'react-native';
-
 /**
  * Log levels in order of severity.
  */
@@ -99,13 +97,19 @@ export class LoggingService {
    * Log an error message.
    */
   public error(tag: string, message: string, error?: Error, data?: Record<string, unknown>): void {
-    this.log(LogLevel.ERROR, tag, message, { ...data, error: this.sanitizeError(error) });
+    this.log(LogLevel.ERROR, tag, message, data, this.sanitizeError(error));
   }
 
   /**
    * Core log method.
    */
-  private log(level: LogLevel, tag: string, message: string, data?: Record<string, unknown>): void {
+  public log(
+    level: LogLevel,
+    tag: string,
+    message: string,
+    data?: Record<string, unknown>,
+    error?: Error
+  ): void {
     if (level < this.config.minLevel) {
       return;
     }
@@ -116,6 +120,7 @@ export class LoggingService {
       tag,
       message,
       data: data ? this.redactSensitiveData(data) : undefined,
+      error,
     };
 
     if (this.config.enableConsole) {

@@ -14,7 +14,6 @@ import {
   type StyleProp,
 } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
-import type { FontSizeToken } from '@theme/typography';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -100,7 +99,7 @@ export function Text({
     }
     // Default to text color
     return theme.colors.text;
-  }, [color, theme.colors]);
+  }, [color, theme]);
 
   const textStyle = useMemo<TextStyle>(() => {
     const typographyPreset = theme.typography[preset];

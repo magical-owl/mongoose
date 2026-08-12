@@ -114,6 +114,17 @@ export function withLogging<T extends object>(service: T): T {
 
 ## Testing
 
+### Offline operations
+
+`OfflineService` persists writes while offline. Each collection must register an
+`OfflineOperationExecutor` at app bootstrap. Queue entries are removed only
+after that executor resolves successfully; missing executors and failed requests
+remain queued with retry metadata. Do not register an executor until its API
+contract and idempotency behavior are defined.
+
+`NetworkProvider` synchronizes device connectivity with that queue and marks
+the app session expired when a token refresh cannot recover from a 401 response.
+
 Services are designed for unit testing without integration setup.
 
 - **Mock dependencies** — Repositories and external services are replaced with mocks or fakes

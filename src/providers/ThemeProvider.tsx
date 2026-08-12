@@ -5,11 +5,12 @@
  * Supports light and dark modes with automatic system detection.
  */
 
-import React, { createContext, useContext, useMemo, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useMemo, useCallback } from 'react';
 import { useColorScheme } from 'react-native';
 import { palette } from '@/theme/colors';
 import { spacing, borderRadius } from '@/theme/spacing';
 import { typography, fontSizes, fontWeights } from '@/theme/typography';
+import { useAppStore } from '@/stores/useAppStore';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -108,26 +109,25 @@ const ThemeContext = createContext<Theme | undefined>(undefined);
  */
 export function ThemeProvider({
   children,
-  initialMode = 'system',
+  initialMode,
 }: {
   readonly children: React.ReactNode;
+  /** Test-only override for deterministic provider rendering. */
   readonly initialMode?: ThemeMode;
 }): React.JSX.Element {
   const systemColorScheme = useColorScheme();
-  const [mode, setMode] = useState<ThemeMode>(initialMode);
-  const [resolvedMode, setResolvedMode] = useState<'light' | 'dark'>('light');
-
-  useEffect(() => {
-    if (mode === 'system') {
-      setResolvedMode(systemColorScheme ?? 'light');
-    } else {
-      setResolvedMode(mode);
-    }
-  }, [mode, systemColorScheme]);
+  const persistedMode = useAppStore((state) => state.themeMode);
+  const persistThemeMode = useAppStore((state) => state.setThemeMode);
+  const mode = initialMode ?? persistedMode;
+  const resolvedMode = mode === 'system' && systemColorScheme === 'dark'
+    ? 'dark'
+    : mode === 'dark'
+      ? 'dark'
+      : 'light';
 
   const setThemeMode = useCallback((newMode: ThemeMode) => {
-    setMode(newMode);
-  }, []);
+    persistThemeMode(newMode);
+  }, [persistThemeMode]);
 
   const theme = useMemo<Theme>(
     () => ({

@@ -7,10 +7,10 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { MMKV } from 'react-native-mmkv';
+import { createMMKV } from 'react-native-mmkv';
 import type { ThemeMode } from '@/providers/ThemeProvider';
 
-const storage = new MMKV({ id: 'app-store' });
+const storage = createMMKV({ id: 'app-store' });
 
 /**
  * Onboarding status.
@@ -72,7 +72,7 @@ export const useAppStore = create<AppState>()(
       storage: createJSONStorage(() => ({
         getItem: (key: string) => storage.getString(key) ?? null,
         setItem: (key: string, value: string) => storage.set(key, value),
-        removeItem: (key: string) => storage.delete(key),
+        removeItem: (key: string) => storage.remove(key),
       })),
       partialize: (state) => ({
         themeMode: state.themeMode,

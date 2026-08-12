@@ -4,7 +4,7 @@
  * A themed segmented control for switching between options.
  */
 
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Animated, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';
@@ -35,12 +35,6 @@ export function SegmentedControl({
       friction: 10,
     }).start();
   }, [selectedIndex, slideAnim]);
-
-  const segmentWidth = useMemo(() => {
-    const totalPadding = theme.spacing.xs * 2; // container padding
-    const availableWidth = 100 - (theme.spacing.xs * 4) / 3; // approximate
-    return `${availableWidth / segments.length}%`;
-  }, [segments.length, theme.spacing.xs]);
 
   const translateX = slideAnim.interpolate({
     inputRange: segments.map((_, i) => i),

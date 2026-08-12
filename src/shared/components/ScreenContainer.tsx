@@ -26,7 +26,7 @@ import { Text } from './Text';
 
 export interface ScreenContainerProps {
   /** Screen content */
-  readonly children: React.ReactNode;
+  readonly children?: React.ReactNode;
   /** Whether content should be scrollable */
   readonly scrollable?: boolean;
   /** Whether to enable keyboard avoidance */

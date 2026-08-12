@@ -1,5 +1,17 @@
 # Security Guidelines
 
+## Client Configuration and Local Secrets
+
+- Only non-sensitive build-time values may use `EXPO_PUBLIC_*` variables. Expo
+  embeds them in the client bundle, so they must never contain tokens, private
+  keys, or API secrets.
+- `EXPO_PUBLIC_API_BASE_URL` is required for staging and production and must
+  use HTTPS. Copy `.env.example` for local development configuration.
+- Store device secrets and PII through `SecureStorageDataSource`. MMKV is only
+  for non-sensitive app data.
+- Every feature-owned secure key must be listed in `secureStorageKeys` so the
+  user-driven managed-data deletion flow can remove it.
+
 ## Expo Secure Store Usage
 
 ### When to Use Secure Store

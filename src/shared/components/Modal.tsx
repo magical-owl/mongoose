@@ -4,7 +4,7 @@
  * A themed modal with slide-up panel, drag handle, backdrop, and optional title.
  */
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Animated,
   Dimensions,
@@ -105,14 +105,12 @@ export function Modal({
               <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: theme.colors.border }} />
             </View>
 
-            {(title || onDismiss) && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.md }}>
-                {title && <Text preset="h3" style={{ flex: 1 }}>{title}</Text>}
-                <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Close" accessibilityRole="button">
-                  <Ionicons name="close" size={24} color={theme.colors.text} />
-                </TouchableOpacity>
-              </View>
-            )}
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.md }}>
+              {title && <Text preset="h3" style={{ flex: 1 }}>{title}</Text>}
+              <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Close" accessibilityRole="button">
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={{ paddingHorizontal: theme.spacing.lg }}>

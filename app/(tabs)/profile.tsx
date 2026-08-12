@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   View,
   Text,
@@ -11,57 +10,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/providers/ThemeProvider';
 import { spacing, borderRadius, typography } from '@/theme';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { create } from 'zustand';
-
-/* ───────────────────────────────────────
- * Zod validation schema
- * ───────────────────────────────────────*/
-
-const profileSchema = z.object({
-  displayName: z
-    .string()
-    .min(2, 'Name must be at least 2 characters')
-    .max(50, 'Name must be at most 50 characters'),
-  email: z.string().email('Enter a valid email address'),
-  bio: z.string().max(280, 'Bio must be at most 280 characters').optional(),
-});
-
-type ProfileFormData = z.infer<typeof profileSchema>;
-
-/* ───────────────────────────────────────
- * Zustand profile store
- * ───────────────────────────────────────*/
-
-interface ProfileState {
-  displayName: string;
-  email: string;
-  bio: string;
-  savedAt: string | null;
-  save: (data: ProfileFormData) => void;
-  clear: () => void;
-}
-
-const defaultProfile: ProfileFormData = {
-  displayName: '',
-  email: '',
-  bio: '',
-};
-
-const useProfileStore = create<ProfileState>((set) => ({
-  ...defaultProfile,
-  savedAt: null,
-  save: (data) =>
-    set({
-      displayName: data.displayName,
-      email: data.email,
-      bio: data.bio ?? '',
-      savedAt: new Date().toISOString(),
-    }),
-  clear: () => set({ ...defaultProfile, savedAt: null }),
-}));
+import { Controller } from 'react-hook-form';
+import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
+import type { ProfileFormData } from '@/features/profile/domain/profileSchema';
 
 /* ───────────────────────────────────────
  * Component
@@ -70,26 +21,24 @@ const useProfileStore = create<ProfileState>((set) => ({
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const savedProfile = useProfileStore();
-  const { save } = useProfileStore();
-
   const {
     control,
     handleSubmit,
     formState: { errors, isDirty, isValid },
-    reset,
-  } = useForm<ProfileFormData>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      displayName: savedProfile.displayName || '',
-      email: savedProfile.email || '',
-      bio: savedProfile.bio || '',
-    },
-  });
+    profile,
+    saveProfile,
+    clearProfile,
+    isSaving,
+    isClearing,
+  } = useProfileForm();
 
-  const onSubmit = (data: ProfileFormData) => {
-    save(data);
-    Alert.alert('Saved', 'Your profile has been updated.');
+  const onSubmit = async (data: ProfileFormData) => {
+    const result = await saveProfile(data);
+    if (result.success) {
+      Alert.alert('Saved', 'Your profile has been updated.');
+      return;
+    }
+    Alert.alert('Unable to save profile', result.error.message);
   };
 
   const handleClear = () => {
@@ -99,8 +48,11 @@ export default function ProfileScreen() {
         text: 'Clear',
         style: 'destructive',
         onPress: () => {
-          savedProfile.clear();
-          reset(defaultProfile);
+          void clearProfile().then((result) => {
+            if (!result.success) {
+              Alert.alert('Unable to clear profile', result.error.message);
+            }
+          });
         },
       },
     ]);
@@ -217,14 +169,14 @@ export default function ProfileScreen() {
       </View>
 
       {/* Last saved indicator */}
-      {savedProfile.savedAt && (
+      {profile && (
         <Text
           style={[
             typography.caption,
             { color: colors.textTertiary, textAlign: 'center', marginBottom: spacing.md },
           ]}
         >
-          Last saved: {new Date(savedProfile.savedAt).toLocaleString()}
+          Last saved: {new Date(profile.updatedAt).toLocaleString()}
         </Text>
       )}
 
@@ -232,22 +184,23 @@ export default function ProfileScreen() {
       <TouchableOpacity
         style={[
           styles.saveBtn,
-          { backgroundColor: colors.tint, opacity: isDirty && isValid ? 1 : 0.5 },
+          { backgroundColor: colors.tint, opacity: isDirty && isValid && !isSaving ? 1 : 0.5 },
         ]}
         onPress={handleSubmit(onSubmit)}
-        disabled={!isDirty || !isValid}
+        disabled={!isDirty || !isValid || isSaving}
         activeOpacity={0.8}
       >
-        <Text style={[typography.button, { color: colors.background }]}>Save Profile</Text>
+        <Text style={[typography.button, { color: colors.background }]}>{isSaving ? 'Saving…' : 'Save Profile'}</Text>
       </TouchableOpacity>
 
       {/* Clear Button */}
       <TouchableOpacity
         style={[styles.clearBtn, { borderColor: colors.border }]}
         onPress={handleClear}
+        disabled={isClearing}
         activeOpacity={0.7}
       >
-        <Text style={[typography.button, { color: colors.error }]}>Clear Profile Data</Text>
+        <Text style={[typography.button, { color: colors.error }]}>{isClearing ? 'Clearing…' : 'Clear Profile Data'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

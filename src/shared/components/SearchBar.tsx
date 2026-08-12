@@ -11,8 +11,6 @@ import {
   View,
   type StyleProp,
   type ViewStyle,
-  type NativeSyntheticEvent,
-  type TextInputSubmitEditingEventData,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';

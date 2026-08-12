@@ -4,7 +4,7 @@
  * A themed horizontal or vertical divider with optional centered label.
  */
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';

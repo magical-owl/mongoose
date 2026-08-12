@@ -6,7 +6,6 @@
 
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
-import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';
 import { palette } from '@/theme/colors';
 
@@ -41,7 +40,6 @@ export function Badge({
   maxCount = 99,
   accessibilityLabel,
 }: BadgeProps): React.JSX.Element {
-  const theme = useTheme();
   const dims = sizeMap[size];
   const display = count > maxCount ? `${maxCount}+` : String(count);
 

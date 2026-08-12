@@ -1,9 +1,11 @@
-import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, ThemeMode } from '@/providers/ThemeProvider';
 import { spacing, borderRadius, typography } from '@/theme';
 import Constants from 'expo-constants';
+import { queryClient } from '@/providers/QueryProvider';
+import { localDataService } from '@/services/LocalDataService';
+import { useAppStore } from '@/stores/useAppStore';
 
 /* ───────────────────────────────────────
  * Theme option definitions
@@ -35,15 +37,21 @@ export default function SettingsScreen() {
   const handleClearData = () => {
     Alert.alert(
       'Clear All Data',
-      'This will remove all locally stored data. This action cannot be undone.',
+      'This will remove all application-managed local data. This action cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Clear Data',
           style: 'destructive',
           onPress: () => {
-            // In a real app this would clear MMKV / SecureStore / Zustand stores.
-            Alert.alert('Done', 'All local data has been cleared.');
+            void localDataService.clearManagedData().then(() => {
+              useAppStore.persist.clearStorage();
+              useAppStore.getState().reset();
+              queryClient.clear();
+              Alert.alert('Done', 'All local data has been cleared.');
+            }).catch(() => {
+              Alert.alert('Unable to clear data', 'Please try again.');
+            });
           },
         },
       ],

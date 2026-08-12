@@ -7,7 +7,7 @@
 
 import React, { useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import type { StyleProp, ViewStyle } from 'react-native';
+import type { StyleProp, TextStyle } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 
 // ---------------------------------------------------------------------------
@@ -50,7 +50,7 @@ export interface IconProps {
    */
   readonly color?: ThemeColorVariant | string;
   /** Additional styles for the container view */
-  readonly style?: StyleProp<ViewStyle>;
+  readonly style?: StyleProp<TextStyle>;
   /** Accessibility label describing the icon */
   readonly accessibilityLabel?: string;
 }
@@ -79,7 +79,7 @@ export function Icon({
     }
     // Default to text color
     return theme.colors.text;
-  }, [color, theme.colors]);
+  }, [color, theme]);
 
   return (
     <Ionicons

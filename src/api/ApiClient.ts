@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { networkService } from '@/services/NetworkService';
 import { logger } from '@/services/LoggingService';
 import type { Result } from '@/shared/types/architecture';
-import type { NetworkError } from '@/shared/errors/AppError';
+import { NetworkError } from '@/shared/errors/AppError';
 
 const TAG = 'ApiClient';
 
@@ -55,16 +55,17 @@ export class ApiClient {
           path: endpoint.path,
           errors: parsed.error.flatten(),
         });
-        throw parsed.error;
+        return {
+          success: false,
+          error: new NetworkError('Invalid request format', {
+            details: { path: endpoint.path, errors: parsed.error.flatten() },
+          }),
+        };
       }
     }
 
     // Execute the request
-    const result = await networkService[method.toLowerCase() as 'get' | 'post' | 'put' | 'patch' | 'delete']<unknown>(
-      url,
-      method === 'GET' ? options?.params : options?.data,
-      options?.signal
-    );
+    const result = await this.executeRequest(url, method, options);
 
     // Validate response data
     if (result.success) {
@@ -76,15 +77,36 @@ export class ApiClient {
         });
         return {
           success: false,
-          error: new (require('@/shared/errors/AppError').NetworkError)(
-            'Invalid response format'
-          ),
+          error: new NetworkError('Invalid response format'),
         };
       }
       return { success: true, data: parsed.data };
     }
 
     return result as Result<TResponse, NetworkError>;
+  }
+
+  private async executeRequest<TRequest>(
+    url: string,
+    method: ApiEndpoint<TRequest, unknown>['method'],
+    options?: {
+      params?: Record<string, unknown>;
+      data?: TRequest;
+      signal?: AbortSignal;
+    }
+  ): Promise<Result<unknown, NetworkError>> {
+    switch (method) {
+      case 'GET':
+        return networkService.get(url, options?.params, options?.signal);
+      case 'POST':
+        return networkService.post(url, options?.data, options?.signal);
+      case 'PUT':
+        return networkService.put(url, options?.data, options?.signal);
+      case 'PATCH':
+        return networkService.patch(url, options?.data, options?.signal);
+      case 'DELETE':
+        return networkService.delete(url, options?.signal);
+    }
   }
 
   /**

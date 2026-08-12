@@ -42,6 +42,9 @@ Meadow serves as a reusable foundation for future apps: Diary, Journal, Finance,
 # Install dependencies
 npm install
 
+# Configure public, non-secret runtime values
+cp .env.example .env
+
 # Start development
 npx expo start
 
@@ -54,6 +57,9 @@ npm run android
 # Run tests
 npm test
 ```
+
+`EXPO_PUBLIC_*` values are bundled into the app. Do not put secrets in `.env`;
+staging and production require a valid HTTPS `EXPO_PUBLIC_API_BASE_URL`.
 
 ## Project Structure
 

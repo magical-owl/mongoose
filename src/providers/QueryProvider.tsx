@@ -5,16 +5,29 @@
  */
 
 import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  MutationCache,
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query';
 import { errorHandler } from '@/services/ErrorHandlerService';
-
-const TAG = 'QueryProvider';
 
 /**
  * Create a QueryClient with sensible defaults.
  */
 function createQueryClient(): QueryClient {
   return new QueryClient({
+    queryCache: new QueryCache({
+      onError: (error) => {
+        errorHandler.handle(error, 'TanStack Query');
+      },
+    }),
+    mutationCache: new MutationCache({
+      onError: (error) => {
+        errorHandler.handle(error, 'TanStack Mutation');
+      },
+    }),
     defaultOptions: {
       queries: {
         staleTime: 5 * 60 * 1000, // 5 minutes

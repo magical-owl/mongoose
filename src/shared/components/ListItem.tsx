@@ -4,7 +4,7 @@
  * A list row with leading icon, title, subtitle, trailing icon, press handler.
  */
 
-import React, { useMemo, useCallback } from 'react';
+import React from 'react';
 import {
   TouchableOpacity,
   View,

@@ -199,6 +199,11 @@ Hook — invalidates React Query cache, updates Zustand store
 Component — shows success/error feedback
 ```
 
+The Profile feature is the reference implementation: its screen consumes
+`useProfileForm`, which coordinates React Hook Form and TanStack Query; the
+hook calls `ProfileService`; and the service delegates local persistence to
+`ProfileRepository`.
+
 ## Error Handling
 
 All layers use the `Result<T, ArchitectureError>` discriminated union type for operations that can fail. This eliminates try/catch at architectural boundaries and provides type-safe error handling.

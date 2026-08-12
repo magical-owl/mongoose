@@ -8,6 +8,8 @@
 import React from 'react';
 import { ThemeProvider } from './ThemeProvider';
 import { QueryProvider } from './QueryProvider';
+import { NetworkProvider } from './NetworkProvider';
+import { assertValidConfig } from '@/config/ConfigService';
 
 /**
  * App providers composition.
@@ -19,11 +21,15 @@ export function AppProviders({
 }: {
   readonly children: React.ReactNode;
 }): React.JSX.Element {
+  assertValidConfig();
+
   return (
     <ThemeProvider>
-      <QueryProvider>
-        {children}
-      </QueryProvider>
+      <NetworkProvider>
+        <QueryProvider>
+          {children}
+        </QueryProvider>
+      </NetworkProvider>
     </ThemeProvider>
   );
 }

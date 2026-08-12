@@ -4,7 +4,7 @@
  * A chip/tag with variants, sizes, optional delete icon.
  */
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import {
   TouchableOpacity,
   View,
@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';
 
-export type ChipVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
+export type ChipVariant = 'primary' | 'secondary' | 'success' | 'outline' | 'ghost';
 export type ChipSize = 'sm' | 'md';
 
 export interface ChipProps {
@@ -66,6 +66,9 @@ export function Chip({
       case 'secondary':
         base.backgroundColor = theme.colors.surface;
         break;
+      case 'success':
+        base.backgroundColor = theme.colors.success;
+        break;
       case 'outline':
         base.backgroundColor = 'transparent';
         base.borderWidth = 1;
@@ -82,6 +85,7 @@ export function Chip({
     if (disabled) return theme.colors.disabledText;
     switch (variant) {
       case 'primary': return theme.colors.background;
+      case 'success': return theme.colors.background;
       case 'secondary': return theme.colors.text;
       case 'outline':
       case 'ghost': return theme.colors.tint;

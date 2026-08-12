@@ -4,8 +4,8 @@
  * A themed toggle switch with animated track/thumb.
  */
 
-import React, { useMemo, useRef, useEffect } from 'react';
-import { Animated, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { Animated, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';
 
@@ -23,7 +23,6 @@ const TRACK_WIDTH = 50;
 const TRACK_HEIGHT = 28;
 const THUMB_SIZE = 24;
 const THUMB_MARGIN = 2;
-const TRACK_PADDED = TRACK_HEIGHT - THUMB_MARGIN * 2;
 
 export function Switch({
   value,

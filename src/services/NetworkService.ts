@@ -5,11 +5,12 @@
  * and authentication token management.
  */
 
-import axios, {
-  AxiosInstance,
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse,
+import {
+  create,
+  isAxiosError,
+  type AxiosInstance,
+  type AxiosError,
+  type AxiosRequestConfig,
 } from 'axios';
 import { config } from '@/config/ConfigService';
 import { logger } from './LoggingService';
@@ -18,6 +19,10 @@ import type { Result } from '@/shared/types/architecture';
 import { success, failure } from '@/shared/utils/result';
 
 const TAG = 'NetworkService';
+
+interface RetriableAxiosRequestConfig extends AxiosRequestConfig {
+  _hasRetriedAfterRefresh?: boolean;
+}
 
 /**
  * Retry configuration for failed requests.
@@ -42,15 +47,17 @@ export class NetworkService {
   private readonly retryConfig: RetryConfig;
   private authToken: string | null = null;
   private refreshTokenPromise: Promise<string | null> | null = null;
+  private refreshTokenHandler: (() => Promise<string | null>) | null = null;
+  private sessionExpiredHandler: (() => void) | null = null;
 
   constructor(
-    baseURL: string = config.apiBaseUrl,
+    baseURL: string = config.apiBaseUrl ?? '',
     timeout: number = config.apiTimeout,
     retryConfig: Partial<RetryConfig> = {}
   ) {
     this.retryConfig = { ...DEFAULT_RETRY, ...retryConfig };
 
-    this.client = axios.create({
+    this.client = create({
       baseURL,
       timeout,
       headers: {
@@ -78,7 +85,10 @@ export class NetworkService {
     this.refreshTokenHandler = handler;
   }
 
-  private refreshTokenHandler: (() => Promise<string | null>) | null = null;
+  /** Register the action to take when a session can no longer be refreshed. */
+  public setSessionExpiredHandler(handler: (() => void) | null): void {
+    this.sessionExpiredHandler = handler;
+  }
 
   /**
    * Make a GET request.
@@ -140,6 +150,9 @@ export class NetworkService {
   private async request<T>(
     config: AxiosRequestConfig & { method: string }
   ): Promise<Result<T, NetworkError>> {
+    if (!this.client.defaults.baseURL) {
+      return failure(new NetworkError('API base URL is not configured'));
+    }
     let lastError: NetworkError | null = null;
 
     for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
@@ -188,7 +201,14 @@ export class NetworkService {
     this.client.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
-        if (error.response?.status === 401 && this.refreshTokenHandler) {
+        const requestConfig = error.config as RetriableAxiosRequestConfig | undefined;
+
+        if (
+          error.response?.status === 401 &&
+          this.refreshTokenHandler &&
+          requestConfig &&
+          !requestConfig._hasRetriedAfterRefresh
+        ) {
           try {
             // Prevent multiple simultaneous refresh attempts
             if (!this.refreshTokenPromise) {
@@ -201,15 +221,23 @@ export class NetworkService {
             if (newToken) {
               this.authToken = newToken;
               // Retry the original request with the new token
-              if (error.config) {
-                error.config.headers.Authorization = `Bearer ${newToken}`;
-                return this.client.request(error.config);
-              }
+              requestConfig._hasRetriedAfterRefresh = true;
+              requestConfig.headers ??= {};
+              requestConfig.headers.Authorization = `Bearer ${newToken}`;
+              return this.client.request(requestConfig);
             }
           } catch {
+            // The session-expiry path below clears local in-memory auth state.
+          } finally {
             this.refreshTokenPromise = null;
           }
         }
+
+        if (error.response?.status === 401) {
+          this.authToken = null;
+          this.sessionExpiredHandler?.();
+        }
+
         return Promise.reject(error);
       }
     );
@@ -223,7 +251,7 @@ export class NetworkService {
       return error;
     }
 
-    if (axios.isAxiosError(error)) {
+    if (isAxiosError(error)) {
       const status = error.response?.status;
       const message = error.response?.data
         ? typeof error.response.data === 'string'
@@ -261,7 +289,7 @@ export class NetworkService {
    * Check if an error is retryable.
    */
   private isRetryableError(error: unknown): boolean {
-    if (axios.isAxiosError(error)) {
+    if (isAxiosError(error)) {
       // Retry on network errors and 5xx server errors
       if (!error.response) {
         return true;

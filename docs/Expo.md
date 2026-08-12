@@ -96,6 +96,13 @@ Plugins are preferred over bare `app.json` fields when the configuration require
 
 ## app.json / app.config.ts
 
+### Runtime environment values
+
+JavaScript runtime configuration uses statically referenced `EXPO_PUBLIC_*`
+variables. They are client-visible and must contain only non-secret values.
+Copy `.env.example` for local development. Staging and production require
+`EXPO_PUBLIC_API_BASE_URL` with an HTTPS URL.
+
 Configuration is defined in `app.config.ts` (not static JSON) to support environment variables and conditional logic.
 
 ```ts

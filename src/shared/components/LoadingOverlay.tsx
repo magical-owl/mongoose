@@ -15,7 +15,6 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
-import type { ThemeColorVariant } from './Icon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,7 +50,7 @@ export function LoadingOverlay({
     () =>
       StyleSheet.create({
         overlay: {
-          ...StyleSheet.absoluteFillObject,
+          ...StyleSheet.absoluteFill,
           zIndex: 9999,
           backgroundColor: theme.colors.overlay,
           alignItems: 'center',
@@ -65,7 +64,7 @@ export function LoadingOverlay({
         messageText: {
           marginTop: theme.spacing.md,
           color: theme.colors.text,
-          fontSize: theme.fontSizes.body,
+          fontSize: theme.fontSizes.base,
           textAlign: 'center',
         },
       }),

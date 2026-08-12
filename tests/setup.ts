@@ -5,7 +5,7 @@ jest.mock('react-native-mmkv', () => {
   const mockStorage: Record<string, string> = {};
 
   return {
-    MMKV: jest.fn().mockImplementation(() => ({
+    createMMKV: jest.fn(() => ({
       getString: jest.fn((key: string) => mockStorage[key] ?? null),
       set: jest.fn((key: string, value: string) => {
         mockStorage[key] = value;
@@ -18,7 +18,7 @@ jest.mock('react-native-mmkv', () => {
         const val = mockStorage[key];
         return val !== undefined ? Number(val) : null;
       }),
-      delete: jest.fn((key: string) => {
+      remove: jest.fn((key: string) => {
         delete mockStorage[key];
       }),
       clearAll: jest.fn(() => {
@@ -56,6 +56,7 @@ jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn(),
   deleteItemAsync: jest.fn(),
   isAvailableAsync: jest.fn().mockResolvedValue(true),
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WHEN_UNLOCKED_THIS_DEVICE_ONLY',
 }));
 
 jest.mock('expo-linking', () => ({

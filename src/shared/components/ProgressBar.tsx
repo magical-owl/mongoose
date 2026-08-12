@@ -4,7 +4,7 @@
  * A themed progress bar with animated fill, variants, and optional label.
  */
 
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Animated, View } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';

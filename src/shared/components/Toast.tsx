@@ -15,7 +15,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { useTheme } from '@providers/ThemeProvider';
+import { useTheme, type ThemeColors } from '@providers/ThemeProvider';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,7 +54,7 @@ const SLIDE_DURATION = 250;
 // Variant accent colors
 // ---------------------------------------------------------------------------
 
-const variantAccentMap: Record<ToastVariant, string> = {
+const variantAccentMap: Record<ToastVariant, keyof ThemeColors> = {
   success: 'success',
   error: 'error',
   warning: 'warning',
@@ -187,8 +187,8 @@ export function Toast({
         messageText: {
           flex: 1,
           color: theme.colors.text,
-          fontSize: theme.fontSizes.body,
-          lineHeight: theme.fontSizes.body + 4,
+          fontSize: theme.fontSizes.base,
+          lineHeight: theme.fontSizes.base + 4,
           marginRight: theme.spacing.sm,
         },
         actionButton: {
@@ -198,7 +198,7 @@ export function Toast({
         },
         actionLabel: {
           color: theme.colors.tint,
-          fontSize: theme.fontSizes.bodySmall,
+          fontSize: theme.fontSizes.sm,
           fontWeight: '600',
         },
       }),
