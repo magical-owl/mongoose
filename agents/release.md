@@ -29,6 +29,17 @@ Before submitting a sensitive app (Diary, Journal, Finance, Habit Tracker, AI Co
 - **Zero Ad/Tracker SDKs**: Run `npm ls` and audit production bundles to guarantee no third-party ad networks, fingerprinting SDKs, or data brokers are included.
 - **DPA & Subprocessor Audit**: Ensure all external backend services (hosting, crash reporting, AI proxies) have signed Data Processing Addendums (DPAs).
 
+### 4. Legal, IP & Terms of Service Audit
+- **Trademark & Brand Check**: Confirm app title, keywords, and app icon do not infringe on registered trademarks.
+- **Asset License Verification**: Ensure all fonts, icons, and media have commercial clearance (Google Fonts OFL, `@expo/vector-icons`, royalty-free graphics).
+- **Public Legal Links**: Verify live, accessible URLs for Privacy Policy and Terms of Use (EULA) are pasted in App Store Connect and Google Play Console.
+- **Guideline 1.2 User Moderation Audit**: If the app features user-generated content or social sharing, verify that "Block User" and "Report Content" buttons are operational.
+
+### 5. In-App Purchase (IAP) & Monetization Audit (Guideline 3.1.1)
+- **Native IAP Enforcement**: If offering digital features, AI credits, or subscriptions, use native StoreKit / IAP (e.g. RevenueCat). Direct credit card inputs (Stripe web forms) inside iOS apps are strictly prohibited.
+- **Restore Purchases Button**: Any paywall or subscription UI must include a prominent, working "Restore Purchases" button.
+- **Apple Small Business Program**: Apply for Apple's Small Business Program to cut store commission fees from 30% to 15%.
+
 
 
 ## Changelog Generation

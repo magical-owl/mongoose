@@ -4,6 +4,12 @@
 
 Meadow is a production-grade Expo application platform built with Feature-First + Clean Architecture. It serves as a reusable foundation for future apps (Diary, Journal, Finance, Habit Tracker, AI Companion, Notes, etc.).
 
+## Template Usage & Starter Protocol
+
+Meadow is designed to be cloned or copied as a starter template repository when building new applications. When an AI agent or developer is instructed to create a new app using Meadow:
+1. **Clone / Duplicate Repository**: Treat Meadow as the source template (via GitHub Template or `cp -r meadow my-new-app`).
+2. **Follow New App Blueprint**: Strictly execute the sequence in [`agents/new-app.md`](file:///Users/louise/Desktop/meadow/agents/new-app.md) to configure app identity (`app.json`), theme tokens (`@theme`), feature layering (`src/features/`), compliance guardrails, and EAS deployment.
+
 ## Architecture
 
 - **Feature-First + Clean Architecture**: Presentation → Hooks → Services → Repositories → Data Sources → Storage/API/AI
@@ -79,8 +85,16 @@ All modules and agents building on Meadow (Diary, Journal, Finance, Habit Tracke
 
 ### 5. App Store & Google Play Release Compliance
 - **Apple App Store Review Guidelines**: Comply with Guideline 5.1.1 (Data Collection & Storage), 5.1.2 (Data Use & Sharing), and 2.5.18 (AI Generated Content & Safety).
+- **In-App Purchase & Monetization (Guideline 3.1.1)**: Digital subscriptions or paid features must use native Apple IAP / StoreKit with a mandatory "Restore Purchases" button on paywalls. In-app web credit card checkouts (Stripe/PayPal) are prohibited.
 - **Google Play Data Safety Section**: Disclose all data types collected/processed, ensure transit encryption (HTTPS/TLS 1.3), and provide an explicit deletion mechanism URL/in-app flow.
 - **Zero Third-Party Trackers**: No third-party ad networks, fingerprinting SDKs, or data brokers may be imported into sensitive app modules.
+
+
+### 6. Legal, Trademark & Intellectual Property (IP) Compliance
+- **Trademark Clearance**: Verify app names and branding against trademark databases (e.g. USPTO TESS) to prevent trademark infringement.
+- **Asset Licensing**: All fonts, icons, and media must have verified commercial-use licenses (OFL Google Fonts, `@expo/vector-icons`, royalty-free assets). Never use unlicensed images or graphics.
+- **Public Legal Links**: Maintain live, publicly hosted Privacy Policy and Terms of Use (EULA) URLs (using [`COMPLIANCE/PRIVACY.md`](file:///Users/louise/Desktop/meadow/COMPLIANCE/PRIVACY.md)).
+- **User Content Moderation (Guideline 1.2)**: If apps include public user-generated content or social sharing, implement a mandatory "Block / Report User" mechanism and standard EULA terms.
 
 
 ## Path Aliases

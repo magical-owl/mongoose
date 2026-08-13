@@ -8,6 +8,19 @@ This guide serves as the mandatory point of reference for AI agents and human de
 
 ## Phase 1: Project & App Initialization
 
+### 0. Clone or Duplicate Meadow Template
+Before starting a new app, clone or duplicate Meadow into a new repository directory:
+```bash
+# Option A: Local Copy
+cp -r /path/to/meadow /path/to/my-new-app
+cd /path/to/my-new-app
+rm -rf .git && git init
+npm install
+
+# Option B: GitHub Template
+# Click "Use this template" on GitHub -> git clone <new-repo-url> -> npm install
+```
+
 ### 1. Update Application Identifiers (`app.json`)
 Before writing app-specific code, update core configuration:
 - **App Metadata**: Set `"name"`, `"slug"`, and `"scheme"`.
@@ -63,6 +76,12 @@ When initializing an app handling confidential user data (journals, financial re
 4. **Data Governance & Erasure**:
    - Provide a functional in-app **"Delete Account / Clear Data"** button that hard-purges local and server data (GDPR Art. 17).
    - Provide **Data Export** functionality in structured JSON format (GDPR Art. 20).
+5. **Legal, Trademark & Asset Compliance**:
+   - Verify app name against trademark databases (e.g. USPTO TESS) to prevent brand infringement.
+   - Ensure all icons, fonts, and assets have commercial-use clearance (OFL Google Fonts, `@expo/vector-icons`).
+   - Host public Privacy Policy and Terms of Use (EULA) links before release (using [`COMPLIANCE/PRIVACY.md`](file:///Users/louise/Desktop/meadow/COMPLIANCE/PRIVACY.md)).
+   - Implement user reporting/blocking tools if the app includes public content (Guideline 1.2).
+
 
 ---
 

@@ -88,9 +88,17 @@ When developing or integrating AI capabilities in sensitive apps (Diary, Journal
 - **Prompt Sanitization**: Strip direct PII (emails, names, exact addresses) from AI prompt contexts before transmission.
 
 ### EU AI Act & Apple App Store Transparency (Guideline 2.5.18)
-- **Clear AI Content Labeling**: Explicitly tag and label all AI-generated content (e.g., "AI-generated reflection", "AI summary") in the UI.
+- **Clear AI Content Labeling**: Explicitly tag and label all AI-generated content (e.g., "AI-generated reflection", "AI summary", "AI Sticker") in the UI.
 - **User Control & Opt-out**: AI features must require explicit user opt-in consent with an immediate toggle in Settings → Privacy → AI Features to disable remote AI analysis.
-- **Content Moderation & Guardrails**: Implement safety filters on all AI outputs to prevent harmful, defamatory, or non-compliant text generation.
+- **Content Moderation & Guardrails**: Implement safety filters on all AI outputs to prevent harmful, defamatory, or non-compliant text/image generation.
+
+### AI-Generated Assets & Media (Stickers, Images, Art - Guideline 2.5.18 & 5.2)
+- **Pre-Generated Static Assets**: Pre-made AI stickers, background themes, or illustrations bundled in the app must have full commercial usage clearance and zero trademarked content (no copyrighted characters, brand logos, or celebrity likenesses).
+- **Dynamic In-App AI Asset Generation**: If users can generate custom stickers/images inside the app:
+  1. Enforce automated image prompt & safety filters to block offensive or explicit image generation.
+  2. Visually tag/label generated stickers or images as "AI Generated" in the UI.
+  3. Provide an in-app report/flag mechanism for users to report problematic generated media.
+
 
 
 
