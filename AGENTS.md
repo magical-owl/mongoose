@@ -96,6 +96,11 @@ All modules and agents building on Meadow (Diary, Journal, Finance, Habit Tracke
 - **Public Legal Links**: Maintain live, publicly hosted Privacy Policy and Terms of Use (EULA) URLs (using [`COMPLIANCE/PRIVACY.md`](file:///Users/louise/Desktop/meadow/COMPLIANCE/PRIVACY.md)).
 - **User Content Moderation (Guideline 1.2)**: If apps include public user-generated content or social sharing, implement a mandatory "Block / Report User" mechanism and standard EULA terms.
 
+### 7. Accessibility (a11y) & Offline Resilience
+- **Dynamic Type & Font Scaling (Guideline 2.5.5)**: UI components must support OS Dynamic Type scaling gracefully without text truncation or broken container bounds.
+- **Offline Network Resilience**: All network operations must fail gracefully with offline fallbacks (`src/services/OfflineService.ts`). Unsaved local entries must never be lost during connection drops.
+
+
 
 ## Path Aliases
 
