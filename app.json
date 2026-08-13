@@ -61,7 +61,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#E6F4FE"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

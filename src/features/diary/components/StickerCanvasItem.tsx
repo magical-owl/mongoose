@@ -1,18 +1,33 @@
-import React from 'react';
-import { Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  runOnJS,
-} from 'react-native-reanimated';
+/**
+ * StickerCanvasItem
+ *
+ * Draggable, resizable sticker using only React Native built-in APIs
+ * (Animated + PanResponder) — no react-native-gesture-handler or
+ * react-native-reanimated required, so it works in Expo Go.
+ *
+ * Interactions:
+ *   • Drag to move
+ *   • Tap to select (shows resize/delete controls)
+ *   • + / − buttons to resize in 10% steps
+ *   • ✕ button to delete
+ */
+
+import React, { useRef, useState, useCallback } from 'react';
+import {
+  Animated,
+  PanResponder,
+  TouchableOpacity,
+  Text,
+  View,
+  StyleSheet,
+} from 'react-native';
 import { PlacedSticker, STICKER_PACKS } from '../domain/Sticker';
 
 interface StickerCanvasItemProps {
-  sticker: PlacedSticker;
-  onUpdate: (updated: PlacedSticker) => void;
-  onDelete: (id: string) => void;
-  isEditable?: boolean;
+  readonly sticker: PlacedSticker;
+  readonly onUpdate: (updated: PlacedSticker) => void;
+  readonly onDelete: (id: string) => void;
+  readonly isEditable?: boolean;
 }
 
 export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
@@ -21,13 +36,15 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   onDelete,
   isEditable = true,
 }) => {
-  const translationX = useSharedValue(sticker.x);
-  const translationY = useSharedValue(sticker.y);
-  const scale = useSharedValue(sticker.scale);
-  const rotation = useSharedValue(sticker.rotation);
-  const [isSelected, setIsSelected] = React.useState(false);
+  const [isSelected, setIsSelected] = useState(false);
+  const [currentScale, setCurrentScale] = useState(sticker.scale);
 
-  // Find icon representation
+  // Animated position — starts at the sticker's saved position
+  const pan = useRef(new Animated.ValueXY({ x: sticker.x, y: sticker.y })).current;
+  // Track absolute position so we can persist on release
+  const position = useRef({ x: sticker.x, y: sticker.y });
+
+  // Find the emoji for this sticker
   let stickerIcon = '⭐';
   for (const pack of STICKER_PACKS) {
     const item = pack.stickers.find((s) => s.id === sticker.stickerId);
@@ -37,95 +54,146 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
     }
   }
 
-  const panGesture = Gesture.Pan()
-    .enabled(isEditable)
-    .onUpdate((event) => {
-      translationX.value = sticker.x + event.translationX;
-      translationY.value = sticker.y + event.translationY;
-    })
-    .onEnd(() => {
-      runOnJS(onUpdate)({
-        ...sticker,
-        x: translationX.value,
-        y: translationY.value,
-        scale: scale.value,
-        rotation: rotation.value,
-      });
-    });
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => isEditable,
+      onMoveShouldSetPanResponder: (_, gs) =>
+        isEditable && (Math.abs(gs.dx) > 4 || Math.abs(gs.dy) > 4),
 
-  const pinchGesture = Gesture.Pinch()
-    .enabled(isEditable)
-    .onUpdate((event) => {
-      scale.value = Math.min(Math.max(sticker.scale * event.scale, 0.5), 3.0);
-    })
-    .onEnd(() => {
-      runOnJS(onUpdate)({
-        ...sticker,
-        x: translationX.value,
-        y: translationY.value,
-        scale: scale.value,
-        rotation: rotation.value,
-      });
-    });
+      onPanResponderGrant: () => {
+        // Anchor the animated value to current absolute position
+        pan.setOffset({ x: position.current.x, y: position.current.y });
+        pan.setValue({ x: 0, y: 0 });
+        setIsSelected(false); // hide controls while dragging
+      },
 
-  const animatedStyle = useAnimatedStyle(() => ({
+      onPanResponderMove: Animated.event(
+        [null, { dx: pan.x, dy: pan.y }],
+        { useNativeDriver: false }
+      ),
+
+      onPanResponderRelease: (_, gs) => {
+        pan.flattenOffset();
+        const newX = position.current.x + gs.dx;
+        const newY = position.current.y + gs.dy;
+        position.current = { x: newX, y: newY };
+
+        onUpdate({
+          ...sticker,
+          x: newX,
+          y: newY,
+          scale: currentScale,
+        });
+      },
+    })
+  ).current;
+
+  const handleScaleUp = useCallback(() => {
+    const next = Math.min(currentScale + 0.2, 3.0);
+    setCurrentScale(next);
+    onUpdate({ ...sticker, x: position.current.x, y: position.current.y, scale: next });
+  }, [currentScale, sticker, onUpdate]);
+
+  const handleScaleDown = useCallback(() => {
+    const next = Math.max(currentScale - 0.2, 0.4);
+    setCurrentScale(next);
+    onUpdate({ ...sticker, x: position.current.x, y: position.current.y, scale: next });
+  }, [currentScale, sticker, onUpdate]);
+
+  const animatedStyle = {
     transform: [
-      { translateX: translationX.value },
-      { translateY: translationY.value },
-      { scale: scale.value },
-      { rotate: `${rotation.value}deg` },
+      { translateX: pan.x },
+      { translateY: pan.y },
+      { scale: currentScale },
+      { rotate: `${sticker.rotation}deg` },
     ],
-    zIndex: sticker.zIndex,
-  }));
-
-  const composedGesture = Gesture.Simultaneous(panGesture, pinchGesture);
+    zIndex: isSelected ? 999 : sticker.zIndex,
+  };
 
   return (
-    <GestureDetector gesture={composedGesture}>
-      <Animated.View style={[styles.stickerContainer, animatedStyle]}>
-        <TouchableOpacity
-          onPress={() => isEditable && setIsSelected(!isSelected)}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.stickerEmoji}>{stickerIcon}</Text>
-        </TouchableOpacity>
-        {isEditable && isSelected && (
+    <Animated.View
+      style={[styles.container, animatedStyle]}
+      {...panResponder.panHandlers}
+    >
+      {/* Resize / delete controls (only when selected) */}
+      {isEditable && isSelected && (
+        <View style={styles.controls}>
           <TouchableOpacity
-            style={styles.deleteBadge}
-            onPress={() => onDelete(sticker.id)}
+            style={styles.controlBtn}
+            onPress={handleScaleDown}
+            accessibilityLabel="Shrink sticker"
+            accessibilityRole="button"
           >
-            <Text style={styles.deleteBadgeText}>✕</Text>
+            <Text style={styles.controlText}>−</Text>
           </TouchableOpacity>
-        )}
-      </Animated.View>
-    </GestureDetector>
+          <TouchableOpacity
+            style={[styles.controlBtn, styles.deleteBtn]}
+            onPress={() => onDelete(sticker.id)}
+            accessibilityLabel="Delete sticker"
+            accessibilityRole="button"
+          >
+            <Text style={styles.controlText}>✕</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.controlBtn}
+            onPress={handleScaleUp}
+            accessibilityLabel="Grow sticker"
+            accessibilityRole="button"
+          >
+            <Text style={styles.controlText}>+</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Sticker emoji — tap to toggle selection */}
+      <TouchableOpacity
+        onPress={() => isEditable && setIsSelected((s) => !s)}
+        activeOpacity={isEditable ? 0.8 : 1}
+        accessibilityLabel={`Sticker ${stickerIcon}${isEditable ? ', tap to select' : ''}`}
+        accessibilityRole={isEditable ? 'button' : 'image'}
+      >
+        <Text style={[styles.emoji, isSelected && styles.emojiSelected]}>
+          {stickerIcon}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  stickerContainer: {
+  container: {
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 4,
   },
-  stickerEmoji: {
+  emoji: {
     fontSize: 48,
   },
-  deleteBadge: {
+  emojiSelected: {
+    opacity: 0.85,
+  },
+  controls: {
     position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: '#EF4444',
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    top: -36,
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
+  controlBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#334155',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  deleteBadgeText: {
+  deleteBtn: {
+    backgroundColor: '#EF4444',
+  },
+  controlText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 'bold',
+    lineHeight: 16,
   },
 });

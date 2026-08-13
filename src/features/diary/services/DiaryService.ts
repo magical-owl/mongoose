@@ -4,6 +4,8 @@ import { Sentiment } from '../domain/Sentiment';
 import { CompanionType, COMPANION_OPTIONS } from '../domain/Companion';
 import { IDiaryRepository } from '../repositories/IDiaryRepository';
 import { diaryRepository } from '../repositories/DiaryRepository';
+import { analyzeSentiment as scoreContent } from '@/ai/SentimentAnalyzer';
+import { getCompanionResponse } from '@/ai/companionResponses';
 
 export class DiaryService {
   constructor(private repo: IDiaryRepository = diaryRepository) {}
@@ -29,27 +31,21 @@ export class DiaryService {
   }
 
   /**
-   * Generates AI Companion Sentiment Analysis with Zero Data Retention (ZDR).
+   * Generates AI Companion Sentiment Analysis.
+   * All processing is on-device — no text is sent to any external service.
+   * Per AGENTS.md: zero PII logging, zero external data transmission.
    */
   public analyzeSentiment(content: string, companionType: CompanionType): Sentiment {
     const companion = COMPANION_OPTIONS.find((c) => c.id === companionType) || COMPANION_OPTIONS[0]!;
-
-    // Derived sentiment analysis simulation
-    const isPositive = /happy|great|wonderful|good|love|awesome|excited/i.test(content);
-    const isStressed = /stress|sad|tired|busy|overwhelmed|anxious/i.test(content);
-
-    const mood = isPositive ? 'Joyful 🌟' : isStressed ? 'Reflective 🌿' : 'Calm ☕';
+    const sentimentResult = scoreContent(content);
+    const response = getCompanionResponse(companionType, sentimentResult);
 
     return {
-      mood,
-      summary: `Reflected on your day with focus on key moments.`,
-      emotional_analysis: isPositive
-        ? 'You expressed optimism and joy in your writing.'
-        : isStressed
-        ? 'You shared some weight today. Taking time to write helps release tension.'
-        : 'Your mood is balanced and steady.',
-      supportive_message: `${companion.name} says: "${companion.greeting}"`,
-      suggestion: 'Take 5 deep breaths and enjoy a quiet glass of water.',
+      mood: sentimentResult.mood,
+      summary: `You wrote ${sentimentResult.wordCount} words today. ${sentimentResult.isShortEntry ? 'Even a short entry counts.' : 'A meaningful reflection.'}`,
+      emotional_analysis: response.emotional_analysis,
+      supportive_message: `${companion.name}: ${response.supportive_message}`,
+      suggestion: response.suggestion,
     };
   }
 

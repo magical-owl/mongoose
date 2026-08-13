@@ -5,7 +5,8 @@
  * Provides generic CRUD operations with type safety.
  */
 
-import { createMMKV, type MMKV } from 'react-native-mmkv';
+import { createSafeMMKV } from './mmkvSafe';
+import type { MMKV } from 'react-native-mmkv';
 import { logger } from '@/services/LoggingService';
 
 const TAG = 'DatabaseService';
@@ -49,7 +50,7 @@ export class MmkvDatabaseService extends IDatabaseService {
 
   constructor(storageId: string = 'meadow-db') {
     super();
-    this.storage = createMMKV({ id: storageId });
+    this.storage = createSafeMMKV({ id: storageId });
   }
 
   /**

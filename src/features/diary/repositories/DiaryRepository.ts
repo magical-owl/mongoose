@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { success, failure } from '@/shared/utils/result';
 import type { Result } from '@/shared/types/architecture';
 import { IDiaryRepository } from './IDiaryRepository';
@@ -52,9 +53,15 @@ export class DiaryRepository implements IDiaryRepository {
       this.memoryStore.set(validated.id, validated);
       return success(validated);
     } catch (error) {
+      let message = 'Failed to save entry';
+      if (error instanceof z.ZodError) {
+        message = error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join(', ');
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
       return failure({
         code: 'VALIDATION_ERROR',
-        message: error instanceof Error ? error.message : 'Failed to save entry',
+        message,
       });
     }
   }

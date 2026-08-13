@@ -1,20 +1,16 @@
 import React from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-} from 'react-native';
+import { View, TouchableOpacity, ScrollView } from 'react-native';
+import { useTheme } from '@providers/ThemeProvider';
+import { Modal } from '@shared/components/Modal';
+import { Text } from '@shared/components/Text';
+import { Ionicons } from '@expo/vector-icons';
 import { CompanionType, COMPANION_OPTIONS } from '../domain/Companion';
 
 interface CompanionPickerModalProps {
-  visible: boolean;
-  onClose: () => void;
-  selectedCompanion: CompanionType;
-  onSelectCompanion: (companion: CompanionType) => void;
+  readonly visible: boolean;
+  readonly onClose: () => void;
+  readonly selectedCompanion: CompanionType;
+  readonly onSelectCompanion: (companion: CompanionType) => void;
 }
 
 export const CompanionPickerModal: React.FC<CompanionPickerModalProps> = ({
@@ -23,108 +19,54 @@ export const CompanionPickerModal: React.FC<CompanionPickerModalProps> = ({
   selectedCompanion,
   onSelectCompanion,
 }) => {
-  return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Select AI Companion</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeText}>✕</Text>
-          </TouchableOpacity>
-        </View>
+  const theme = useTheme();
 
-        <ScrollView contentContainerStyle={styles.listContainer}>
-          {COMPANION_OPTIONS.map((item) => {
-            const isSelected = item.id === selectedCompanion;
-            return (
-              <TouchableOpacity
-                key={item.id}
-                style={[styles.card, isSelected && styles.cardSelected]}
-                onPress={() => {
-                  onSelectCompanion(item.id);
-                  onClose();
-                }}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.avatar}>{item.avatar}</Text>
-                <View style={styles.info}>
-                  <Text style={styles.name}>{item.name}</Text>
-                  <Text style={styles.description}>{item.description}</Text>
-                  <Text style={styles.greeting}>"{item.greeting}"</Text>
+  return (
+    <Modal visible={visible} onDismiss={onClose} title="Select AI Companion" accessibilityLabel="Companion picker">
+      <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
+        {COMPANION_OPTIONS.map((item) => {
+          const isSelected = item.id === selectedCompanion;
+          return (
+            <TouchableOpacity
+              key={item.id}
+              style={{
+                flexDirection: 'row',
+                backgroundColor: isSelected ? `${theme.colors.tint}1A` : theme.colors.surface,
+                borderRadius: theme.borderRadius.lg,
+                padding: theme.spacing.md,
+                marginBottom: theme.spacing.md,
+                borderWidth: 1.5,
+                borderColor: isSelected ? theme.colors.tint : theme.colors.border,
+                alignItems: 'center',
+              }}
+              onPress={() => {
+                onSelectCompanion(item.id);
+                onClose();
+              }}
+              activeOpacity={0.8}
+              accessibilityLabel={`Select ${item.name}${isSelected ? ', currently selected' : ''}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+            >
+              <Text style={{ fontSize: 48, marginRight: theme.spacing.lg }}>{item.avatar}</Text>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <Text preset="label" style={{ flex: 1 }}>{item.name}</Text>
+                  {isSelected && (
+                    <Ionicons name="checkmark-circle" size={20} color={theme.colors.tint} />
+                  )}
                 </View>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </SafeAreaView>
+                <Text preset="caption" color="textSecondary" style={{ marginBottom: 4 }}>
+                  {item.description}
+                </Text>
+                <Text preset="caption" color="tint" style={{ fontStyle: 'italic' }}>
+                  "{item.greeting}"
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0F172A',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  title: {
-    color: '#F8FAFC',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  closeText: {
-    color: '#94A3B8',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  listContainer: {
-    padding: 16,
-  },
-  card: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    alignItems: 'center',
-  },
-  cardSelected: {
-    borderColor: '#10B981',
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-  },
-  avatar: {
-    fontSize: 48,
-    marginRight: 16,
-  },
-  info: {
-    flex: 1,
-  },
-  name: {
-    color: '#F8FAFC',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  description: {
-    color: '#94A3B8',
-    fontSize: 13,
-    marginBottom: 6,
-  },
-  greeting: {
-    color: '#10B981',
-    fontSize: 12,
-    fontStyle: 'italic',
-  },
-});

@@ -3,6 +3,11 @@
  *
  * Composes all global providers with proper nesting order.
  * Add new providers here as the app grows.
+ *
+ * NOTE: react-native-gesture-handler and react-native-reanimated require
+ * native modules (worklet runtime, NitroModules) that are NOT available in
+ * Expo Go. To use sticker pan/pinch gestures, run a development build:
+ *   npx expo run:ios
  */
 
 import React from 'react';
@@ -33,3 +38,4 @@ export function AppProviders({
     </ThemeProvider>
   );
 }
+

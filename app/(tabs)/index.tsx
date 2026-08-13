@@ -1,112 +1,216 @@
-import { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-  ActivityIndicator,
-} from 'react-native';
-import { useRouter } from 'expo-router';
+import { useState, useCallback } from 'react';
+
+import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useTheme } from '@providers/ThemeProvider';
+import { ScreenContainer } from '@shared/components/ScreenContainer';
+import { Text } from '@shared/components/Text';
+import { Card } from '@shared/components/Card';
+import { FAB } from '@shared/components/FAB';
+import { EmptyState } from '@shared/components/EmptyState';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 
 export default function TimelineScreen() {
   const router = useRouter();
-  const { entries, isLoading, streakStats, selectedCompanion } = useDiary();
-  const [viewMode, setViewMode] = useState<'feed' | 'calendar'>('feed');
+  const theme = useTheme();
+  const { entries, isLoading, streakStats, selectedCompanion, refresh } = useDiary();
+  const [viewModeIndex, setViewModeIndex] = useState(0);
 
-  const activeCompanion = COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
+
+  const activeCompanion =
+    COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
+
+  const viewMode = viewModeIndex === 0 ? 'feed' : 'calendar';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <ScreenContainer loading={isLoading} loadingMessage="Loading your diary..." safeArea scrollable={false}>
       {/* Header */}
-      <View style={styles.header}>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingHorizontal: theme.spacing.lg,
+          paddingVertical: theme.spacing.md,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.border,
+        }}
+      >
         <View>
-          <Text style={styles.appTitle}>Mongoose</Text>
-          <Text style={styles.subtitle}>AI Diary Companion</Text>
+          <Text preset="h3">Mongoose</Text>
+          <Text preset="caption" color="tint">AI Diary Companion</Text>
         </View>
 
-        {/* View Switcher: Feed | Calendar */}
-        <View style={styles.viewSwitcher}>
-          <TouchableOpacity
-            style={[styles.switchBtn, viewMode === 'feed' && styles.switchBtnActive]}
-            onPress={() => setViewMode('feed')}
-          >
-            <Text style={[styles.switchText, viewMode === 'feed' && styles.switchTextActive]}>Feed</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.switchBtn, viewMode === 'calendar' && styles.switchBtnActive]}
-            onPress={() => setViewMode('calendar')}
-          >
-            <Text style={[styles.switchText, viewMode === 'calendar' && styles.switchTextActive]}>Calendar</Text>
-          </TouchableOpacity>
+        {/* Compact pill switcher */}
+        <View
+          style={{
+            flexDirection: 'row',
+            backgroundColor: theme.colors.surface,
+            borderRadius: theme.borderRadius.full,
+            padding: 3,
+          }}
+          accessibilityRole="tablist"
+          accessibilityLabel="View mode switcher"
+        >
+          {(['Feed', 'Calendar'] as const).map((label, idx) => (
+            <TouchableOpacity
+              key={label}
+              onPress={() => setViewModeIndex(idx)}
+              style={{
+                paddingHorizontal: theme.spacing.md,
+                paddingVertical: 5,
+                borderRadius: theme.borderRadius.full,
+                backgroundColor:
+                  viewModeIndex === idx ? theme.colors.tint : 'transparent',
+              }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: viewModeIndex === idx }}
+              accessibilityLabel={`${label}${viewModeIndex === idx ? ', selected' : ''}`}
+            >
+              <Text
+                preset="caption"
+                style={{
+                  fontWeight: '600',
+                  color:
+                    viewModeIndex === idx
+                      ? theme.colors.background
+                      : theme.colors.textSecondary,
+                }}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
       {/* Streak & Companion Banner */}
-      <View style={styles.streakBanner}>
-        <Text style={styles.companionAvatar}>{activeCompanion.avatar}</Text>
-        <View style={styles.streakInfo}>
-          <Text style={styles.streakTitle}>{activeCompanion.name}</Text>
-          <Text style={styles.streakSubtitle}>🔥 {streakStats.currentStreak} Day Writing Streak</Text>
+      <Card
+        shadow={false}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginHorizontal: theme.spacing.lg,
+          marginTop: theme.spacing.md,
+          marginBottom: theme.spacing.sm,
+          borderWidth: 1,
+          borderColor: theme.colors.border,
+        }}
+      >
+        <Text style={{ fontSize: 32, marginRight: theme.spacing.md }}>{activeCompanion.avatar}</Text>
+        <View style={{ flex: 1 }}>
+          <Text preset="label" color="text">{activeCompanion.name}</Text>
+          <Text preset="caption" color="tint">🔥 {streakStats.currentStreak} Day Writing Streak</Text>
         </View>
-      </View>
+      </Card>
 
       {/* Content Feed / Calendar */}
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#10B981" />
-        </View>
-      ) : viewMode === 'feed' ? (
-        <ScrollView contentContainerStyle={styles.feedContent}>
+      {viewMode === 'feed' ? (
+        <ScrollView
+          contentContainerStyle={{
+            padding: theme.spacing.lg,
+            paddingBottom: theme.spacing.massive + theme.spacing.lg,
+            flexGrow: 1,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
           {entries.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>📝</Text>
-              <Text style={styles.emptyTitle}>No entries yet</Text>
-              <Text style={styles.emptyDesc}>Tap "+" below to write your first entry with {activeCompanion.name}!</Text>
-            </View>
+            <EmptyState
+              icon="journal-outline"
+              title="No entries yet"
+              message={`Tap "+" below to write your first entry with ${activeCompanion.name}!`}
+              actionLabel="Write First Entry"
+              onAction={() => router.push('/entry/new')}
+            />
           ) : (
             entries.map((entry) => (
-              <TouchableOpacity
+              <Card
                 key={entry.id}
-                style={styles.entryCard}
                 onPress={() => router.push(`/entry/${entry.id}`)}
-                activeOpacity={0.8}
+                style={{ marginBottom: theme.spacing.md }}
+                accessibilityLabel={`Diary entry: ${entry.title}`}
               >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.cardDate}>{entry.date}</Text>
-                  {entry.sentiment && <Text style={styles.cardMood}>{entry.sentiment.mood}</Text>}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    marginBottom: theme.spacing.xs,
+                  }}
+                >
+                  <Text preset="caption" color="textSecondary">{entry.date}</Text>
+                  {entry.sentiment && (
+                    <Text preset="caption" color="tint">{entry.sentiment.mood}</Text>
+                  )}
                 </View>
-                <Text style={styles.cardTitle}>{entry.title}</Text>
-                <Text style={styles.cardSnippet} numberOfLines={2}>
+                <Text preset="h3" style={{ marginBottom: theme.spacing.xs }}>{entry.title}</Text>
+                <Text preset="bodySmall" color="textSecondary" numberOfLines={2}>
                   {entry.content}
                 </Text>
                 {entry.stickers.length > 0 && (
-                  <Text style={styles.stickerTag}>🏷️ {entry.stickers.length} Stickers Placed</Text>
+                  <Text
+                    preset="caption"
+                    color="textTertiary"
+                    style={{ marginTop: theme.spacing.xs }}
+                  >
+                    🏷️ {entry.stickers.length} Stickers Placed
+                  </Text>
                 )}
-              </TouchableOpacity>
+              </Card>
             ))
           )}
         </ScrollView>
       ) : (
-        <ScrollView contentContainerStyle={styles.feedContent}>
-          <View style={styles.calendarCard}>
-            <Text style={styles.calendarTitle}>📅 Calendar View</Text>
-            <Text style={styles.calendarSubtitle}>Select any day below to view or write entries:</Text>
+        <ScrollView
+          contentContainerStyle={{
+            padding: theme.spacing.lg,
+            paddingBottom: theme.spacing.massive + theme.spacing.lg,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          <Card>
+            <Text preset="h3" style={{ marginBottom: theme.spacing.xs }}>📅 Calendar View</Text>
+            <Text preset="bodySmall" color="textSecondary" style={{ marginBottom: theme.spacing.lg }}>
+              Select any day below to view or write entries:
+            </Text>
 
-            <View style={styles.calendarGrid}>
+            {/* Day header row */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-                <Text key={d} style={styles.calendarHeaderCell}>{d}</Text>
+                <Text
+                  key={d}
+                  preset="caption"
+                  color="textTertiary"
+                  style={{ width: '13%', textAlign: 'center', marginBottom: theme.spacing.sm, fontWeight: '700' }}
+                >
+                  {d}
+                </Text>
               ))}
+
               {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
                 const dayStr = `2026-08-${day < 10 ? '0' + day : day}`;
                 const hasEntry = entries.some((e) => e.date === dayStr);
                 return (
                   <TouchableOpacity
                     key={day}
-                    style={[styles.calendarCell, hasEntry && styles.calendarCellHasEntry]}
+                    style={{
+                      width: '13%',
+                      height: 40,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: theme.spacing.sm,
+                      borderRadius: theme.borderRadius.sm,
+                      backgroundColor: hasEntry
+                        ? `${theme.colors.tint}33`
+                        : theme.colors.surface,
+                      borderWidth: hasEntry ? 1 : 0,
+                      borderColor: hasEntry ? theme.colors.tint : 'transparent',
+                    }}
                     onPress={() => {
                       const found = entries.find((e) => e.date === dayStr);
                       if (found) {
@@ -115,254 +219,43 @@ export default function TimelineScreen() {
                         router.push('/entry/new');
                       }
                     }}
+                    accessibilityLabel={`${day} August${hasEntry ? ', has entry' : ''}`}
+                    accessibilityRole="button"
                   >
-                    <Text style={[styles.calendarCellText, hasEntry && styles.calendarCellTextActive]}>
+                    <Text
+                      preset="caption"
+                      color={hasEntry ? 'tint' : 'textSecondary'}
+                      style={{ fontWeight: hasEntry ? '700' : '400' }}
+                    >
                       {day}
                     </Text>
-                    {hasEntry && <View style={styles.dot} />}
+                    {hasEntry && (
+                      <View
+                        style={{
+                          width: 4,
+                          height: 4,
+                          borderRadius: 2,
+                          backgroundColor: theme.colors.tint,
+                          marginTop: 2,
+                        }}
+                      />
+                    )}
                   </TouchableOpacity>
                 );
               })}
             </View>
-          </View>
+          </Card>
         </ScrollView>
       )}
 
-      {/* Floating Action Button (+ New Entry) */}
-      <TouchableOpacity
-        style={styles.fab}
+      {/* FAB */}
+      <FAB
+        icon="add"
         onPress={() => router.push('/entry/new')}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.fabIcon}>+</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+        size="lg"
+        accessibilityLabel="Write new diary entry"
+        style={{ position: 'absolute', bottom: theme.spacing.xxl, right: theme.spacing.xxl }}
+      />
+    </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0F172A',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  appTitle: {
-    color: '#F8FAFC',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    color: '#10B981',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  viewSwitcher: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
-    borderRadius: 20,
-    padding: 3,
-  },
-  switchBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  switchBtnActive: {
-    backgroundColor: '#10B981',
-  },
-  switchText: {
-    color: '#94A3B8',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  switchTextActive: {
-    color: '#0F172A',
-  },
-  streakBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(30, 41, 59, 0.6)',
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-    borderRadius: 16,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  companionAvatar: {
-    fontSize: 32,
-    marginRight: 12,
-  },
-  streakInfo: {
-    flex: 1,
-  },
-  streakTitle: {
-    color: '#F8FAFC',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  streakSubtitle: {
-    color: '#10B981',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  feedContent: {
-    padding: 16,
-    paddingBottom: 80,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  emptyTitle: {
-    color: '#F8FAFC',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  emptyDesc: {
-    color: '#94A3B8',
-    fontSize: 14,
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
-  entryCard: {
-    backgroundColor: '#FDF6E3', // Vintage parchment preview
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  cardDate: {
-    color: '#64748B',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  cardMood: {
-    color: '#0F172A',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  cardTitle: {
-    color: '#0F172A',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 6,
-  },
-  cardSnippet: {
-    color: '#334155',
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  stickerTag: {
-    color: '#0F172A',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  calendarCard: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  calendarTitle: {
-    color: '#F8FAFC',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  calendarSubtitle: {
-    color: '#94A3B8',
-    fontSize: 13,
-    marginBottom: 16,
-  },
-  calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  calendarHeaderCell: {
-    width: '13%',
-    textAlign: 'center',
-    color: '#94A3B8',
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  calendarCell: {
-    width: '13%',
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
-  },
-  calendarCellHasEntry: {
-    backgroundColor: 'rgba(16, 185, 129, 0.25)',
-    borderWidth: 1,
-    borderColor: '#10B981',
-  },
-  calendarCellText: {
-    color: '#94A3B8',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  calendarCellTextActive: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#10B981',
-    marginTop: 2,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#10B981',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 5,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-  },
-  fabIcon: {
-    color: '#0F172A',
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginTop: -2,
-  },
-});

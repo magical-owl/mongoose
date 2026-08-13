@@ -1,15 +1,13 @@
 import { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-  Alert,
-} from 'react-native';
+import { View, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+
 import { useRouter } from 'expo-router';
+import { useTheme } from '@providers/ThemeProvider';
+import { ScreenContainer } from '@shared/components/ScreenContainer';
+import { Text } from '@shared/components/Text';
+import { Button } from '@shared/components/Button';
+import { TextInput } from '@shared/components/TextInput';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
@@ -17,25 +15,50 @@ import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem
 import { StickerPickerModal } from '@/features/diary/components/StickerPickerModal';
 import { CompanionPickerModal } from '@/features/diary/components/CompanionPickerModal';
 import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
+import { generateUUID } from '@/shared/utils/uuid';
 
 export default function CreateEntryScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const { saveDiaryEntry, selectedCompanion, setSelectedCompanion } = useDiary();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]!);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [paperId] = useState('vintage-parchment');
   const [stickers, setStickers] = useState<PlacedSticker[]>([]);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showCompanionPicker, setShowCompanionPicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const activeCompanion = COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
+  // Format for display: "Thursday, August 13, 2026"
+  const formattedDate = selectedDate.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  // Format for storage: "YYYY-MM-DD"
+  const isoDate = selectedDate.toISOString().split('T')[0]!;
+
+  const handleDateChange = (_event: DateTimePickerEvent, date?: Date) => {
+    // On Android the picker closes automatically on selection; on iOS it stays open.
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (date) {
+      setSelectedDate(date);
+    }
+  };
+
+  const activeCompanion =
+    COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
 
   const handleAddSticker = (stickerId: string, category: string) => {
     const newSticker: PlacedSticker = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: generateUUID(),
       stickerId,
       category,
       x: 120 + (stickers.length % 3) * 30,
@@ -55,6 +78,14 @@ export default function CreateEntryScreen() {
     setStickers(stickers.filter((s) => s.id !== id));
   };
 
+  const navigateBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
   const handleSave = async () => {
     if (!title.trim()) {
       Alert.alert('Title Required', 'Please enter a title for your diary entry.');
@@ -67,10 +98,10 @@ export default function CreateEntryScreen() {
 
     setIsSaving(true);
     const newEntry: DiaryEntry = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: generateUUID(),
       title: title.trim(),
       content: content.trim(),
-      date,
+      date: isoDate,
       paperBackgroundId: paperId,
       stickers,
       companion: selectedCompanion,
@@ -84,28 +115,57 @@ export default function CreateEntryScreen() {
     setIsSaving(false);
 
     if (result.success) {
-      router.back();
+      navigateBack();
     } else {
       Alert.alert('Error', result.error.message);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Top Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Diary Entry</Text>
-        <TouchableOpacity onPress={handleSave} disabled={isSaving}>
-          <Text style={styles.saveText}>{isSaving ? 'Saving...' : 'Save'}</Text>
-        </TouchableOpacity>
+    <ScreenContainer safeArea keyboardAvoiding scrollable={false}>
+      {/* Header */}
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingHorizontal: theme.spacing.lg,
+          paddingVertical: theme.spacing.md,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.border,
+        }}
+      >
+        <Button
+          label="Cancel"
+          variant="ghost"
+          size="sm"
+          onPress={navigateBack}
+          accessibilityLabel="Cancel and go back"
+        />
+        <Text preset="h3">New Diary Entry</Text>
+        <Button
+          label={isSaving ? 'Saving…' : 'Save'}
+          variant="primary"
+          size="sm"
+          loading={isSaving}
+          onPress={handleSave}
+          accessibilityLabel="Save diary entry"
+        />
       </View>
 
-      {/* Main Canvas Workspace */}
-      <View style={styles.canvasContainer}>
-        {/* Render Drag & Drop Stickers on Canvas */}
+      {/* Paper Canvas */}
+      <View
+        style={{
+          flex: 1,
+          position: 'relative',
+          backgroundColor: '#FDF6E3',
+          marginHorizontal: theme.spacing.lg,
+          marginVertical: theme.spacing.md,
+          borderRadius: theme.borderRadius.xl,
+          overflow: 'hidden',
+        }}
+      >
+        {/* Drag-and-drop stickers */}
         {stickers.map((sticker) => (
           <StickerCanvasItem
             key={sticker.id}
@@ -115,55 +175,135 @@ export default function CreateEntryScreen() {
           />
         ))}
 
-        {/* Paper Text & Editor */}
-        <ScrollView contentContainerStyle={styles.editorContent}>
-          {/* Companion Greeting Banner */}
-          <TouchableOpacity style={styles.companionBanner} onPress={() => setShowCompanionPicker(true)}>
-            <Text style={styles.companionAvatar}>{activeCompanion.avatar}</Text>
-            <View style={styles.companionBannerTextContainer}>
-              <Text style={styles.companionName}>{activeCompanion.name}</Text>
-              <Text style={styles.companionGreeting}>"{activeCompanion.greeting}"</Text>
+        <ScrollView
+          contentContainerStyle={{ padding: theme.spacing.lg }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Companion banner */}
+          <TouchableOpacity
+            onPress={() => setShowCompanionPicker(true)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: 'rgba(15, 23, 42, 0.08)',
+              padding: theme.spacing.md,
+              borderRadius: theme.borderRadius.lg,
+              marginBottom: theme.spacing.lg,
+            }}
+            accessibilityLabel={`AI Companion: ${activeCompanion.name}. Tap to change.`}
+            accessibilityRole="button"
+          >
+            <Text style={{ fontSize: 32, marginRight: theme.spacing.md }}>
+              {activeCompanion.avatar}
+            </Text>
+            <View style={{ flex: 1 }}>
+              <Text preset="label" style={{ color: '#0F172A' }}>{activeCompanion.name}</Text>
+              <Text preset="caption" style={{ color: '#334155', fontStyle: 'italic' }}>
+                "{activeCompanion.greeting}"
+              </Text>
             </View>
           </TouchableOpacity>
 
-          {/* Date & Title Inputs */}
-          <TextInput
-            style={styles.dateInput}
-            value={date}
-            onChangeText={setDate}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor="#64748B"
-          />
+          {/* Date picker row */}
+          <TouchableOpacity
+            onPress={() => setShowDatePicker(true)}
+            style={{
+              marginBottom: theme.spacing.md,
+              borderWidth: 1,
+              borderColor: theme.colors.inputBorder,
+              borderRadius: theme.borderRadius.md,
+              backgroundColor: theme.colors.inputBackground,
+              paddingHorizontal: theme.spacing.md,
+              paddingVertical: theme.spacing.md,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+            accessibilityLabel={`Entry date: ${formattedDate}. Tap to change.`}
+            accessibilityRole="button"
+          >
+            <View>
+              <Text preset="caption" color="textSecondary" style={{ marginBottom: 2 }}>Date</Text>
+              <Text preset="body" color="text">{formattedDate}</Text>
+            </View>
+            <Text style={{ fontSize: 20 }}>📅</Text>
+          </TouchableOpacity>
 
+          {/* Native date picker — inline on iOS, dialog on Android */}
+          {showDatePicker && (
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'inline' : 'default'}
+              onChange={handleDateChange}
+              maximumDate={new Date()}
+              style={{ marginBottom: theme.spacing.md }}
+            />
+          )}
+          {/* iOS: show a Done button to dismiss the inline picker */}
+          {showDatePicker && Platform.OS === 'ios' && (
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(false)}
+              style={{
+                alignSelf: 'flex-end',
+                marginBottom: theme.spacing.md,
+                paddingHorizontal: theme.spacing.md,
+                paddingVertical: theme.spacing.xs,
+              }}
+              accessibilityLabel="Done selecting date"
+              accessibilityRole="button"
+            >
+              <Text preset="button" color="tint">Done</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Title */}
           <TextInput
-            style={styles.titleInput}
-            placeholder="Entry Title..."
-            placeholderTextColor="#64748B"
             value={title}
             onChangeText={setTitle}
+            placeholder="Entry Title…"
+            label="Title"
+            accessibilityLabel="Entry title"
+            style={{ marginBottom: theme.spacing.md }}
           />
 
+          {/* Body */}
           <TextInput
-            style={styles.bodyInput}
-            placeholder="What's on your mind today? Write freely..."
-            placeholderTextColor="#64748B"
             value={content}
             onChangeText={setContent}
+            placeholder="What's on your mind today? Write freely…"
+            label="Content"
             multiline
-            textAlignVertical="top"
+            accessibilityLabel="Entry content"
           />
         </ScrollView>
       </View>
 
-      {/* Toolbar Controls */}
-      <View style={styles.toolbar}>
-        <TouchableOpacity style={styles.toolButton} onPress={() => setShowStickerPicker(true)}>
-          <Text style={styles.toolButtonText}>🏷️ Add Sticker ({stickers.length})</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.toolButton} onPress={() => setShowCompanionPicker(true)}>
-          <Text style={styles.toolButtonText}>{activeCompanion.avatar} AI Companion</Text>
-        </TouchableOpacity>
+      {/* Toolbar */}
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+          paddingHorizontal: theme.spacing.lg,
+          paddingVertical: theme.spacing.md,
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.border,
+        }}
+      >
+        <Button
+          label={`🏷️ Add Sticker (${stickers.length})`}
+          variant="outline"
+          size="sm"
+          onPress={() => setShowStickerPicker(true)}
+          accessibilityLabel={`Add sticker. ${stickers.length} placed.`}
+        />
+        <Button
+          label={`${activeCompanion.avatar} AI Companion`}
+          variant="outline"
+          size="sm"
+          onPress={() => setShowCompanionPicker(true)}
+          accessibilityLabel="Change AI companion"
+        />
       </View>
 
       {/* Sticker Picker Modal */}
@@ -180,112 +320,6 @@ export default function CreateEntryScreen() {
         selectedCompanion={selectedCompanion}
         onSelectCompanion={setSelectedCompanion}
       />
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0F172A',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  cancelText: {
-    color: '#94A3B8',
-    fontSize: 16,
-  },
-  headerTitle: {
-    color: '#F8FAFC',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  saveText: {
-    color: '#10B981',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  canvasContainer: {
-    flex: 1,
-    position: 'relative',
-    backgroundColor: '#FDF6E3', // Vintage Parchment paper texture
-    marginHorizontal: 16,
-    marginVertical: 12,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  editorContent: {
-    padding: 20,
-  },
-  companionBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.08)',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  companionAvatar: {
-    fontSize: 32,
-    marginRight: 12,
-  },
-  companionBannerTextContainer: {
-    flex: 1,
-  },
-  companionName: {
-    color: '#0F172A',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  companionGreeting: {
-    color: '#334155',
-    fontSize: 12,
-    fontStyle: 'italic',
-  },
-  dateInput: {
-    color: '#64748B',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  titleInput: {
-    color: '#0F172A',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  bodyInput: {
-    color: '#1E293B',
-    fontSize: 16,
-    lineHeight: 24,
-    minHeight: 250,
-  },
-  toolbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 16,
-    backgroundColor: '#0F172A',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  toolButton: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  toolButtonText: {
-    color: '#F8FAFC',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});

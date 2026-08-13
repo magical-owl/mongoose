@@ -7,10 +7,10 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { createMMKV } from 'react-native-mmkv';
+import { createSafeMMKV } from '@/database/mmkvSafe';
 import type { ThemeMode } from '@/providers/ThemeProvider';
 
-const storage = createMMKV({ id: 'app-store' });
+const storage = createSafeMMKV({ id: 'app-store' });
 
 /**
  * Onboarding status.
