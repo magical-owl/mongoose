@@ -10,6 +10,27 @@
 - Tag the commit: `git tag vX.Y.Z && git push origin vX.Y.Z`.
 - After tagging, push changes: `git push origin main --tags`.
 
+## App Store & Google Play Compliance Pre-Submission Checklist
+
+Before submitting a sensitive app (Diary, Journal, Finance, Habit Tracker, AI Companion, Notes) to Apple App Store Connect or Google Play Console, perform these mandatory compliance audits:
+
+### 1. Apple App Store Guidelines Audit
+- **Guideline 5.1.1 (Data Collection & Privacy)**: Verify that account deletion ("Delete Account") is easily accessible in-app and purges all user data across local storage (MMKV, SecureStore, SQLite) and backend servers.
+- **Guideline 5.1.2 (Data Use & Sharing)**: Verify App Store Privacy Nutrition Labels accurately list all data types collected. Ensure zero user content (journal text, personal notes) is shared with third parties or used for tracking.
+- **Guideline 2.5.18 (AI Generated Content & Safety)**: Ensure all AI features clearly label AI outputs, include content moderation filters, and provide an in-app toggle for users to disable AI processing.
+- **Export Compliance**: Correctly declare encryption usage in `app.json` (`"ios.config.usesNonExemptEncryption": false` or provide proper CCATS documentation if using custom cryptography).
+
+### 2. Google Play Data Safety & Compliance Audit
+- **Data Safety Form**: Verify every data category collected or shared is disclosed in Google Play Console. Confirm that encryption in transit (HTTPS / TLS 1.3) is enabled for all network endpoints.
+- **Data Deletion Policy**: Verify that the in-app account/data deletion flow and the external web deletion URL are active and operational.
+- **Prominent Disclosure & Consent**: Verify runtime permission prompts (Camera, Location, Contacts, Microphone) display explicit context before requesting OS permission.
+
+### 3. SDK & Tracker Dependency Audit
+- **Zero Ad/Tracker SDKs**: Run `npm ls` and audit production bundles to guarantee no third-party ad networks, fingerprinting SDKs, or data brokers are included.
+- **DPA & Subprocessor Audit**: Ensure all external backend services (hosting, crash reporting, AI proxies) have signed Data Processing Addendums (DPAs).
+
+
+
 ## Changelog Generation
 
 - Run `git log --oneline --no-decorate v<PREVIOUS_VERSION>..HEAD` to collect commits since the last release.

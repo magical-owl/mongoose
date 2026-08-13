@@ -7,10 +7,21 @@
 - If a secret is detected in code, immediately flag it and remove it from version history.
 - Add sensitive file patterns to `.gitignore` (`.env`, `.env.local`, `*.pem`, `secrets/**`).
 
-## Use SecureStore for Sensitive Data
-- Store authentication tokens, refresh tokens, and user credentials in `expo-secure-store` (or platform-native Keychain/Keystore).
-- Never store sensitive data in `AsyncStorage`, Redux, Zustand, or plain JS objects.
+## Use SecureStore & Encryption at Rest for Sensitive Data
+- Store authentication tokens, refresh tokens, and master encryption keys in `expo-secure-store` (platform-native iOS Keychain / Android Keystore).
+- All sensitive user entries (journal content, financial transactions, private notes, health/habit history) must be encrypted at rest using AES-256 before persistence in local SQLite or MMKV.
+- Never store plain-text sensitive data in `AsyncStorage`, Redux, Zustand, or plain JS objects.
 - Retrieve SecureStore values asynchronously and handle missing/expired entries gracefully.
+
+## Biometric App Lock & Inactivity Lock
+- Protect sensitive apps (Diary, Journal, Finance, Notes) with local biometric authentication (FaceID, TouchID, Android Biometrics) using `expo-local-authentication`.
+- Re-trigger biometric authentication when the app resumes from background after the lock timeout.
+- Prevent screenshot capture or task switcher preview leaks on iOS/Android where required by compliance policy.
+
+## Clipboard & Sensitive Input Safety
+- Disable auto-copy of sensitive text to OS clipboard without user interaction.
+- Set `secureTextEntry` for password inputs and mark sensitive text inputs appropriately to prevent OS auto-fill or keyboard dictionary learning of private journal content.
+
 
 ## Validate All Inputs
 - Validate all external input at the boundary (API responses, user forms, deep links, push notification payloads).
