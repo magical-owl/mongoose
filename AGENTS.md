@@ -8,7 +8,8 @@ Meadow is a production-grade Expo application platform built with Feature-First 
 
 Meadow is designed to be cloned or copied as a starter template repository when building new applications. When an AI agent or developer is instructed to create a new app using Meadow:
 1. **Clone / Duplicate Repository**: Treat Meadow as the source template (via GitHub Template or `cp -r meadow my-new-app`).
-2. **Follow New App Blueprint**: Strictly execute the sequence in [`agents/new-app.md`](file:///Users/louise/Desktop/meadow/agents/new-app.md) to configure app identity (`app.json`), theme tokens (`@theme`), feature layering (`src/features/`), compliance guardrails, and EAS deployment.
+2. **Initialize App Identity**: Run `npm run init-app -- --name "MyAppName" --slug "myapp" --bundle "com.mycompany.myapp"` to automatically update `app.json` and `package.json`.
+3. **Follow New App Blueprint**: Strictly execute the sequence in [`agents/new-app.md`](file:///Users/louise/Desktop/meadow/agents/new-app.md) to configure theme tokens (`@theme`), feature layering (`src/features/`), compliance guardrails, and EAS deployment.
 
 ## Architecture
 

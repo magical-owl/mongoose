@@ -34,7 +34,7 @@ npm install
 
 Follow the step-by-step sequence in [`agents/new-app.md`](agents/new-app.md) when developing your new application:
 
-1. **Configure Identity ([`app.json`](app.json))**: Set `"name"`, `"slug"`, `"scheme"`, `"ios.bundleIdentifier"`, and `"android.package"`.
+1. **Configure Identity**: Run `npm run init-app -- --name "MyAppName" --slug "myapp" --bundle "com.mycompany.myapp"` to automatically configure `app.json` and `package.json`.
 2. **Customize Theme ([`src/theme/`](src/theme/))**: Set brand palette in `colors.ts` and typography scale in `typography.ts`.
 3. **Build Feature Modules ([`src/features/`](src/features/))**:
    - **Domain**: Data models & Zod schemas.
@@ -148,11 +148,13 @@ meadow/
 ## 📖 Documentation & Guidelines
 
 - **New App Starter Guide**: [`agents/new-app.md`](agents/new-app.md)
+- **ZenJournal Technical Blueprint**: [`docs/ZenJournalBlueprint.md`](docs/ZenJournalBlueprint.md)
 - **AI Agent Rules & Compliance**: [`AGENTS.md`](AGENTS.md)
-- **Architecture Guide**: [`docs/Architecture.md`](docs/Architecture.md)
 - **Security Guide**: [`docs/Security.md`](docs/Security.md)
 - **App Store & Google Play Release**: [`agents/release.md`](agents/release.md)
 - **Privacy & GDPR Framework**: [`COMPLIANCE/PRIVACY.md`](COMPLIANCE/PRIVACY.md)
+- **Subscription Architecture**: [`src/features/subscription/`](src/features/subscription/) & [`src/shared/components/PaywallModal.tsx`](src/shared/components/PaywallModal.tsx)
+
 
 ---
 

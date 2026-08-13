@@ -12,6 +12,7 @@
     },
     "preview": {
       "distribution": "internal",
+      "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging"
       }

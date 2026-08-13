@@ -13,6 +13,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "doctor": "npx expo-doctor",
+    "init-app": "node scripts/init-app.js",
     "eas:build": "eas build",
     "eas:update": "eas update"
   },
@@ -22,15 +23,15 @@
     "@react-native-community/netinfo": "^12.0.1",
     "@tanstack/react-query": "^5.101.4",
     "axios": "^1.18.1",
-    "expo": "~57.0.8",
+    "expo": "~57.0.12",
     "expo-clipboard": "~57.0.1",
     "expo-constants": "~57.0.0",
-    "expo-font": "~57.0.1",
+    "expo-font": "~57.0.0",
     "expo-haptics": "~57.0.1",
-    "expo-linking": "~57.0.0",
-    "expo-router": "~57.0.0",
+    "expo-linking": "~57.0.5",
+    "expo-router": "~57.0.12",
     "expo-secure-store": "~57.0.1",
-    "expo-splash-screen": "~57.0.0",
+    "expo-splash-screen": "~57.0.6",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -59,5 +60,12 @@
     "react-test-renderer": "^19.2.3",
     "typescript": "~6.0.3"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "install": {
+      "exclude": [
+        "react-native-reanimated"
+      ]
+    }
+  }
 }

@@ -294,3 +294,19 @@ npm test
 # 4. Expo SDK Compatibility Check
 npm run doctor
 ```
+
+---
+
+## 11. Subscription & Paywall Architecture (`src/features/subscription/`)
+
+### 11.1 Packages & Entitlement Schemas
+- **Pro Monthly**: `$4.99 / month` (`pro_monthly`)
+- **Pro Annual**: `$29.99 / year` (`pro_yearly` with `BEST VALUE • SAVE 50%` badge)
+- **Pro Lifetime**: `$79.99 once` (`pro_lifetime` with `PAY ONCE • OWN FOREVER` badge)
+
+### 11.2 Paywall Component (`src/shared/components/PaywallModal.tsx`)
+- Displays Pro benefits (Unlimited AI Reflections, 9 Seasonal Papers, 8 Sticker Packs, Biometric Lock).
+- Interactive tier selection card list.
+- Action button (`[ Unlock Pro ]`) + Mandatory **"Restore Purchases"** button (App Store Guideline 3.1.1).
+- Auto-renewal legal disclaimer text.
+

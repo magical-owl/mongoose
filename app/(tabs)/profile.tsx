@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +14,8 @@ import { spacing, borderRadius, typography } from '@/theme';
 import { Controller } from 'react-hook-form';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import type { ProfileFormData } from '@/features/profile/domain/profileSchema';
+import { useSubscription } from '@/features/subscription/hooks/useSubscription';
+import { PaywallModal } from '@/shared/components/PaywallModal';
 
 /* ───────────────────────────────────────
  * Component
@@ -21,6 +24,9 @@ import type { ProfileFormData } from '@/features/profile/domain/profileSchema';
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const [showPaywall, setShowPaywall] = useState(false);
+  const { isPro, activeTier } = useSubscription();
+
   const {
     control,
     handleSubmit,
@@ -179,6 +185,62 @@ export default function ProfileScreen() {
           Last saved: {new Date(profile.updatedAt).toLocaleString()}
         </Text>
       )}
+
+      {/* Subscription Demo Section */}
+      <View
+        style={{
+          backgroundColor: colors.card,
+          borderRadius: borderRadius.lg,
+          padding: spacing.md,
+          marginBottom: spacing.xl,
+          borderWidth: 1,
+          borderColor: isPro ? '#10B981' : colors.border,
+        }}
+      >
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
+          <Text style={[typography.h3, { color: colors.text }]}>Subscription Status</Text>
+          <View
+            style={{
+              backgroundColor: isPro ? '#10B981' : '#8B5CF6',
+              paddingHorizontal: spacing.sm,
+              paddingVertical: 2,
+              borderRadius: borderRadius.sm,
+            }}
+          >
+            <Text style={[typography.caption, { color: '#FFFFFF', fontWeight: 'bold' }]}>
+              {isPro ? `PRO (${activeTier.toUpperCase()})` : 'FREE PLAN'}
+            </Text>
+          </View>
+        </View>
+
+        <Text style={[typography.bodySmall, { color: colors.textSecondary, marginBottom: spacing.md }]}>
+          {isPro
+            ? 'Your Pro membership is active. You have full access to all features.'
+            : 'Upgrade to Pro to unlock unlimited AI features, custom themes, and biometric security.'}
+        </Text>
+
+        <TouchableOpacity
+          style={{
+            backgroundColor: isPro ? 'rgba(16, 185, 129, 0.15)' : colors.tint,
+            borderRadius: borderRadius.md,
+            paddingVertical: spacing.sm + 2,
+            alignItems: 'center',
+          }}
+          onPress={() => setShowPaywall(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={[typography.button, { color: isPro ? '#10B981' : colors.background }]}>
+            {isPro ? 'Manage Pro Subscription' : '✨ Upgrade to Pro'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        appName="Meadow"
+        subtitle="Experience unlimited access to all platform features"
+      />
 
       {/* Save Button */}
       <TouchableOpacity

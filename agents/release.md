@@ -1,6 +1,53 @@
-# AI Agent Release Instructions
+# AI Agent & Developer Release Instructions
 
-## Version Bump
+## 🚀 Master Setup & App Store Release Checklist
+
+Use this step-by-step checklist to guide your app from local development to TestFlight staging and final App Store deployment:
+
+### Phase 1: Accounts & Developer Registrations
+- [ ] **Apple Developer Program ($99/yr)**: Register at [developer.apple.com](https://developer.apple.com).
+- [ ] **Google Play Console ($25 one-time)**: Register at [play.google.com/console](https://play.google.com/console).
+- [ ] **Expo Account (EAS Free)**: Create free account at [expo.dev](https://expo.dev).
+- [ ] **RevenueCat Account (Free tier)**: Create account at [revenuecat.com](https://www.revenuecat.com) for in-app subscriptions.
+- [ ] **Apple 15% Small Business Program**: Apply at [developer.apple.com/app-store/small-business-program](https://developer.apple.com/app-store/small-business-program) to cut Apple commission from 30% to 15%.
+
+### Phase 2: App Store Listing Assets & Legal Links
+- [ ] **App Icon**: `1024 x 1024 px` PNG (Square, no transparency or rounded corners).
+- [ ] **App Store Screenshots**:
+  - 6.7-inch display screenshots (`1290 x 2796 px`).
+  - 6.5-inch display screenshots (`1242 x 2688 px`).
+- [ ] **Store Metadata**:
+  - App Title (Max 30 characters).
+  - Subtitle (Max 30 characters).
+  - Keywords (Max 100 characters, comma-separated).
+  - Marketing & Support URLs.
+- [ ] **Public Legal Links**:
+  - Live HTTPS Privacy Policy URL (using [`COMPLIANCE/PRIVACY.md`](../COMPLIANCE/PRIVACY.md)).
+  - Live HTTPS Terms of Service (EULA) URL.
+
+### Phase 3: Local Code Quality & Automated Checks
+- [ ] `npm run typecheck` (Verify 0 TypeScript errors).
+- [ ] `npm test` (Verify all unit & subscription tests pass).
+- [ ] `npm run doctor` (Verify Expo SDK 57 package health).
+
+### Phase 4: Staging Build & TestFlight Verification
+- [ ] **Log into EAS CLI**: `npx eas-cli login`.
+- [ ] **Build Staging Binary**: `eas build --platform ios --profile preview`.
+- [ ] **TestFlight Testing**:
+  - Install app via Apple TestFlight on physical iPhone.
+  - Verify Face ID / Touch ID biometric lock screen.
+  - Test StoreKit Sandbox In-App Purchases (Pro Monthly, Pro Yearly, Pro Lifetime).
+  - Verify mandatory **"Restore Purchases"** button on paywall (Guideline 3.1.1).
+
+### Phase 5: Production Build & Store Submission
+- [ ] **Version Bump**: Update `version` and `buildNumber`/`versionCode` in `package.json` and `app.json`.
+- [ ] **Submit to Apple**: `eas submit --platform ios`.
+- [ ] **Submit to Google**: `eas submit --platform android`.
+- [ ] **Submit for App Review**: Click "Submit for Review" in App Store Connect (approval takes 24–48h).
+
+---
+
+## Version Bump Instructions
 
 - Determine the next version using semantic versioning (MAJOR.MINOR.PATCH) based on the changes in the release branch.
 - Update the `version` field in `package.json` to the new version string.
@@ -9,6 +56,7 @@
 - Commit the version bump with message format: `chore(release): bump version to X.Y.Z`.
 - Tag the commit: `git tag vX.Y.Z && git push origin vX.Y.Z`.
 - After tagging, push changes: `git push origin main --tags`.
+
 
 ## App Store & Google Play Compliance Pre-Submission Checklist
 
