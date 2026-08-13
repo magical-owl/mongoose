@@ -1,13 +1,10 @@
 /**
  * Settings & Profile Screen
  *
- * Designed based on reference app Settings UI:
- * - Well-defined row options with icons, titles, subtitles, and right arrows
- * - Appearance modal with live Dark Mode toggle switch & theme mode selectors
- * - AI Companion picker modal
- * - Profile details edit modal
- * - Data & Storage management (JSON export & reset)
- * - Subscription / Pro membership
+ * 1:1 Layout matched to original reference app SettingsScreen.tsx:
+ * - Title: ⚙️ Settings (28px bold, padded)
+ * - Defined option rows: Icon | Title + Subtitle | Arrow (›)
+ * - Modals for Appearance, Companion, Profile Details, Data Export & Paywall
  */
 
 import { useState } from 'react';
@@ -66,8 +63,8 @@ export default function SettingsScreen() {
 
   const handleResetApp = () => {
     Alert.alert(
-      '⚠️ Reset App Data',
-      'This will erase all your diary entries and profile data. This action cannot be undone.',
+      '⚠️ Reset App',
+      'This will delete all your diary entries and profile data. This action cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -95,7 +92,7 @@ export default function SettingsScreen() {
     {
       id: 'appearance',
       title: 'Appearance',
-      subtitle: theme.isDark ? 'Dark Mode (Active)' : 'Light Mode (Active)',
+      subtitle: 'Dark mode, theme',
       icon: '🎨',
       onPress: () => setShowAppearanceModal(true),
     },
@@ -109,7 +106,7 @@ export default function SettingsScreen() {
     {
       id: 'profile',
       title: 'Profile Details',
-      subtitle: profile?.displayName || 'Set your display name and bio',
+      subtitle: profile?.displayName || 'Set display name and bio',
       icon: '👤',
       onPress: () => {
         setDisplayName(profile?.displayName ?? '');
@@ -146,16 +143,16 @@ export default function SettingsScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 16,
-          paddingBottom: insets.bottom + 32,
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom + 40,
         }}
         showsVerticalScrollIndicator={false}
       >
-        <Text preset="h1" style={[styles.title, { color: theme.colors.text }]}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
           ⚙️ Settings
         </Text>
 
-        <View style={styles.optionsList}>
+        <View style={styles.optionsContainer}>
           {settingsOptions.map((option) => (
             <TouchableOpacity
               key={option.id}
@@ -172,21 +169,21 @@ export default function SettingsScreen() {
                 <Text style={styles.optionIcon}>{option.icon}</Text>
                 <View style={styles.optionText}>
                   <Text
-                    preset="label"
-                    style={{
-                      fontSize: 16,
-                      fontWeight: '600',
-                      color: option.isDestructive ? theme.colors.error : theme.colors.text,
-                    }}
+                    style={[
+                      styles.optionTitle,
+                      { color: option.isDestructive ? theme.colors.error : theme.colors.text },
+                    ]}
                   >
                     {option.title}
                   </Text>
-                  <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>
+                  <Text style={[styles.optionSubtitle, { color: theme.colors.textSecondary }]}>
                     {option.subtitle}
                   </Text>
                 </View>
               </View>
-              <Text style={{ fontSize: 20, color: theme.colors.textSecondary }}>›</Text>
+              <Text style={[styles.arrow, { color: theme.colors.textSecondary }]}>
+                ›
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -199,7 +196,6 @@ export default function SettingsScreen() {
         title="🎨 Appearance & Theme"
         accessibilityLabel="Appearance settings"
       >
-        {/* Dark mode switch */}
         <View style={[styles.modalRow, { borderBottomColor: theme.colors.border }]}>
           <View style={{ flex: 1 }}>
             <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>
@@ -217,7 +213,6 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {/* Theme mode options */}
         <View style={{ paddingTop: 16 }}>
           <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
             THEME MODE PREFERENCE
@@ -352,18 +347,25 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  title: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
+  container: {
+    flex: 1,
   },
-  optionsList: { flex: 1 },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  optionsContainer: {
+    flex: 1,
+  },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 18,
+    paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   optionLeft: {
@@ -374,10 +376,24 @@ const styles = StyleSheet.create({
   optionIcon: {
     fontSize: 24,
     marginRight: 16,
-    width: 32,
+    width: 30,
     textAlign: 'center',
   },
-  optionText: { flex: 1 },
+  optionText: {
+    flex: 1,
+  },
+  optionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  optionSubtitle: {
+    fontSize: 14,
+  },
+  arrow: {
+    fontSize: 20,
+    fontWeight: '300',
+  },
   modalRow: {
     flexDirection: 'row',
     alignItems: 'center',

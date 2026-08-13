@@ -1,12 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, ScrollView, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { ScreenContainer } from '@shared/components/ScreenContainer';
 import { Text } from '@shared/components/Text';
-import { Card } from '@shared/components/Card';
-import { EmptyState } from '@shared/components/EmptyState';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { stripHtml } from '@shared/utils/html';
 
@@ -20,8 +17,8 @@ export default function TimelineScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { entries, isLoading, refresh } = useDiary();
-  const [viewModeIndex, setViewModeIndex] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [viewModeIndex, setViewModeIndex] = useState(0); // 0: Detailed, 1: Simple
+  const [search, setSearch] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -29,273 +26,273 @@ export default function TimelineScreen() {
     }, [refresh])
   );
 
-  const viewMode = viewModeIndex === 0 ? 'feed' : 'calendar';
+  const viewMode = viewModeIndex === 0 ? 'detailed' : 'simple';
 
   const filteredEntries = useMemo(() => {
-    if (!searchQuery.trim()) return entries;
-    const q = searchQuery.toLowerCase();
+    if (!search.trim()) return entries;
+    const q = search.toLowerCase();
     return entries.filter(
       (e) =>
         e.title.toLowerCase().includes(q) ||
         stripHtml(e.content).toLowerCase().includes(q)
     );
-  }, [entries, searchQuery]);
+  }, [entries, search]);
 
   return (
     <ScreenContainer loading={isLoading} loadingMessage="Loading your diary..." safeArea scrollable={false}>
-      {/* Header */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingHorizontal: theme.spacing.lg,
-          paddingVertical: theme.spacing.md,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.border,
-        }}
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          { paddingBottom: theme.spacing.massive + 40 },
+        ]}
+        showsVerticalScrollIndicator={false}
       >
-        <Text preset="h3">Mongoose</Text>
+        {/* Header Row */}
+        <View style={styles.headerRow}>
+          <Text style={[styles.heading, { color: theme.colors.text }]}>
+            📔 My dAIry
+          </Text>
 
-        {/* Compact pill switcher */}
-        <View
-          style={{
-            flexDirection: 'row',
-            backgroundColor: theme.colors.surface,
-            borderRadius: theme.borderRadius.full,
-            padding: 3,
-          }}
-          accessibilityRole="tablist"
-          accessibilityLabel="View mode switcher"
-        >
-          {(['Feed', 'Calendar'] as const).map((label, idx) => (
-            <TouchableOpacity
-              key={label}
-              onPress={() => setViewModeIndex(idx)}
-              style={{
-                paddingHorizontal: theme.spacing.md,
-                paddingVertical: 5,
-                borderRadius: theme.borderRadius.full,
-                backgroundColor:
-                  viewModeIndex === idx ? theme.colors.tint : 'transparent',
-              }}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: viewModeIndex === idx }}
-              accessibilityLabel={`${label}${viewModeIndex === idx ? ', selected' : ''}`}
-            >
-              <Text
-                preset="caption"
-                style={{
-                  fontWeight: '600',
-                  color:
-                    viewModeIndex === idx
-                      ? theme.colors.background
-                      : theme.colors.textSecondary,
-                }}
+          {/* Detailed / Simple Switcher */}
+          <View
+            style={[
+              styles.switcherWrap,
+              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+            ]}
+          >
+            {(['Detailed', 'Simple'] as const).map((label, idx) => (
+              <TouchableOpacity
+                key={label}
+                onPress={() => setViewModeIndex(idx)}
+                style={[
+                  styles.switcherBtn,
+                  {
+                    backgroundColor:
+                      viewModeIndex === idx ? theme.colors.tint : 'transparent',
+                  },
+                ]}
               >
-                {label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Search Bar (Feed View) */}
-      {viewMode === 'feed' && (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border,
-            borderWidth: 1,
-            borderRadius: theme.borderRadius.md,
-            marginHorizontal: theme.spacing.lg,
-            marginTop: theme.spacing.xs,
-            marginBottom: theme.spacing.xs,
-            paddingHorizontal: theme.spacing.md,
-            paddingVertical: 8,
-          }}
-        >
-          <Ionicons name="search" size={18} color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
-          <TextInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search entries by title or content…"
-            placeholderTextColor={theme.colors.textSecondary}
-            style={{
-              flex: 1,
-              color: theme.colors.text,
-              fontSize: 14,
-              padding: 0,
-            }}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityLabel="Clear search">
-              <Ionicons name="close-circle" size={18} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
-
-      {/* Content Feed / Calendar */}
-      {viewMode === 'feed' ? (
-        <ScrollView
-          contentContainerStyle={{
-            padding: theme.spacing.lg,
-            paddingTop: theme.spacing.sm,
-            paddingBottom: theme.spacing.massive + theme.spacing.lg,
-            flexGrow: 1,
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          {filteredEntries.length === 0 ? (
-            <EmptyState
-              icon="journal-outline"
-              title={searchQuery.trim() ? 'No matching entries' : 'No entries yet'}
-              message={
-                searchQuery.trim()
-                  ? `No entries found for "${searchQuery}". Try a different keyword.`
-                  : 'Tap "+" below to write your first diary entry!'
-              }
-              actionLabel={searchQuery.trim() ? undefined : 'Write First Entry'}
-              onAction={searchQuery.trim() ? undefined : () => router.push('/entry/new')}
-            />
-          ) : (
-            filteredEntries.map((entry) => {
-              const hasSentiment = !!entry.sentiment?.mood;
-              const moodEmoji = hasSentiment ? MOOD_EMOJI[entry.sentiment!.mood] ?? '💭' : null;
-              return (
-                <Card
-                  key={entry.id}
-                  onPress={() => router.push(`/entry/${entry.id}`)}
-                  style={{
-                    marginBottom: theme.spacing.md,
-                    borderLeftWidth: hasSentiment ? 4 : 1,
-                    borderLeftColor: hasSentiment ? '#FF6B6B' : theme.colors.border,
-                  }}
-                  accessibilityLabel={`Diary entry: ${entry.title}`}
+                <Text
+                  style={[
+                    styles.switcherText,
+                    {
+                      color:
+                        viewModeIndex === idx
+                          ? '#fff'
+                          : theme.colors.textSecondary,
+                    },
+                  ]}
                 >
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: theme.spacing.xs,
-                    }}
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Search Bar */}
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search by title or content..."
+          placeholderTextColor={theme.colors.textSecondary}
+          style={[
+            styles.searchInput,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+              color: theme.colors.text,
+            },
+          ]}
+        />
+
+        {/* Entries List */}
+        {filteredEntries.length === 0 ? (
+          <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+            {search.trim() ? 'No matching entries.' : 'No entries yet.'}
+          </Text>
+        ) : (
+          filteredEntries.map((entry) => {
+            const hasSentiment = !!entry.sentiment?.mood;
+            const moodEmoji = hasSentiment ? MOOD_EMOJI[entry.sentiment!.mood] ?? '💭' : null;
+
+            if (viewMode === 'simple') {
+              {/* Simple Mode Row */}
+              return (
+                <TouchableOpacity
+                  key={entry.id}
+                  activeOpacity={0.8}
+                  onPress={() => router.push(`/entry/${entry.id}`)}
+                  style={[
+                    styles.simpleRow,
+                    {
+                      backgroundColor: theme.colors.surface,
+                      borderColor: theme.colors.border,
+                      borderLeftWidth: hasSentiment ? 4 : 1,
+                      borderLeftColor: hasSentiment ? '#ff6b6b' : theme.colors.border,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.date, { color: theme.colors.textSecondary, minWidth: 75 }]}>
+                    {entry.date}
+                  </Text>
+                  <Text
+                    style={[styles.title, { color: theme.colors.text, flex: 1, marginRight: 8 }]}
+                    numberOfLines={1}
                   >
-                    <Text preset="caption" color="textSecondary">{entry.date}</Text>
+                    {entry.title}
+                  </Text>
+                  {hasSentiment && (
+                    <View style={styles.sentimentIndicator}>
+                      <Text style={styles.sentimentEmoji}>{moodEmoji}</Text>
+                    </View>
+                  )}
+                  <Text style={[styles.arrow, { color: theme.colors.textSecondary }]}>›</Text>
+                </TouchableOpacity>
+              );
+            }
+
+            {/* Detailed Mode Card (Matches original reference layout 1:1) */}
+            return (
+              <TouchableOpacity
+                key={entry.id}
+                activeOpacity={0.8}
+                onPress={() => router.push(`/entry/${entry.id}`)}
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: theme.colors.border,
+                    borderLeftWidth: hasSentiment ? 4 : 1,
+                    borderLeftColor: hasSentiment ? '#ff6b6b' : theme.colors.border,
+                  },
+                ]}
+              >
+                <View style={styles.cardHeader}>
+                  <View style={styles.titleContainer}>
+                    <Text style={[styles.title, { color: theme.colors.text }]}>
+                      {entry.title.substring(0, 30)}
+                      {entry.title.length > 30 ? '...' : ''}
+                    </Text>
                     {hasSentiment && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Text style={{ fontSize: 14 }}>{moodEmoji}</Text>
-                        <Text preset="caption" color="tint" style={{ textTransform: 'capitalize' }}>
-                          {entry.sentiment!.mood}
-                        </Text>
+                      <View style={styles.sentimentIndicator}>
+                        <Text style={styles.sentimentEmoji}>{moodEmoji}</Text>
                       </View>
                     )}
                   </View>
-                  <Text preset="h3" style={{ marginBottom: theme.spacing.xs }}>{entry.title}</Text>
-                  <Text preset="bodySmall" color="textSecondary" numberOfLines={2}>
-                    {stripHtml(entry.content)}
+                  <Text style={[styles.date, { color: theme.colors.textSecondary }]}>
+                    {entry.date}
                   </Text>
-                  {entry.stickers.length > 0 && (
-                    <Text
-                      preset="caption"
-                      color="textTertiary"
-                      style={{ marginTop: theme.spacing.xs }}
-                    >
-                      🏷️ {entry.stickers.length} Stickers Placed
-                    </Text>
-                  )}
-                </Card>
-              );
-            })
-          )}
-        </ScrollView>
-      ) : (
-        <ScrollView
-          contentContainerStyle={{
-            padding: theme.spacing.lg,
-            paddingBottom: theme.spacing.massive + theme.spacing.lg,
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          <Card>
-            <Text preset="h3" style={{ marginBottom: theme.spacing.xs }}>📅 Calendar View</Text>
-            <Text preset="bodySmall" color="textSecondary" style={{ marginBottom: theme.spacing.lg }}>
-              Select any day below to view or write entries:
-            </Text>
-
-            {/* Day header row */}
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                </View>
                 <Text
-                  key={d}
-                  preset="caption"
-                  color="textTertiary"
-                  style={{ width: '13%', textAlign: 'center', marginBottom: theme.spacing.sm, fontWeight: '700' }}
+                  style={[styles.content, { color: theme.colors.textSecondary }]}
+                  numberOfLines={2}
                 >
-                  {d}
+                  {stripHtml(entry.content)}
                 </Text>
-              ))}
-
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
-                const dayStr = `2026-08-${day < 10 ? '0' + day : day}`;
-                const hasEntry = entries.some((e) => e.date === dayStr);
-                return (
-                  <TouchableOpacity
-                    key={day}
-                    style={{
-                      width: '13%',
-                      height: 40,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginBottom: theme.spacing.sm,
-                      borderRadius: theme.borderRadius.sm,
-                      backgroundColor: hasEntry
-                        ? `${theme.colors.tint}33`
-                        : theme.colors.surface,
-                      borderWidth: hasEntry ? 1 : 0,
-                      borderColor: hasEntry ? theme.colors.tint : 'transparent',
-                    }}
-                    onPress={() => {
-                      const found = entries.find((e) => e.date === dayStr);
-                      if (found) {
-                        router.push(`/entry/${found.id}`);
-                      } else {
-                        router.push('/entry/new');
-                      }
-                    }}
-                    accessibilityLabel={`${day} August${hasEntry ? ', has entry' : ''}`}
-                    accessibilityRole="button"
-                  >
-                    <Text
-                      preset="caption"
-                      color={hasEntry ? 'tint' : 'textSecondary'}
-                      style={{ fontWeight: hasEntry ? '700' : '400' }}
-                    >
-                      {day}
-                    </Text>
-                    {hasEntry && (
-                      <View
-                        style={{
-                          width: 4,
-                          height: 4,
-                          borderRadius: 2,
-                          backgroundColor: theme.colors.tint,
-                          marginTop: 2,
-                        }}
-                      />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </Card>
-        </ScrollView>
-      )}
+              </TouchableOpacity>
+            );
+          })
+        )}
+      </ScrollView>
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  heading: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  switcherWrap: {
+    flexDirection: 'row',
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 2,
+  },
+  switcherBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 16,
+  },
+  switcherText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 16,
+  },
+  card: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 12,
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  simpleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  date: {
+    fontSize: 12,
+  },
+  content: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  sentimentIndicator: {
+    marginLeft: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    backgroundColor: '#ff6b6b',
+  },
+  sentimentEmoji: {
+    fontSize: 13,
+    color: '#fff',
+  },
+  arrow: {
+    fontSize: 18,
+    marginLeft: 6,
+  },
+  emptyText: {
+    marginTop: 10,
+    fontSize: 15,
+  },
+});

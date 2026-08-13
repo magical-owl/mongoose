@@ -26,7 +26,17 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+            <Ionicons name="journal-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Calendar',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" size={size} color={color} />
           ),
         }}
       />
@@ -65,6 +75,16 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="insights"
+        options={{
+          title: 'Insights',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="stats-chart-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Settings',
@@ -76,12 +96,6 @@ export default function TabLayout() {
 
       <Tabs.Screen
         name="settings"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="insights"
         options={{
           href: null,
         }}
