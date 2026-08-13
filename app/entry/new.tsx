@@ -1,13 +1,33 @@
-import { useState } from 'react';
-import { View, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+/**
+ * Create Diary Entry Screen
+ *
+ * Design mirrors the reference diary app:
+ *   - Thin header:  Cancel | date | Save
+ *   - Full-bleed journal body: title → rich editor
+ *   - Stickers float absolutely over the scroll area
+ *   - Floating bottom toolbar (above keyboard) with formatting + sticker + companion icons
+ */
 
+import { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  View,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+  Platform,
+  KeyboardAvoidingView,
+  Keyboard,
+  TextInput as NativeTextInput,
+  StyleSheet,
+  Text as RNText,
+} from 'react-native';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
-import { ScreenContainer } from '@shared/components/ScreenContainer';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@shared/components/Text';
-import { Button } from '@shared/components/Button';
-import { TextInput } from '@shared/components/TextInput';
+import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
@@ -17,73 +37,84 @@ import { CompanionPickerModal } from '@/features/diary/components/CompanionPicke
 import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { generateUUID } from '@/shared/utils/uuid';
 
+// Word count helper (strips markdown syntax)
+function countWords(text: string): number {
+  const clean = text.replace(/[*#`>•\-_]/g, '').trim();
+  return clean ? clean.split(/\s+/).filter(Boolean).length : 0;
+}
+
+// Toolbar format items
+const FORMAT_ITEMS: { kind: FormatActionKind; icon: string }[] = [
+  { kind: 'bold',    icon: 'format-bold' },
+  { kind: 'italic',  icon: 'format-italic' },
+  { kind: 'heading', icon: 'format-header-2' },
+  { kind: 'bullet',  icon: 'format-list-bulleted' },
+  { kind: 'quote',   icon: 'format-quote-close' },
+  { kind: 'code',    icon: 'code-tags' },
+];
+
 export default function CreateEntryScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { saveDiaryEntry, selectedCompanion, setSelectedCompanion } = useDiary();
+  const editorRef = useRef<RichTextEditorHandle>(null);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [paperId] = useState('vintage-parchment');
   const [stickers, setStickers] = useState<PlacedSticker[]>([]);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showCompanionPicker, setShowCompanionPicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  // Format for display: "Thursday, August 13, 2026"
+  // Track keyboard height to float toolbar above it
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', (e) => setKeyboardHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+
   const formattedDate = selectedDate.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
-
-  // Format for storage: "YYYY-MM-DD"
   const isoDate = selectedDate.toISOString().split('T')[0]!;
+  const wordCount = countWords(content);
+
+  const activeCompanion = COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
 
   const handleDateChange = (_event: DateTimePickerEvent, date?: Date) => {
-    // On Android the picker closes automatically on selection; on iOS it stays open.
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-    }
-    if (date) {
-      setSelectedDate(date);
-    }
+    if (Platform.OS === 'android') setShowDatePicker(false);
+    if (date) setSelectedDate(date);
   };
 
-  const activeCompanion =
-    COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
-
-  const handleAddSticker = (stickerId: string, category: string) => {
+  const handleAddSticker = useCallback((stickerId: string, category: string) => {
     const newSticker: PlacedSticker = {
       id: generateUUID(),
       stickerId,
       category,
-      x: 120 + (stickers.length % 3) * 30,
-      y: 100 + (stickers.length % 4) * 30,
+      x: 80 + (stickers.length % 4) * 40,
+      y: 120 + (stickers.length % 5) * 30,
       scale: 1,
       rotation: Math.floor(Math.random() * 30) - 15,
       zIndex: stickers.length + 1,
     };
-    setStickers([...stickers, newSticker]);
-  };
+    setStickers((prev) => [...prev, newSticker]);
+  }, [stickers.length]);
 
-  const handleUpdateSticker = (updated: PlacedSticker) => {
-    setStickers(stickers.map((s) => (s.id === updated.id ? updated : s)));
-  };
+  const handleUpdateSticker = useCallback((updated: PlacedSticker) => {
+    setStickers((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+  }, []);
 
-  const handleDeleteSticker = (id: string) => {
-    setStickers(stickers.filter((s) => s.id !== id));
-  };
+  const handleDeleteSticker = useCallback((id: string) => {
+    setStickers((prev) => prev.filter((s) => s.id !== id));
+  }, []);
 
   const navigateBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(tabs)');
-    }
+    if (router.canGoBack()) router.back();
+    else router.replace('/(tabs)');
   };
 
   const handleSave = async () => {
@@ -95,14 +126,13 @@ export default function CreateEntryScreen() {
       Alert.alert('Content Required', 'Please write a few thoughts before saving.');
       return;
     }
-
     setIsSaving(true);
     const newEntry: DiaryEntry = {
       id: generateUUID(),
       title: title.trim(),
       content: content.trim(),
       date: isoDate,
-      paperBackgroundId: paperId,
+      paperBackgroundId: 'vintage-parchment',
       stickers,
       companion: selectedCompanion,
       isFavorite: false,
@@ -110,216 +140,312 @@ export default function CreateEntryScreen() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-
     const result = await saveDiaryEntry(newEntry);
     setIsSaving(false);
-
-    if (result.success) {
-      navigateBack();
-    } else {
-      Alert.alert('Error', result.error.message);
-    }
+    if (result.success) navigateBack();
+    else Alert.alert('Error', result.error.message);
   };
 
+  // Toolbar height constant used for scroll padding
+  const TOOLBAR_H = 56;
+
   return (
-    <ScreenContainer safeArea keyboardAvoiding scrollable={false}>
-      {/* Header */}
+    <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
+
+      {/* ── Header ────────────────────────────────────────────────────────── */}
       <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingHorizontal: theme.spacing.lg,
-          paddingVertical: theme.spacing.md,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.border,
-        }}
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top + 4,
+            backgroundColor: theme.colors.background,
+            borderBottomColor: theme.colors.border,
+          },
+        ]}
       >
-        <Button
-          label="Cancel"
-          variant="ghost"
-          size="sm"
+        <TouchableOpacity
           onPress={navigateBack}
+          style={styles.headerBtn}
           accessibilityLabel="Cancel and go back"
-        />
-        <Text preset="h3">New Diary Entry</Text>
-        <Button
-          label={isSaving ? 'Saving…' : 'Save'}
-          variant="primary"
-          size="sm"
-          loading={isSaving}
+          accessibilityRole="button"
+        >
+          <Text preset="label" color="textSecondary">Cancel</Text>
+        </TouchableOpacity>
+
+        {/* Date — tap to change */}
+        <TouchableOpacity
+          onPress={() => setShowDatePicker(true)}
+          accessibilityLabel={`Entry date: ${formattedDate}. Tap to change.`}
+          accessibilityRole="button"
+        >
+          <Text preset="caption" color="textSecondary" style={{ textAlign: 'center' }}>
+            {selectedDate.toDateString()}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           onPress={handleSave}
+          disabled={isSaving}
+          style={styles.headerBtn}
           accessibilityLabel="Save diary entry"
-        />
+          accessibilityRole="button"
+        >
+          <Text
+            preset="label"
+            style={{ color: isSaving ? theme.colors.textSecondary : '#1E90FF', fontWeight: '600' }}
+          >
+            {isSaving ? 'Saving…' : 'Save'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Paper Canvas */}
-      <View
-        style={{
-          flex: 1,
-          position: 'relative',
-          backgroundColor: '#FDF6E3',
-          marginHorizontal: theme.spacing.lg,
-          marginVertical: theme.spacing.md,
-          borderRadius: theme.borderRadius.xl,
-          overflow: 'hidden',
-        }}
-      >
-        {/* Drag-and-drop stickers */}
-        {stickers.map((sticker) => (
-          <StickerCanvasItem
-            key={sticker.id}
-            sticker={sticker}
-            onUpdate={handleUpdateSticker}
-            onDelete={handleDeleteSticker}
-          />
-        ))}
-
-        <ScrollView
-          contentContainerStyle={{ padding: theme.spacing.lg }}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Companion banner */}
-          <TouchableOpacity
-            onPress={() => setShowCompanionPicker(true)}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: 'rgba(15, 23, 42, 0.08)',
-              padding: theme.spacing.md,
-              borderRadius: theme.borderRadius.lg,
-              marginBottom: theme.spacing.lg,
-            }}
-            accessibilityLabel={`AI Companion: ${activeCompanion.name}. Tap to change.`}
-            accessibilityRole="button"
-          >
-            <Text style={{ fontSize: 32, marginRight: theme.spacing.md }}>
-              {activeCompanion.avatar}
-            </Text>
-            <View style={{ flex: 1 }}>
-              <Text preset="label" style={{ color: '#0F172A' }}>{activeCompanion.name}</Text>
-              <Text preset="caption" style={{ color: '#334155', fontStyle: 'italic' }}>
-                "{activeCompanion.greeting}"
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* Date picker row */}
-          <TouchableOpacity
-            onPress={() => setShowDatePicker(true)}
-            style={{
-              marginBottom: theme.spacing.md,
-              borderWidth: 1,
-              borderColor: theme.colors.inputBorder,
-              borderRadius: theme.borderRadius.md,
-              backgroundColor: theme.colors.inputBackground,
-              paddingHorizontal: theme.spacing.md,
-              paddingVertical: theme.spacing.md,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-            accessibilityLabel={`Entry date: ${formattedDate}. Tap to change.`}
-            accessibilityRole="button"
-          >
-            <View>
-              <Text preset="caption" color="textSecondary" style={{ marginBottom: 2 }}>Date</Text>
-              <Text preset="body" color="text">{formattedDate}</Text>
-            </View>
-            <Text style={{ fontSize: 20 }}>📅</Text>
-          </TouchableOpacity>
-
-          {/* Native date picker — inline on iOS, dialog on Android */}
-          {showDatePicker && (
-            <DateTimePicker
-              value={selectedDate}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'inline' : 'default'}
-              onChange={handleDateChange}
-              maximumDate={new Date()}
-              style={{ marginBottom: theme.spacing.md }}
-            />
-          )}
-          {/* iOS: show a Done button to dismiss the inline picker */}
-          {showDatePicker && Platform.OS === 'ios' && (
+      {/* Date picker */}
+      {showDatePicker && (
+        <View style={[styles.pickerWrap, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+          {Platform.OS === 'ios' && (
             <TouchableOpacity
+              style={[styles.pickerDone, { backgroundColor: theme.colors.tint }]}
               onPress={() => setShowDatePicker(false)}
-              style={{
-                alignSelf: 'flex-end',
-                marginBottom: theme.spacing.md,
-                paddingHorizontal: theme.spacing.md,
-                paddingVertical: theme.spacing.xs,
-              }}
               accessibilityLabel="Done selecting date"
-              accessibilityRole="button"
             >
-              <Text preset="button" color="tint">Done</Text>
+              <Text preset="label" style={{ color: '#fff' }}>Done</Text>
             </TouchableOpacity>
           )}
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleDateChange}
+            maximumDate={new Date()}
+            style={{ width: '100%', height: Platform.OS === 'ios' ? 150 : undefined }}
+          />
+        </View>
+      )}
 
+      {/* ── Stickers (float above scroll area) ────────────────────────────── */}
+      {stickers.map((sticker) => (
+        <StickerCanvasItem
+          key={sticker.id}
+          sticker={sticker}
+          onUpdate={handleUpdateSticker}
+          onDelete={handleDeleteSticker}
+        />
+      ))}
+
+      {/* ── Journal body ─────────────────────────────────────────────────── */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? TOOLBAR_H : 0}
+      >
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingHorizontal: theme.spacing.lg,
+              paddingBottom: TOOLBAR_H + theme.spacing.xl,
+            },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           {/* Title */}
-          <TextInput
+          <NativeTextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="Entry Title…"
-            label="Title"
+            placeholder="Entry title…"
+            placeholderTextColor={theme.colors.textSecondary}
+            style={[styles.titleInput, { color: theme.colors.text }]}
+            multiline
+            returnKeyType="next"
             accessibilityLabel="Entry title"
-            style={{ marginBottom: theme.spacing.md }}
+            accessibilityHint="Write the title of your diary entry"
           />
 
-          {/* Body */}
-          <TextInput
+          {/* Divider */}
+          <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+
+          {/* Rich content editor — toolbar hidden, controlled from floating bar */}
+          <RichTextEditor
+            ref={editorRef}
             value={content}
             onChangeText={setContent}
             placeholder="What's on your mind today? Write freely…"
-            label="Content"
-            multiline
+            minHeight={320}
+            showToolbar={false}
             accessibilityLabel="Entry content"
           />
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
 
-      {/* Toolbar */}
+      {/* ── Floating bottom toolbar ──────────────────────────────────────── */}
       <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-around',
-          paddingHorizontal: theme.spacing.lg,
-          paddingVertical: theme.spacing.md,
-          borderTopWidth: 1,
-          borderTopColor: theme.colors.border,
-        }}
+        style={[
+          styles.floatingBar,
+          {
+            bottom: keyboardHeight,
+            backgroundColor: theme.colors.background,
+            borderTopColor: theme.colors.border,
+            paddingBottom: keyboardHeight > 0 ? 0 : insets.bottom,
+          },
+        ]}
       >
-        <Button
-          label={`🏷️ Add Sticker (${stickers.length})`}
-          variant="outline"
-          size="sm"
-          onPress={() => setShowStickerPicker(true)}
-          accessibilityLabel={`Add sticker. ${stickers.length} placed.`}
-        />
-        <Button
-          label={`${activeCompanion.avatar} AI Companion`}
-          variant="outline"
-          size="sm"
-          onPress={() => setShowCompanionPicker(true)}
-          accessibilityLabel="Change AI companion"
-        />
+        {/* Left: formatting icons */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.toolbarLeft}
+          keyboardShouldPersistTaps="always"
+        >
+          {FORMAT_ITEMS.map((item) => (
+            <TouchableOpacity
+              key={item.kind}
+              style={styles.toolbarIcon}
+              onPress={() => editorRef.current?.applyFormat(item.kind)}
+              activeOpacity={0.6}
+              accessibilityLabel={item.kind}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons
+                name={item.icon as any}
+                size={22}
+                color={theme.colors.text}
+              />
+            </TouchableOpacity>
+          ))}
+
+          {/* Separator */}
+          <View style={[styles.barDivider, { backgroundColor: theme.colors.border }]} />
+
+          {/* Sticker button */}
+          <TouchableOpacity
+            style={styles.toolbarIcon}
+            onPress={() => setShowStickerPicker(true)}
+            activeOpacity={0.6}
+            accessibilityLabel={`Add sticker. ${stickers.length} placed.`}
+            accessibilityRole="button"
+          >
+            <MaterialCommunityIcons name="sticker-emoji" size={22} color="#FF6B6B" />
+          </TouchableOpacity>
+        </ScrollView>
+
+        {/* Right: word count + companion avatar */}
+        <View style={styles.toolbarRight}>
+          {wordCount > 0 && (
+            <RNText style={[styles.wordCount, { color: theme.colors.textSecondary }]}>
+              {wordCount}w
+            </RNText>
+          )}
+          <TouchableOpacity
+            onPress={() => setShowCompanionPicker(true)}
+            style={styles.companionAvatar}
+            accessibilityLabel={`AI Companion: ${activeCompanion.name}. Tap to change.`}
+            accessibilityRole="button"
+          >
+            <RNText style={{ fontSize: 22 }}>{activeCompanion.avatar}</RNText>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Sticker Picker Modal */}
+      {/* Modals */}
       <StickerPickerModal
         visible={showStickerPicker}
         onClose={() => setShowStickerPicker(false)}
         onSelectSticker={handleAddSticker}
       />
-
-      {/* Companion Picker Modal */}
       <CompanionPickerModal
         visible={showCompanionPicker}
         onClose={() => setShowCompanionPicker(false)}
         selectedCompanion={selectedCompanion}
         onSelectCompanion={setSelectedCompanion}
       />
-    </ScreenContainer>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  headerBtn: { padding: 6, minWidth: 60 },
+  pickerWrap: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+  },
+  pickerDone: {
+    padding: 10,
+    alignItems: 'center',
+  },
+  scrollContent: {
+    paddingTop: 16,
+    flexGrow: 1,
+  },
+  titleInput: {
+    fontSize: 26,
+    fontWeight: '700',
+    lineHeight: 34,
+    padding: 0,
+    marginBottom: 12,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginBottom: 16,
+  },
+  floatingBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+  toolbarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  toolbarIcon: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  barDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 22,
+    marginHorizontal: 4,
+  },
+  toolbarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 'auto',
+    gap: 4,
+    paddingLeft: 8,
+  },
+  wordCount: {
+    fontSize: 11,
+    fontVariant: ['tabular-nums'],
+  },
+  companionAvatar: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+  },
+});

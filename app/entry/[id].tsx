@@ -1,13 +1,41 @@
-import { useEffect, useState, useCallback } from 'react';
-import { View, ScrollView, Alert } from 'react-native';
+/**
+ * Entry Detail / Edit Screen
+ *
+ * Design mirrors the reference diary app:
+ *   View mode:
+ *     - Back | date | Edit + Delete header
+ *     - Full-bleed content (title → MarkdownText → AI card)
+ *     - Floating coral AI-insight pill (top-right) when sentiment exists
+ *     - Stickers displayed (non-editable)
+ *
+ *   Edit mode:
+ *     - Cancel | "Edit Entry" | Save header
+ *     - Same floating bottom toolbar as Create screen
+ *     - Stickers editable (drag/resize/delete)
+ */
+
+import { useEffect, useState, useCallback, useRef } from 'react';
+import {
+  View,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+  Platform,
+  KeyboardAvoidingView,
+  Keyboard,
+  TextInput as NativeTextInput,
+  StyleSheet,
+  Text as RNText,
+} from 'react-native';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
-import { ScreenContainer } from '@shared/components/ScreenContainer';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@shared/components/Text';
-import { Button } from '@shared/components/Button';
 import { Card } from '@shared/components/Card';
-import { TextInput as MeadowTextInput } from '@shared/components/TextInput';
 import { useDiary } from '@/features/diary/hooks/useDiary';
+import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
+import { MarkdownText } from '@shared/components/MarkdownText';
 import { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
@@ -15,21 +43,48 @@ import { StickerPickerModal } from '@/features/diary/components/StickerPickerMod
 import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { generateUUID } from '@/shared/utils/uuid';
 
+function countWords(text: string): number {
+  const clean = text.replace(/[*#`>•\-_]/g, '').trim();
+  return clean ? clean.split(/\s+/).filter(Boolean).length : 0;
+}
+
+const MOOD_EMOJI: Record<string, string> = {
+  happy: '😊', sad: '😢', excited: '🤩', anxious: '😰',
+  calm: '😌', angry: '😠', neutral: '😐', tired: '😴',
+  confused: '😕', grateful: '🙏',
+};
+
+const FORMAT_ITEMS: { kind: FormatActionKind; icon: string }[] = [
+  { kind: 'bold',    icon: 'format-bold' },
+  { kind: 'italic',  icon: 'format-italic' },
+  { kind: 'heading', icon: 'format-header-2' },
+  { kind: 'bullet',  icon: 'format-list-bulleted' },
+  { kind: 'quote',   icon: 'format-quote-close' },
+  { kind: 'code',    icon: 'code-tags' },
+];
+
 export default function EntryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { entries, saveDiaryEntry, deleteDiaryEntry } = useDiary();
+  const editorRef = useRef<RichTextEditorHandle>(null);
 
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-
-  // Local edit state
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [editStickers, setEditStickers] = useState<PlacedSticker[]>([]);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', (e) => setKeyboardHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   useEffect(() => {
     if (id) {
@@ -44,11 +99,8 @@ export default function EntryDetailScreen() {
   }, [id, entries]);
 
   const navigateBack = useCallback(() => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(tabs)');
-    }
+    if (router.canGoBack()) router.back();
+    else router.replace('/(tabs)');
   }, [router]);
 
   const handleStartEdit = () => {
@@ -61,7 +113,6 @@ export default function EntryDetailScreen() {
 
   const handleCancelEdit = () => {
     if (!entry) return;
-    // Restore original values
     setEditTitle(entry.title);
     setEditContent(entry.content);
     setEditStickers(entry.stickers);
@@ -70,10 +121,7 @@ export default function EntryDetailScreen() {
 
   const handleSaveEdit = async () => {
     if (!entry) return;
-    if (!editTitle.trim()) {
-      Alert.alert('Title Required', 'Please enter a title.');
-      return;
-    }
+    if (!editTitle.trim()) { Alert.alert('Title Required', 'Please enter a title.'); return; }
     setIsSaving(true);
     const updated: DiaryEntry = {
       ...entry,
@@ -84,27 +132,23 @@ export default function EntryDetailScreen() {
     };
     const result = await saveDiaryEntry(updated);
     setIsSaving(false);
-    if (result.success) {
-      setEntry(updated);
-      setIsEditing(false);
-    } else {
-      Alert.alert('Save Failed', result.error.message);
-    }
+    if (result.success) { setEntry(updated); setIsEditing(false); }
+    else Alert.alert('Save Failed', result.error.message);
   };
 
-  const handleAddSticker = (stickerId: string, category: string) => {
+  const handleAddSticker = useCallback((stickerId: string, category: string) => {
     const newSticker: PlacedSticker = {
       id: generateUUID(),
       stickerId,
       category,
-      x: 120 + (editStickers.length % 3) * 30,
-      y: 100 + (editStickers.length % 4) * 30,
+      x: 80 + (editStickers.length % 4) * 40,
+      y: 120 + (editStickers.length % 5) * 30,
       scale: 1,
       rotation: Math.floor(Math.random() * 30) - 15,
       zIndex: editStickers.length + 1,
     };
     setEditStickers((prev) => [...prev, newSticker]);
-  };
+  }, [editStickers.length]);
 
   const handleUpdateSticker = useCallback((updated: PlacedSticker) => {
     setEditStickers((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
@@ -119,238 +163,182 @@ export default function EntryDetailScreen() {
     Alert.alert('Delete Entry', 'Are you sure you want to delete this diary entry?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteDiaryEntry(entry.id);
-          navigateBack();
-        },
+        text: 'Delete', style: 'destructive',
+        onPress: async () => { await deleteDiaryEntry(entry.id); navigateBack(); },
       },
     ]);
   };
 
   if (!entry) {
     return (
-      <ScreenContainer safeArea>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: theme.spacing.lg,
-            paddingVertical: theme.spacing.md,
-            borderBottomWidth: 1,
-            borderBottomColor: theme.colors.border,
-          }}
-        >
-          <Button label="‹ Back" variant="ghost" size="sm" onPress={navigateBack} />
+      <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 4, borderBottomColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
+          <TouchableOpacity onPress={navigateBack} style={styles.headerBtn} accessibilityRole="button">
+            <Text preset="label" color="textSecondary">‹ Back</Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1 }} />
+          <View style={styles.headerBtn} />
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text preset="body" color="textSecondary">Entry not found</Text>
         </View>
-      </ScreenContainer>
+      </View>
     );
   }
 
-  const companion =
-    COMPANION_OPTIONS.find((c) => c.id === entry.companion) || COMPANION_OPTIONS[0]!;
-
-  // Which stickers to show: live edit list or saved entry list
+  const companion = COMPANION_OPTIONS.find((c) => c.id === entry.companion) || COMPANION_OPTIONS[0]!;
   const displayStickers = isEditing ? editStickers : entry.stickers;
+  const wordCount = countWords(isEditing ? editContent : entry.content);
+  const hasSentiment = !!entry.sentiment?.mood;
+  const moodEmoji = hasSentiment ? (MOOD_EMOJI[entry.sentiment!.mood] ?? '💭') : null;
+  const TOOLBAR_H = 56;
 
   return (
-    <ScreenContainer safeArea scrollable={false}>
-      {/* Header */}
+    <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingHorizontal: theme.spacing.lg,
-          paddingVertical: theme.spacing.md,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.border,
-        }}
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top + 4,
+            backgroundColor: theme.colors.background,
+            borderBottomColor: theme.colors.border,
+          },
+        ]}
       >
         {isEditing ? (
           <>
-            <Button
-              label="Cancel"
-              variant="ghost"
-              size="sm"
-              onPress={handleCancelEdit}
-              accessibilityLabel="Cancel editing"
-            />
-            <Text preset="h3">Edit Entry</Text>
-            <Button
-              label={isSaving ? 'Saving…' : 'Save'}
-              variant="primary"
-              size="sm"
-              loading={isSaving}
-              onPress={handleSaveEdit}
-              accessibilityLabel="Save changes"
-            />
+            <TouchableOpacity onPress={handleCancelEdit} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Cancel editing">
+              <Text preset="label" color="textSecondary">Cancel</Text>
+            </TouchableOpacity>
+            <Text preset="label" color="text" style={{ fontWeight: '600' }}>Edit Entry</Text>
+            <TouchableOpacity onPress={handleSaveEdit} disabled={isSaving} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Save changes">
+              <Text preset="label" style={{ color: isSaving ? theme.colors.textSecondary : '#1E90FF', fontWeight: '600', textAlign: 'right' }}>
+                {isSaving ? 'Saving…' : 'Save'}
+              </Text>
+            </TouchableOpacity>
           </>
         ) : (
           <>
-            <Button
-              label="‹ Back"
-              variant="ghost"
-              size="sm"
-              onPress={navigateBack}
-              accessibilityLabel="Go back"
-            />
-            <Text preset="label" color="textSecondary">{entry.date}</Text>
-            <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
-              <Button
-                label="Edit"
-                variant="outline"
-                size="sm"
-                onPress={handleStartEdit}
-                accessibilityLabel="Edit this entry"
-              />
-              <Button
-                label="Delete"
-                variant="ghost"
-                size="sm"
-                onPress={handleDelete}
-                style={{ opacity: 0.8 }}
-                accessibilityLabel="Delete this entry"
-              />
+            <TouchableOpacity onPress={navigateBack} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Go back">
+              <Text preset="label" color="textSecondary">‹ Back</Text>
+            </TouchableOpacity>
+            <Text preset="caption" color="textSecondary">{entry.date}</Text>
+            <View style={[styles.headerBtn, { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }]}>
+              <TouchableOpacity onPress={handleStartEdit} accessibilityRole="button" accessibilityLabel="Edit this entry">
+                <Text preset="label" style={{ color: '#1E90FF', fontWeight: '600' }}>Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleDelete} accessibilityRole="button" accessibilityLabel="Delete this entry">
+                <Text preset="label" color="textSecondary">Delete</Text>
+              </TouchableOpacity>
             </View>
           </>
         )}
       </View>
 
-      {/* Paper Canvas */}
-      <View
-        style={{
-          flex: 1,
-          position: 'relative',
-          backgroundColor: '#FDF6E3',
-          marginHorizontal: theme.spacing.lg,
-          marginVertical: theme.spacing.md,
-          borderRadius: theme.borderRadius.xl,
-          overflow: 'hidden',
-        }}
-      >
-        {/* Sticker layer — editable in edit mode, view-only otherwise */}
-        {displayStickers.map((sticker) => (
-          <StickerCanvasItem
-            key={sticker.id}
-            sticker={sticker}
-            onUpdate={handleUpdateSticker}
-            onDelete={handleDeleteSticker}
-            isEditable={isEditing}
-          />
-        ))}
 
+
+
+      {/* ── Stickers (float above scroll area) ─────────────────────────────── */}
+      {displayStickers.map((sticker) => (
+        <StickerCanvasItem
+          key={sticker.id}
+          sticker={sticker}
+          onUpdate={handleUpdateSticker}
+          onDelete={handleDeleteSticker}
+          isEditable={isEditing}
+        />
+      ))}
+
+      {/* ── Body ──────────────────────────────────────────────────────────── */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? TOOLBAR_H : 0}
+      >
         <ScrollView
-          contentContainerStyle={{ padding: theme.spacing.lg }}
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingHorizontal: theme.spacing.lg,
+              paddingBottom: (isEditing ? TOOLBAR_H : 0) + theme.spacing.xl,
+            },
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           {isEditing ? (
-            /* ── Edit mode ── */
+            /* ── Edit mode ──────────────────────────────────────────────── */
             <>
-              <MeadowTextInput
+              <NativeTextInput
                 value={editTitle}
                 onChangeText={setEditTitle}
-                label="Title"
                 placeholder="Entry title…"
+                placeholderTextColor={theme.colors.textSecondary}
+                style={[styles.titleInput, { color: theme.colors.text }]}
+                multiline
+                returnKeyType="next"
                 accessibilityLabel="Entry title"
-                style={{ marginBottom: theme.spacing.md }}
               />
-              <MeadowTextInput
+              <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+              <RichTextEditor
+                ref={editorRef}
                 value={editContent}
                 onChangeText={setEditContent}
-                label="Content"
                 placeholder="Write your thoughts…"
-                multiline
+                minHeight={320}
+                showToolbar={false}
                 accessibilityLabel="Entry content"
               />
             </>
           ) : (
-            /* ── View mode ── */
+            /* ── View mode ──────────────────────────────────────────────── */
             <>
               <Text
                 preset="caption"
-                style={{ color: '#64748B', marginBottom: theme.spacing.xs, fontWeight: '600' }}
+                color="textSecondary"
+                style={{ marginBottom: 4, fontWeight: '600', marginTop: 4 }}
               >
                 {entry.date}
               </Text>
-              <Text
-                preset="h2"
-                style={{ color: '#0F172A', marginBottom: theme.spacing.lg }}
-              >
+              <Text preset="h2" color="text" style={{ marginBottom: 16 }}>
                 {entry.title}
               </Text>
-              <Text
-                preset="body"
-                style={{ color: '#1E293B', lineHeight: 26, marginBottom: theme.spacing.xl }}
-              >
+              <MarkdownText style={{ lineHeight: 26 }}>
                 {entry.content}
-              </Text>
+              </MarkdownText>
 
-              {/* AI Sentiment Card */}
+              {/* AI sentiment card */}
               {entry.sentiment && (
                 <Card
                   style={{
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    marginTop: theme.spacing.md,
+                    backgroundColor: theme.colors.surface,
+                    borderWidth: 1,
+                    borderColor: theme.colors.border,
+                    marginTop: theme.spacing.xl,
                   }}
                 >
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      marginBottom: theme.spacing.md,
-                    }}
-                  >
-                    <Text style={{ fontSize: 36, marginRight: theme.spacing.md }}>
-                      {companion.avatar}
-                    </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing.md }}>
+                    <Text style={{ fontSize: 36, marginRight: theme.spacing.md }}>{companion.avatar}</Text>
                     <View>
-                      <Text preset="label" style={{ color: '#F8FAFC' }}>
-                        {companion.name}'s Insights
-                      </Text>
+                      <Text preset="label" color="text">{companion.name}'s Insights</Text>
                       <Text preset="caption" color="tint">{entry.sentiment.mood}</Text>
                     </View>
                   </View>
-
-                  <Text
-                    preset="bodySmall"
-                    style={{ color: '#CBD5E1', lineHeight: 20, marginBottom: theme.spacing.sm }}
-                  >
+                  <Text preset="bodySmall" color="textSecondary" style={{ lineHeight: 20, marginBottom: theme.spacing.sm }}>
                     {entry.sentiment.emotional_analysis}
                   </Text>
-
                   {entry.sentiment.supportive_message && (
-                    <Text
-                      preset="bodySmall"
-                      style={{ color: '#F8FAFC', fontStyle: 'italic', marginBottom: theme.spacing.md }}
-                    >
+                    <Text preset="bodySmall" color="text" style={{ fontStyle: 'italic', marginBottom: theme.spacing.md }}>
                       {entry.sentiment.supportive_message}
                     </Text>
                   )}
-
                   {entry.sentiment.suggestion && (
-                    <View
-                      style={{
-                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                        borderRadius: theme.borderRadius.md,
-                        padding: theme.spacing.md,
-                      }}
-                    >
-                      <Text
-                        preset="caption"
-                        color="tint"
-                        style={{ marginBottom: 2, fontWeight: '700' }}
-                      >
-                        💡 Tip for you:
-                      </Text>
-                      <Text preset="caption" style={{ color: '#F8FAFC' }}>
-                        {entry.sentiment.suggestion}
-                      </Text>
+                    <View style={{ backgroundColor: theme.colors.tint + '18', borderRadius: theme.borderRadius.md, padding: theme.spacing.md }}>
+                      <Text preset="caption" color="tint" style={{ marginBottom: 2, fontWeight: '700' }}>💡 Tip for you:</Text>
+                      <Text preset="caption" color="textSecondary">{entry.sentiment.suggestion}</Text>
                     </View>
                   )}
                 </Card>
@@ -358,27 +346,59 @@ export default function EntryDetailScreen() {
             </>
           )}
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
 
-      {/* Edit-mode toolbar: add stickers */}
+      {/* ── Floating bottom toolbar (edit mode only) ────────────────────── */}
       {isEditing && (
         <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-around',
-            paddingHorizontal: theme.spacing.lg,
-            paddingVertical: theme.spacing.md,
-            borderTopWidth: 1,
-            borderTopColor: theme.colors.border,
-          }}
+          style={[
+            styles.floatingBar,
+            {
+              bottom: keyboardHeight,
+              backgroundColor: theme.colors.background,
+              borderTopColor: theme.colors.border,
+              paddingBottom: keyboardHeight > 0 ? 0 : insets.bottom,
+            },
+          ]}
         >
-          <Button
-            label={`🏷️ Add Sticker (${editStickers.length})`}
-            variant="outline"
-            size="sm"
-            onPress={() => setShowStickerPicker(true)}
-            accessibilityLabel={`Add sticker. ${editStickers.length} placed.`}
-          />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.toolbarLeft}
+            keyboardShouldPersistTaps="always"
+          >
+            {FORMAT_ITEMS.map((item) => (
+              <TouchableOpacity
+                key={item.kind}
+                style={styles.toolbarIcon}
+                onPress={() => editorRef.current?.applyFormat(item.kind)}
+                activeOpacity={0.6}
+                accessibilityLabel={item.kind}
+                accessibilityRole="button"
+              >
+                <MaterialCommunityIcons name={item.icon as any} size={22} color={theme.colors.text} />
+              </TouchableOpacity>
+            ))}
+            <View style={[styles.barDivider, { backgroundColor: theme.colors.border }]} />
+            <TouchableOpacity
+              style={styles.toolbarIcon}
+              onPress={() => setShowStickerPicker(true)}
+              activeOpacity={0.6}
+              accessibilityLabel={`Add sticker. ${editStickers.length} placed.`}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="sticker-emoji" size={22} color="#FF6B6B" />
+            </TouchableOpacity>
+          </ScrollView>
+
+          {/* Right: word count */}
+          <View style={styles.toolbarRight}>
+            {wordCount > 0 && (
+              <RNText style={[styles.wordCount, { color: theme.colors.textSecondary }]}>
+                {wordCount}w
+              </RNText>
+            )}
+          </View>
         </View>
       )}
 
@@ -387,6 +407,100 @@ export default function EntryDetailScreen() {
         onClose={() => setShowStickerPicker(false)}
         onSelectSticker={handleAddSticker}
       />
-    </ScreenContainer>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  headerBtn: { padding: 6, minWidth: 70 },
+  sentimentPill: {
+    position: 'absolute',
+    top: 70,
+    right: 16,
+    zIndex: 20,
+  },
+  sentimentPillInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    gap: 5,
+  },
+  sentimentPillText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  scrollContent: {
+    paddingTop: 16,
+    flexGrow: 1,
+  },
+  titleInput: {
+    fontSize: 26,
+    fontWeight: '700',
+    lineHeight: 34,
+    padding: 0,
+    marginBottom: 12,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginBottom: 16,
+  },
+  floatingBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+  toolbarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  toolbarIcon: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  barDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 22,
+    marginHorizontal: 4,
+  },
+  toolbarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 'auto',
+    paddingLeft: 8,
+  },
+  wordCount: {
+    fontSize: 11,
+    fontVariant: ['tabular-nums'],
+  },
+});

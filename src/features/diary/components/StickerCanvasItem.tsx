@@ -18,10 +18,11 @@ import {
   PanResponder,
   TouchableOpacity,
   Text,
+  Image,
   View,
   StyleSheet,
 } from 'react-native';
-import { PlacedSticker, STICKER_PACKS } from '../domain/Sticker';
+import { PlacedSticker, findStickerItem } from '../domain/Sticker';
 
 interface StickerCanvasItemProps {
   readonly sticker: PlacedSticker;
@@ -44,15 +45,10 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   // Track absolute position so we can persist on release
   const position = useRef({ x: sticker.x, y: sticker.y });
 
-  // Find the emoji for this sticker
-  let stickerIcon = '⭐';
-  for (const pack of STICKER_PACKS) {
-    const item = pack.stickers.find((s) => s.id === sticker.stickerId);
-    if (item) {
-      stickerIcon = item.icon;
-      break;
-    }
-  }
+  // Resolve the sticker data
+  const stickerItem = findStickerItem(sticker.stickerId);
+  const stickerIcon = stickerItem?.icon ?? '⭐';
+  const stickerSource = stickerItem?.source;
 
   const panResponder = useRef(
     PanResponder.create({
@@ -145,16 +141,24 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
         </View>
       )}
 
-      {/* Sticker emoji — tap to toggle selection */}
+      {/* Sticker — tap to toggle selection; Image for PNG, Text for emoji */}
       <TouchableOpacity
         onPress={() => isEditable && setIsSelected((s) => !s)}
         activeOpacity={isEditable ? 0.8 : 1}
-        accessibilityLabel={`Sticker ${stickerIcon}${isEditable ? ', tap to select' : ''}`}
+        accessibilityLabel={`Sticker${isEditable ? ', tap to select' : ''}`}
         accessibilityRole={isEditable ? 'button' : 'image'}
       >
-        <Text style={[styles.emoji, isSelected && styles.emojiSelected]}>
-          {stickerIcon}
-        </Text>
+        {stickerSource != null ? (
+          <Image
+            source={stickerSource}
+            style={[styles.stickerImage, isSelected && styles.selectedOverlay]}
+            resizeMode="contain"
+          />
+        ) : (
+          <Text style={[styles.emoji, isSelected && styles.emojiSelected]}>
+            {stickerIcon}
+          </Text>
+        )}
       </TouchableOpacity>
     </Animated.View>
   );
@@ -170,6 +174,13 @@ const styles = StyleSheet.create({
     fontSize: 48,
   },
   emojiSelected: {
+    opacity: 0.85,
+  },
+  stickerImage: {
+    width: 80,
+    height: 80,
+  },
+  selectedOverlay: {
     opacity: 0.85,
   },
   controls: {
