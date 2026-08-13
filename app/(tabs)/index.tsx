@@ -1,21 +1,27 @@
-import { useState, useCallback } from 'react';
-
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { useState, useCallback, useMemo } from 'react';
+import { View, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { ScreenContainer } from '@shared/components/ScreenContainer';
 import { Text } from '@shared/components/Text';
 import { Card } from '@shared/components/Card';
-import { FAB } from '@shared/components/FAB';
 import { EmptyState } from '@shared/components/EmptyState';
 import { useDiary } from '@/features/diary/hooks/useDiary';
-import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
+import { stripHtml } from '@shared/utils/html';
+
+const MOOD_EMOJI: Record<string, string> = {
+  happy: '😊', sad: '😢', excited: '🤩', anxious: '😰',
+  calm: '😌', angry: '😠', neutral: '😐', tired: '😴',
+  confused: '😕', grateful: '🙏',
+};
 
 export default function TimelineScreen() {
   const router = useRouter();
   const theme = useTheme();
-  const { entries, isLoading, streakStats, selectedCompanion, refresh } = useDiary();
+  const { entries, isLoading, refresh } = useDiary();
   const [viewModeIndex, setViewModeIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -23,10 +29,17 @@ export default function TimelineScreen() {
     }, [refresh])
   );
 
-  const activeCompanion =
-    COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
-
   const viewMode = viewModeIndex === 0 ? 'feed' : 'calendar';
+
+  const filteredEntries = useMemo(() => {
+    if (!searchQuery.trim()) return entries;
+    const q = searchQuery.toLowerCase();
+    return entries.filter(
+      (e) =>
+        e.title.toLowerCase().includes(q) ||
+        stripHtml(e.content).toLowerCase().includes(q)
+    );
+  }, [entries, searchQuery]);
 
   return (
     <ScreenContainer loading={isLoading} loadingMessage="Loading your diary..." safeArea scrollable={false}>
@@ -42,10 +55,7 @@ export default function TimelineScreen() {
           borderBottomColor: theme.colors.border,
         }}
       >
-        <View>
-          <Text preset="h3">Mongoose</Text>
-          <Text preset="caption" color="tint">AI Diary Companion</Text>
-        </View>
+        <Text preset="h3">Mongoose</Text>
 
         {/* Compact pill switcher */}
         <View
@@ -90,79 +100,118 @@ export default function TimelineScreen() {
         </View>
       </View>
 
-      {/* Streak & Companion Banner */}
-      <Card
-        shadow={false}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          marginHorizontal: theme.spacing.lg,
-          marginTop: theme.spacing.md,
-          marginBottom: theme.spacing.sm,
-          borderWidth: 1,
-          borderColor: theme.colors.border,
-        }}
-      >
-        <Text style={{ fontSize: 32, marginRight: theme.spacing.md }}>{activeCompanion.avatar}</Text>
-        <View style={{ flex: 1 }}>
-          <Text preset="label" color="text">{activeCompanion.name}</Text>
-          <Text preset="caption" color="tint">🔥 {streakStats.currentStreak} Day Writing Streak</Text>
+      {/* Search Bar (Feed View) */}
+      {viewMode === 'feed' && (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.border,
+            borderWidth: 1,
+            borderRadius: theme.borderRadius.md,
+            marginHorizontal: theme.spacing.lg,
+            marginTop: theme.spacing.xs,
+            marginBottom: theme.spacing.xs,
+            paddingHorizontal: theme.spacing.md,
+            paddingVertical: 8,
+          }}
+        >
+          <Ionicons name="search" size={18} color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search entries by title or content…"
+            placeholderTextColor={theme.colors.textSecondary}
+            style={{
+              flex: 1,
+              color: theme.colors.text,
+              fontSize: 14,
+              padding: 0,
+            }}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityLabel="Clear search">
+              <Ionicons name="close-circle" size={18} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          )}
         </View>
-      </Card>
+      )}
 
       {/* Content Feed / Calendar */}
       {viewMode === 'feed' ? (
         <ScrollView
           contentContainerStyle={{
             padding: theme.spacing.lg,
+            paddingTop: theme.spacing.sm,
             paddingBottom: theme.spacing.massive + theme.spacing.lg,
             flexGrow: 1,
           }}
           showsVerticalScrollIndicator={false}
         >
-          {entries.length === 0 ? (
+          {filteredEntries.length === 0 ? (
             <EmptyState
               icon="journal-outline"
-              title="No entries yet"
-              message={`Tap "+" below to write your first entry with ${activeCompanion.name}!`}
-              actionLabel="Write First Entry"
-              onAction={() => router.push('/entry/new')}
+              title={searchQuery.trim() ? 'No matching entries' : 'No entries yet'}
+              message={
+                searchQuery.trim()
+                  ? `No entries found for "${searchQuery}". Try a different keyword.`
+                  : 'Tap "+" below to write your first diary entry!'
+              }
+              actionLabel={searchQuery.trim() ? undefined : 'Write First Entry'}
+              onAction={searchQuery.trim() ? undefined : () => router.push('/entry/new')}
             />
           ) : (
-            entries.map((entry) => (
-              <Card
-                key={entry.id}
-                onPress={() => router.push(`/entry/${entry.id}`)}
-                style={{ marginBottom: theme.spacing.md }}
-                accessibilityLabel={`Diary entry: ${entry.title}`}
-              >
-                <View
+            filteredEntries.map((entry) => {
+              const hasSentiment = !!entry.sentiment?.mood;
+              const moodEmoji = hasSentiment ? MOOD_EMOJI[entry.sentiment!.mood] ?? '💭' : null;
+              return (
+                <Card
+                  key={entry.id}
+                  onPress={() => router.push(`/entry/${entry.id}`)}
                   style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    marginBottom: theme.spacing.xs,
+                    marginBottom: theme.spacing.md,
+                    borderLeftWidth: hasSentiment ? 4 : 1,
+                    borderLeftColor: hasSentiment ? '#FF6B6B' : theme.colors.border,
                   }}
+                  accessibilityLabel={`Diary entry: ${entry.title}`}
                 >
-                  <Text preset="caption" color="textSecondary">{entry.date}</Text>
-                  {entry.sentiment && (
-                    <Text preset="caption" color="tint">{entry.sentiment.mood}</Text>
-                  )}
-                </View>
-                <Text preset="h3" style={{ marginBottom: theme.spacing.xs }}>{entry.title}</Text>
-                <Text preset="bodySmall" color="textSecondary" numberOfLines={2}>
-                  {entry.content}
-                </Text>
-                {entry.stickers.length > 0 && (
-                  <Text
-                    preset="caption"
-                    color="textTertiary"
-                    style={{ marginTop: theme.spacing.xs }}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: theme.spacing.xs,
+                    }}
                   >
-                    🏷️ {entry.stickers.length} Stickers Placed
+                    <Text preset="caption" color="textSecondary">{entry.date}</Text>
+                    {hasSentiment && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Text style={{ fontSize: 14 }}>{moodEmoji}</Text>
+                        <Text preset="caption" color="tint" style={{ textTransform: 'capitalize' }}>
+                          {entry.sentiment!.mood}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text preset="h3" style={{ marginBottom: theme.spacing.xs }}>{entry.title}</Text>
+                  <Text preset="bodySmall" color="textSecondary" numberOfLines={2}>
+                    {stripHtml(entry.content)}
                   </Text>
-                )}
-              </Card>
-            ))
+                  {entry.stickers.length > 0 && (
+                    <Text
+                      preset="caption"
+                      color="textTertiary"
+                      style={{ marginTop: theme.spacing.xs }}
+                    >
+                      🏷️ {entry.stickers.length} Stickers Placed
+                    </Text>
+                  )}
+                </Card>
+              );
+            })
           )}
         </ScrollView>
       ) : (
@@ -247,15 +296,6 @@ export default function TimelineScreen() {
           </Card>
         </ScrollView>
       )}
-
-      {/* FAB */}
-      <FAB
-        icon="add"
-        onPress={() => router.push('/entry/new')}
-        size="lg"
-        accessibilityLabel="Write new diary entry"
-        style={{ position: 'absolute', bottom: theme.spacing.xxl, right: theme.spacing.xxl }}
-      />
     </ScreenContainer>
   );
 }

@@ -27,7 +27,7 @@ import {
   StyleSheet,
   Text as RNText,
 } from 'react-native';
-import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,6 +40,8 @@ import { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { StickerPickerModal } from '@/features/diary/components/StickerPickerModal';
+import { TemplatePickerModal } from '@/features/diary/components/TemplatePickerModal';
+import { Template } from '@/features/diary/domain/Template';
 import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { generateUUID } from '@/shared/utils/uuid';
 
@@ -48,11 +50,6 @@ function countWords(text: string): number {
   return clean ? clean.split(/\s+/).filter(Boolean).length : 0;
 }
 
-const MOOD_EMOJI: Record<string, string> = {
-  happy: '😊', sad: '😢', excited: '🤩', anxious: '😰',
-  calm: '😌', angry: '😠', neutral: '😐', tired: '😴',
-  confused: '😕', grateful: '🙏',
-};
 
 const FORMAT_ITEMS: { kind: FormatActionKind; icon: string }[] = [
   { kind: 'bold',    icon: 'format-bold' },
@@ -77,7 +74,19 @@ export default function EntryDetailScreen() {
   const [editContent, setEditContent] = useState('');
   const [editStickers, setEditStickers] = useState<PlacedSticker[]>([]);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleSelectTemplate = (template: Template) => {
+    const trimmed = editContent
+      ? editContent.replace(/[\s\n\r]*$/, '').replace(/(<p><\/p>|<br\s*\/?>)*$/, '')
+      : '';
+    const newContent = trimmed ? `${trimmed}<br><br>${template.content}` : template.content;
+    setEditContent(newContent);
+    setTimeout(() => {
+      editorRef.current?.setContentHTML(newContent);
+    }, 50);
+  };
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
@@ -189,8 +198,7 @@ export default function EntryDetailScreen() {
   const companion = COMPANION_OPTIONS.find((c) => c.id === entry.companion) || COMPANION_OPTIONS[0]!;
   const displayStickers = isEditing ? editStickers : entry.stickers;
   const wordCount = countWords(isEditing ? editContent : entry.content);
-  const hasSentiment = !!entry.sentiment?.mood;
-  const moodEmoji = hasSentiment ? (MOOD_EMOJI[entry.sentiment!.mood] ?? '💭') : null;
+
   const TOOLBAR_H = 56;
 
   return (
@@ -371,7 +379,7 @@ export default function EntryDetailScreen() {
               <TouchableOpacity
                 key={item.kind}
                 style={styles.toolbarIcon}
-                onPress={() => editorRef.current?.applyFormat(item.kind)}
+                onPressIn={() => editorRef.current?.applyFormat(item.kind)}
                 activeOpacity={0.6}
                 accessibilityLabel={item.kind}
                 accessibilityRole="button"
@@ -380,6 +388,17 @@ export default function EntryDetailScreen() {
               </TouchableOpacity>
             ))}
             <View style={[styles.barDivider, { backgroundColor: theme.colors.border }]} />
+            {/* Template button */}
+            <TouchableOpacity
+              style={styles.toolbarIcon}
+              onPress={() => setShowTemplatePicker(true)}
+              activeOpacity={0.6}
+              accessibilityLabel="Choose writing template"
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="file-document-outline" size={22} color="#1E90FF" />
+            </TouchableOpacity>
+            {/* Sticker button */}
             <TouchableOpacity
               style={styles.toolbarIcon}
               onPress={() => setShowStickerPicker(true)}
@@ -406,6 +425,11 @@ export default function EntryDetailScreen() {
         visible={showStickerPicker}
         onClose={() => setShowStickerPicker(false)}
         onSelectSticker={handleAddSticker}
+      />
+      <TemplatePickerModal
+        visible={showTemplatePicker}
+        onClose={() => setShowTemplatePicker(false)}
+        onSelectTemplate={handleSelectTemplate}
       />
     </View>
   );

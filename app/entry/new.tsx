@@ -33,6 +33,8 @@ import { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { StickerPickerModal } from '@/features/diary/components/StickerPickerModal';
+import { TemplatePickerModal } from '@/features/diary/components/TemplatePickerModal';
+import { Template } from '@/features/diary/domain/Template';
 import { CompanionPickerModal } from '@/features/diary/components/CompanionPickerModal';
 import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { generateUUID } from '@/shared/utils/uuid';
@@ -66,7 +68,19 @@ export default function CreateEntryScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [stickers, setStickers] = useState<PlacedSticker[]>([]);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showCompanionPicker, setShowCompanionPicker] = useState(false);
+
+  const handleSelectTemplate = (template: Template) => {
+    const trimmed = content
+      ? content.replace(/[\s\n\r]*$/, '').replace(/(<p><\/p>|<br\s*\/?>)*$/, '')
+      : '';
+    const newContent = trimmed ? `${trimmed}<br><br>${template.content}` : template.content;
+    setContent(newContent);
+    setTimeout(() => {
+      editorRef.current?.setContentHTML(newContent);
+    }, 50);
+  };
   const [isSaving, setIsSaving] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
@@ -302,7 +316,7 @@ export default function CreateEntryScreen() {
             <TouchableOpacity
               key={item.kind}
               style={styles.toolbarIcon}
-              onPress={() => editorRef.current?.applyFormat(item.kind)}
+              onPressIn={() => editorRef.current?.applyFormat(item.kind)}
               activeOpacity={0.6}
               accessibilityLabel={item.kind}
               accessibilityRole="button"
@@ -317,6 +331,17 @@ export default function CreateEntryScreen() {
 
           {/* Separator */}
           <View style={[styles.barDivider, { backgroundColor: theme.colors.border }]} />
+
+          {/* Template button */}
+          <TouchableOpacity
+            style={styles.toolbarIcon}
+            onPress={() => setShowTemplatePicker(true)}
+            activeOpacity={0.6}
+            accessibilityLabel="Choose writing template"
+            accessibilityRole="button"
+          >
+            <MaterialCommunityIcons name="file-document-outline" size={22} color="#1E90FF" />
+          </TouchableOpacity>
 
           {/* Sticker button */}
           <TouchableOpacity
@@ -353,6 +378,11 @@ export default function CreateEntryScreen() {
         visible={showStickerPicker}
         onClose={() => setShowStickerPicker(false)}
         onSelectSticker={handleAddSticker}
+      />
+      <TemplatePickerModal
+        visible={showTemplatePicker}
+        onClose={() => setShowTemplatePicker(false)}
+        onSelectTemplate={handleSelectTemplate}
       />
       <CompanionPickerModal
         visible={showCompanionPicker}

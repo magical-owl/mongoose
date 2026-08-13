@@ -1,19 +1,52 @@
 /**
  * MarkdownText
  *
- * Lightweight Markdown renderer using only React Native built-ins.
- * Supports: # headings, **bold**, *italic*, ***bold+italic***,
- *            `code`, > blockquote, bullet lines (•  -  *)
+ * Lightweight Rich Content renderer for both Markdown and HTML tags.
+ * Supports: <b>, <i>, <h3>, <h2>, <h1>, <div>, <p>, <br>,
+ *            # headings, **bold**, *italic*, `code`, > quote, bullet lines
  *
- * No external dependencies — works in Expo Go.
+ * No native dependencies — works in Expo Go.
  */
 
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 
-// ---------------------------------------------------------------------------
-// Inline segment types
-// ---------------------------------------------------------------------------
+function convertHtmlToMarkdown(html: string): string {
+  if (!html) return '';
+  let md = html;
+
+  // Convert HTML headers
+  md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
+  md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n');
+  md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n');
+
+  // Convert HTML formatting
+  md = md.replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**');
+  md = md.replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**');
+  md = md.replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*');
+  md = md.replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*');
+  md = md.replace(/<u[^>]*>(.*?)<\/u>/gi, '*$1*');
+  md = md.replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '> $1\n');
+  md = md.replace(/<li[^>]*>(.*?)<\/li>/gi, '• $1\n');
+
+  // Convert line breaks and paragraph breaks
+  md = md.replace(/<br\s*\/?>/gi, '\n');
+  md = md.replace(/<\/p>/gi, '\n\n');
+  md = md.replace(/<p[^>]*>/gi, '');
+  md = md.replace(/<\/div>/gi, '\n');
+  md = md.replace(/<div[^>]*>/gi, '');
+
+  // Strip remaining unknown HTML tags
+  md = md.replace(/<\/?[a-zA-Z][^>]*>/g, '');
+
+  // Replace common HTML entities
+  md = md.replace(/&nbsp;/gi, ' ');
+  md = md.replace(/&amp;/gi, '&');
+  md = md.replace(/&lt;/gi, '<');
+  md = md.replace(/&gt;/gi, '>');
+
+  return md.trim();
+}
 
 type InlineSegment =
   | { kind: 'text'; text: string }
@@ -24,7 +57,6 @@ type InlineSegment =
 
 function parseInline(raw: string): InlineSegment[] {
   const segments: InlineSegment[] = [];
-  // Order: bold-italic first, then bold, then italic, then code
   const re = /(\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/gs;
   let last = 0;
   let m: RegExpExecArray | null;
@@ -49,10 +81,6 @@ function parseInline(raw: string): InlineSegment[] {
   }
   return segments;
 }
-
-// ---------------------------------------------------------------------------
-// Inline renderer
-// ---------------------------------------------------------------------------
 
 interface InlineProps {
   readonly segments: InlineSegment[];
@@ -93,10 +121,6 @@ function InlineSegments({ segments, baseStyle, tintColor }: InlineProps) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Block-level line types
-// ---------------------------------------------------------------------------
-
 type BlockLine =
   | { kind: 'h1' | 'h2' | 'h3'; text: string }
   | { kind: 'bullet'; text: string }
@@ -115,18 +139,10 @@ function parseLine(raw: string): BlockLine {
   return { kind: 'paragraph', text: trimmed };
 }
 
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
-
 interface MarkdownTextProps {
   readonly children: string;
   readonly style?: object;
 }
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
 
 export function MarkdownText({ children, style }: MarkdownTextProps) {
   const theme = useTheme();
@@ -138,7 +154,8 @@ export function MarkdownText({ children, style }: MarkdownTextProps) {
     ...style,
   };
 
-  const lines = children.split('\n');
+  const normalizedText = convertHtmlToMarkdown(children || '');
+  const lines = normalizedText.split('\n');
   const blocks: BlockLine[] = lines.map(parseLine);
 
   return (
@@ -231,7 +248,7 @@ export function MarkdownText({ children, style }: MarkdownTextProps) {
               </View>
             );
 
-          default: // paragraph
+          default:
             return (
               <InlineSegments
                 key={i}
