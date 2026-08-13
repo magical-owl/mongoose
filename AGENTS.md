@@ -102,9 +102,12 @@ All modules and agents building on Meadow (Diary, Journal, Finance, Habit Tracke
 - `@utils/*` → `src/utils/*`
 - `@tests/*` → `tests/*`
 
-## Documentation
+## Documentation & Reference Guides
 
-See `/docs/` for full documentation. See `/agents/` for AI agent instructions.
+- Full Documentation: See `/docs/`
+- AI Agent Instructions: See `/agents/`
+- **New App Starter Guide**: See [`agents/new-app.md`](file:///Users/louise/Desktop/meadow/agents/new-app.md) when initializing a new app or feature on Meadow platform.
+
 
 ## Expo SDK 57
 
