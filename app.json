@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "meadow",
-    "slug": "meadow",
+    "name": "Mongoose",
+    "slug": "mongoose",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "meadow",
+    "scheme": "mongoose",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.meadow.app",
+      "bundleIdentifier": "com.magicalowl.mongoose",
       "buildNumber": "1",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Face ID is used to securely authenticate and protect your data.",
@@ -45,7 +45,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.meadow.app",
+      "package": "com.magicalowl.mongoose",
       "versionCode": 1
     },
     "web": {
