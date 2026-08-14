@@ -73,6 +73,14 @@ export default function InsightsScreen() {
         .toISOString()
         .slice(0, 10);
     });
+    const activityDays = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(today.getTime() - (6 - index) * 86400000);
+      const key = date.toISOString().slice(0, 10);
+      return {
+        label: date.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2),
+        count: entries.filter((entry) => entry.date === key).length,
+      };
+    });
 
     return {
       totalEntries: total,
@@ -84,6 +92,7 @@ export default function InsightsScreen() {
       monthlyMoodDistribution,
       consistency,
       calendarDays,
+      activityDays,
     };
   }, [entries]);
 
@@ -117,10 +126,11 @@ export default function InsightsScreen() {
               {
                 backgroundColor: theme.colors.surface,
                 borderColor: theme.colors.border,
+                borderTopColor: theme.colors.tint,
               },
             ]}
           >
-            <Text style={styles.icon}>📝</Text>
+            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Text style={styles.icon}>📝</Text></View>
             <Text style={[styles.statNumber, { color: theme.colors.text }]}>
               {stats.totalEntries}
             </Text>
@@ -137,10 +147,11 @@ export default function InsightsScreen() {
               {
                 backgroundColor: theme.colors.surface,
                 borderColor: theme.colors.border,
+                borderTopColor: theme.colors.tint,
               },
             ]}
           >
-            <Text style={styles.icon}>🔥</Text>
+            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Text style={styles.icon}>🔥</Text></View>
             <Text style={[styles.statNumber, { color: theme.colors.tint }]}>
               {streakStats.currentStreak} Days
             </Text>
@@ -157,10 +168,11 @@ export default function InsightsScreen() {
               {
                 backgroundColor: theme.colors.surface,
                 borderColor: theme.colors.border,
+                borderTopColor: theme.colors.tint,
               },
             ]}
           >
-            <Text style={styles.icon}>✍️</Text>
+            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Text style={styles.icon}>✍️</Text></View>
             <Text style={[styles.statNumber, { color: theme.colors.text }]}>
               {stats.avgWords}
             </Text>
@@ -177,10 +189,11 @@ export default function InsightsScreen() {
               {
                 backgroundColor: theme.colors.surface,
                 borderColor: theme.colors.border,
+                borderTopColor: theme.colors.tint,
               },
             ]}
           >
-            <Text style={styles.icon}>📚</Text>
+            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Text style={styles.icon}>📚</Text></View>
             <Text style={[styles.statNumber, { color: theme.colors.text }]}>
               {stats.totalWords}
             </Text>
@@ -197,11 +210,12 @@ export default function InsightsScreen() {
               {
                 backgroundColor: theme.colors.surface,
                 borderColor: theme.colors.border,
+                borderTopColor: theme.colors.tint,
                 width: "100%",
               },
             ]}
           >
-            <Text style={styles.icon}>📅</Text>
+            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Text style={styles.icon}>📅</Text></View>
             <Text style={[styles.statNumber, { color: theme.colors.text }]}>
               {stats.mostActiveDay}
             </Text>
@@ -211,6 +225,26 @@ export default function InsightsScreen() {
               Most Active Journaling Day
             </Text>
           </View>
+        </View>
+
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>WRITING PULSE</Text>
+        <View style={[styles.chartCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <View style={styles.chartHeader}>
+            <View><Text preset="label" color="text">Your last 7 days</Text><Text preset="caption" color="textSecondary">Entries by day</Text></View>
+            <Text style={[styles.chartTotal, { color: theme.colors.tint }]}>{stats.activityDays.reduce((sum, day) => sum + day.count, 0)}</Text>
+          </View>
+          <View style={styles.barChart}>
+            {stats.activityDays.map((day) => {
+              const max = Math.max(...stats.activityDays.map((item) => item.count), 1);
+              const height = day.count ? Math.max(18, (day.count / max) * 104) : 8;
+              return <View key={day.label} style={styles.barColumn}><View style={[styles.barTrack, { backgroundColor: theme.colors.border }]}><View style={[styles.bar, { height, backgroundColor: day.count ? theme.colors.tint : theme.colors.border }]} /></View><Text preset="caption" color="textSecondary" style={styles.barLabel}>{day.label}</Text></View>;
+            })}
+          </View>
+        </View>
+
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>MOOD MIX</Text>
+        <View style={[styles.chartCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          {stats.monthlyMoodDistribution.length === 0 ? <Text preset="caption" color="textSecondary">Mood mix appears after entries are analyzed.</Text> : <><View style={styles.segmentedBar}>{stats.monthlyMoodDistribution.map(([mood, count], index) => <View key={mood} style={[styles.segment, { flex: count, backgroundColor: index % 2 === 0 ? theme.colors.tint : theme.colors.tint + "88" }]} />)}</View><View style={styles.legend}>{stats.monthlyMoodDistribution.slice(0, 4).map(([mood, count], index) => <View key={mood} style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: index % 2 === 0 ? theme.colors.tint : theme.colors.tint + "88" }]} /><Text preset="caption" color="textSecondary">{mood} {count}</Text></View>)}</View></>}
         </View>
 
         <Text
@@ -394,26 +428,36 @@ const styles = StyleSheet.create({
   statCard: {
     width: "48%",
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: 14,
+    padding: 10,
     marginBottom: 12,
-    alignItems: "center",
+    alignItems: "flex-start",
+    minHeight: 104,
+    justifyContent: "space-between",
+    borderTopWidth: 3,
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 6,
     elevation: 3,
   },
   icon: {
-    fontSize: 26,
-    marginBottom: 6,
+    fontSize: 22,
+  },
+  iconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
-    marginBottom: 2,
+    marginTop: 4,
   },
   statLabel: {
     fontSize: 12,
+    fontWeight: "600",
   },
   trendCard: {
     borderWidth: 1,
@@ -421,6 +465,19 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 16,
   },
+  chartCard: { borderWidth: 1, borderRadius: 12, padding: 16, marginBottom: 16 },
+  chartHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  chartTotal: { fontSize: 26, fontWeight: "700" },
+  barChart: { height: 140, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-around", marginTop: 14 },
+  barColumn: { height: "100%", alignItems: "center", justifyContent: "flex-end", gap: 6, flex: 1 },
+  barTrack: { width: 18, height: 108, borderRadius: 9, justifyContent: "flex-end", overflow: "hidden" },
+  bar: { width: "100%", borderRadius: 9 },
+  barLabel: { fontSize: 11 },
+  segmentedBar: { height: 14, flexDirection: "row", borderRadius: 7, overflow: "hidden", gap: 2 },
+  segment: { height: "100%" },
+  legend: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 14 },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
   trendRow: {
     flexDirection: "row",
     justifyContent: "space-between",

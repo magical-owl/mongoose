@@ -10,6 +10,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { createSafeMMKV } from '@/database/mmkvSafe';
 import type { ThemeMode } from '@/providers/ThemeProvider';
 import type { CompanionType } from '@/features/diary/domain/Companion';
+import type { AccentColor } from '@/theme/accents';
 
 const storage = createSafeMMKV({ id: 'app-store' });
 
@@ -29,6 +30,7 @@ export type SessionState = 'idle' | 'active' | 'expired';
 export interface AppState {
   // State
   themeMode: ThemeMode;
+  accentColor: AccentColor;
   onboardingStatus: OnboardingStatus;
   sessionState: SessionState;
   isOnboarded: boolean;
@@ -40,6 +42,7 @@ export interface AppState {
 
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
+  setAccentColor: (color: AccentColor) => void;
   setOnboardingStatus: (status: OnboardingStatus) => void;
   setSessionState: (state: SessionState) => void;
   setSelectedCalendarDate: (date: string | null) => void;
@@ -53,6 +56,7 @@ export interface AppState {
 const initialState: Pick<
   AppState,
   | 'themeMode'
+  | 'accentColor'
   | 'onboardingStatus'
   | 'sessionState'
   | 'isOnboarded'
@@ -63,6 +67,7 @@ const initialState: Pick<
   | 'remoteAiConsent'
 > = {
   themeMode: 'dark',
+  accentColor: 'blue',
   onboardingStatus: 'not_started',
   sessionState: 'idle',
   isOnboarded: false,
@@ -83,6 +88,7 @@ export const useAppStore = create<AppState>()(
       ...initialState,
 
       setThemeMode: (themeMode: ThemeMode) => set({ themeMode }),
+      setAccentColor: (accentColor: AccentColor) => set({ accentColor }),
 
       setSelectedCalendarDate: (selectedCalendarDate: string | null) => set({ selectedCalendarDate }),
 
@@ -113,6 +119,7 @@ export const useAppStore = create<AppState>()(
       })),
       partialize: (state) => ({
         themeMode: state.themeMode,
+        accentColor: state.accentColor,
         onboardingStatus: state.onboardingStatus,
         isOnboarded: state.isOnboarded,
         selectedCompanion: state.selectedCompanion,

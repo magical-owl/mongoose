@@ -48,7 +48,18 @@ export const CompanionPickerModal: React.FC<CompanionPickerModalProps> = ({
               accessibilityRole="button"
               accessibilityState={{ selected: isSelected }}
             >
-              <Text style={{ fontSize: 48, marginRight: theme.spacing.lg }}>{item.avatar}</Text>
+              <View
+                style={{
+                  width: 64,
+                  height: 64,
+                  marginRight: theme.spacing.lg,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Text style={{ fontSize: 42, lineHeight: 54, textAlign: 'center' }}>{item.avatar}</Text>
+              </View>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                   <Text preset="label" style={{ flex: 1 }}>{item.name}</Text>
@@ -60,7 +71,7 @@ export const CompanionPickerModal: React.FC<CompanionPickerModalProps> = ({
                   {item.description}
                 </Text>
                 <Text preset="caption" color="tint" style={{ fontStyle: 'italic' }}>
-                  "{item.greeting}"
+                  &quot;{item.greeting}&quot;
                 </Text>
               </View>
             </TouchableOpacity>

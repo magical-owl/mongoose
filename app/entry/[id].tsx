@@ -271,7 +271,7 @@ export default function EntryDetailScreen() {
             <TouchableOpacity onPress={navigateBack} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Go back">
               <Text preset="label" color="textSecondary">‹ Back</Text>
             </TouchableOpacity>
-            <Text preset="caption" color="textSecondary">{entry.date}</Text>
+            <View style={styles.headerDateSpacer} />
             <View style={[styles.headerBtn, { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }]}>
               <TouchableOpacity onPress={handleStartEdit} accessibilityRole="button" accessibilityLabel="Edit this entry">
                 <Text preset="label" style={{ color: '#1E90FF', fontWeight: '600' }}>Edit</Text>
@@ -497,6 +497,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerBtn: { padding: 6, minWidth: 70 },
+  headerDateSpacer: { flex: 1 },
   sentimentPill: {
     position: 'absolute',
     top: 70,

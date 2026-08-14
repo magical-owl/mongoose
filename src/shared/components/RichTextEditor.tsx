@@ -113,6 +113,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
             color: theme.colors.text,
             placeholderColor: theme.colors.textSecondary,
             contentCSSText: `
+              padding: 0 0 40px 0;
               font-size: 18px;
               font-family: -apple-system, Roboto, sans-serif;
               color: ${theme.colors.text};

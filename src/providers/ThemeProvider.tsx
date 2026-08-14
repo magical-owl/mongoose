@@ -11,6 +11,7 @@ import { palette } from '@/theme/colors';
 import { spacing, borderRadius } from '@/theme/spacing';
 import { typography, fontSizes, fontWeights } from '@/theme/typography';
 import { useAppStore } from '@/stores/useAppStore';
+import { accentColors, type AccentColor } from '@/theme/accents';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -45,6 +46,7 @@ export interface ThemeColors {
  */
 export interface Theme {
   readonly mode: ThemeMode;
+  readonly accentColor: AccentColor;
   readonly isDark: boolean;
   readonly colors: ThemeColors;
   readonly spacing: typeof spacing;
@@ -54,6 +56,7 @@ export interface Theme {
   readonly fontWeights: typeof fontWeights;
   /** Update the theme mode (light / dark / system). Persisted automatically. */
   readonly setThemeMode: (mode: ThemeMode) => void;
+  readonly setAccentColor: (color: AccentColor) => void;
 }
 
 const lightColors: ThemeColors = {
@@ -118,6 +121,8 @@ export function ThemeProvider({
   const systemColorScheme = useColorScheme();
   const persistedMode = useAppStore((state) => state.themeMode);
   const persistThemeMode = useAppStore((state) => state.setThemeMode);
+  const accentColor = useAppStore((state) => state.accentColor);
+  const persistAccentColor = useAppStore((state) => state.setAccentColor);
   const mode = initialMode ?? persistedMode ?? 'dark';
   const resolvedMode = mode === 'system' && systemColorScheme === 'dark'
     ? 'dark'
@@ -128,20 +133,29 @@ export function ThemeProvider({
   const setThemeMode = useCallback((newMode: ThemeMode) => {
     persistThemeMode(newMode);
   }, [persistThemeMode]);
+  const setAccentColor = useCallback((newColor: AccentColor) => {
+    persistAccentColor(newColor);
+  }, [persistAccentColor]);
 
   const theme = useMemo<Theme>(
     () => ({
       mode,
+      accentColor,
       isDark: resolvedMode === 'dark',
-      colors: resolvedMode === 'dark' ? darkColors : lightColors,
+      colors: {
+        ...(resolvedMode === 'dark' ? darkColors : lightColors),
+        tint: accentColors[accentColor][resolvedMode],
+        tabIconSelected: accentColors[accentColor][resolvedMode],
+      },
       spacing,
       borderRadius,
       typography,
       fontSizes,
       fontWeights,
       setThemeMode,
+      setAccentColor,
     }),
-    [mode, resolvedMode, setThemeMode]
+    [mode, resolvedMode, accentColor, setThemeMode, setAccentColor]
   );
 
   return (

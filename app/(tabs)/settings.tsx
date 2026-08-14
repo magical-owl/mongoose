@@ -31,6 +31,7 @@ import { appLockService } from '@/services/AppLockService';
 import { dataDeletionService } from '@/services/DataDeletionService';
 import { diaryBackupService } from '@/services/DiaryBackupService';
 import { useJournalExtras } from '@/features/journal/hooks/useJournalExtras';
+import { accentColors, type AccentColor } from '@/theme/accents';
 
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -47,6 +48,7 @@ export default function SettingsScreen() {
   const [showCompanionModal, setShowCompanionModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showDataModal, setShowDataModal] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
 
   // Profile form state
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
@@ -161,6 +163,13 @@ export default function SettingsScreen() {
       },
     },
     {
+      id: 'security',
+      title: 'Security & Privacy',
+      subtitle: 'Biometric lock and AI privacy controls',
+      icon: '🔒',
+      onPress: () => setShowSecurityModal(true),
+    },
+    {
       id: 'data',
       title: 'Data & Storage',
       subtitle: `Export ${entries.length} entries or backup JSON`,
@@ -244,31 +253,6 @@ export default function SettingsScreen() {
             </Text>
           </View>
 
-        <View style={[styles.modalRow, { borderBottomColor: theme.colors.border, marginTop: 16 }]}>
-          <View style={{ flex: 1 }}>
-            <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>🔒 Biometric App Lock</Text>
-            <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>Require device biometrics before opening the diary</Text>
-          </View>
-          <Switch
-            value={biometricLockEnabled}
-            onValueChange={handleBiometricToggle}
-            trackColor={{ false: theme.colors.border, true: theme.colors.tint }}
-            thumbColor="#fff"
-          />
-        </View>
-
-        <View style={[styles.modalRow, { borderBottomColor: theme.colors.border, marginTop: 16 }]}>
-          <View style={{ flex: 1 }}>
-            <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>☁️ Remote AI Summaries</Text>
-            <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>Allow only when the configured endpoint confirms zero data retention</Text>
-          </View>
-          <Switch
-            value={remoteAiConsent}
-            onValueChange={setRemoteAiConsent}
-            trackColor={{ false: theme.colors.border, true: theme.colors.tint }}
-            thumbColor="#fff"
-          />
-        </View>
           <Switch
             value={theme.isDark}
             onValueChange={(value) => theme.setThemeMode(value ? 'dark' : 'light')}
@@ -311,6 +295,53 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               );
             })}
+          </View>
+        </View>
+
+        <View style={{ paddingTop: 20 }}>
+          <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
+            ACCENT COLOR
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            {(['blue', 'violet', 'green', 'rose', 'amber'] as AccentColor[]).map((color) => {
+              const active = theme.accentColor === color;
+              return (
+                <TouchableOpacity
+                  key={color}
+                  onPress={() => theme.setAccentColor(color)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${accentColors[color].label} accent color${active ? ', selected' : ''}`}
+                  style={[styles.colorSwatch, { backgroundColor: accentColors[color][theme.isDark ? 'dark' : 'light'], borderColor: active ? theme.colors.text : theme.colors.border, borderWidth: active ? 3 : 1 }]}
+                />
+              );
+            })}
+          </View>
+          <Text preset="caption" color="textSecondary" style={{ marginTop: 8 }}>
+            Choose the accent used across buttons, highlights, and navigation.
+          </Text>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showSecurityModal}
+        onDismiss={() => setShowSecurityModal(false)}
+        title="🔒 Security & Privacy"
+        accessibilityLabel="Security and privacy settings"
+      >
+        <View style={{ gap: 16, paddingVertical: 8 }}>
+          <View style={[styles.modalRow, { borderBottomColor: theme.colors.border }]}>
+            <View style={{ flex: 1 }}>
+              <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>Biometric App Lock</Text>
+              <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>Require Face ID, Touch ID, or device biometrics before opening the diary.</Text>
+            </View>
+            <Switch value={biometricLockEnabled} onValueChange={handleBiometricToggle} trackColor={{ false: theme.colors.border, true: theme.colors.tint }} thumbColor="#fff" />
+          </View>
+          <View style={[styles.modalRow, { borderBottomColor: theme.colors.border }]}>
+            <View style={{ flex: 1 }}>
+              <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>Remote AI Summaries</Text>
+              <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>Allow only when the configured endpoint confirms zero data retention.</Text>
+            </View>
+            <Switch value={remoteAiConsent} onValueChange={setRemoteAiConsent} trackColor={{ false: theme.colors.border, true: theme.colors.tint }} thumbColor="#fff" />
           </View>
         </View>
       </Modal>
@@ -465,6 +496,11 @@ const styles = StyleSheet.create({
   },
   optionSubtitle: {
     fontSize: 14,
+  },
+  colorSwatch: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   arrow: {
     fontSize: 20,
