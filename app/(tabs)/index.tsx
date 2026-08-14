@@ -1,60 +1,123 @@
-import { useState, useCallback, useMemo } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@providers/ThemeProvider';
-import { Text } from '@shared/components/Text';
-import { useDiary } from '@/features/diary/hooks/useDiary';
-import { stripHtml } from '@shared/utils/html';
-import { getMoodEmoji, normalizeMoodKey } from '@/ai/Mood';
-import { isDiaryEntryVisible } from '@/features/diary/services/DiaryEntryVisibility';
-import { appLockService } from '@/services/AppLockService';
+import { useState, useCallback, useMemo } from "react";
+import {
+  View,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+} from "react-native";
+import { useRouter, useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "@providers/ThemeProvider";
+import { Text } from "@shared/components/Text";
+import { Modal } from "@shared/components/Modal";
+import { useDiary } from "@/features/diary/hooks/useDiary";
+import { stripHtml } from "@shared/utils/html";
+import { getMoodEmoji, normalizeMoodKey } from "@/ai/Mood";
+import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
+import { appLockService } from "@/services/AppLockService";
 
 export default function TimelineScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { entries, isLoading, refresh } = useDiary();
+  const { entries, isLoading, refresh, saveDiaryEntry } = useDiary();
   const [viewModeIndex, setViewModeIndex] = useState(0); // 0: Detailed, 1: Simple
-  const [search, setSearch] = useState('');
-  const [filterDate, setFilterDate] = useState('');
-  const [filterTag, setFilterTag] = useState('');
-  const [filterMood, setFilterMood] = useState('');
-  const [filterCompanion, setFilterCompanion] = useState('');
+  const [search, setSearch] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+  const [filterTag, setFilterTag] = useState("");
+  const [filterMood, setFilterMood] = useState("");
+  const [filterCompanion, setFilterCompanion] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [filterModal, setFilterModal] = useState<
+    "date" | "tag" | "mood" | "companion" | null
+  >(null);
+
+  const filterOptions = useMemo(
+    () => ({
+      date: Array.from(new Set(entries.map((entry) => entry.date)))
+        .sort()
+        .reverse(),
+      tag: Array.from(new Set(entries.flatMap((entry) => entry.tags))).sort(),
+      mood: Array.from(
+        new Set(
+          entries.flatMap((entry) =>
+            entry.sentiment?.mood
+              ? [normalizeMoodKey(entry.sentiment.mood)]
+              : [],
+          ),
+        ),
+      ).sort(),
+      companion: Array.from(
+        new Set(entries.map((entry) => entry.companion)),
+      ).sort(),
+    }),
+    [entries],
+  );
+
+  const toggleFavorite = useCallback(
+    async (entry: (typeof entries)[number]) => {
+      await saveDiaryEntry({
+        ...entry,
+        isFavorite: !entry.isFavorite,
+        updatedAt: new Date().toISOString(),
+      });
+      await refresh();
+    },
+    [refresh, saveDiaryEntry],
+  );
 
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh])
+    }, [refresh]),
   );
 
-  const viewMode = viewModeIndex === 0 ? 'detailed' : 'simple';
+  const viewMode = viewModeIndex === 0 ? "detailed" : "simple";
 
   const filteredEntries = useMemo(() => {
-    if (!search.trim() && !filterDate && !filterTag && !filterMood && !filterCompanion && !favoritesOnly) return entries.filter((entry) => isDiaryEntryVisible(entry));
+    if (
+      !search.trim() &&
+      !filterDate &&
+      !filterTag &&
+      !filterMood &&
+      !filterCompanion &&
+      !favoritesOnly
+    )
+      return entries.filter((entry) => isDiaryEntryVisible(entry));
     const q = search.toLowerCase();
     return entries.filter(
       (e) =>
-        isDiaryEntryVisible(e)
-        &&
-        (!q || e.title.toLowerCase().includes(q) || stripHtml(e.content).toLowerCase().includes(q))
-        && (!filterDate || e.date.includes(filterDate))
-        && (!filterTag || e.tags.some((tag) => tag.toLowerCase().includes(filterTag.toLowerCase())))
-        && (!filterMood || (e.sentiment?.mood ? normalizeMoodKey(e.sentiment.mood) === filterMood.toLowerCase() : false))
-        && (!filterCompanion || e.companion === filterCompanion.toLowerCase())
-        && (!favoritesOnly || e.isFavorite)
+        isDiaryEntryVisible(e) &&
+        (!q ||
+          e.title.toLowerCase().includes(q) ||
+          stripHtml(e.content).toLowerCase().includes(q)) &&
+        (!filterDate || e.date.includes(filterDate)) &&
+        (!filterTag ||
+          e.tags.some((tag) =>
+            tag.toLowerCase().includes(filterTag.toLowerCase()),
+          )) &&
+        (!filterMood ||
+          (e.sentiment?.mood
+            ? normalizeMoodKey(e.sentiment.mood) === filterMood.toLowerCase()
+            : false)) &&
+        (!filterCompanion || e.companion === filterCompanion.toLowerCase()) &&
+        (!favoritesOnly || e.isFavorite),
     );
-  }, [entries, search, filterDate, filterTag, filterMood, filterCompanion, favoritesOnly]);
-
-  const onThisDay = useMemo(() => {
-    const today = new Date();
-    const monthDay = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    return entries.filter((entry) => isDiaryEntryVisible(entry) && entry.date.slice(5) === monthDay && entry.date !== today.toISOString().slice(0, 10));
-  }, [entries]);
+  }, [
+    entries,
+    search,
+    filterDate,
+    filterTag,
+    filterMood,
+    filterCompanion,
+    favoritesOnly,
+  ]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       {isLoading ? null : (
         <ScrollView
           contentContainerStyle={[
@@ -73,10 +136,13 @@ export default function TimelineScreen() {
             <View
               style={[
                 styles.switcherWrap,
-                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                },
               ]}
             >
-              {(['Detailed', 'Simple'] as const).map((label, idx) => (
+              {(["Detailed", "Simple"] as const).map((label, idx) => (
                 <TouchableOpacity
                   key={label}
                   onPress={() => setViewModeIndex(idx)}
@@ -84,7 +150,9 @@ export default function TimelineScreen() {
                     styles.switcherBtn,
                     {
                       backgroundColor:
-                        viewModeIndex === idx ? theme.colors.tint : 'transparent',
+                        viewModeIndex === idx
+                          ? theme.colors.tint
+                          : "transparent",
                     },
                   ]}
                 >
@@ -94,7 +162,7 @@ export default function TimelineScreen() {
                       {
                         color:
                           viewModeIndex === idx
-                            ? '#fff'
+                            ? "#fff"
                             : theme.colors.textSecondary,
                       },
                     ]}
@@ -122,53 +190,138 @@ export default function TimelineScreen() {
             ]}
           />
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-            <TextInput value={filterDate} onChangeText={setFilterDate} placeholder="Date" placeholderTextColor={theme.colors.textSecondary} style={[styles.filterInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
-            <TextInput value={filterTag} onChangeText={setFilterTag} placeholder="Tag" placeholderTextColor={theme.colors.textSecondary} style={[styles.filterInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
-            <TextInput value={filterMood} onChangeText={setFilterMood} placeholder="Mood" placeholderTextColor={theme.colors.textSecondary} style={[styles.filterInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
-            <TextInput value={filterCompanion} onChangeText={setFilterCompanion} placeholder="Companion" placeholderTextColor={theme.colors.textSecondary} style={[styles.filterInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
-            <TouchableOpacity onPress={() => setFavoritesOnly((value) => !value)} style={[styles.favoriteFilter, { borderColor: theme.colors.border, backgroundColor: favoritesOnly ? theme.colors.tint : theme.colors.surface }]}><Text preset="caption" style={{ color: favoritesOnly ? '#fff' : theme.colors.text }}>★</Text></TouchableOpacity>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            {(["date", "tag", "mood", "companion"] as const).map((kind) => {
+              const value =
+                kind === "date"
+                  ? filterDate
+                  : kind === "tag"
+                    ? filterTag
+                    : kind === "mood"
+                      ? filterMood
+                      : filterCompanion;
+              return (
+                <TouchableOpacity
+                  key={kind}
+                  onPress={() => setFilterModal(kind)}
+                  style={[
+                    styles.filterButton,
+                    {
+                      borderColor: value
+                        ? theme.colors.tint
+                        : theme.colors.border,
+                      backgroundColor: value
+                        ? theme.colors.tint + "18"
+                        : theme.colors.surface,
+                    },
+                  ]}
+                >
+                  <Text preset="caption" color="text">
+                    {value || kind.charAt(0).toUpperCase() + kind.slice(1)}
+                  </Text>
+                  <Text color="textSecondary">⌄</Text>
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity
+              onPress={() => setFavoritesOnly((value) => !value)}
+              style={[
+                styles.favoriteFilter,
+                {
+                  borderColor: theme.colors.border,
+                  backgroundColor: favoritesOnly
+                    ? theme.colors.tint
+                    : theme.colors.surface,
+                },
+              ]}
+            >
+              <Text
+                preset="caption"
+                style={{ color: favoritesOnly ? "#fff" : theme.colors.text }}
+              >
+                ★
+              </Text>
+            </TouchableOpacity>
           </ScrollView>
 
-          {onThisDay.length > 0 && (
+          {/* {onThisDay.length > 0 && (
             <View style={[styles.memoryBanner, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <Text preset="label" color="text">On this day</Text>
               <Text preset="caption" color="textSecondary">You have {onThisDay.length} memor{onThisDay.length === 1 ? 'y' : 'ies'} from this date in previous years.</Text>
             </View>
-          )}
+          )} */}
 
           {/* Entries List */}
           {filteredEntries.length === 0 ? (
-            <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-              {search.trim() ? 'No matching entries.' : 'No entries yet.'}
+            <Text
+              style={[styles.emptyText, { color: theme.colors.textSecondary }]}
+            >
+              {search.trim() ? "No matching entries." : "No entries yet."}
             </Text>
           ) : (
             filteredEntries.map((entry) => {
               const hasSentiment = !!entry.sentiment?.mood;
-              const moodEmoji = hasSentiment ? getMoodEmoji(entry.sentiment!.mood) : null;
+              const moodEmoji = hasSentiment
+                ? getMoodEmoji(entry.sentiment!.mood)
+                : null;
 
-              if (viewMode === 'simple') {
-                {/* Simple Mode Row */ }
+              if (viewMode === "simple") {
+                {
+                  /* Simple Mode Row */
+                }
                 return (
                   <TouchableOpacity
                     key={entry.id}
                     activeOpacity={0.8}
-                    onPress={async () => { if (entry.isLockbox && !(await appLockService.authenticate())) return; router.push(`/entry/${entry.id}`); }}
+                    onPress={async () => {
+                      if (
+                        entry.isLockbox &&
+                        !(await appLockService.authenticate())
+                      )
+                        return;
+                      router.push(`/entry/${entry.id}`);
+                    }}
                     style={[
                       styles.simpleRow,
                       {
                         backgroundColor: theme.colors.surface,
                         borderColor: theme.colors.border,
                         borderLeftWidth: hasSentiment ? 4 : 1,
-                        borderLeftColor: hasSentiment ? '#ff6b6b' : theme.colors.border,
+                        borderLeftColor: hasSentiment
+                          ? "#ff6b6b"
+                          : theme.colors.border,
                       },
                     ]}
                   >
-                    <Text style={[styles.date, { color: theme.colors.textSecondary, minWidth: 75 }]}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        void toggleFavorite(entry);
+                      }}
+                      accessibilityLabel={
+                        entry.isFavorite ? "Remove favorite" : "Add favorite"
+                      }
+                    >
+                      <Text style={styles.favoriteMark}>
+                        {entry.isFavorite ? "★" : "☆"}
+                      </Text>
+                    </TouchableOpacity>
+                    <Text
+                      style={[
+                        styles.date,
+                        { color: theme.colors.textSecondary, minWidth: 75 },
+                      ]}
+                    >
                       {entry.date}
                     </Text>
                     <Text
-                      style={[styles.title, { color: theme.colors.text, flex: 1, marginRight: 8 }]}
+                      style={[
+                        styles.title,
+                        { color: theme.colors.text, flex: 1, marginRight: 8 },
+                      ]}
                       numberOfLines={1}
                     >
                       {entry.title}
@@ -178,32 +331,64 @@ export default function TimelineScreen() {
                         <Text style={styles.sentimentEmoji}>{moodEmoji}</Text>
                       </View>
                     )}
-                    <Text style={[styles.arrow, { color: theme.colors.textSecondary }]}>›</Text>
+                    <Text
+                      style={[
+                        styles.arrow,
+                        { color: theme.colors.textSecondary },
+                      ]}
+                    >
+                      ›
+                    </Text>
                   </TouchableOpacity>
                 );
               }
 
-              {/* Detailed Mode Card (Matches original reference layout 1:1) */ }
+              {
+                /* Detailed Mode Card (Matches original reference layout 1:1) */
+              }
               return (
                 <TouchableOpacity
                   key={entry.id}
                   activeOpacity={0.8}
-                  onPress={async () => { if (entry.isLockbox && !(await appLockService.authenticate())) return; router.push(`/entry/${entry.id}`); }}
+                  onPress={async () => {
+                    if (
+                      entry.isLockbox &&
+                      !(await appLockService.authenticate())
+                    )
+                      return;
+                    router.push(`/entry/${entry.id}`);
+                  }}
                   style={[
                     styles.card,
                     {
                       backgroundColor: theme.colors.surface,
                       borderColor: theme.colors.border,
                       borderLeftWidth: hasSentiment ? 4 : 1,
-                      borderLeftColor: hasSentiment ? '#ff6b6b' : theme.colors.border,
+                      borderLeftColor: hasSentiment
+                        ? "#ff6b6b"
+                        : theme.colors.border,
                     },
                   ]}
                 >
                   <View style={styles.cardHeader}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        void toggleFavorite(entry);
+                      }}
+                      accessibilityLabel={
+                        entry.isFavorite ? "Remove favorite" : "Add favorite"
+                      }
+                    >
+                      <Text style={styles.favoriteMark}>
+                        {entry.isFavorite ? "★" : "☆"}
+                      </Text>
+                    </TouchableOpacity>
                     <View style={styles.titleContainer}>
-                      <Text style={[styles.title, { color: theme.colors.text }]}>
+                      <Text
+                        style={[styles.title, { color: theme.colors.text }]}
+                      >
                         {entry.title.substring(0, 30)}
-                        {entry.title.length > 30 ? '...' : ''}
+                        {entry.title.length > 30 ? "..." : ""}
                       </Text>
                       {hasSentiment && (
                         <View style={styles.sentimentIndicator}>
@@ -211,12 +396,20 @@ export default function TimelineScreen() {
                         </View>
                       )}
                     </View>
-                    <Text style={[styles.date, { color: theme.colors.textSecondary }]}>
+                    <Text
+                      style={[
+                        styles.date,
+                        { color: theme.colors.textSecondary },
+                      ]}
+                    >
                       {entry.date}
                     </Text>
                   </View>
                   <Text
-                    style={[styles.content, { color: theme.colors.textSecondary }]}
+                    style={[
+                      styles.content,
+                      { color: theme.colors.textSecondary },
+                    ]}
                     numberOfLines={2}
                   >
                     {stripHtml(entry.content)}
@@ -227,6 +420,63 @@ export default function TimelineScreen() {
           )}
         </ScrollView>
       )}
+      <Modal
+        visible={filterModal !== null}
+        onDismiss={() => setFilterModal(null)}
+        title={filterModal ? `Choose ${filterModal}` : "Choose filter"}
+      >
+        <ScrollView
+          style={styles.optionList}
+          showsVerticalScrollIndicator={false}
+        >
+          {filterModal && (
+            <>
+              <TouchableOpacity
+                onPress={() => {
+                  if (filterModal === "date") setFilterDate("");
+                  if (filterModal === "tag") setFilterTag("");
+                  if (filterModal === "mood") setFilterMood("");
+                  if (filterModal === "companion") setFilterCompanion("");
+                  setFilterModal(null);
+                }}
+                style={[
+                  styles.optionButton,
+                  { borderColor: theme.colors.border },
+                ]}
+              >
+                <Text preset="bodySmall" color="textSecondary">
+                  All {filterModal}s
+                </Text>
+              </TouchableOpacity>
+              {filterOptions[filterModal].map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  onPress={() => {
+                    if (filterModal === "date") setFilterDate(option);
+                    if (filterModal === "tag") setFilterTag(option);
+                    if (filterModal === "mood") setFilterMood(option);
+                    if (filterModal === "companion") setFilterCompanion(option);
+                    setFilterModal(null);
+                  }}
+                  style={[
+                    styles.optionButton,
+                    {
+                      borderColor: theme.colors.border,
+                      backgroundColor: theme.colors.surface,
+                    },
+                  ]}
+                >
+                  <Text preset="bodySmall" color="text">
+                    {filterModal === "mood"
+                      ? `${getMoodEmoji(option)} ${option}`
+                      : option}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </>
+          )}
+        </ScrollView>
+      </Modal>
     </View>
   );
 }
@@ -239,17 +489,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   heading: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   switcherWrap: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderRadius: 20,
     borderWidth: 1,
     padding: 2,
@@ -261,7 +511,7 @@ const styles = StyleSheet.create({
   },
   switcherText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   searchInput: {
     borderWidth: 1,
@@ -271,9 +521,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   filterRow: { gap: 8, paddingBottom: 12 },
-  filterInput: { width: 92, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 13 },
-  favoriteFilter: { width: 40, height: 40, borderWidth: 1, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  memoryBanner: { borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 12, gap: 4 },
+  filterButton: {
+    minWidth: 92,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+  },
+  favoriteFilter: {
+    width: 40,
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  memoryBanner: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    gap: 4,
+  },
   card: {
     borderWidth: 1,
     borderRadius: 12,
@@ -285,8 +558,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   simpleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
@@ -294,19 +567,19 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   title: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   date: {
     fontSize: 12,
@@ -320,11 +593,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 10,
-    backgroundColor: '#ff6b6b',
+    backgroundColor: "#ff6b6b",
   },
   sentimentEmoji: {
     fontSize: 13,
-    color: '#fff',
+    color: "#fff",
   },
   arrow: {
     fontSize: 18,
@@ -333,5 +606,18 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 10,
     fontSize: 15,
+  },
+  favoriteMark: {
+    color: "#E5A72D",
+    fontSize: 18,
+    width: 26,
+    textAlign: "center",
+  },
+  optionList: { maxHeight: 420 },
+  optionButton: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
   },
 });

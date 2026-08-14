@@ -87,8 +87,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="archive"
         options={{
-          title: 'Archive',
-          tabBarIcon: ({ color, size }) => <Ionicons name="albums-outline" size={size} color={color} />,
+          // Shelved until the archive information architecture is planned.
+          href: null,
         }}
       />
 

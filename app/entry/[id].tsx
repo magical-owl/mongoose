@@ -5,7 +5,6 @@
  *   View mode:
  *     - Back | date | Edit + Delete header
  *     - Full-bleed content (title → MarkdownText → AI card)
- *     - Floating coral AI-insight pill (top-right) when sentiment exists
  *     - Stickers displayed (non-editable)
  *
  *   Edit mode:
@@ -32,23 +31,27 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@shared/components/Text';
-import { Card } from '@shared/components/Card';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { MarkdownText } from '@shared/components/MarkdownText';
-import { getMoodLabel } from '@/ai/Mood';
-import { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import { DiaryEntry, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { StickerPickerModal } from '@/features/diary/components/StickerPickerModal';
 import { TemplatePickerModal } from '@/features/diary/components/TemplatePickerModal';
 import { Template } from '@/features/diary/domain/Template';
-import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { generateUUID } from '@/shared/utils/uuid';
+import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
+import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 
 function countWords(text: string): number {
   const clean = text.replace(/[*#`>•\-_]/g, '').trim();
   return clean ? clean.split(/\s+/).filter(Boolean).length : 0;
+}
+
+function entryDate(value: string): Date {
+  const [year, month, day] = value.split('-').map(Number);
+  return year && month && day ? new Date(year, month - 1, day, 12, 0, 0) : new Date();
 }
 
 
@@ -73,9 +76,21 @@ export default function EntryDetailScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
+  const [editDate, setEditDate] = useState(new Date());
   const [editStickers, setEditStickers] = useState<PlacedSticker[]>([]);
   const [editTags, setEditTags] = useState<string[]>([]);
   const [editTagInput, setEditTagInput] = useState('');
+  const [editMoodWeather, setEditMoodWeather] = useState<ManualMoodWeather>('calm');
+  const [editWritingMode, setEditWritingMode] = useState<WritingMode>('free-write');
+  const [editLocation, setEditLocation] = useState('');
+  const [editSounds, setEditSounds] = useState('');
+  const [editSmells, setEditSmells] = useState('');
+  const [editEnergy, setEditEnergy] = useState('5');
+  const [editBody, setEditBody] = useState('');
+  const [editLockbox, setEditLockbox] = useState(false);
+  const [editUnlockAt, setEditUnlockAt] = useState('');
+  const [editExpiresAt, setEditExpiresAt] = useState('');
+  const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -105,8 +120,10 @@ export default function EntryDetailScreen() {
         setEntry(found);
         setEditTitle(found.title);
         setEditContent(found.content);
+        setEditDate(entryDate(found.date));
         setEditStickers(found.stickers);
         setEditTags(found.tags);
+        setEditMoodWeather(found.manualMoodWeather); setEditWritingMode(found.writingMode); setEditLocation(found.sensory.locationLabel); setEditSounds(found.sensory.sounds); setEditSmells(found.sensory.smells); setEditEnergy(String(found.sensory.energyLevel)); setEditBody(found.sensory.bodyState); setEditLockbox(found.isLockbox); setEditUnlockAt(found.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(found.expiresAt ?? '');
       }
     }
   }, [id, entries]);
@@ -120,8 +137,10 @@ export default function EntryDetailScreen() {
     if (!entry) return;
     setEditTitle(entry.title);
     setEditContent(entry.content);
+    setEditDate(entryDate(entry.date));
     setEditStickers(entry.stickers);
     setEditTags(entry.tags);
+    setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(true);
   };
 
@@ -129,8 +148,10 @@ export default function EntryDetailScreen() {
     if (!entry) return;
     setEditTitle(entry.title);
     setEditContent(entry.content);
+    setEditDate(entryDate(entry.date));
     setEditStickers(entry.stickers);
     setEditTags(entry.tags);
+    setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(false);
   };
 
@@ -142,8 +163,15 @@ export default function EntryDetailScreen() {
       ...entry,
       title: editTitle.trim(),
       content: editContent.trim(),
+      date: `${editDate.getFullYear()}-${String(editDate.getMonth() + 1).padStart(2, '0')}-${String(editDate.getDate()).padStart(2, '0')}`,
       stickers: editStickers,
       tags: editTags,
+      manualMoodWeather: editMoodWeather,
+      writingMode: editWritingMode,
+      sensory: { locationLabel: editLocation, sounds: editSounds, smells: editSmells, energyLevel: Math.min(10, Math.max(1, Number(editEnergy) || 5)), bodyState: editBody },
+      isLockbox: editLockbox,
+      timeCapsuleUnlockAt: editUnlockAt || undefined,
+      expiresAt: editExpiresAt || undefined,
       updatedAt: new Date().toISOString(),
     };
     const result = await saveDiaryEntry(updated);
@@ -202,7 +230,6 @@ export default function EntryDetailScreen() {
     );
   }
 
-  const companion = COMPANION_OPTIONS.find((c) => c.id === entry.companion) || COMPANION_OPTIONS[0]!;
   const displayStickers = isEditing ? editStickers : entry.stickers;
   const wordCount = countWords(isEditing ? editContent : entry.content);
 
@@ -228,11 +255,16 @@ export default function EntryDetailScreen() {
               <Text preset="label" color="textSecondary">Cancel</Text>
             </TouchableOpacity>
             <Text preset="label" color="text" style={{ fontWeight: '600' }}>Edit Entry</Text>
-            <TouchableOpacity onPress={handleSaveEdit} disabled={isSaving} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Save changes">
-              <Text preset="label" style={{ color: isSaving ? theme.colors.textSecondary : '#1E90FF', fontWeight: '600', textAlign: 'right' }}>
-                {isSaving ? 'Saving…' : 'Save'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity onPress={() => setShowEntryDetails(true)} style={styles.headerIcon} accessibilityRole="button" accessibilityLabel="Open entry details">
+                <MaterialCommunityIcons name="tune-variant" size={20} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleSaveEdit} disabled={isSaving} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Save changes">
+                <Text preset="label" style={{ color: isSaving ? theme.colors.textSecondary : '#1E90FF', fontWeight: '600', textAlign: 'right' }}>
+                  {isSaving ? 'Saving…' : 'Save'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </>
         ) : (
           <>
@@ -287,6 +319,7 @@ export default function EntryDetailScreen() {
           {isEditing ? (
             /* ── Edit mode ──────────────────────────────────────────────── */
             <>
+              <DiaryDatePicker value={editDate} onChange={setEditDate} maximumDate={new Date()} />
               <NativeTextInput
                 value={editTitle}
                 onChangeText={setEditTitle}
@@ -363,39 +396,6 @@ export default function EntryDetailScreen() {
                 {entry.content}
               </MarkdownText>
 
-              {/* AI sentiment card */}
-              {entry.sentiment && (
-                <Card
-                  style={{
-                    backgroundColor: theme.colors.surface,
-                    borderWidth: 1,
-                    borderColor: theme.colors.border,
-                    marginTop: theme.spacing.xl,
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing.md }}>
-                    <Text style={{ fontSize: 36, marginRight: theme.spacing.md }}>{companion.avatar}</Text>
-                    <View>
-                      <Text preset="label" color="text">{companion.name}'s Insights</Text>
-                      <Text preset="caption" color="tint">{getMoodLabel(entry.sentiment.mood)}</Text>
-                    </View>
-                  </View>
-                  <Text preset="bodySmall" color="textSecondary" style={{ lineHeight: 20, marginBottom: theme.spacing.sm }}>
-                    {entry.sentiment.emotional_analysis}
-                  </Text>
-                  {entry.sentiment.supportive_message && (
-                    <Text preset="bodySmall" color="text" style={{ fontStyle: 'italic', marginBottom: theme.spacing.md }}>
-                      {entry.sentiment.supportive_message}
-                    </Text>
-                  )}
-                  {entry.sentiment.suggestion && (
-                    <View style={{ backgroundColor: theme.colors.tint + '18', borderRadius: theme.borderRadius.md, padding: theme.spacing.md }}>
-                      <Text preset="caption" color="tint" style={{ marginBottom: 2, fontWeight: '700' }}>💡 Tip for you:</Text>
-                      <Text preset="caption" color="textSecondary">{entry.sentiment.suggestion}</Text>
-                    </View>
-                  )}
-                </Card>
-              )}
             </>
           )}
         </ScrollView>
@@ -476,6 +476,12 @@ export default function EntryDetailScreen() {
         onClose={() => setShowTemplatePicker(false)}
         onSelectTemplate={handleSelectTemplate}
       />
+      <EntryDetailsModal
+        visible={showEntryDetails}
+        onDismiss={() => setShowEntryDetails(false)}
+        values={{ manualMoodWeather: editMoodWeather, writingMode: editWritingMode, sensory: { locationLabel: editLocation, sounds: editSounds, smells: editSmells, energyLevel: Number(editEnergy) || 5, bodyState: editBody }, isLockbox: editLockbox, timeCapsuleUnlockAt: editUnlockAt, expiresAt: editExpiresAt }}
+        onChange={(next) => { if (next.manualMoodWeather) setEditMoodWeather(next.manualMoodWeather); if (next.writingMode) setEditWritingMode(next.writingMode); if (next.sensory) { setEditLocation(next.sensory.locationLabel); setEditSounds(next.sensory.sounds); setEditSmells(next.sensory.smells); setEditEnergy(String(next.sensory.energyLevel)); setEditBody(next.sensory.bodyState); } if (next.isLockbox !== undefined) setEditLockbox(next.isLockbox); if (next.timeCapsuleUnlockAt !== undefined) setEditUnlockAt(next.timeCapsuleUnlockAt); if (next.expiresAt !== undefined) setEditExpiresAt(next.expiresAt); }}
+      />
     </View>
   );
 }
@@ -530,6 +536,8 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     marginBottom: 16,
   },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
+  headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   tagEditor: { marginTop: 16, gap: 8 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   tag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },

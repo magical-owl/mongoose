@@ -21,13 +21,11 @@ import {
   StyleSheet,
   Text as RNText,
 } from 'react-native';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@shared/components/Text';
-import { Modal } from '@shared/components/Modal';
 import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useAppStore } from '@/stores/useAppStore';
@@ -41,6 +39,8 @@ import { CompanionPickerModal } from '@/features/diary/components/CompanionPicke
 import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { generateUUID } from '@/shared/utils/uuid';
 import { diaryDraftService } from '@/features/diary/services/DiaryDraftService';
+import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
+import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 
 // Word count helper (strips markdown syntax)
 function countWords(text: string): number {
@@ -79,7 +79,6 @@ export default function CreateEntryScreen() {
     }
     return new Date();
   });
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [stickers, setStickers] = useState<PlacedSticker[]>([]);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -168,17 +167,9 @@ export default function CreateEntryScreen() {
     return () => { show.remove(); hide.remove(); };
   }, []);
 
-  const formattedDate = selectedDate.toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-  });
   const wordCount = countWords(content);
 
   const activeCompanion = COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
-
-  const handleDateChange = (_event: DateTimePickerEvent, date?: Date) => {
-    if (Platform.OS === 'android') setShowDatePicker(false);
-    if (date) setSelectedDate(date);
-  };
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
     const newSticker: PlacedSticker = {
@@ -281,13 +272,12 @@ export default function CreateEntryScreen() {
         ) : <View style={styles.headerBtn} />}
 
         <TouchableOpacity
-          onPress={() => setShowDatePicker(true)}
-          accessibilityLabel={`Entry date: ${formattedDate}. Tap to change.`}
+          onPress={() => setShowEntryDetails(true)}
+          style={styles.headerIcon}
           accessibilityRole="button"
+          accessibilityLabel="Open entry details"
         >
-          <Text preset="caption" color="textSecondary" style={{ textAlign: 'center' }}>
-            {selectedDate.toDateString()}
-          </Text>
+          <MaterialCommunityIcons name="tune-variant" size={20} color={theme.colors.textSecondary} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -305,29 +295,6 @@ export default function CreateEntryScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-
-      {/* Date picker */}
-      {showDatePicker && (
-        <View style={[styles.pickerWrap, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
-          {Platform.OS === 'ios' && (
-            <TouchableOpacity
-              style={[styles.pickerDone, { backgroundColor: theme.colors.tint }]}
-              onPress={() => setShowDatePicker(false)}
-              accessibilityLabel="Done selecting date"
-            >
-              <Text preset="label" style={{ color: '#fff' }}>Done</Text>
-            </TouchableOpacity>
-          )}
-          <DateTimePicker
-            value={selectedDate}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            onChange={handleDateChange}
-            maximumDate={new Date()}
-            style={{ width: '100%', height: Platform.OS === 'ios' ? 150 : undefined }}
-          />
-        </View>
-      )}
 
       {/* ── Stickers (float above scroll area) ────────────────────────────── */}
       {stickers.map((sticker) => (
@@ -357,6 +324,8 @@ export default function CreateEntryScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <DiaryDatePicker value={selectedDate} onChange={setSelectedDate} maximumDate={new Date()} />
+
           {/* Title */}
           <NativeTextInput
             value={title}
@@ -369,24 +338,6 @@ export default function CreateEntryScreen() {
             accessibilityLabel="Entry title"
             accessibilityHint="Write the title of your diary entry"
           />
-
-          <TouchableOpacity
-            onPress={() => setShowEntryDetails(true)}
-            style={[styles.detailsButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
-            accessibilityRole="button"
-            accessibilityLabel="Open entry details"
-          >
-            <View style={styles.summaryLeft}>
-              <Text style={styles.summaryIcon}>{isLockbox ? '🔐' : '☼'}</Text>
-              <View>
-                <Text preset="label" color="text">Entry details</Text>
-                <Text preset="caption" color="textSecondary">
-                  {manualMoodWeather} mood · {writingMode === 'free-write' ? 'Free write' : writingMode.replace('-', ' ')}{timeCapsuleUnlockAt ? ' · Time capsule' : ''}
-                </Text>
-              </View>
-            </View>
-            <Text style={{ color: theme.colors.textSecondary, fontSize: 22 }}>›</Text>
-          </TouchableOpacity>
 
           {/* Divider */}
           <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
@@ -501,45 +452,19 @@ export default function CreateEntryScreen() {
         selectedCompanion={selectedCompanion}
         onSelectCompanion={setSelectedCompanion}
       />
-      <Modal
+      <EntryDetailsModal
         visible={showEntryDetails}
         onDismiss={() => setShowEntryDetails(false)}
-        title="Entry details"
-        accessibilityLabel="Entry details"
-      >
-        <ScrollView style={styles.detailsModalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          <Text preset="caption" color="textSecondary" style={styles.detailsLabel}>MOOD WEATHER</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.choiceRow}>
-            {(['sunny', 'cloudy', 'stormy', 'foggy', 'windy', 'calm'] as ManualMoodWeather[]).map((weather) => (
-              <TouchableOpacity key={weather} onPress={() => setManualMoodWeather(weather)} style={[styles.choice, { borderColor: manualMoodWeather === weather ? theme.colors.tint : theme.colors.border, backgroundColor: manualMoodWeather === weather ? theme.colors.tint + '20' : 'transparent' }]}>
-                <Text preset="caption" color="text">{weather}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          <Text preset="caption" color="textSecondary" style={styles.detailsLabel}>WRITING MODE</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.choiceRow}>
-            {([['free-write', 'Free write'], ['one-line', 'One line'], ['five-minute', '5 minutes'], ['gratitude', 'Gratitude'], ['travel', 'Travel'], ['dream', 'Dream'], ['evening-review', 'Evening review']] as [WritingMode, string][]).map(([mode, label]) => (
-              <TouchableOpacity key={mode} onPress={() => setWritingMode(mode)} style={[styles.choice, { borderColor: writingMode === mode ? theme.colors.tint : theme.colors.border, backgroundColor: writingMode === mode ? theme.colors.tint + '20' : 'transparent' }]}>
-                <Text preset="caption" color="text">{label}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          <Text preset="caption" color="textSecondary" style={styles.detailsLabel}>SENSORY SNAPSHOT</Text>
-          <View style={styles.sensoryGrid}>
-            <NativeTextInput value={locationLabel} onChangeText={setLocationLabel} placeholder="Location label" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
-            <NativeTextInput value={sounds} onChangeText={setSounds} placeholder="Sounds" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
-            <NativeTextInput value={smells} onChangeText={setSmells} placeholder="Smells" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
-            <NativeTextInput value={energyLevel} onChangeText={setEnergyLevel} keyboardType="number-pad" placeholder="Energy 1-10" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
-            <NativeTextInput value={bodyState} onChangeText={setBodyState} placeholder="Body state" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
-          </View>
-          <NativeTextInput value={timeCapsuleUnlockAt} onChangeText={setTimeCapsuleUnlockAt} placeholder="Unlock date (YYYY-MM-DD)" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, styles.fullWidthInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
-          <NativeTextInput value={expiresAt} onChangeText={setExpiresAt} placeholder="Expiry date (YYYY-MM-DD)" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, styles.fullWidthInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
-          <TouchableOpacity onPress={() => setIsLockbox((value) => !value)} style={styles.lockboxRow}>
-            <Text style={{ fontSize: 20 }}>{isLockbox ? '🔐' : '🔓'}</Text>
-            <Text preset="caption" color="text">{isLockbox ? 'Offline lockbox entry enabled' : 'Keep this entry in the normal diary'}</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </Modal>
+        values={{ manualMoodWeather, writingMode, sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState }, isLockbox, timeCapsuleUnlockAt, expiresAt }}
+        onChange={(next) => {
+          if (next.manualMoodWeather) setManualMoodWeather(next.manualMoodWeather);
+          if (next.writingMode) setWritingMode(next.writingMode);
+          if (next.sensory) { setLocationLabel(next.sensory.locationLabel); setSounds(next.sensory.sounds); setSmells(next.sensory.smells); setEnergyLevel(String(next.sensory.energyLevel)); setBodyState(next.sensory.bodyState); }
+          if (next.isLockbox !== undefined) setIsLockbox(next.isLockbox);
+          if (next.timeCapsuleUnlockAt !== undefined) setTimeCapsuleUnlockAt(next.timeCapsuleUnlockAt);
+          if (next.expiresAt !== undefined) setExpiresAt(next.expiresAt);
+        }}
+      />
     </View>
   );
 }
@@ -555,16 +480,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerBtn: { padding: 6, minWidth: 60 },
-  pickerWrap: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-  },
-  pickerDone: {
-    padding: 10,
-    alignItems: 'center',
-  },
   scrollContent: {
-    paddingTop: 16,
+    paddingTop: 0,
     flexGrow: 1,
   },
   titleInput: {
@@ -578,17 +495,7 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     marginBottom: 16,
   },
-  detailsLabel: { marginTop: 10, marginBottom: 6, fontWeight: '700' },
-  choiceRow: { gap: 8, paddingBottom: 4 },
-  choice: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
-  sensoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  detailInput: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 8, minWidth: '47%' },
-  lockboxRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
-  detailsButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
-  summaryLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  summaryIcon: { fontSize: 20, width: 26, textAlign: 'center' },
-  detailsModalScroll: { maxHeight: 470 },
-  fullWidthInput: { width: '100%' },
+  headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   floatingBar: {
     position: 'absolute',
     left: 0,

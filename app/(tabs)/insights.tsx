@@ -7,13 +7,13 @@
  * - Card styling matching original (12px radius, 15px padding, subtle shadow)
  */
 
-import { useMemo } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@providers/ThemeProvider';
-import { Text } from '@shared/components/Text';
-import { useDiary } from '@/features/diary/hooks/useDiary';
-import { getMoodLabel } from '@/ai/Mood';
+import { useMemo } from "react";
+import { View, ScrollView, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "@providers/ThemeProvider";
+import { Text } from "@shared/components/Text";
+import { useDiary } from "@/features/diary/hooks/useDiary";
+import { getMoodLabel } from "@/ai/Mood";
 
 export default function InsightsScreen() {
   const theme = useTheme();
@@ -23,12 +23,13 @@ export default function InsightsScreen() {
   const stats = useMemo(() => {
     const total = entries.length;
     const totalWords = entries.reduce(
-      (acc, entry) => acc + entry.content.trim().split(/\s+/).filter(Boolean).length,
-      0
+      (acc, entry) =>
+        acc + entry.content.trim().split(/\s+/).filter(Boolean).length,
+      0,
     );
     const avgWords = total ? Math.round(totalWords / total) : 0;
 
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const dayCounts = Array(7).fill(0);
     entries.forEach((entry) => {
       const dayIndex = new Date(entry.date).getDay();
@@ -39,7 +40,8 @@ export default function InsightsScreen() {
 
     const maxCount = Math.max(...dayCounts);
     const maxDayIndex = dayCounts.indexOf(maxCount);
-    const mostActiveDay = total > 0 && maxCount > 0 ? days[maxDayIndex] || 'None' : 'None';
+    const mostActiveDay =
+      total > 0 && maxCount > 0 ? days[maxDayIndex] || "None" : "None";
 
     const today = new Date();
     const getMoodDistribution = (days: number) => {
@@ -57,13 +59,19 @@ export default function InsightsScreen() {
     const moodDistribution = getMoodDistribution(3650);
     const weeklyMoodDistribution = getMoodDistribution(7);
     const monthlyMoodDistribution = getMoodDistribution(30);
-    const recentDates = new Set(entries.filter((entry) => {
-      const date = new Date(`${entry.date}T12:00:00`);
-      return today.getTime() - date.getTime() <= 30 * 86400000;
-    }).map((entry) => entry.date));
+    const recentDates = new Set(
+      entries
+        .filter((entry) => {
+          const date = new Date(`${entry.date}T12:00:00`);
+          return today.getTime() - date.getTime() <= 30 * 86400000;
+        })
+        .map((entry) => entry.date),
+    );
     const consistency = Math.round((recentDates.size / 30) * 100);
     const calendarDays = Array.from({ length: 30 }, (_, index) => {
-      return new Date(today.getTime() - (29 - index) * 86400000).toISOString().slice(0, 10);
+      return new Date(today.getTime() - (29 - index) * 86400000)
+        .toISOString()
+        .slice(0, 10);
     });
 
     return {
@@ -80,7 +88,9 @@ export default function InsightsScreen() {
   }, [entries]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + 16,
@@ -89,11 +99,14 @@ export default function InsightsScreen() {
         }}
         showsVerticalScrollIndicator={false}
       >
+        {/* <View style={[styles.hero, { backgroundColor: theme.colors.tint }]}><Text style={styles.heroLabel}>YOUR WRITING RHYTHM</Text><Text style={styles.heroNumber}>{streakStats.currentStreak} days</Text><Text style={styles.heroCopy}>{stats.consistency}% of the last 30 days had a little room for reflection.</Text></View> */}
         <Text style={[styles.title, { color: theme.colors.text }]}>
           💡 Analytics & Insights
         </Text>
 
-        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>
+        <Text
+          style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}
+        >
           WRITING METRICS
         </Text>
 
@@ -101,87 +114,249 @@ export default function InsightsScreen() {
           <View
             style={[
               styles.statCard,
-              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
             ]}
           >
             <Text style={styles.icon}>📝</Text>
-            <Text style={[styles.statNumber, { color: theme.colors.text }]}>{stats.totalEntries}</Text>
-            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Total Entries</Text>
+            <Text style={[styles.statNumber, { color: theme.colors.text }]}>
+              {stats.totalEntries}
+            </Text>
+            <Text
+              style={[styles.statLabel, { color: theme.colors.textSecondary }]}
+            >
+              Total Entries
+            </Text>
           </View>
 
           <View
             style={[
               styles.statCard,
-              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
             ]}
           >
             <Text style={styles.icon}>🔥</Text>
-            <Text style={[styles.statNumber, { color: theme.colors.tint }]}>{streakStats.currentStreak} Days</Text>
-            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Writing Streak</Text>
+            <Text style={[styles.statNumber, { color: theme.colors.tint }]}>
+              {streakStats.currentStreak} Days
+            </Text>
+            <Text
+              style={[styles.statLabel, { color: theme.colors.textSecondary }]}
+            >
+              Writing Streak
+            </Text>
           </View>
 
           <View
             style={[
               styles.statCard,
-              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
             ]}
           >
             <Text style={styles.icon}>✍️</Text>
-            <Text style={[styles.statNumber, { color: theme.colors.text }]}>{stats.avgWords}</Text>
-            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Avg Words/Entry</Text>
+            <Text style={[styles.statNumber, { color: theme.colors.text }]}>
+              {stats.avgWords}
+            </Text>
+            <Text
+              style={[styles.statLabel, { color: theme.colors.textSecondary }]}
+            >
+              Avg Words/Entry
+            </Text>
           </View>
 
           <View
             style={[
               styles.statCard,
-              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
             ]}
           >
             <Text style={styles.icon}>📚</Text>
-            <Text style={[styles.statNumber, { color: theme.colors.text }]}>{stats.totalWords}</Text>
-            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Total Words</Text>
+            <Text style={[styles.statNumber, { color: theme.colors.text }]}>
+              {stats.totalWords}
+            </Text>
+            <Text
+              style={[styles.statLabel, { color: theme.colors.textSecondary }]}
+            >
+              Total Words
+            </Text>
           </View>
 
           <View
             style={[
               styles.statCard,
-              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, width: '100%' },
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+                width: "100%",
+              },
             ]}
           >
             <Text style={styles.icon}>📅</Text>
-            <Text style={[styles.statNumber, { color: theme.colors.text }]}>{stats.mostActiveDay}</Text>
-            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Most Active Journaling Day</Text>
+            <Text style={[styles.statNumber, { color: theme.colors.text }]}>
+              {stats.mostActiveDay}
+            </Text>
+            <Text
+              style={[styles.statLabel, { color: theme.colors.textSecondary }]}
+            >
+              Most Active Journaling Day
+            </Text>
           </View>
         </View>
 
-        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>MOOD TRENDS</Text>
-        <View style={[styles.trendCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        <Text
+          style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}
+        >
+          MOOD TRENDS
+        </Text>
+        <View
+          style={[
+            styles.trendCard,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+            },
+          ]}
+        >
           {stats.moodDistribution.length === 0 ? (
-            <Text preset="caption" color="textSecondary">Mood trends appear after entries are analyzed.</Text>
+            <Text preset="caption" color="textSecondary">
+              Mood trends appear after entries are analyzed.
+            </Text>
           ) : (
             <>
-              <Text preset="caption" color="textSecondary" style={styles.periodLabel}>LAST 7 DAYS</Text>
-              {stats.weeklyMoodDistribution.length === 0 ? <Text preset="caption" color="textSecondary">No analyzed moods.</Text> : stats.weeklyMoodDistribution.map(([mood, count]) => <View key={`week-${mood}`} style={styles.trendRow}><Text preset="bodySmall" color="text">{mood}</Text><Text preset="bodySmall" color="tint">{count}</Text></View>)}
-              <Text preset="caption" color="textSecondary" style={styles.periodLabel}>LAST 30 DAYS</Text>
-              {stats.monthlyMoodDistribution.length === 0 ? <Text preset="caption" color="textSecondary">No analyzed moods.</Text> : stats.monthlyMoodDistribution.map(([mood, count]) => <View key={`month-${mood}`} style={styles.trendRow}><Text preset="bodySmall" color="text">{mood}</Text><Text preset="bodySmall" color="tint">{count}</Text></View>)}
+              <Text
+                preset="caption"
+                color="textSecondary"
+                style={styles.periodLabel}
+              >
+                LAST 7 DAYS
+              </Text>
+              {stats.weeklyMoodDistribution.length === 0 ? (
+                <Text preset="caption" color="textSecondary">
+                  No analyzed moods.
+                </Text>
+              ) : (
+                stats.weeklyMoodDistribution.map(([mood, count]) => (
+                  <MoodBar
+                    key={`week-${mood}`}
+                    mood={mood}
+                    count={count}
+                    max={stats.weeklyMoodDistribution[0]?.[1] ?? 1}
+                  />
+                ))
+              )}
+              <Text
+                preset="caption"
+                color="textSecondary"
+                style={styles.periodLabel}
+              >
+                LAST 30 DAYS
+              </Text>
+              {stats.monthlyMoodDistribution.length === 0 ? (
+                <Text preset="caption" color="textSecondary">
+                  No analyzed moods.
+                </Text>
+              ) : (
+                stats.monthlyMoodDistribution.map(([mood, count]) => (
+                  <MoodBar
+                    key={`month-${mood}`}
+                    mood={mood}
+                    count={count}
+                    max={stats.monthlyMoodDistribution[0]?.[1] ?? 1}
+                  />
+                ))
+              )}
             </>
           )}
         </View>
 
-        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>WRITING CONSISTENCY</Text>
-        <View style={[styles.trendCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-          <Text preset="body" color="text">{stats.consistency}% active days in the last 30 days</Text>
+        <Text
+          style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}
+        >
+          WRITING CONSISTENCY
+        </Text>
+        <View
+          style={[
+            styles.trendCard,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+            },
+          ]}
+        >
+          <Text preset="body" color="text">
+            {stats.consistency}% active days in the last 30 days
+          </Text>
           <Text preset="caption" color="textSecondary" style={{ marginTop: 6 }}>
-            {streakStats.currentStreak} day current streak · {streakStats.longestStreak} day longest streak
+            {streakStats.currentStreak} day current streak ·{" "}
+            {streakStats.longestStreak} day longest streak
           </Text>
           <View style={styles.calendarGrid}>
             {stats.calendarDays.map((day) => {
               const active = entries.some((entry) => entry.date === day);
-              return <View key={day} style={[styles.calendarDot, { backgroundColor: active ? theme.colors.tint : theme.colors.border }]} />;
+              return (
+                <View
+                  key={day}
+                  style={[
+                    styles.calendarDot,
+                    {
+                      backgroundColor: active
+                        ? theme.colors.tint
+                        : theme.colors.border,
+                    },
+                  ]}
+                />
+              );
             })}
           </View>
         </View>
       </ScrollView>
+    </View>
+  );
+}
+
+function MoodBar({
+  mood,
+  count,
+  max,
+}: {
+  mood: string;
+  count: number;
+  max: number;
+}) {
+  const theme = useTheme();
+  return (
+    <View style={styles.moodBarRow}>
+      <View style={styles.moodBarLabel}>
+        <Text preset="bodySmall" color="text">
+          {mood}
+        </Text>
+        <Text preset="bodySmall" color="tint">
+          {count}
+        </Text>
+      </View>
+      <View
+        style={[styles.moodBarTrack, { backgroundColor: theme.colors.border }]}
+      >
+        <View
+          style={[
+            styles.moodBarFill,
+            {
+              backgroundColor: theme.colors.tint,
+              width: `${Math.max(12, (count / max) * 100)}%`,
+            },
+          ]}
+        />
+      </View>
     </View>
   );
 }
@@ -192,28 +367,37 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 16,
   },
+  hero: { borderRadius: 12, padding: 18, marginBottom: 20 },
+  heroLabel: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  heroNumber: { color: "#fff", fontSize: 30, fontWeight: "700", marginTop: 8 },
+  heroCopy: { color: "#fff", opacity: 0.9, marginTop: 4 },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontWeight: "600",
+    textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 12,
   },
   grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   statCard: {
-    width: '48%',
+    width: "48%",
     borderWidth: 1,
     borderRadius: 12,
     padding: 15,
     marginBottom: 12,
-    alignItems: 'center',
+    alignItems: "center",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 6,
@@ -225,15 +409,37 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 2,
   },
   statLabel: {
     fontSize: 12,
   },
-  trendCard: { borderWidth: 1, borderRadius: 10, padding: 14, marginBottom: 16 },
-  trendRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
-  periodLabel: { fontWeight: '700', marginTop: 8, marginBottom: 2 },
-  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 14 },
+  trendCard: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 16,
+  },
+  trendRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 6,
+  },
+  moodBarRow: { marginBottom: 10 },
+  moodBarLabel: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 5,
+  },
+  moodBarTrack: { height: 8, borderRadius: 4, overflow: "hidden" },
+  moodBarFill: { height: "100%", borderRadius: 4 },
+  periodLabel: { fontWeight: "700", marginTop: 8, marginBottom: 2 },
+  calendarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 14,
+  },
   calendarDot: { width: 14, height: 14, borderRadius: 3 },
 });
