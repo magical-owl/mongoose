@@ -23,12 +23,13 @@ import {
 } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@shared/components/Text';
 import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { useDiary } from '@/features/diary/hooks/useDiary';
+import { useAppStore } from '@/stores/useAppStore';
 import { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
@@ -57,14 +58,24 @@ const FORMAT_ITEMS: { kind: FormatActionKind; icon: string }[] = [
 
 export default function CreateEntryScreen() {
   const router = useRouter();
+  const { date: paramDate } = useLocalSearchParams<{ date?: string }>();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { saveDiaryEntry, selectedCompanion, setSelectedCompanion } = useDiary();
+  const selectedCalendarDate = useAppStore((state) => state.selectedCalendarDate);
+  const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const editorRef = useRef<RichTextEditorHandle>(null);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    const target = paramDate || selectedCalendarDate;
+    if (target) {
+      const [y, m, d] = target.split('-').map(Number);
+      if (y && m && d) return new Date(y, m - 1, d, 12, 0, 0);
+    }
+    return new Date();
+  });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [stickers, setStickers] = useState<PlacedSticker[]>([]);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
@@ -94,7 +105,7 @@ export default function CreateEntryScreen() {
   const formattedDate = selectedDate.toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
-  const isoDate = selectedDate.toISOString().split('T')[0]!;
+  const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
   const wordCount = countWords(content);
 
   const activeCompanion = COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
@@ -127,6 +138,7 @@ export default function CreateEntryScreen() {
   }, []);
 
   const navigateBack = () => {
+    setSelectedCalendarDate(null);
     if (router.canGoBack()) router.back();
     else router.replace('/(tabs)');
   };
@@ -156,8 +168,12 @@ export default function CreateEntryScreen() {
     };
     const result = await saveDiaryEntry(newEntry);
     setIsSaving(false);
-    if (result.success) navigateBack();
-    else Alert.alert('Error', result.error.message);
+    if (result.success) {
+      setSelectedCalendarDate(null);
+      navigateBack();
+    } else {
+      Alert.alert('Error', result.error.message);
+    }
   };
 
   // Toolbar height constant used for scroll padding

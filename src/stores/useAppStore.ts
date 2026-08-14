@@ -31,19 +31,22 @@ export interface AppState {
   onboardingStatus: OnboardingStatus;
   sessionState: SessionState;
   isOnboarded: boolean;
+  selectedCalendarDate: string | null;
 
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
   setOnboardingStatus: (status: OnboardingStatus) => void;
   setSessionState: (state: SessionState) => void;
+  setSelectedCalendarDate: (date: string | null) => void;
   reset: () => void;
 }
 
-const initialState: Pick<AppState, 'themeMode' | 'onboardingStatus' | 'sessionState' | 'isOnboarded'> = {
-  themeMode: 'system',
+const initialState: Pick<AppState, 'themeMode' | 'onboardingStatus' | 'sessionState' | 'isOnboarded' | 'selectedCalendarDate'> = {
+  themeMode: 'dark',
   onboardingStatus: 'not_started',
   sessionState: 'idle',
   isOnboarded: false,
+  selectedCalendarDate: null,
 };
 
 /**
@@ -56,6 +59,8 @@ export const useAppStore = create<AppState>()(
       ...initialState,
 
       setThemeMode: (themeMode: ThemeMode) => set({ themeMode }),
+
+      setSelectedCalendarDate: (selectedCalendarDate: string | null) => set({ selectedCalendarDate }),
 
       setOnboardingStatus: (onboardingStatus: OnboardingStatus) =>
         set({

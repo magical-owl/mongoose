@@ -118,12 +118,12 @@ export function ThemeProvider({
   const systemColorScheme = useColorScheme();
   const persistedMode = useAppStore((state) => state.themeMode);
   const persistThemeMode = useAppStore((state) => state.setThemeMode);
-  const mode = initialMode ?? persistedMode;
+  const mode = initialMode ?? persistedMode ?? 'dark';
   const resolvedMode = mode === 'system' && systemColorScheme === 'dark'
     ? 'dark'
-    : mode === 'dark'
-      ? 'dark'
-      : 'light';
+    : mode === 'light'
+      ? 'light'
+      : 'dark';
 
   const setThemeMode = useCallback((newMode: ThemeMode) => {
     persistThemeMode(newMode);

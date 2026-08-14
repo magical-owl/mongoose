@@ -63,9 +63,9 @@ export default function InsightsScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top,
+          paddingTop: insets.top + 16,
           paddingHorizontal: 20,
-          paddingBottom: insets.bottom + 40,
+          paddingBottom: insets.bottom + 80,
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -145,8 +145,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    paddingTop: 20,
-    paddingBottom: 15,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 14,

@@ -143,8 +143,8 @@ export default function SettingsScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom + 40,
+          paddingTop: insets.top + 16,
+          paddingBottom: insets.bottom + 80,
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -351,11 +351,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
+    marginBottom: 16,
   },
   optionsContainer: {
     flex: 1,
