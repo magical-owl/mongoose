@@ -7,26 +7,20 @@
  * - Card styling matching original (12px radius, 15px padding, subtle shadow)
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { useDiary } from '@/features/diary/hooks/useDiary';
+import { getMoodLabel } from '@/ai/Mood';
 
 export default function InsightsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { entries, streakStats } = useDiary();
 
-  const [stats, setStats] = useState({
-    totalEntries: 0,
-    totalWords: 0,
-    avgWords: 0,
-    mostActiveDay: 'None',
-  });
-
-  const computeStats = useCallback(() => {
+  const stats = useMemo(() => {
     const total = entries.length;
     const totalWords = entries.reduce(
       (acc, entry) => acc + entry.content.trim().split(/\s+/).filter(Boolean).length,
@@ -47,17 +41,43 @@ export default function InsightsScreen() {
     const maxDayIndex = dayCounts.indexOf(maxCount);
     const mostActiveDay = total > 0 && maxCount > 0 ? days[maxDayIndex] || 'None' : 'None';
 
-    setStats({
+    const today = new Date();
+    const getMoodDistribution = (days: number) => {
+      const moodCounts = new Map<string, number>();
+      entries.forEach((entry) => {
+        const date = new Date(`${entry.date}T12:00:00`);
+        const mood = entry.sentiment?.mood;
+        if (mood && today.getTime() - date.getTime() <= days * 86400000) {
+          const label = getMoodLabel(mood);
+          moodCounts.set(label, (moodCounts.get(label) ?? 0) + 1);
+        }
+      });
+      return Array.from(moodCounts.entries()).sort((a, b) => b[1] - a[1]);
+    };
+    const moodDistribution = getMoodDistribution(3650);
+    const weeklyMoodDistribution = getMoodDistribution(7);
+    const monthlyMoodDistribution = getMoodDistribution(30);
+    const recentDates = new Set(entries.filter((entry) => {
+      const date = new Date(`${entry.date}T12:00:00`);
+      return today.getTime() - date.getTime() <= 30 * 86400000;
+    }).map((entry) => entry.date));
+    const consistency = Math.round((recentDates.size / 30) * 100);
+    const calendarDays = Array.from({ length: 30 }, (_, index) => {
+      return new Date(today.getTime() - (29 - index) * 86400000).toISOString().slice(0, 10);
+    });
+
+    return {
       totalEntries: total,
       totalWords,
       avgWords,
       mostActiveDay,
-    });
+      moodDistribution,
+      weeklyMoodDistribution,
+      monthlyMoodDistribution,
+      consistency,
+      calendarDays,
+    };
   }, [entries]);
-
-  useEffect(() => {
-    computeStats();
-  }, [computeStats]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -133,6 +153,34 @@ export default function InsightsScreen() {
             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Most Active Journaling Day</Text>
           </View>
         </View>
+
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>MOOD TRENDS</Text>
+        <View style={[styles.trendCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          {stats.moodDistribution.length === 0 ? (
+            <Text preset="caption" color="textSecondary">Mood trends appear after entries are analyzed.</Text>
+          ) : (
+            <>
+              <Text preset="caption" color="textSecondary" style={styles.periodLabel}>LAST 7 DAYS</Text>
+              {stats.weeklyMoodDistribution.length === 0 ? <Text preset="caption" color="textSecondary">No analyzed moods.</Text> : stats.weeklyMoodDistribution.map(([mood, count]) => <View key={`week-${mood}`} style={styles.trendRow}><Text preset="bodySmall" color="text">{mood}</Text><Text preset="bodySmall" color="tint">{count}</Text></View>)}
+              <Text preset="caption" color="textSecondary" style={styles.periodLabel}>LAST 30 DAYS</Text>
+              {stats.monthlyMoodDistribution.length === 0 ? <Text preset="caption" color="textSecondary">No analyzed moods.</Text> : stats.monthlyMoodDistribution.map(([mood, count]) => <View key={`month-${mood}`} style={styles.trendRow}><Text preset="bodySmall" color="text">{mood}</Text><Text preset="bodySmall" color="tint">{count}</Text></View>)}
+            </>
+          )}
+        </View>
+
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>WRITING CONSISTENCY</Text>
+        <View style={[styles.trendCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <Text preset="body" color="text">{stats.consistency}% active days in the last 30 days</Text>
+          <Text preset="caption" color="textSecondary" style={{ marginTop: 6 }}>
+            {streakStats.currentStreak} day current streak · {streakStats.longestStreak} day longest streak
+          </Text>
+          <View style={styles.calendarGrid}>
+            {stats.calendarDays.map((day) => {
+              const active = entries.some((entry) => entry.date === day);
+              return <View key={day} style={[styles.calendarDot, { backgroundColor: active ? theme.colors.tint : theme.colors.border }]} />;
+            })}
+          </View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -183,4 +231,9 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
   },
+  trendCard: { borderWidth: 1, borderRadius: 10, padding: 14, marginBottom: 16 },
+  trendRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
+  periodLabel: { fontWeight: '700', marginTop: 8, marginBottom: 2 },
+  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 14 },
+  calendarDot: { width: 14, height: 14, borderRadius: 3 },
 });

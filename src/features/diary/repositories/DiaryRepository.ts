@@ -8,6 +8,7 @@ import {
 import { secureStorageKeys } from '@/constants/secureStorageKeys';
 import { IDiaryRepository } from './IDiaryRepository';
 import { DiaryEntry, DiaryEntrySchema } from '../domain/DiaryEntry';
+import { CURRENT_DIARY_SCHEMA_VERSION, migrateDiaryStorage, type DiaryStorageEnvelope } from '../domain/DiaryMigrations';
 
 export class DiaryRepository implements IDiaryRepository {
   private memoryStore = new Map<string, DiaryEntry>();
@@ -23,13 +24,11 @@ export class DiaryRepository implements IDiaryRepository {
       const raw = await this.storage.getItem(secureStorageKeys.diaryEntries);
       if (raw) {
         const parsed: unknown = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) || (typeof parsed === 'object' && parsed !== null)) {
+          const migrated = migrateDiaryStorage(parsed);
           this.memoryStore.clear();
-          for (const item of parsed) {
-            const validated = DiaryEntrySchema.safeParse(item);
-            if (validated.success) {
-              this.memoryStore.set(validated.data.id, validated.data);
-            }
+          for (const entry of migrated.entries) {
+            this.memoryStore.set(entry.id, entry);
           }
         }
       }
@@ -41,13 +40,21 @@ export class DiaryRepository implements IDiaryRepository {
   }
 
   private async persist(): Promise<void> {
-    const list = Array.from(this.memoryStore.values());
-    await this.storage.setItem(secureStorageKeys.diaryEntries, JSON.stringify(list));
+    const envelope: DiaryStorageEnvelope = {
+      version: CURRENT_DIARY_SCHEMA_VERSION,
+      entries: Array.from(this.memoryStore.values()),
+    };
+    await this.storage.setItem(secureStorageKeys.diaryEntries, JSON.stringify(envelope));
   }
 
   public async getAll(): Promise<Result<DiaryEntry[]>> {
     try {
       await this.ensureLoaded();
+      const expiredIds = Array.from(this.memoryStore.values()).filter((entry) => entry.expiresAt && new Date(entry.expiresAt).getTime() <= Date.now()).map((entry) => entry.id);
+      if (expiredIds.length > 0) {
+        expiredIds.forEach((id) => this.memoryStore.delete(id));
+        await this.persist();
+      }
       const entries = Array.from(this.memoryStore.values()).sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       );
@@ -64,6 +71,11 @@ export class DiaryRepository implements IDiaryRepository {
     try {
       await this.ensureLoaded();
       const entry = this.memoryStore.get(id) || null;
+      if (entry?.expiresAt && new Date(entry.expiresAt).getTime() <= Date.now()) {
+        this.memoryStore.delete(id);
+        await this.persist();
+        return success(null);
+      }
       return success(entry);
     } catch (error) {
       return failure({
@@ -77,7 +89,7 @@ export class DiaryRepository implements IDiaryRepository {
     try {
       await this.ensureLoaded();
       const entries = Array.from(this.memoryStore.values()).filter(
-        (entry) => entry.date === date
+        (entry) => entry.date === date && (!entry.expiresAt || new Date(entry.expiresAt).getTime() > Date.now())
       );
       return success(entries);
     } catch (error) {

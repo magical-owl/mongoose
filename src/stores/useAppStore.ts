@@ -34,6 +34,9 @@ export interface AppState {
   isOnboarded: boolean;
   selectedCalendarDate: string | null;
   selectedCompanion: CompanionType;
+  biometricLockEnabled: boolean;
+  isLocked: boolean;
+  remoteAiConsent: boolean;
 
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
@@ -41,6 +44,9 @@ export interface AppState {
   setSessionState: (state: SessionState) => void;
   setSelectedCalendarDate: (date: string | null) => void;
   setSelectedCompanion: (companion: CompanionType) => void;
+  setBiometricLockEnabled: (enabled: boolean) => void;
+  setLocked: (locked: boolean) => void;
+  setRemoteAiConsent: (consent: boolean) => void;
   reset: () => void;
 }
 
@@ -52,6 +58,9 @@ const initialState: Pick<
   | 'isOnboarded'
   | 'selectedCalendarDate'
   | 'selectedCompanion'
+  | 'biometricLockEnabled'
+  | 'isLocked'
+  | 'remoteAiConsent'
 > = {
   themeMode: 'dark',
   onboardingStatus: 'not_started',
@@ -59,6 +68,9 @@ const initialState: Pick<
   isOnboarded: false,
   selectedCalendarDate: null,
   selectedCompanion: 'cat',
+  biometricLockEnabled: false,
+  isLocked: false,
+  remoteAiConsent: false,
 };
 
 /**
@@ -75,6 +87,12 @@ export const useAppStore = create<AppState>()(
       setSelectedCalendarDate: (selectedCalendarDate: string | null) => set({ selectedCalendarDate }),
 
       setSelectedCompanion: (selectedCompanion: CompanionType) => set({ selectedCompanion }),
+
+      setBiometricLockEnabled: (biometricLockEnabled: boolean) => set({ biometricLockEnabled }),
+
+      setLocked: (isLocked: boolean) => set({ isLocked }),
+
+      setRemoteAiConsent: (remoteAiConsent: boolean) => set({ remoteAiConsent }),
 
       setOnboardingStatus: (onboardingStatus: OnboardingStatus) =>
         set({
@@ -98,6 +116,8 @@ export const useAppStore = create<AppState>()(
         onboardingStatus: state.onboardingStatus,
         isOnboarded: state.isOnboarded,
         selectedCompanion: state.selectedCompanion,
+        biometricLockEnabled: state.biometricLockEnabled,
+        remoteAiConsent: state.remoteAiConsent,
       }),
     }
   )

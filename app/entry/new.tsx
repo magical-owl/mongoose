@@ -27,10 +27,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@shared/components/Text';
+import { Modal } from '@shared/components/Modal';
 import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useAppStore } from '@/stores/useAppStore';
-import { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import { DiaryEntry, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { StickerPickerModal } from '@/features/diary/components/StickerPickerModal';
@@ -39,6 +40,7 @@ import { Template } from '@/features/diary/domain/Template';
 import { CompanionPickerModal } from '@/features/diary/components/CompanionPickerModal';
 import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { generateUUID } from '@/shared/utils/uuid';
+import { diaryDraftService } from '@/features/diary/services/DiaryDraftService';
 
 // Word count helper (strips markdown syntax)
 function countWords(text: string): number {
@@ -65,6 +67,7 @@ export default function CreateEntryScreen() {
   const selectedCalendarDate = useAppStore((state) => state.selectedCalendarDate);
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const editorRef = useRef<RichTextEditorHandle>(null);
+  const isHydratingDraft = useRef(true);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -81,6 +84,69 @@ export default function CreateEntryScreen() {
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showCompanionPicker, setShowCompanionPicker] = useState(false);
+  const [draftStatus, setDraftStatus] = useState<'idle' | 'saved'>('idle');
+  const [manualMoodWeather, setManualMoodWeather] = useState<ManualMoodWeather>('calm');
+  const [writingMode, setWritingMode] = useState<WritingMode>('free-write');
+  const [locationLabel, setLocationLabel] = useState('');
+  const [sounds, setSounds] = useState('');
+  const [smells, setSmells] = useState('');
+  const [energyLevel, setEnergyLevel] = useState('5');
+  const [bodyState, setBodyState] = useState('');
+  const [isLockbox, setIsLockbox] = useState(false);
+  const [timeCapsuleUnlockAt, setTimeCapsuleUnlockAt] = useState('');
+  const [expiresAt, setExpiresAt] = useState('');
+  const [showEntryDetails, setShowEntryDetails] = useState(false);
+  const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+
+  useEffect(() => {
+    let active = true;
+    void diaryDraftService.get().then((draft) => {
+      if (!active || !draft) {
+        isHydratingDraft.current = false;
+        return;
+      }
+      setTitle(draft.title);
+      setContent(draft.content);
+      setStickers(draft.stickers);
+      setSelectedCompanion(draft.companion);
+      setManualMoodWeather(draft.manualMoodWeather);
+      setWritingMode(draft.writingMode);
+      setLocationLabel(draft.sensory.locationLabel);
+      setSounds(draft.sensory.sounds);
+      setSmells(draft.sensory.smells);
+      setEnergyLevel(String(draft.sensory.energyLevel));
+      setBodyState(draft.sensory.bodyState);
+      setIsLockbox(draft.isLockbox);
+      setTimeCapsuleUnlockAt(draft.timeCapsuleUnlockAt ?? '');
+      setExpiresAt(draft.expiresAt ?? '');
+      const [year, month, day] = draft.date.split('-').map(Number);
+      if (year && month && day) setSelectedDate(new Date(year, month - 1, day, 12, 0, 0));
+      setTimeout(() => editorRef.current?.setContentHTML(draft.content), 50);
+      isHydratingDraft.current = false;
+      setDraftStatus('saved');
+    }).catch(() => {
+      isHydratingDraft.current = false;
+    });
+    return () => { active = false; };
+  }, [setSelectedCompanion]);
+
+  useEffect(() => {
+    if (isHydratingDraft.current || (!title.trim() && !content.trim())) return;
+    const timer = setTimeout(() => {
+      void diaryDraftService.save({
+        title,
+        content,
+        date: isoDate,
+        companion: selectedCompanion,
+        stickers,
+        manualMoodWeather, writingMode,
+        sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState },
+        isLockbox, timeCapsuleUnlockAt: timeCapsuleUnlockAt ? new Date(timeCapsuleUnlockAt).toISOString() : undefined,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+      }).then(() => setDraftStatus('saved'));
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [title, content, isoDate, selectedCompanion, stickers, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = content
@@ -105,7 +171,6 @@ export default function CreateEntryScreen() {
   const formattedDate = selectedDate.toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
-  const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
   const wordCount = countWords(content);
 
   const activeCompanion = COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
@@ -163,12 +228,20 @@ export default function CreateEntryScreen() {
       companion: selectedCompanion,
       isFavorite: false,
       tags: [],
+      manualMoodWeather,
+      writingMode,
+      sensory: { locationLabel, sounds, smells, energyLevel: Math.min(10, Math.max(1, Number(energyLevel) || 5)), bodyState },
+      isLockbox,
+      timeCapsuleUnlockAt: timeCapsuleUnlockAt ? new Date(timeCapsuleUnlockAt).toISOString() : undefined,
+      expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+      collectionIds: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
     const result = await saveDiaryEntry(newEntry);
     setIsSaving(false);
     if (result.success) {
+      await diaryDraftService.clear();
       setSelectedCalendarDate(null);
       navigateBack();
     } else {
@@ -203,6 +276,10 @@ export default function CreateEntryScreen() {
         </TouchableOpacity>
 
         {/* Date — tap to change */}
+        {draftStatus === 'saved' && (title.trim() || content.trim()) ? (
+          <Text preset="caption" color="textSecondary">Draft saved</Text>
+        ) : <View style={styles.headerBtn} />}
+
         <TouchableOpacity
           onPress={() => setShowDatePicker(true)}
           accessibilityLabel={`Entry date: ${formattedDate}. Tap to change.`}
@@ -292,6 +369,24 @@ export default function CreateEntryScreen() {
             accessibilityLabel="Entry title"
             accessibilityHint="Write the title of your diary entry"
           />
+
+          <TouchableOpacity
+            onPress={() => setShowEntryDetails(true)}
+            style={[styles.detailsButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+            accessibilityRole="button"
+            accessibilityLabel="Open entry details"
+          >
+            <View style={styles.summaryLeft}>
+              <Text style={styles.summaryIcon}>{isLockbox ? '🔐' : '☼'}</Text>
+              <View>
+                <Text preset="label" color="text">Entry details</Text>
+                <Text preset="caption" color="textSecondary">
+                  {manualMoodWeather} mood · {writingMode === 'free-write' ? 'Free write' : writingMode.replace('-', ' ')}{timeCapsuleUnlockAt ? ' · Time capsule' : ''}
+                </Text>
+              </View>
+            </View>
+            <Text style={{ color: theme.colors.textSecondary, fontSize: 22 }}>›</Text>
+          </TouchableOpacity>
 
           {/* Divider */}
           <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
@@ -406,6 +501,45 @@ export default function CreateEntryScreen() {
         selectedCompanion={selectedCompanion}
         onSelectCompanion={setSelectedCompanion}
       />
+      <Modal
+        visible={showEntryDetails}
+        onDismiss={() => setShowEntryDetails(false)}
+        title="Entry details"
+        accessibilityLabel="Entry details"
+      >
+        <ScrollView style={styles.detailsModalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <Text preset="caption" color="textSecondary" style={styles.detailsLabel}>MOOD WEATHER</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.choiceRow}>
+            {(['sunny', 'cloudy', 'stormy', 'foggy', 'windy', 'calm'] as ManualMoodWeather[]).map((weather) => (
+              <TouchableOpacity key={weather} onPress={() => setManualMoodWeather(weather)} style={[styles.choice, { borderColor: manualMoodWeather === weather ? theme.colors.tint : theme.colors.border, backgroundColor: manualMoodWeather === weather ? theme.colors.tint + '20' : 'transparent' }]}>
+                <Text preset="caption" color="text">{weather}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <Text preset="caption" color="textSecondary" style={styles.detailsLabel}>WRITING MODE</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.choiceRow}>
+            {([['free-write', 'Free write'], ['one-line', 'One line'], ['five-minute', '5 minutes'], ['gratitude', 'Gratitude'], ['travel', 'Travel'], ['dream', 'Dream'], ['evening-review', 'Evening review']] as [WritingMode, string][]).map(([mode, label]) => (
+              <TouchableOpacity key={mode} onPress={() => setWritingMode(mode)} style={[styles.choice, { borderColor: writingMode === mode ? theme.colors.tint : theme.colors.border, backgroundColor: writingMode === mode ? theme.colors.tint + '20' : 'transparent' }]}>
+                <Text preset="caption" color="text">{label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <Text preset="caption" color="textSecondary" style={styles.detailsLabel}>SENSORY SNAPSHOT</Text>
+          <View style={styles.sensoryGrid}>
+            <NativeTextInput value={locationLabel} onChangeText={setLocationLabel} placeholder="Location label" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
+            <NativeTextInput value={sounds} onChangeText={setSounds} placeholder="Sounds" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
+            <NativeTextInput value={smells} onChangeText={setSmells} placeholder="Smells" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
+            <NativeTextInput value={energyLevel} onChangeText={setEnergyLevel} keyboardType="number-pad" placeholder="Energy 1-10" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
+            <NativeTextInput value={bodyState} onChangeText={setBodyState} placeholder="Body state" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
+          </View>
+          <NativeTextInput value={timeCapsuleUnlockAt} onChangeText={setTimeCapsuleUnlockAt} placeholder="Unlock date (YYYY-MM-DD)" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, styles.fullWidthInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
+          <NativeTextInput value={expiresAt} onChangeText={setExpiresAt} placeholder="Expiry date (YYYY-MM-DD)" placeholderTextColor={theme.colors.textSecondary} style={[styles.detailInput, styles.fullWidthInput, { color: theme.colors.text, borderColor: theme.colors.border }]} />
+          <TouchableOpacity onPress={() => setIsLockbox((value) => !value)} style={styles.lockboxRow}>
+            <Text style={{ fontSize: 20 }}>{isLockbox ? '🔐' : '🔓'}</Text>
+            <Text preset="caption" color="text">{isLockbox ? 'Offline lockbox entry enabled' : 'Keep this entry in the normal diary'}</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </Modal>
     </View>
   );
 }
@@ -444,6 +578,17 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     marginBottom: 16,
   },
+  detailsLabel: { marginTop: 10, marginBottom: 6, fontWeight: '700' },
+  choiceRow: { gap: 8, paddingBottom: 4 },
+  choice: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
+  sensoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  detailInput: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 8, minWidth: '47%' },
+  lockboxRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
+  detailsButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
+  summaryLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  summaryIcon: { fontSize: 20, width: 26, textAlign: 'center' },
+  detailsModalScroll: { maxHeight: 470 },
+  fullWidthInput: { width: '100%' },
   floatingBar: {
     position: 'absolute',
     left: 0,

@@ -16,7 +16,6 @@ import {
   Switch,
   Alert,
   TextInput,
-  Clipboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -27,12 +26,21 @@ import { CompanionPickerModal } from '@/features/diary/components/CompanionPicke
 import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
+import { useAppStore } from '@/stores/useAppStore';
+import { appLockService } from '@/services/AppLockService';
+import { dataDeletionService } from '@/services/DataDeletionService';
+import { diaryBackupService } from '@/services/DiaryBackupService';
+import { useJournalExtras } from '@/features/journal/hooks/useJournalExtras';
 
 export default function SettingsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { entries, selectedCompanion, setSelectedCompanion, deleteDiaryEntry } = useDiary();
-  const { profile, saveProfile, clearProfile } = useProfileForm();
+  const { entries, selectedCompanion, setSelectedCompanion, saveDiaryEntry } = useDiary();
+  const biometricLockEnabled = useAppStore((state) => state.biometricLockEnabled);
+  const remoteAiConsent = useAppStore((state) => state.remoteAiConsent);
+  const setRemoteAiConsent = useAppStore((state) => state.setRemoteAiConsent);
+  const { profile, saveProfile } = useProfileForm();
+  const { state: journalExtras, replace: replaceJournalExtras } = useJournalExtras();
 
   // Modals
   const [showAppearanceModal, setShowAppearanceModal] = useState(false);
@@ -47,13 +55,57 @@ export default function SettingsScreen() {
 
   const activeCompanion = COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
 
-  const handleExportData = () => {
+  const handleExportData = async () => {
     try {
-      const dataStr = JSON.stringify({ entries, profile }, null, 2);
-      Clipboard.setString(dataStr);
-      Alert.alert('✅ Exported', 'All diary entries and profile data copied to clipboard as JSON!');
+      await diaryBackupService.exportJson(entries, profile, journalExtras);
+      Alert.alert('Exported', 'Your complete diary JSON is ready to share.');
     } catch {
       Alert.alert('Error', 'Failed to export data.');
+    }
+  };
+
+  const handleEncryptedExport = async () => {
+    try {
+      await diaryBackupService.exportEncrypted(entries, profile, journalExtras);
+      Alert.alert('Encrypted backup created', 'Keep this backup file in a secure location.');
+    } catch {
+      Alert.alert('Error', 'Failed to create encrypted backup.');
+    }
+  };
+
+  const handleEncryptedImport = async () => {
+    try {
+      const imported = await diaryBackupService.importEncrypted();
+      if (!imported) return;
+      Alert.alert('Restore backup?', `This will add ${imported.entries.length} entries and restore profile data.`, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Restore',
+          onPress: async () => {
+            for (const entry of imported.entries) await saveDiaryEntry(entry);
+            if (imported.profile) {
+              await saveProfile({
+                displayName: imported.profile.displayName,
+                email: imported.profile.email,
+                bio: imported.profile.bio,
+              });
+            }
+            if (imported.journalExtras) await replaceJournalExtras(imported.journalExtras);
+            Alert.alert('Restored', 'Your encrypted backup has been restored.');
+          },
+        },
+      ]);
+    } catch {
+      Alert.alert('Error', 'The backup could not be decrypted or was invalid.');
+    }
+  };
+
+  const handleBiometricToggle = async (enabled: boolean) => {
+    if (enabled) {
+      const activated = await appLockService.enable();
+      if (!activated) Alert.alert('Biometrics unavailable', 'Set up Face ID, Touch ID, or device biometrics first.');
+    } else {
+      appLockService.disable();
     }
   };
 
@@ -67,10 +119,7 @@ export default function SettingsScreen() {
           text: 'Yes, Reset Everything',
           style: 'destructive',
           onPress: async () => {
-            for (const e of entries) {
-              await deleteDiaryEntry(e.id);
-            }
-            await clearProfile();
+            await dataDeletionService.deleteAll();
             Alert.alert('✅ App Reset', 'All data has been cleared.');
           },
         },
@@ -190,10 +239,36 @@ export default function SettingsScreen() {
             <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>
               🌙 Dark Mode
             </Text>
-            <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>
+          <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>
               Toggle between light and dark themes
             </Text>
           </View>
+
+        <View style={[styles.modalRow, { borderBottomColor: theme.colors.border, marginTop: 16 }]}>
+          <View style={{ flex: 1 }}>
+            <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>🔒 Biometric App Lock</Text>
+            <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>Require device biometrics before opening the diary</Text>
+          </View>
+          <Switch
+            value={biometricLockEnabled}
+            onValueChange={handleBiometricToggle}
+            trackColor={{ false: theme.colors.border, true: theme.colors.tint }}
+            thumbColor="#fff"
+          />
+        </View>
+
+        <View style={[styles.modalRow, { borderBottomColor: theme.colors.border, marginTop: 16 }]}>
+          <View style={{ flex: 1 }}>
+            <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>☁️ Remote AI Summaries</Text>
+            <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>Allow only when the configured endpoint confirms zero data retention</Text>
+          </View>
+          <Switch
+            value={remoteAiConsent}
+            onValueChange={setRemoteAiConsent}
+            trackColor={{ false: theme.colors.border, true: theme.colors.tint }}
+            thumbColor="#fff"
+          />
+        </View>
           <Switch
             value={theme.isDark}
             onValueChange={(value) => theme.setThemeMode(value ? 'dark' : 'light')}
@@ -313,12 +388,32 @@ export default function SettingsScreen() {
         <View style={{ gap: 12, paddingVertical: 8 }}>
           <TouchableOpacity
             style={[styles.modalRowBtn, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
-            onPress={handleExportData}
+            onPress={() => { void handleExportData(); }}
           >
             <Text style={{ fontSize: 22, marginRight: 12 }}>📋</Text>
             <View style={{ flex: 1 }}>
               <Text preset="label" color="text">Export Data (JSON)</Text>
-              <Text preset="caption" color="textSecondary">Copy all diary entries to clipboard</Text>
+              <Text preset="caption" color="textSecondary">Share a complete JSON export file</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modalRowBtn, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+            onPress={() => { void handleEncryptedExport(); }}
+          >
+            <Text style={{ fontSize: 22, marginRight: 12 }}>🔐</Text>
+            <View style={{ flex: 1 }}>
+              <Text preset="label" color="text">Create Encrypted Backup</Text>
+              <Text preset="caption" color="textSecondary">AES-256-GCM backup for private storage</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modalRowBtn, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+            onPress={() => { void handleEncryptedImport(); }}
+          >
+            <Text style={{ fontSize: 22, marginRight: 12 }}>📥</Text>
+            <View style={{ flex: 1 }}>
+              <Text preset="label" color="text">Restore Encrypted Backup</Text>
+              <Text preset="caption" color="textSecondary">Import entries from a backup file</Text>
             </View>
           </TouchableOpacity>
         </View>

@@ -45,6 +45,11 @@ describe('DiaryRepository', () => {
     tags: ['test', 'gratitude'],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    manualMoodWeather: 'calm',
+    writingMode: 'free-write',
+    sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' },
+    isLockbox: false,
+    collectionIds: [],
   };
 
   beforeEach(() => {

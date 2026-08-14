@@ -74,6 +74,8 @@ export default function EntryDetailScreen() {
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [editStickers, setEditStickers] = useState<PlacedSticker[]>([]);
+  const [editTags, setEditTags] = useState<string[]>([]);
+  const [editTagInput, setEditTagInput] = useState('');
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -104,6 +106,7 @@ export default function EntryDetailScreen() {
         setEditTitle(found.title);
         setEditContent(found.content);
         setEditStickers(found.stickers);
+        setEditTags(found.tags);
       }
     }
   }, [id, entries]);
@@ -118,6 +121,7 @@ export default function EntryDetailScreen() {
     setEditTitle(entry.title);
     setEditContent(entry.content);
     setEditStickers(entry.stickers);
+    setEditTags(entry.tags);
     setIsEditing(true);
   };
 
@@ -126,6 +130,7 @@ export default function EntryDetailScreen() {
     setEditTitle(entry.title);
     setEditContent(entry.content);
     setEditStickers(entry.stickers);
+    setEditTags(entry.tags);
     setIsEditing(false);
   };
 
@@ -138,6 +143,7 @@ export default function EntryDetailScreen() {
       title: editTitle.trim(),
       content: editContent.trim(),
       stickers: editStickers,
+      tags: editTags,
       updatedAt: new Date().toISOString(),
     };
     const result = await saveDiaryEntry(updated);
@@ -301,6 +307,29 @@ export default function EntryDetailScreen() {
                 showToolbar={false}
                 accessibilityLabel="Entry content"
               />
+              <View style={styles.tagEditor}>
+                <Text preset="caption" color="textSecondary">Tags</Text>
+                <View style={styles.tagRow}>
+                  {editTags.map((tag) => (
+                    <TouchableOpacity key={tag} onPress={() => setEditTags((current) => current.filter((item) => item !== tag))} style={[styles.tag, { backgroundColor: theme.colors.tint + '20' }]}>
+                      <Text preset="caption" color="tint">#{tag} ×</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <NativeTextInput
+                  value={editTagInput}
+                  onChangeText={setEditTagInput}
+                  onSubmitEditing={() => {
+                    const tag = editTagInput.trim().toLowerCase().replace(/\s+/g, '-');
+                    if (tag && !editTags.includes(tag)) setEditTags((current) => [...current, tag]);
+                    setEditTagInput('');
+                  }}
+                  placeholder="Add a tag and press return"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  style={[styles.tagInput, { color: theme.colors.text, borderColor: theme.colors.border }]}
+                  returnKeyType="done"
+                />
+              </View>
             </>
           ) : (
             /* ── View mode ──────────────────────────────────────────────── */
@@ -315,6 +344,21 @@ export default function EntryDetailScreen() {
               <Text preset="h2" color="text" style={{ marginBottom: 16 }}>
                 {entry.title}
               </Text>
+              <View style={styles.entryMetaRow}>
+                <TouchableOpacity
+                  onPress={() => {
+                    const updated = { ...entry, isFavorite: !entry.isFavorite, updatedAt: new Date().toISOString() };
+                    void saveDiaryEntry(updated).then((result) => { if (result.success) setEntry(updated); });
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={entry.isFavorite ? 'Remove favorite' : 'Add favorite'}
+                >
+                  <Text style={styles.favorite}>{entry.isFavorite ? '★ Favorite' : '☆ Favorite'}</Text>
+                </TouchableOpacity>
+                <View style={styles.tagRow}>
+                  {entry.tags.map((tag) => <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>)}
+                </View>
+              </View>
               <MarkdownText style={{ lineHeight: 26 }}>
                 {entry.content}
               </MarkdownText>
@@ -486,6 +530,12 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     marginBottom: 16,
   },
+  tagEditor: { marginTop: 16, gap: 8 },
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
+  tag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
+  tagInput: { borderWidth: 1, borderRadius: 8, padding: 10 },
+  entryMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  favorite: { color: '#E5A72D', fontWeight: '700' },
   floatingBar: {
     position: 'absolute',
     left: 0,

@@ -27,6 +27,9 @@ describe('LocalDataService', () => {
     expect(removedKeys).toEqual([
       secureStorageKeys.currentProfile,
       secureStorageKeys.diaryEntries,
+      secureStorageKeys.diaryDraft,
+      secureStorageKeys.backupEncryptionKey,
+      secureStorageKeys.journalExtras,
     ]);
   });
 });
