@@ -170,7 +170,7 @@ export default function CalendarScreen() {
                         {
                           fontWeight: isSelected || hasEntries ? '700' : '400',
                           color: isSelected
-                            ? '#fff'
+                            ? theme.colors.background
                             : hasEntries
                               ? theme.colors.tint
                               : theme.colors.text,
@@ -185,10 +185,10 @@ export default function CalendarScreen() {
                           styles.dot,
                           {
                             backgroundColor: isSelected
-                              ? '#fff'
+                              ? theme.colors.background
                               : hasSentiment
-                                ? '#ff6b6b'
-                                : '#1E90FF',
+                                ? theme.colors.tint
+                                : theme.colors.tint,
                           },
                         ]}
                       />
@@ -225,7 +225,7 @@ export default function CalendarScreen() {
                       backgroundColor: theme.colors.surface,
                       borderColor: theme.colors.border,
                       borderLeftWidth: hasSentiment ? 4 : 1,
-                      borderLeftColor: hasSentiment ? '#ff6b6b' : theme.colors.border,
+                      borderLeftColor: hasSentiment ? theme.colors.tint : theme.colors.border,
                     },
                   ]}
                 >
@@ -370,10 +370,6 @@ const styles = StyleSheet.create({
   },
   sentimentIndicator: {
     marginLeft: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-    backgroundColor: '#ff6b6b',
   },
   sentimentEmoji: {
     fontSize: 13,

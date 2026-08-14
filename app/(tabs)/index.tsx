@@ -292,7 +292,7 @@ export default function TimelineScreen() {
                         borderColor: theme.colors.border,
                         borderLeftWidth: hasSentiment ? 4 : 1,
                         borderLeftColor: hasSentiment
-                          ? "#ff6b6b"
+                          ? theme.colors.tint
                           : theme.colors.border,
                       },
                     ]}
@@ -305,7 +305,7 @@ export default function TimelineScreen() {
                         entry.isFavorite ? "Remove favorite" : "Add favorite"
                       }
                     >
-                      <Text style={styles.favoriteMark}>
+                      <Text style={[styles.favoriteMark, { color: theme.colors.warning }]}>
                         {entry.isFavorite ? "★" : "☆"}
                       </Text>
                     </TouchableOpacity>
@@ -365,7 +365,7 @@ export default function TimelineScreen() {
                       borderColor: theme.colors.border,
                       borderLeftWidth: hasSentiment ? 4 : 1,
                       borderLeftColor: hasSentiment
-                        ? "#ff6b6b"
+                        ? theme.colors.tint
                         : theme.colors.border,
                     },
                   ]}
@@ -379,7 +379,7 @@ export default function TimelineScreen() {
                         entry.isFavorite ? "Remove favorite" : "Add favorite"
                       }
                     >
-                      <Text style={styles.favoriteMark}>
+                      <Text style={[styles.favoriteMark, { color: theme.colors.warning }]}>
                         {entry.isFavorite ? "★" : "☆"}
                       </Text>
                     </TouchableOpacity>
@@ -391,7 +391,7 @@ export default function TimelineScreen() {
                         {entry.title.length > 30 ? "..." : ""}
                       </Text>
                       {hasSentiment && (
-                        <View style={styles.sentimentIndicator}>
+                      <View style={styles.sentimentIndicator}>
                           <Text style={styles.sentimentEmoji}>{moodEmoji}</Text>
                         </View>
                       )}
@@ -590,10 +590,6 @@ const styles = StyleSheet.create({
   },
   sentimentIndicator: {
     marginLeft: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-    backgroundColor: "#ff6b6b",
   },
   sentimentEmoji: {
     fontSize: 13,
@@ -608,7 +604,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   favoriteMark: {
-    color: "#E5A72D",
     fontSize: 18,
     width: 26,
     textAlign: "center",
