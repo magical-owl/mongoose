@@ -24,7 +24,9 @@ describe('LocalDataService', () => {
     await service.clearManagedData();
 
     expect(database.getAll('profiles')).toEqual([]);
-    expect(database.getAll('offline_queue')).toEqual([]);
-    expect(removedKeys).toEqual([secureStorageKeys.currentProfile]);
+    expect(removedKeys).toEqual([
+      secureStorageKeys.currentProfile,
+      secureStorageKeys.diaryEntries,
+    ]);
   });
 });

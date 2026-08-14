@@ -2,13 +2,14 @@
  * App Store
  *
  * Global application state using Zustand.
- * Manages theme mode, onboarding status, and session state.
+ * Manages theme mode, onboarding status, session state, and companion preference.
  */
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { createSafeMMKV } from '@/database/mmkvSafe';
 import type { ThemeMode } from '@/providers/ThemeProvider';
+import type { CompanionType } from '@/features/diary/domain/Companion';
 
 const storage = createSafeMMKV({ id: 'app-store' });
 
@@ -32,21 +33,32 @@ export interface AppState {
   sessionState: SessionState;
   isOnboarded: boolean;
   selectedCalendarDate: string | null;
+  selectedCompanion: CompanionType;
 
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
   setOnboardingStatus: (status: OnboardingStatus) => void;
   setSessionState: (state: SessionState) => void;
   setSelectedCalendarDate: (date: string | null) => void;
+  setSelectedCompanion: (companion: CompanionType) => void;
   reset: () => void;
 }
 
-const initialState: Pick<AppState, 'themeMode' | 'onboardingStatus' | 'sessionState' | 'isOnboarded' | 'selectedCalendarDate'> = {
+const initialState: Pick<
+  AppState,
+  | 'themeMode'
+  | 'onboardingStatus'
+  | 'sessionState'
+  | 'isOnboarded'
+  | 'selectedCalendarDate'
+  | 'selectedCompanion'
+> = {
   themeMode: 'dark',
   onboardingStatus: 'not_started',
   sessionState: 'idle',
   isOnboarded: false,
   selectedCalendarDate: null,
+  selectedCompanion: 'cat',
 };
 
 /**
@@ -61,6 +73,8 @@ export const useAppStore = create<AppState>()(
       setThemeMode: (themeMode: ThemeMode) => set({ themeMode }),
 
       setSelectedCalendarDate: (selectedCalendarDate: string | null) => set({ selectedCalendarDate }),
+
+      setSelectedCompanion: (selectedCompanion: CompanionType) => set({ selectedCompanion }),
 
       setOnboardingStatus: (onboardingStatus: OnboardingStatus) =>
         set({
@@ -83,6 +97,7 @@ export const useAppStore = create<AppState>()(
         themeMode: state.themeMode,
         onboardingStatus: state.onboardingStatus,
         isOnboarded: state.isOnboarded,
+        selectedCompanion: state.selectedCompanion,
       }),
     }
   )

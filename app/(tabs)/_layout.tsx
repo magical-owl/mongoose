@@ -85,7 +85,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="profile"
+        name="settings"
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, size }) => (
@@ -95,7 +95,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="settings"
+        name="profile"
         options={{
           href: null,
         }}

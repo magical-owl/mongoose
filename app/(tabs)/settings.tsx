@@ -1,194 +1,417 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+/**
+ * Settings Screen
+ *
+ * Consolidated Settings & Profile screen:
+ * - Title: ⚙️ Settings (24px bold)
+ * - Defined option rows: Appearance, AI Companion, Profile Details, Membership & Pro, Data & Storage, Reset App
+ * - Modals for Appearance, Companion, Profile Details, Data Export & Paywall
+ */
+
+import { useState } from 'react';
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Switch,
+  Alert,
+  TextInput,
+  Clipboard,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme, ThemeMode } from '@/providers/ThemeProvider';
-import { spacing, borderRadius, typography } from '@/theme';
-import Constants from 'expo-constants';
-import { queryClient } from '@/providers/QueryProvider';
-import { localDataService } from '@/services/LocalDataService';
-import { useAppStore } from '@/stores/useAppStore';
-
-/* ───────────────────────────────────────
- * Theme option definitions
- * ───────────────────────────────────────*/
-
-interface ThemeOption {
-  label: string;
-  value: ThemeMode;
-  icon: string;
-}
-
-const themeOptions: ThemeOption[] = [
-  { label: 'Light', value: 'light', icon: '☀️' },
-  { label: 'Dark', value: 'dark', icon: '🌙' },
-  { label: 'System', value: 'system', icon: '📱' },
-];
-
-/* ───────────────────────────────────────
- * Component
- * ───────────────────────────────────────*/
+import { useTheme } from '@/providers/ThemeProvider';
+import { Text } from '@shared/components/Text';
+import { Modal } from '@shared/components/Modal';
+import { Button } from '@shared/components/Button';
+import { CompanionPickerModal } from '@/features/diary/components/CompanionPickerModal';
+import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
+import { useDiary } from '@/features/diary/hooks/useDiary';
+import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
+import { useSubscription } from '@/features/subscription/hooks/useSubscription';
+import { PaywallModal } from '@/shared/components/PaywallModal';
 
 export default function SettingsScreen() {
-  const { colors, mode, isDark, setThemeMode } = useTheme();
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { entries, selectedCompanion, setSelectedCompanion, deleteDiaryEntry } = useDiary();
+  const { isPro, activeTier } = useSubscription();
+  const { profile, saveProfile, clearProfile } = useProfileForm();
 
-  const appVersion = Constants.expoConfig?.version ?? '1.0.0';
-  const appName = Constants.expoConfig?.name ?? 'Meadow';
+  // Modals
+  const [showAppearanceModal, setShowAppearanceModal] = useState(false);
+  const [showCompanionModal, setShowCompanionModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showDataModal, setShowDataModal] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
 
-  const handleClearData = () => {
+  // Profile form state
+  const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
+  const [email, setEmail] = useState(profile?.email ?? '');
+  const [bio, setBio] = useState(profile?.bio ?? '');
+
+  const activeCompanion = COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
+
+  const handleExportData = () => {
+    try {
+      const dataStr = JSON.stringify({ entries, profile }, null, 2);
+      Clipboard.setString(dataStr);
+      Alert.alert('✅ Exported', 'All diary entries and profile data copied to clipboard as JSON!');
+    } catch {
+      Alert.alert('Error', 'Failed to export data.');
+    }
+  };
+
+  const handleResetApp = () => {
     Alert.alert(
-      'Clear All Data',
-      'This will remove all application-managed local data. This action cannot be undone.',
+      '⚠️ Reset App',
+      'This will delete all your diary entries and profile data. This action cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Clear Data',
+          text: 'Yes, Reset Everything',
           style: 'destructive',
-          onPress: () => {
-            void localDataService.clearManagedData().then(() => {
-              useAppStore.persist.clearStorage();
-              useAppStore.getState().reset();
-              queryClient.clear();
-              Alert.alert('Done', 'All local data has been cleared.');
-            }).catch(() => {
-              Alert.alert('Unable to clear data', 'Please try again.');
-            });
+          onPress: async () => {
+            for (const e of entries) {
+              await deleteDiaryEntry(e.id);
+            }
+            await clearProfile();
+            Alert.alert('✅ App Reset', 'All data has been cleared.');
           },
         },
-      ],
+      ]
     );
   };
 
+  const handleSaveProfileDetails = async () => {
+    await saveProfile({ displayName, email, bio });
+    setShowProfileModal(false);
+    Alert.alert('Saved', 'Profile updated successfully.');
+  };
+
+  const settingsOptions = [
+    {
+      id: 'appearance',
+      title: 'Appearance',
+      subtitle: 'Dark mode, theme',
+      icon: '🎨',
+      onPress: () => setShowAppearanceModal(true),
+    },
+    {
+      id: 'companion',
+      title: 'AI Companion',
+      subtitle: `${activeCompanion.avatar} ${activeCompanion.name}`,
+      icon: '🤖',
+      onPress: () => setShowCompanionModal(true),
+    },
+    {
+      id: 'profile',
+      title: 'Profile Details',
+      subtitle: profile?.displayName || 'Set display name and bio',
+      icon: '👤',
+      onPress: () => {
+        setDisplayName(profile?.displayName ?? '');
+        setEmail(profile?.email ?? '');
+        setBio(profile?.bio ?? '');
+        setShowProfileModal(true);
+      },
+    },
+    {
+      id: 'subscription',
+      title: 'Membership & Pro',
+      subtitle: isPro ? `Pro Plan (${activeTier.toUpperCase()})` : 'Free Plan (Tap to upgrade)',
+      icon: '👑',
+      onPress: () => setShowPaywall(true),
+    },
+    {
+      id: 'data',
+      title: 'Data & Storage',
+      subtitle: `Export ${entries.length} entries or backup JSON`,
+      icon: '💾',
+      onPress: () => setShowDataModal(true),
+    },
+    {
+      id: 'reset',
+      title: 'Reset App',
+      subtitle: 'Delete all entries and start fresh',
+      icon: '🗑️',
+      onPress: handleResetApp,
+      isDestructive: true,
+    },
+  ];
+
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{ paddingTop: insets.top, paddingBottom: insets.bottom + spacing.xxxl }}
-    >
-      <Text style={[typography.h1, { color: colors.text, marginBottom: spacing.xxl }]}>
-        Settings
-      </Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingTop: insets.top + 16,
+          paddingBottom: insets.bottom + 80,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          ⚙️ Settings
+        </Text>
 
-      {/* ── Theme Section ── */}
-      <Text style={[typography.label, { color: colors.textTertiary, marginBottom: spacing.sm }]}>
-        APPEARANCE
-      </Text>
-      <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        {themeOptions.map((option, index) => {
-          const selected = mode === option.value;
-          const isLast = index === themeOptions.length - 1;
-          return (
+        <View style={styles.optionsContainer}>
+          {settingsOptions.map((option) => (
             <TouchableOpacity
-              key={option.value}
+              key={option.id}
               style={[
-                styles.row,
-                !isLast && { borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+                styles.optionRow,
+                { borderBottomColor: theme.colors.border },
               ]}
-              onPress={() => setThemeMode(option.value)}
-              activeOpacity={0.6}
+              onPress={option.onPress}
+              activeOpacity={0.7}
+              accessibilityLabel={`${option.title}, ${option.subtitle}`}
+              accessibilityRole="button"
             >
-              <Text style={styles.rowIcon}>{option.icon}</Text>
-              <Text style={[typography.body, { color: colors.text, flex: 1 }]}>
-                {option.label}
-              </Text>
-              <View
-                style={[
-                  styles.radio,
-                  {
-                    borderColor: selected ? colors.tint : colors.border,
-                    backgroundColor: selected ? colors.tint : 'transparent',
-                  },
-                ]}
-              >
-                {selected && <View style={[styles.radioInner, { backgroundColor: colors.background }]} />}
+              <View style={styles.optionLeft}>
+                <Text style={styles.optionIcon}>{option.icon}</Text>
+                <View style={styles.optionText}>
+                  <Text
+                    style={[
+                      styles.optionTitle,
+                      { color: option.isDestructive ? theme.colors.error : theme.colors.text },
+                    ]}
+                  >
+                    {option.title}
+                  </Text>
+                  <Text style={[styles.optionSubtitle, { color: theme.colors.textSecondary }]}>
+                    {option.subtitle}
+                  </Text>
+                </View>
               </View>
+              <Text style={[styles.arrow, { color: theme.colors.textSecondary }]}>
+                ›
+              </Text>
             </TouchableOpacity>
-          );
-        })}
-      </View>
+          ))}
+        </View>
+      </ScrollView>
 
-      {/* ── About Section ── */}
-      <Text
-        style={[
-          typography.label,
-          { color: colors.textTertiary, marginBottom: spacing.sm, marginTop: spacing.xxl },
-        ]}
+      {/* ── 1. Appearance Modal ───────────────────────────────────────────── */}
+      <Modal
+        visible={showAppearanceModal}
+        onDismiss={() => setShowAppearanceModal(false)}
+        title="🎨 Appearance & Theme"
+        accessibilityLabel="Appearance settings"
       >
-        ABOUT
-      </Text>
-      <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <View style={[styles.row, { borderBottomWidth: 1, borderBottomColor: colors.borderLight }]}>
-          <Text style={[typography.body, { color: colors.text, flex: 1 }]}>App Name</Text>
-          <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>{appName}</Text>
+        <View style={[styles.modalRow, { borderBottomColor: theme.colors.border }]}>
+          <View style={{ flex: 1 }}>
+            <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>
+              🌙 Dark Mode
+            </Text>
+            <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>
+              Toggle between light and dark themes
+            </Text>
+          </View>
+          <Switch
+            value={theme.isDark}
+            onValueChange={(value) => theme.setThemeMode(value ? 'dark' : 'light')}
+            trackColor={{ false: theme.colors.border, true: theme.colors.tint }}
+            thumbColor="#fff"
+          />
         </View>
-        <View style={[styles.row, { borderBottomWidth: 1, borderBottomColor: colors.borderLight }]}>
-          <Text style={[typography.body, { color: colors.text, flex: 1 }]}>Version</Text>
-          <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>v{appVersion}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={[typography.body, { color: colors.text, flex: 1 }]}>Theme</Text>
-          <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>
-            {isDark ? 'Dark' : 'Light'}
+
+        <View style={{ paddingTop: 16 }}>
+          <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
+            THEME MODE PREFERENCE
           </Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            {(['light', 'dark', 'system'] as const).map((m) => {
+              const active = theme.mode === m;
+              return (
+                <TouchableOpacity
+                  key={m}
+                  onPress={() => theme.setThemeMode(m)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 12,
+                    borderRadius: 10,
+                    borderWidth: active ? 2 : 1,
+                    borderColor: active ? theme.colors.tint : theme.colors.border,
+                    backgroundColor: active ? theme.colors.tint + '18' : theme.colors.surface,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    preset="caption"
+                    style={{
+                      fontWeight: '700',
+                      textTransform: 'capitalize',
+                      color: active ? theme.colors.tint : theme.colors.text,
+                    }}
+                  >
+                    {m === 'light' ? '☀️ Light' : m === 'dark' ? '🌙 Dark' : '📱 System'}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
-      </View>
+      </Modal>
 
-      {/* ── Danger Zone ── */}
-      <Text
-        style={[
-          typography.label,
-          { color: colors.textTertiary, marginBottom: spacing.sm, marginTop: spacing.xxl },
-        ]}
+      {/* ── 2. Companion Modal ───────────────────────────────────────────── */}
+      <CompanionPickerModal
+        visible={showCompanionModal}
+        onClose={() => setShowCompanionModal(false)}
+        selectedCompanion={selectedCompanion}
+        onSelectCompanion={setSelectedCompanion}
+      />
+
+      {/* ── 3. Profile Details Modal ─────────────────────────────────────── */}
+      <Modal
+        visible={showProfileModal}
+        onDismiss={() => setShowProfileModal(false)}
+        title="👤 Profile Details"
+        accessibilityLabel="Profile details modal"
       >
-        DATA
-      </Text>
-      <TouchableOpacity
-        style={[styles.dangerBtn, { borderColor: colors.error }]}
-        onPress={handleClearData}
-        activeOpacity={0.7}
+        <View style={{ gap: 12, paddingVertical: 8 }}>
+          <View>
+            <Text preset="caption" color="textSecondary" style={{ marginBottom: 4 }}>Display Name</Text>
+            <TextInput
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="Your name"
+              placeholderTextColor={theme.colors.textSecondary}
+              style={[
+                styles.modalInput,
+                { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
+              ]}
+            />
+          </View>
+          <View>
+            <Text preset="caption" color="textSecondary" style={{ marginBottom: 4 }}>Email</Text>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              placeholder="you@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholderTextColor={theme.colors.textSecondary}
+              style={[
+                styles.modalInput,
+                { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
+              ]}
+            />
+          </View>
+          <View>
+            <Text preset="caption" color="textSecondary" style={{ marginBottom: 4 }}>Bio</Text>
+            <TextInput
+              value={bio}
+              onChangeText={setBio}
+              placeholder="Write a short bio…"
+              multiline
+              numberOfLines={3}
+              placeholderTextColor={theme.colors.textSecondary}
+              style={[
+                styles.modalInput,
+                { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, minHeight: 70 },
+              ]}
+            />
+          </View>
+          <Button label="Save Changes" variant="primary" onPress={handleSaveProfileDetails} style={{ marginTop: 8 }} />
+        </View>
+      </Modal>
+
+      {/* ── 4. Data & Storage Modal ─────────────────────────────────────── */}
+      <Modal
+        visible={showDataModal}
+        onDismiss={() => setShowDataModal(false)}
+        title="💾 Data & Storage"
+        accessibilityLabel="Data and storage modal"
       >
-        <Text style={[typography.button, { color: colors.error }]}>Clear All Data</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <View style={{ gap: 12, paddingVertical: 8 }}>
+          <TouchableOpacity
+            style={[styles.modalRowBtn, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+            onPress={handleExportData}
+          >
+            <Text style={{ fontSize: 22, marginRight: 12 }}>📋</Text>
+            <View style={{ flex: 1 }}>
+              <Text preset="label" color="text">Export Data (JSON)</Text>
+              <Text preset="caption" color="textSecondary">Copy all diary entries to clipboard</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* ── 5. Paywall / Pro Modal ───────────────────────────────────────── */}
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        appName="Mongoose"
+        subtitle="Unlock unlimited AI companion features, themes, and storage"
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
   },
-  section: {
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    overflow: 'hidden',
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    paddingHorizontal: 20,
+    marginBottom: 16,
   },
-  row: {
+  optionsContainer: {
+    flex: 1,
+  },
+  optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    minHeight: 48,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  rowIcon: {
-    fontSize: 18,
-    marginRight: spacing.sm,
-  },
-  radio: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
+  optionLeft: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    flex: 1,
   },
-  radioInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  optionIcon: {
+    fontSize: 24,
+    marginRight: 16,
+    width: 30,
+    textAlign: 'center',
   },
-  dangerBtn: {
-    borderRadius: borderRadius.md,
+  optionText: {
+    flex: 1,
+  },
+  optionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  optionSubtitle: {
+    fontSize: 14,
+  },
+  arrow: {
+    fontSize: 20,
+    fontWeight: '300',
+  },
+  modalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  modalInput: {
     borderWidth: 1,
-    paddingVertical: spacing.md,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+  },
+  modalRowBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
   },
 });
