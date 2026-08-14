@@ -36,6 +36,7 @@ import { Card } from '@shared/components/Card';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { MarkdownText } from '@shared/components/MarkdownText';
+import { getMoodLabel } from '@/ai/Mood';
 import { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
@@ -332,7 +333,7 @@ export default function EntryDetailScreen() {
                     <Text style={{ fontSize: 36, marginRight: theme.spacing.md }}>{companion.avatar}</Text>
                     <View>
                       <Text preset="label" color="text">{companion.name}'s Insights</Text>
-                      <Text preset="caption" color="tint">{entry.sentiment.mood}</Text>
+                      <Text preset="caption" color="tint">{getMoodLabel(entry.sentiment.mood)}</Text>
                     </View>
                   </View>
                   <Text preset="bodySmall" color="textSecondary" style={{ lineHeight: 20, marginBottom: theme.spacing.sm }}>

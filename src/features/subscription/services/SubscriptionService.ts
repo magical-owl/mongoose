@@ -43,68 +43,26 @@ export class SubscriptionService {
 
   /**
    * Purchase a subscription package (Monthly, Yearly, or Lifetime).
+   * Native billing must be wired before this method can grant an entitlement.
    */
   public async purchasePackage(pkg: SubscriptionPackage): Promise<Result<CustomerEntitlement>> {
-    try {
-      useSubscriptionStore.getState().setLoading(true);
-
-      // Simulating native purchase transaction / RevenueCat purchase
-      const newEntitlement: CustomerEntitlement = {
-        isPro: true,
-        activeTier: pkg.tier,
-        expirationDate: pkg.period === 'lifetime' ? undefined : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        originalPurchaseDate: new Date().toISOString(),
-        willRenew: pkg.period !== 'lifetime',
-      };
-
-      useSubscriptionStore.getState().setEntitlement(newEntitlement);
-      useSubscriptionStore.getState().setLoading(false);
-
-      return success(newEntitlement);
-    } catch (error) {
-      useSubscriptionStore.getState().setLoading(false);
-      const message = error instanceof Error ? error.message : 'Purchase transaction failed';
-      return failure({
-        code: 'PURCHASE_FAILED',
-        message,
-      });
-    }
+    void pkg;
+    return failure({
+      code: 'PURCHASE_NOT_CONFIGURED',
+      message: 'Purchases are unavailable until native App Store billing is configured.',
+    });
   }
 
   /**
    * Restore Purchases (Mandatory for Apple Guideline 3.1.1 Compliance).
    * Restores active App Store purchases for users reinstalling or switching devices.
+   * Native billing must be wired before this method can restore an entitlement.
    */
   public async restorePurchases(): Promise<Result<CustomerEntitlement>> {
-    try {
-      useSubscriptionStore.getState().setLoading(true);
-
-      // In production, calls Native StoreKit / RevenueCat.restorePurchases()
-      const restoredEntitlement: CustomerEntitlement = useSubscriptionStore.getState().isPro
-        ? {
-            isPro: true,
-            activeTier: useSubscriptionStore.getState().activeTier,
-            expirationDate: useSubscriptionStore.getState().expirationDate,
-            willRenew: true,
-          }
-        : {
-            isPro: false,
-            activeTier: 'free',
-            willRenew: false,
-          };
-
-      useSubscriptionStore.getState().setEntitlement(restoredEntitlement);
-      useSubscriptionStore.getState().setLoading(false);
-
-      return success(restoredEntitlement);
-    } catch (error) {
-      useSubscriptionStore.getState().setLoading(false);
-      const message = error instanceof Error ? error.message : 'Restore purchases failed';
-      return failure({
-        code: 'RESTORE_FAILED',
-        message,
-      });
-    }
+    return failure({
+      code: 'RESTORE_NOT_CONFIGURED',
+      message: 'Restore is unavailable until native App Store billing is configured.',
+    });
   }
 }
 

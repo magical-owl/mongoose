@@ -30,7 +30,7 @@ describe('DiaryService', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.sentiment).toBeDefined();
-      expect(result.data.sentiment?.mood).toContain('Joyful');
+      expect(result.data.sentiment?.mood).toBe('happy');
     }
   });
 

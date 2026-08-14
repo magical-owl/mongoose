@@ -3,8 +3,8 @@
  *
  * Consolidated Settings & Profile screen:
  * - Title: ⚙️ Settings (24px bold)
- * - Defined option rows: Appearance, AI Companion, Profile Details, Membership & Pro, Data & Storage, Reset App
- * - Modals for Appearance, Companion, Profile Details, Data Export & Paywall
+ * - Defined option rows: Appearance, AI Companion, Profile Details, Data & Storage, Reset App
+ * - Modals for Appearance, Companion, Profile Details and Data Export
  */
 
 import { useState } from 'react';
@@ -27,14 +27,11 @@ import { CompanionPickerModal } from '@/features/diary/components/CompanionPicke
 import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
-import { useSubscription } from '@/features/subscription/hooks/useSubscription';
-import { PaywallModal } from '@/shared/components/PaywallModal';
 
 export default function SettingsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { entries, selectedCompanion, setSelectedCompanion, deleteDiaryEntry } = useDiary();
-  const { isPro, activeTier } = useSubscription();
   const { profile, saveProfile, clearProfile } = useProfileForm();
 
   // Modals
@@ -42,7 +39,6 @@ export default function SettingsScreen() {
   const [showCompanionModal, setShowCompanionModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showDataModal, setShowDataModal] = useState(false);
-  const [showPaywall, setShowPaywall] = useState(false);
 
   // Profile form state
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
@@ -114,13 +110,6 @@ export default function SettingsScreen() {
         setBio(profile?.bio ?? '');
         setShowProfileModal(true);
       },
-    },
-    {
-      id: 'subscription',
-      title: 'Membership & Pro',
-      subtitle: isPro ? `Pro Plan (${activeTier.toUpperCase()})` : 'Free Plan (Tap to upgrade)',
-      icon: '👑',
-      onPress: () => setShowPaywall(true),
     },
     {
       id: 'data',
@@ -335,13 +324,6 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
-      {/* ── 5. Paywall / Pro Modal ───────────────────────────────────────── */}
-      <PaywallModal
-        visible={showPaywall}
-        onClose={() => setShowPaywall(false)}
-        appName="Mongoose"
-        subtitle="Unlock unlimited AI companion features, themes, and storage"
-      />
     </View>
   );
 }

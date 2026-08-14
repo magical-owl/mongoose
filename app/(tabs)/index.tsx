@@ -6,12 +6,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { stripHtml } from '@shared/utils/html';
-
-const MOOD_EMOJI: Record<string, string> = {
-  happy: '😊', sad: '😢', excited: '🤩', anxious: '😰',
-  calm: '😌', angry: '😠', neutral: '😐', tired: '😴',
-  confused: '😕', grateful: '🙏',
-};
+import { getMoodEmoji } from '@/ai/Mood';
 
 export default function TimelineScreen() {
   const router = useRouter();
@@ -116,7 +111,7 @@ export default function TimelineScreen() {
           ) : (
             filteredEntries.map((entry) => {
               const hasSentiment = !!entry.sentiment?.mood;
-              const moodEmoji = hasSentiment ? MOOD_EMOJI[entry.sentiment!.mood] ?? '💭' : null;
+              const moodEmoji = hasSentiment ? getMoodEmoji(entry.sentiment!.mood) : null;
 
               if (viewMode === 'simple') {
                 {/* Simple Mode Row */ }

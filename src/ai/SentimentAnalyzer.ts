@@ -5,8 +5,10 @@
  * No text is sent to any external service — all processing is on-device.
  *
  * Scores content across 8 emotion dimensions using weighted keyword matching,
- * then resolves to a dominant mood with a nuanced label.
+ * then resolves to a stable mood key for storage and UI rendering.
  */
+
+import type { MoodKey } from './Mood';
 
 export type EmotionDimension =
   | 'joy'
@@ -29,17 +31,7 @@ export interface EmotionScores {
   readonly anger: number;
 }
 
-export type MoodLabel =
-  | 'Joyful 🌟'
-  | 'Excited ⚡'
-  | 'Loving 💛'
-  | 'Grateful 🙏'
-  | 'Calm ☕'
-  | 'Reflective 🌿'
-  | 'Tired 🌙'
-  | 'Stressed 🌊'
-  | 'Sad 🌧️'
-  | 'Frustrated 🔥';
+export type MoodLabel = MoodKey;
 
 export interface SentimentResult {
   readonly mood: MoodLabel;
@@ -151,18 +143,18 @@ function resolveMood(dominant: EmotionDimension, scores: EmotionScores): MoodLab
   // Special combined cases
   const total = Object.values(scores).reduce((a, b) => a + b, 0);
 
-  if (total === 0) return 'Calm ☕'; // No emotion detected
+  if (total === 0) return 'calm'; // No emotion detected
 
   switch (dominant) {
-    case 'joy':       return 'Joyful 🌟';
-    case 'excitement': return 'Excited ⚡';
-    case 'love':      return 'Loving 💛';
-    case 'gratitude': return 'Grateful 🙏';
-    case 'sadness':   return 'Sad 🌧️';
-    case 'stress':    return 'Stressed 🌊';
-    case 'fatigue':   return 'Tired 🌙';
-    case 'anger':     return 'Frustrated 🔥';
-    default:          return 'Reflective 🌿';
+    case 'joy':       return 'happy';
+    case 'excitement': return 'excited';
+    case 'love':      return 'happy';
+    case 'gratitude': return 'grateful';
+    case 'sadness':   return 'sad';
+    case 'stress':    return 'anxious';
+    case 'fatigue':   return 'tired';
+    case 'anger':     return 'angry';
+    default:          return 'neutral';
   }
 }
 

@@ -12,12 +12,8 @@ import { Text } from '@shared/components/Text';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useAppStore } from '@/stores/useAppStore';
 import { stripHtml } from '@shared/utils/html';
+import { getMoodEmoji } from '@/ai/Mood';
 
-const MOOD_EMOJI: Record<string, string> = {
-  happy: '😊', sad: '😢', excited: '🤩', anxious: '😰',
-  calm: '😌', angry: '😠', neutral: '😐', tired: '😴',
-  confused: '😕', grateful: '🙏',
-};
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -216,7 +212,7 @@ export default function CalendarScreen() {
           ) : (
             selectedDayEntries.map((item) => {
               const hasSentiment = !!item.sentiment?.mood;
-              const moodEmoji = hasSentiment ? MOOD_EMOJI[item.sentiment!.mood] ?? '💭' : null;
+              const moodEmoji = hasSentiment ? getMoodEmoji(item.sentiment!.mood) : null;
 
               return (
                 <TouchableOpacity
