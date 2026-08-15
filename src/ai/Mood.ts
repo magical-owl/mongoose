@@ -1,13 +1,6 @@
-export type MoodKey =
-  | 'happy'
-  | 'sad'
-  | 'excited'
-  | 'anxious'
-  | 'calm'
-  | 'angry'
-  | 'neutral'
-  | 'tired'
-  | 'grateful';
+import type { ManualMood } from '@/features/diary/domain/DiaryEntry';
+
+export type MoodKey = ManualMood;
 
 const MOOD_EMOJI: Record<MoodKey, string> = {
   happy: '😊',
@@ -21,22 +14,9 @@ const MOOD_EMOJI: Record<MoodKey, string> = {
   grateful: '🙏',
 };
 
-const LEGACY_MOOD_KEYS: Record<string, MoodKey> = {
-  'Joyful 🌟': 'happy',
-  'Excited ⚡': 'excited',
-  'Loving 💛': 'happy',
-  'Grateful 🙏': 'grateful',
-  'Calm ☕': 'calm',
-  'Reflective 🌿': 'neutral',
-  'Tired 🌙': 'tired',
-  'Stressed 🌊': 'anxious',
-  'Sad 🌧️': 'sad',
-  'Frustrated 🔥': 'angry',
-};
-
 export function normalizeMoodKey(mood: string): MoodKey {
   if (mood in MOOD_EMOJI) return mood as MoodKey;
-  return LEGACY_MOOD_KEYS[mood] ?? 'neutral';
+  return 'neutral';
 }
 
 export function getMoodEmoji(mood: string): string {

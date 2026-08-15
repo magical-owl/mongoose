@@ -29,7 +29,7 @@ import { Text } from '@shared/components/Text';
 import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useAppStore } from '@/stores/useAppStore';
-import { DiaryEntry, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
+import { DiaryEntry, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { StickerPickerModal } from '@/features/diary/components/StickerPickerModal';
@@ -85,6 +85,7 @@ export default function CreateEntryScreen() {
   const [showCompanionPicker, setShowCompanionPicker] = useState(false);
   const [draftStatus, setDraftStatus] = useState<'idle' | 'saved'>('idle');
   const [manualMoodWeather, setManualMoodWeather] = useState<ManualMoodWeather>('calm');
+  const [manualMood, setManualMood] = useState<ManualMood>('neutral');
   const [writingMode, setWritingMode] = useState<WritingMode>('free-write');
   const [locationLabel, setLocationLabel] = useState('');
   const [sounds, setSounds] = useState('');
@@ -109,6 +110,7 @@ export default function CreateEntryScreen() {
       setStickers(draft.stickers);
       setSelectedCompanion(draft.companion);
       setManualMoodWeather(draft.manualMoodWeather);
+      setManualMood(draft.manualMood ?? 'neutral');
       setWritingMode(draft.writingMode);
       setLocationLabel(draft.sensory.locationLabel);
       setSounds(draft.sensory.sounds);
@@ -138,14 +140,14 @@ export default function CreateEntryScreen() {
         date: isoDate,
         companion: selectedCompanion,
         stickers,
-        manualMoodWeather, writingMode,
+        manualMood, manualMoodWeather, writingMode,
         sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState },
         isLockbox, timeCapsuleUnlockAt: timeCapsuleUnlockAt ? new Date(timeCapsuleUnlockAt).toISOString() : undefined,
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
       }).then(() => setDraftStatus('saved'));
     }, 700);
     return () => clearTimeout(timer);
-  }, [title, content, isoDate, selectedCompanion, stickers, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
+  }, [title, content, isoDate, selectedCompanion, stickers, manualMood, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = content
@@ -220,6 +222,7 @@ export default function CreateEntryScreen() {
       isFavorite: false,
       tags: [],
       manualMoodWeather,
+      manualMood,
       writingMode,
       sensory: { locationLabel, sounds, smells, energyLevel: Math.min(10, Math.max(1, Number(energyLevel) || 5)), bodyState },
       isLockbox,
@@ -455,8 +458,9 @@ export default function CreateEntryScreen() {
       <EntryDetailsModal
         visible={showEntryDetails}
         onDismiss={() => setShowEntryDetails(false)}
-        values={{ manualMoodWeather, writingMode, sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState }, isLockbox, timeCapsuleUnlockAt, expiresAt }}
+        values={{ manualMood, manualMoodWeather, writingMode, sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState }, isLockbox, timeCapsuleUnlockAt, expiresAt }}
         onChange={(next) => {
+          if (next.manualMood) setManualMood(next.manualMood);
           if (next.manualMoodWeather) setManualMoodWeather(next.manualMoodWeather);
           if (next.writingMode) setWritingMode(next.writingMode);
           if (next.sensory) { setLocationLabel(next.sensory.locationLabel); setSounds(next.sensory.sounds); setSmells(next.sensory.smells); setEnergyLevel(String(next.sensory.energyLevel)); setBodyState(next.sensory.bodyState); }

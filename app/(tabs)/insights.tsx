@@ -14,7 +14,6 @@ import { useTheme } from "@providers/ThemeProvider";
 import { Text } from "@shared/components/Text";
 import { Icon } from "@shared/components/Icon";
 import { useDiary } from "@/features/diary/hooks/useDiary";
-import { getMoodLabel } from "@/ai/Mood";
 
 export default function InsightsScreen() {
   const theme = useTheme();
@@ -45,21 +44,6 @@ export default function InsightsScreen() {
       total > 0 && maxCount > 0 ? days[maxDayIndex] || "None" : "None";
 
     const today = new Date();
-    const getMoodDistribution = (days: number) => {
-      const moodCounts = new Map<string, number>();
-      entries.forEach((entry) => {
-        const date = new Date(`${entry.date}T12:00:00`);
-        const mood = entry.sentiment?.mood;
-        if (mood && today.getTime() - date.getTime() <= days * 86400000) {
-          const label = getMoodLabel(mood);
-          moodCounts.set(label, (moodCounts.get(label) ?? 0) + 1);
-        }
-      });
-      return Array.from(moodCounts.entries()).sort((a, b) => b[1] - a[1]);
-    };
-    const moodDistribution = getMoodDistribution(3650);
-    const weeklyMoodDistribution = getMoodDistribution(7);
-    const monthlyMoodDistribution = getMoodDistribution(30);
     const recentDates = new Set(
       entries
         .filter((entry) => {
@@ -88,9 +72,6 @@ export default function InsightsScreen() {
       totalWords,
       avgWords,
       mostActiveDay,
-      moodDistribution,
-      weeklyMoodDistribution,
-      monthlyMoodDistribution,
       consistency,
       calendarDays,
       activityDays,
@@ -243,77 +224,6 @@ export default function InsightsScreen() {
           </View>
         </View>
 
-        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>MOOD MIX</Text>
-        <View style={[styles.chartCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-          {stats.monthlyMoodDistribution.length === 0 ? <Text preset="caption" color="textSecondary">Mood mix appears after entries are analyzed.</Text> : <><View style={styles.segmentedBar}>{stats.monthlyMoodDistribution.map(([mood, count], index) => <View key={mood} style={[styles.segment, { flex: count, backgroundColor: index % 2 === 0 ? theme.colors.tint : theme.colors.tint + "88" }]} />)}</View><View style={styles.legend}>{stats.monthlyMoodDistribution.slice(0, 4).map(([mood, count], index) => <View key={mood} style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: index % 2 === 0 ? theme.colors.tint : theme.colors.tint + "88" }]} /><Text preset="caption" color="textSecondary">{mood} {count}</Text></View>)}</View></>}
-        </View>
-
-        <Text
-          style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}
-        >
-          MOOD TRENDS
-        </Text>
-        <View
-          style={[
-            styles.trendCard,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
-            },
-          ]}
-        >
-          {stats.moodDistribution.length === 0 ? (
-            <Text preset="caption" color="textSecondary">
-              Mood trends appear after entries are analyzed.
-            </Text>
-          ) : (
-            <>
-              <Text
-                preset="caption"
-                color="textSecondary"
-                style={styles.periodLabel}
-              >
-                LAST 7 DAYS
-              </Text>
-              {stats.weeklyMoodDistribution.length === 0 ? (
-                <Text preset="caption" color="textSecondary">
-                  No analyzed moods.
-                </Text>
-              ) : (
-                stats.weeklyMoodDistribution.map(([mood, count]) => (
-                  <MoodBar
-                    key={`week-${mood}`}
-                    mood={mood}
-                    count={count}
-                    max={stats.weeklyMoodDistribution[0]?.[1] ?? 1}
-                  />
-                ))
-              )}
-              <Text
-                preset="caption"
-                color="textSecondary"
-                style={styles.periodLabel}
-              >
-                LAST 30 DAYS
-              </Text>
-              {stats.monthlyMoodDistribution.length === 0 ? (
-                <Text preset="caption" color="textSecondary">
-                  No analyzed moods.
-                </Text>
-              ) : (
-                stats.monthlyMoodDistribution.map(([mood, count]) => (
-                  <MoodBar
-                    key={`month-${mood}`}
-                    mood={mood}
-                    count={count}
-                    max={stats.monthlyMoodDistribution[0]?.[1] ?? 1}
-                  />
-                ))
-              )}
-            </>
-          )}
-        </View>
-
         <Text
           style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}
         >
@@ -355,43 +265,6 @@ export default function InsightsScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
-  );
-}
-
-function MoodBar({
-  mood,
-  count,
-  max,
-}: {
-  mood: string;
-  count: number;
-  max: number;
-}) {
-  const theme = useTheme();
-  return (
-    <View style={styles.moodBarRow}>
-      <View style={styles.moodBarLabel}>
-        <Text preset="bodySmall" color="text">
-          {mood}
-        </Text>
-        <Text preset="bodySmall" color="tint">
-          {count}
-        </Text>
-      </View>
-      <View
-        style={[styles.moodBarTrack, { backgroundColor: theme.colors.border }]}
-      >
-        <View
-          style={[
-            styles.moodBarFill,
-            {
-              backgroundColor: theme.colors.tint,
-              width: `${Math.max(12, (count / max) * 100)}%`,
-            },
-          ]}
-        />
-      </View>
     </View>
   );
 }
@@ -474,25 +347,11 @@ const styles = StyleSheet.create({
   barTrack: { width: 18, height: 108, borderRadius: 9, justifyContent: "flex-end", overflow: "hidden" },
   bar: { width: "100%", borderRadius: 9 },
   barLabel: { fontSize: 11 },
-  segmentedBar: { height: 14, flexDirection: "row", borderRadius: 7, overflow: "hidden", gap: 2 },
-  segment: { height: "100%" },
-  legend: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 14 },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
   trendRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingVertical: 6,
   },
-  moodBarRow: { marginBottom: 10 },
-  moodBarLabel: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 5,
-  },
-  moodBarTrack: { height: 8, borderRadius: 4, overflow: "hidden" },
-  moodBarFill: { height: "100%", borderRadius: 4 },
-  periodLabel: { fontWeight: "700", marginTop: 8, marginBottom: 2 },
   calendarGrid: {
     flexDirection: "row",
     flexWrap: "wrap",

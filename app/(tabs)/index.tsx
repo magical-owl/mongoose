@@ -1,19 +1,21 @@
-import { useState, useCallback, useMemo } from "react";
+import { Fragment, useState, useCallback, useMemo } from "react";
 import {
   View,
   ScrollView,
   TouchableOpacity,
   TextInput,
   StyleSheet,
+  Pressable,
+  Modal as RNModal,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@providers/ThemeProvider";
 import { Text } from "@shared/components/Text";
-import { Modal } from "@shared/components/Modal";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import { stripHtml } from "@shared/utils/html";
-import { getMoodEmoji, normalizeMoodKey } from "@/ai/Mood";
+import { getMoodEmoji } from "@/ai/Mood";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
 import { appLockService } from "@/services/AppLockService";
 
@@ -29,9 +31,10 @@ export default function TimelineScreen() {
   const [filterMood, setFilterMood] = useState("");
   const [filterCompanion, setFilterCompanion] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const [filterModal, setFilterModal] = useState<
+  const [expandedFilter, setExpandedFilter] = useState<
     "date" | "tag" | "mood" | "companion" | null
   >(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const filterOptions = useMemo(
     () => ({
@@ -42,8 +45,8 @@ export default function TimelineScreen() {
       mood: Array.from(
         new Set(
           entries.flatMap((entry) =>
-            entry.sentiment?.mood
-              ? [normalizeMoodKey(entry.sentiment.mood)]
+            entry.manualMood
+              ? [entry.manualMood]
               : [],
           ),
         ),
@@ -98,8 +101,8 @@ export default function TimelineScreen() {
             tag.toLowerCase().includes(filterTag.toLowerCase()),
           )) &&
         (!filterMood ||
-          (e.sentiment?.mood
-            ? normalizeMoodKey(e.sentiment.mood) === filterMood.toLowerCase()
+          (e.manualMood
+            ? e.manualMood === filterMood.toLowerCase()
             : false)) &&
         (!filterCompanion || e.companion === filterCompanion.toLowerCase()) &&
         (!favoritesOnly || e.isFavorite),
@@ -128,9 +131,9 @@ export default function TimelineScreen() {
         >
           {/* Header Row */}
           <View style={styles.headerRow}>
-            <Text style={[styles.heading, { color: theme.colors.text }]}>
-              My Diary
-            </Text>
+            <TouchableOpacity onPress={() => setIsDrawerOpen(true)} style={styles.menuButton} accessibilityRole="button" accessibilityLabel="Open diary menu">
+              <Ionicons name="menu-outline" size={28} color={theme.colors.text} />
+            </TouchableOpacity>
 
             {/* Detailed / Simple Switcher */}
             <View
@@ -190,64 +193,6 @@ export default function TimelineScreen() {
             ]}
           />
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterRow}
-          >
-            {(["date", "tag", "mood", "companion"] as const).map((kind) => {
-              const value =
-                kind === "date"
-                  ? filterDate
-                  : kind === "tag"
-                    ? filterTag
-                    : kind === "mood"
-                      ? filterMood
-                      : filterCompanion;
-              return (
-                <TouchableOpacity
-                  key={kind}
-                  onPress={() => setFilterModal(kind)}
-                  style={[
-                    styles.filterButton,
-                    {
-                      borderColor: value
-                        ? theme.colors.tint
-                        : theme.colors.border,
-                      backgroundColor: value
-                        ? theme.colors.tint + "18"
-                        : theme.colors.surface,
-                    },
-                  ]}
-                >
-                  <Text preset="caption" color="text">
-                    {value || kind.charAt(0).toUpperCase() + kind.slice(1)}
-                  </Text>
-                  <Text color="textSecondary">⌄</Text>
-                </TouchableOpacity>
-              );
-            })}
-            <TouchableOpacity
-              onPress={() => setFavoritesOnly((value) => !value)}
-              style={[
-                styles.favoriteFilter,
-                {
-                  borderColor: theme.colors.border,
-                  backgroundColor: favoritesOnly
-                    ? theme.colors.tint
-                    : theme.colors.surface,
-                },
-              ]}
-            >
-              <Text
-                preset="caption"
-                style={{ color: favoritesOnly ? "#fff" : theme.colors.text }}
-              >
-                ★
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-
           {/* {onThisDay.length > 0 && (
             <View style={[styles.memoryBanner, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <Text preset="label" color="text">On this day</Text>
@@ -264,9 +209,9 @@ export default function TimelineScreen() {
             </Text>
           ) : (
             filteredEntries.map((entry) => {
-              const hasSentiment = !!entry.sentiment?.mood;
-              const moodEmoji = hasSentiment
-                ? getMoodEmoji(entry.sentiment!.mood)
+              const hasMood = !!entry.manualMood;
+              const moodEmoji = hasMood
+                ? getMoodEmoji(entry.manualMood!)
                 : null;
 
               if (viewMode === "simple") {
@@ -290,8 +235,8 @@ export default function TimelineScreen() {
                       {
                         backgroundColor: theme.colors.surface,
                         borderColor: theme.colors.border,
-                        borderLeftWidth: hasSentiment ? 4 : 1,
-                        borderLeftColor: hasSentiment
+                        borderLeftWidth: hasMood ? 4 : 1,
+                        borderLeftColor: hasMood
                           ? theme.colors.tint
                           : theme.colors.border,
                       },
@@ -326,9 +271,9 @@ export default function TimelineScreen() {
                     >
                       {entry.title}
                     </Text>
-                    {hasSentiment && (
-                      <View style={styles.sentimentIndicator}>
-                        <Text style={styles.sentimentEmoji}>{moodEmoji}</Text>
+                    {hasMood && (
+                      <View style={styles.moodIndicator}>
+                        <Text style={styles.moodEmoji}>{moodEmoji}</Text>
                       </View>
                     )}
                     <Text
@@ -363,8 +308,8 @@ export default function TimelineScreen() {
                     {
                       backgroundColor: theme.colors.surface,
                       borderColor: theme.colors.border,
-                      borderLeftWidth: hasSentiment ? 4 : 1,
-                      borderLeftColor: hasSentiment
+                      borderLeftWidth: hasMood ? 4 : 1,
+                      borderLeftColor: hasMood
                         ? theme.colors.tint
                         : theme.colors.border,
                     },
@@ -390,9 +335,9 @@ export default function TimelineScreen() {
                         {entry.title.substring(0, 30)}
                         {entry.title.length > 30 ? "..." : ""}
                       </Text>
-                      {hasSentiment && (
-                      <View style={styles.sentimentIndicator}>
-                          <Text style={styles.sentimentEmoji}>{moodEmoji}</Text>
+                      {hasMood && (
+                      <View style={styles.moodIndicator}>
+                          <Text style={styles.moodEmoji}>{moodEmoji}</Text>
                         </View>
                       )}
                     </View>
@@ -420,63 +365,61 @@ export default function TimelineScreen() {
           )}
         </ScrollView>
       )}
-      <Modal
-        visible={filterModal !== null}
-        onDismiss={() => setFilterModal(null)}
-        title={filterModal ? `Choose ${filterModal}` : "Choose filter"}
-      >
-        <ScrollView
-          style={styles.optionList}
-          showsVerticalScrollIndicator={false}
-        >
-          {filterModal && (
-            <>
-              <TouchableOpacity
-                onPress={() => {
-                  if (filterModal === "date") setFilterDate("");
-                  if (filterModal === "tag") setFilterTag("");
-                  if (filterModal === "mood") setFilterMood("");
-                  if (filterModal === "companion") setFilterCompanion("");
-                  setFilterModal(null);
-                }}
-                style={[
-                  styles.optionButton,
-                  { borderColor: theme.colors.border },
-                ]}
-              >
-                <Text preset="bodySmall" color="textSecondary">
-                  All {filterModal}s
-                </Text>
+      <RNModal visible={isDrawerOpen} transparent animationType="slide" onRequestClose={() => setIsDrawerOpen(false)}>
+        <View style={styles.drawerRoot}>
+          <Pressable style={styles.drawerOverlay} onPress={() => setIsDrawerOpen(false)} accessibilityLabel="Close diary menu" />
+          <View style={[styles.drawer, { backgroundColor: theme.colors.background, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}>
+            <View style={styles.drawerHeader}>
+              <View>
+                <Text preset="h2" color="text">Diary menu</Text>
+                <Text preset="caption" color="textSecondary">Browse and refine your entries</Text>
+              </View>
+              <TouchableOpacity onPress={() => setIsDrawerOpen(false)} style={styles.drawerClose} accessibilityRole="button" accessibilityLabel="Close diary menu">
+                <Ionicons name="close" size={22} color={theme.colors.text} />
               </TouchableOpacity>
-              {filterOptions[filterModal].map((option) => (
-                <TouchableOpacity
-                  key={option}
-                  onPress={() => {
-                    if (filterModal === "date") setFilterDate(option);
-                    if (filterModal === "tag") setFilterTag(option);
-                    if (filterModal === "mood") setFilterMood(option);
-                    if (filterModal === "companion") setFilterCompanion(option);
-                    setFilterModal(null);
-                  }}
-                  style={[
-                    styles.optionButton,
-                    {
-                      borderColor: theme.colors.border,
-                      backgroundColor: theme.colors.surface,
-                    },
-                  ]}
-                >
-                  <Text preset="bodySmall" color="text">
-                    {filterModal === "mood"
-                      ? `${getMoodEmoji(option)} ${option}`
-                      : option}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </>
-          )}
-        </ScrollView>
-      </Modal>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text preset="caption" color="textSecondary" style={styles.drawerSectionLabel}>FILTER ENTRIES</Text>
+              {(["date", "tag", "mood", "companion"] as const).map((kind) => {
+                const value = kind === "date" ? filterDate : kind === "tag" ? filterTag : kind === "mood" ? filterMood : filterCompanion;
+                const icon = kind === "date" ? "calendar-outline" : kind === "tag" ? "pricetag-outline" : kind === "mood" ? "heart-outline" : "people-outline";
+                return (
+                  <Fragment key={kind}>
+                    <TouchableOpacity onPress={() => setExpandedFilter(expandedFilter === kind ? null : kind)} style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel={`Filter by ${kind}`}>
+                      <Ionicons name={icon} size={20} color={value ? theme.colors.tint : theme.colors.textSecondary} />
+                      <Text preset="bodySmall" color="text" style={styles.drawerRowText}>{value || kind.charAt(0).toUpperCase() + kind.slice(1)}</Text>
+                      <Ionicons name={expandedFilter === kind ? "chevron-down" : "chevron-forward"} size={16} color={theme.colors.textSecondary} />
+                    </TouchableOpacity>
+                    {expandedFilter === kind && (
+                      <View style={[styles.inlineOptions, { borderBottomColor: theme.colors.border }]}>
+                        <TouchableOpacity onPress={() => { if (kind === "date") setFilterDate(""); if (kind === "tag") setFilterTag(""); if (kind === "mood") setFilterMood(""); if (kind === "companion") setFilterCompanion(""); setExpandedFilter(null); }} style={styles.inlineOption}>
+                          <Text preset="caption" color={!value ? "tint" : "textSecondary"}>All {kind}s</Text>
+                        </TouchableOpacity>
+                        {filterOptions[kind].map((option) => {
+                          const selected = option === value;
+                          return (
+                            <TouchableOpacity key={option} onPress={() => { if (kind === "date") setFilterDate(option); if (kind === "tag") setFilterTag(option); if (kind === "mood") setFilterMood(option); if (kind === "companion") setFilterCompanion(option); setExpandedFilter(null); }} style={[styles.inlineOption, selected && { backgroundColor: theme.colors.tint + "18" }]}>
+                              <Text preset="caption" color={selected ? "tint" : "text"}>{kind === "mood" ? `${getMoodEmoji(option)} ${option}` : option}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    )}
+                  </Fragment>
+                );
+              })}
+              <TouchableOpacity onPress={() => setFavoritesOnly((value) => !value)} style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]} accessibilityRole="switch" accessibilityState={{ checked: favoritesOnly }}>
+                <Ionicons name="star-outline" size={20} color={favoritesOnly ? theme.colors.tint : theme.colors.textSecondary} />
+                <Text preset="bodySmall" color="text" style={styles.drawerRowText}>Favorites only</Text>
+                <Ionicons name={favoritesOnly ? "checkbox" : "square-outline"} size={20} color={favoritesOnly ? theme.colors.tint : theme.colors.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setFilterDate(""); setFilterTag(""); setFilterMood(""); setFilterCompanion(""); setFavoritesOnly(false); }} style={styles.clearFilters} accessibilityRole="button">
+                <Text preset="bodySmall" color="tint">Clear all filters</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </RNModal>
     </View>
   );
 }
@@ -494,10 +437,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  heading: {
-    fontSize: 24,
-    fontWeight: "700",
-  },
+  menuButton: { width: 40, height: 40, alignItems: "flex-start", justifyContent: "center" },
   switcherWrap: {
     flexDirection: "row",
     borderRadius: 20,
@@ -520,26 +460,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 16,
   },
-  filterRow: { gap: 8, paddingBottom: 12 },
-  filterButton: {
-    minWidth: 92,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 9,
-  },
-  favoriteFilter: {
-    width: 40,
-    height: 40,
-    borderWidth: 1,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  drawerRoot: { flex: 1, flexDirection: "row" },
+  drawerOverlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.35)" },
+  drawer: { width: "84%", paddingHorizontal: 20, shadowColor: "#000", shadowOffset: { width: 3, height: 0 }, shadowOpacity: 0.18, shadowRadius: 12, elevation: 12 },
+  drawerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 22 },
+  drawerClose: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+  drawerSectionLabel: { fontWeight: "700", letterSpacing: 0.6, marginTop: 18, marginBottom: 8 },
+  drawerRow: { minHeight: 52, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth },
+  drawerRowText: { flex: 1, marginLeft: 12 },
+  clearFilters: { paddingVertical: 14 },
+  inlineOptions: { borderBottomWidth: StyleSheet.hairlineWidth, paddingLeft: 32, paddingBottom: 6 },
+  inlineOption: { paddingVertical: 10, paddingHorizontal: 10, borderRadius: 6 },
   memoryBanner: {
     borderWidth: 1,
     borderRadius: 10,
@@ -584,10 +515,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  sentimentIndicator: {
+  moodIndicator: {
     marginLeft: 8,
   },
-  sentimentEmoji: {
+  moodEmoji: {
     fontSize: 13,
     color: "#fff",
   },
@@ -603,12 +534,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     width: 26,
     textAlign: "center",
-  },
-  optionList: { maxHeight: 420 },
-  optionButton: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
   },
 });

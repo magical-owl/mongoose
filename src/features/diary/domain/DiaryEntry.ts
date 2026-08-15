@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { PlacedStickerSchema } from './Sticker';
 import { CompanionTypeSchema } from './Companion';
-import { SentimentSchema } from './Sentiment';
 
 export const ManualMoodWeatherSchema = z.enum(['sunny', 'cloudy', 'stormy', 'foggy', 'windy', 'calm']);
 export type ManualMoodWeather = z.infer<typeof ManualMoodWeatherSchema>;
+
+export const ManualMoodSchema = z.enum(['happy', 'calm', 'sad', 'anxious', 'angry', 'grateful', 'excited', 'tired', 'neutral']);
+export type ManualMood = z.infer<typeof ManualMoodSchema>;
 
 export const WritingModeSchema = z.enum(['free-write', 'one-line', 'five-minute', 'gratitude', 'travel', 'dream', 'evening-review']);
 export type WritingMode = z.infer<typeof WritingModeSchema>;
@@ -26,12 +28,13 @@ export const DiaryEntrySchema = z.object({
   paperBackgroundId: z.string().default('vintage-parchment'),
   stickers: z.array(PlacedStickerSchema).default([]),
   companion: CompanionTypeSchema.default('cat'),
-  sentiment: SentimentSchema.optional(),
   isFavorite: z.boolean().default(false),
   tags: z.array(z.string()).default([]),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   manualMoodWeather: ManualMoodWeatherSchema.default('calm'),
+  /** Optional for backwards compatibility with entries created before manual mood selection. */
+  manualMood: ManualMoodSchema.optional(),
   writingMode: WritingModeSchema.default('free-write'),
   sensory: SensoryDetailsSchema.default({ locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' }),
   timeCapsuleUnlockAt: z.string().datetime().optional(),

@@ -140,7 +140,7 @@ export default function CalendarScreen() {
                 const isSelected = dateStr === selectedDateStr;
                 const dayEntries = entryDateMap.get(dateStr) || [];
                 const hasEntries = dayEntries.length > 0;
-                const hasSentiment = dayEntries.some((e) => !!e.sentiment?.mood);
+                const hasMood = dayEntries.some((e) => !!e.manualMood);
 
                 return (
                   <TouchableOpacity
@@ -186,7 +186,7 @@ export default function CalendarScreen() {
                           {
                             backgroundColor: isSelected
                               ? theme.colors.background
-                              : hasSentiment
+                              : hasMood
                                 ? theme.colors.tint
                                 : theme.colors.tint,
                           },
@@ -211,8 +211,8 @@ export default function CalendarScreen() {
             </Text>
           ) : (
             selectedDayEntries.map((item) => {
-              const hasSentiment = !!item.sentiment?.mood;
-              const moodEmoji = hasSentiment ? getMoodEmoji(item.sentiment!.mood) : null;
+              const hasMood = !!item.manualMood;
+              const moodEmoji = hasMood ? getMoodEmoji(item.manualMood!) : null;
 
               return (
                 <TouchableOpacity
@@ -224,8 +224,8 @@ export default function CalendarScreen() {
                     {
                       backgroundColor: theme.colors.surface,
                       borderColor: theme.colors.border,
-                      borderLeftWidth: hasSentiment ? 4 : 1,
-                      borderLeftColor: hasSentiment ? theme.colors.tint : theme.colors.border,
+                      borderLeftWidth: hasMood ? 4 : 1,
+                      borderLeftColor: hasMood ? theme.colors.tint : theme.colors.border,
                     },
                   ]}
                 >
@@ -235,9 +235,9 @@ export default function CalendarScreen() {
                         {item.title.substring(0, 30)}
                         {item.title.length > 30 ? '...' : ''}
                       </Text>
-                      {hasSentiment && (
-                        <View style={styles.sentimentIndicator}>
-                          <Text style={styles.sentimentEmoji}>{moodEmoji}</Text>
+                      {hasMood && (
+                        <View style={styles.moodIndicator}>
+                          <Text style={styles.moodEmoji}>{moodEmoji}</Text>
                         </View>
                       )}
                     </View>
@@ -364,10 +364,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  sentimentIndicator: {
+  moodIndicator: {
     marginLeft: 8,
   },
-  sentimentEmoji: {
+  moodEmoji: {
     fontSize: 13,
     color: '#fff',
   },

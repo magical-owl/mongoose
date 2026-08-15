@@ -1,11 +1,7 @@
 import type { Result } from '@/shared/types/architecture';
 import { DiaryEntry } from '../domain/DiaryEntry';
-import { Sentiment } from '../domain/Sentiment';
-import { CompanionType, COMPANION_OPTIONS } from '../domain/Companion';
 import { IDiaryRepository } from '../repositories/IDiaryRepository';
 import { diaryRepository } from '../repositories/DiaryRepository';
-import { analyzeSentiment as scoreContent } from '@/ai/SentimentAnalyzer';
-import { getCompanionResponse } from '@/ai/companionResponses';
 
 export class DiaryService {
   constructor(private repo: IDiaryRepository = diaryRepository) {}
@@ -19,34 +15,11 @@ export class DiaryService {
   }
 
   public async saveEntry(entry: DiaryEntry): Promise<Result<DiaryEntry>> {
-    // Generate AI sentiment analysis if not present
-    if (!entry.sentiment) {
-      entry.sentiment = this.analyzeSentiment(entry.content, entry.companion);
-    }
     return await this.repo.save(entry);
   }
 
   public async deleteEntry(id: string): Promise<Result<boolean>> {
     return await this.repo.delete(id);
-  }
-
-  /**
-   * Generates AI Companion Sentiment Analysis.
-   * All processing is on-device — no text is sent to any external service.
-   * Per AGENTS.md: zero PII logging, zero external data transmission.
-   */
-  public analyzeSentiment(content: string, companionType: CompanionType): Sentiment {
-    const companion = COMPANION_OPTIONS.find((c) => c.id === companionType) || COMPANION_OPTIONS[0]!;
-    const sentimentResult = scoreContent(content);
-    const response = getCompanionResponse(companionType, sentimentResult);
-
-    return {
-      mood: sentimentResult.mood,
-      summary: `You wrote ${sentimentResult.wordCount} words today. ${sentimentResult.isShortEntry ? 'Even a short entry counts.' : 'A meaningful reflection.'}`,
-      emotional_analysis: response.emotional_analysis,
-      supportive_message: `${companion.name}: ${response.supportive_message}`,
-      suggestion: response.suggestion,
-    };
   }
 
   /**

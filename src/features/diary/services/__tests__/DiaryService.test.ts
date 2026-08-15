@@ -30,12 +30,11 @@ describe('DiaryService', () => {
     service = new DiaryService(repo);
   });
 
-  it('should save an entry and generate sentiment analysis automatically', async () => {
+  it('should save an entry without generating automated mood data', async () => {
     const result = await service.saveEntry(mockEntry);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.sentiment).toBeDefined();
-      expect(result.data.sentiment?.mood).toBe('happy');
+      expect(result.data.manualMood).toBeUndefined();
     }
   });
 
