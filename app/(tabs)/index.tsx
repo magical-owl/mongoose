@@ -45,6 +45,15 @@ function formatTimelineMonth(value: string): string {
   );
 }
 
+type HierarchyMode = "year-month-date" | "month-date" | "date";
+const HIERARCHY_MODES: HierarchyMode[] = ["year-month-date", "month-date", "date"];
+
+function hierarchyModeLabel(mode: HierarchyMode): string {
+  if (mode === "month-date") return "Month / Date";
+  if (mode === "date") return "Date only";
+  return "Year / Month / Date";
+}
+
 function FeedStickerPreview({ sticker }: { readonly sticker: PlacedSticker }) {
   const stickerItem = findStickerItem(sticker.stickerId);
   if (!stickerItem) return null;
@@ -89,6 +98,7 @@ export default function TimelineScreen() {
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const [collapsedYears, setCollapsedYears] = useState<Set<string>>(new Set());
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
+  const [hierarchyMode, setHierarchyMode] = useState<HierarchyMode>("year-month-date");
   const [expandedFilter, setExpandedFilter] = useState<
     "date" | "tag" | "mood" | "companion" | null
   >(null);
@@ -263,6 +273,22 @@ export default function TimelineScreen() {
             ]}
           />
 
+          <TouchableOpacity
+            onPress={() => setHierarchyMode((current) => {
+              const index = HIERARCHY_MODES.indexOf(current);
+              return HIERARCHY_MODES[(index + 1) % HIERARCHY_MODES.length]!;
+            })}
+            style={[styles.hierarchyToggle, { borderColor: theme.colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel={`Entry hierarchy: ${hierarchyModeLabel(hierarchyMode)}. Tap to change.`}
+          >
+            <Ionicons name="git-branch-outline" size={16} color={theme.colors.textSecondary} />
+            <Text preset="caption" color="textSecondary" style={styles.hierarchyToggleLabel}>
+              {hierarchyModeLabel(hierarchyMode)}
+            </Text>
+            <Ionicons name="swap-vertical-outline" size={15} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+
           {/* {onThisDay.length > 0 && (
             <View style={[styles.memoryBanner, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <Text preset="label" color="text">On this day</Text>
@@ -284,11 +310,14 @@ export default function TimelineScreen() {
               const isNewMonth = isNewYear || previousDate?.slice(0, 7) !== date.slice(0, 7);
               const yearKey = date.slice(0, 4);
               const monthKey = date.slice(0, 7);
-              const isYearCollapsed = collapsedYears.has(yearKey);
-              const isMonthCollapsed = collapsedMonths.has(monthKey);
+              const isYearVisible = hierarchyMode === "year-month-date";
+              const isMonthVisible = hierarchyMode !== "date";
+              const isDateVisible = true;
+              const isYearCollapsed = isYearVisible && collapsedYears.has(yearKey);
+              const isMonthCollapsed = isMonthVisible && collapsedMonths.has(monthKey);
               return (
               <Fragment key={date}>
-                {isNewYear && (
+                {isNewYear && isYearVisible && (
                   <TouchableOpacity
                     onPress={() => setCollapsedYears((current) => {
                       const next = new Set(current);
@@ -307,7 +336,7 @@ export default function TimelineScreen() {
                     <Ionicons name={isYearCollapsed ? "chevron-forward" : "chevron-down"} size={16} color={theme.colors.textSecondary} />
                   </TouchableOpacity>
                 )}
-                {!isYearCollapsed && isNewMonth && (
+                {!isYearCollapsed && isMonthVisible && isNewMonth && (
                   <TouchableOpacity
                     onPress={() => setCollapsedMonths((current) => {
                       const next = new Set(current);
@@ -315,7 +344,7 @@ export default function TimelineScreen() {
                       else next.add(monthKey);
                       return next;
                     })}
-                    style={[styles.monthGroupRow, { borderLeftColor: theme.colors.tint }]}
+                    style={styles.monthGroupRow}
                     accessibilityRole="button"
                     accessibilityLabel={`${formatTimelineMonth(monthKey)} month group`}
                     accessibilityState={{ expanded: !isMonthCollapsed }}
@@ -326,8 +355,8 @@ export default function TimelineScreen() {
                     <Ionicons name={isMonthCollapsed ? "chevron-forward" : "chevron-down"} size={15} color={theme.colors.textSecondary} />
                   </TouchableOpacity>
                 )}
-              {!isYearCollapsed && !isMonthCollapsed && <View style={styles.dateGroup}>
-                <TouchableOpacity
+              {!isYearCollapsed && !isMonthCollapsed && <View style={[styles.dateGroup, !isDateVisible && styles.flatDateGroup]}>
+                {isDateVisible && <TouchableOpacity
                   onPress={() => setCollapsedDates((current) => {
                     const next = new Set(current);
                     if (next.has(date)) next.delete(date);
@@ -350,12 +379,9 @@ export default function TimelineScreen() {
                     size={16}
                     color={theme.colors.textSecondary}
                   />
-                </TouchableOpacity>
-                {!collapsedDates.has(date) && dateEntries.map((entry) => {
+                </TouchableOpacity>}
+                {(!isDateVisible || !collapsedDates.has(date)) && dateEntries.map((entry) => {
               const hasMood = !!entry.manualMood;
-              const moodEmoji = hasMood
-                ? getMoodEmoji(entry.manualMood!)
-                : null;
 
               if (viewMode === "simple") {
                 {
@@ -406,11 +432,6 @@ export default function TimelineScreen() {
                     >
                       {entry.title}
                     </Text>
-                    {hasMood && (
-                      <View style={styles.moodIndicator}>
-                        <Text style={styles.moodEmoji}>{moodEmoji}</Text>
-                      </View>
-                    )}
                     <Text
                       style={[
                         styles.arrow,
@@ -434,7 +455,6 @@ export default function TimelineScreen() {
                     }}
                     style={[
                       styles.feedCard,
-                      { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
                     ]}
                   >
                     <View style={styles.feedHeader}>
@@ -528,11 +548,6 @@ export default function TimelineScreen() {
                         {entry.title.substring(0, 30)}
                         {entry.title.length > 30 ? "..." : ""}
                       </Text>
-                      {hasMood && (
-                      <View style={styles.moodIndicator}>
-                          <Text style={styles.moodEmoji}>{moodEmoji}</Text>
-                        </View>
-                      )}
                     </View>
                     <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
                   </View>
@@ -647,6 +662,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 16,
   },
+  hierarchyToggle: {
+    minHeight: 36,
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  hierarchyToggleLabel: {
+    marginHorizontal: 7,
+  },
   drawerRoot: { flex: 1, flexDirection: "row" },
   drawerOverlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.35)" },
   drawer: { width: "84%", paddingHorizontal: 20, shadowColor: "#000", shadowOffset: { width: 3, height: 0 }, shadowOpacity: 0.18, shadowRadius: 12, elevation: 12 },
@@ -681,8 +709,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   feedCard: {
-    borderWidth: 1,
-    borderRadius: 10,
     padding: 16,
     marginBottom: 14,
   },
@@ -755,13 +781,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  moodIndicator: {
-    marginLeft: 8,
-  },
-  moodEmoji: {
-    fontSize: 13,
-    color: "#fff",
-  },
   arrow: {
     fontSize: 18,
     marginLeft: 6,
@@ -773,6 +792,9 @@ const styles = StyleSheet.create({
   dateGroup: {
     marginBottom: 6,
     marginLeft: 23,
+  },
+  flatDateGroup: {
+    marginLeft: 0,
   },
   yearGroupRow: {
     flexDirection: "row",
@@ -796,7 +818,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     paddingLeft: 12,
     paddingVertical: 7,
-    borderLeftWidth: 3,
   },
   monthHeading: {
     margin: 0,
