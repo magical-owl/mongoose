@@ -38,6 +38,7 @@ describe('DiaryRepository', () => {
         scale: 1.2,
         rotation: 15,
         zIndex: 1,
+        behindText: false,
       },
     ],
     companion: 'cat',

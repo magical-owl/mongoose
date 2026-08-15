@@ -1,9 +1,7 @@
-import { AESEncryptionKey, AESSealedData, aesDecryptAsync, aesEncryptAsync } from 'expo-crypto';
+import { AESEncryptionKey, AESSealedData, CryptoDigestAlgorithm, CryptoEncoding, aesDecryptAsync, aesEncryptAsync, digestStringAsync, getRandomBytesAsync } from 'expo-crypto';
 import { File, Paths } from 'expo-file-system';
-import * as SecureStore from 'expo-secure-store';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
-import { secureStorageKeys } from '@/constants/secureStorageKeys';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import type { Profile } from '@/features/profile/domain/Profile';
 import { JournalExtrasSchema, type JournalExtras } from '@/features/journal/domain/JournalExtras';
@@ -27,25 +25,28 @@ export class DiaryBackupService {
     return file.uri;
   }
 
-  public async exportEncrypted(entries: DiaryEntry[], profile?: Profile | null, journalExtras?: JournalExtras): Promise<string> {
+  public async exportEncrypted(password: string, entries: DiaryEntry[], profile?: Profile | null, journalExtras?: JournalExtras): Promise<string> {
+    assertPassword(password);
     const payload = this.createPayload(entries, profile, journalExtras);
-    const key = await this.getKey();
+    const salt = bytesToHex(await getRandomBytesAsync(16));
+    const key = await this.getKey(password, salt);
     const plaintext = toBase64(JSON.stringify(payload));
     const sealed = await aesEncryptAsync(plaintext, key);
     const file = new File(Paths.cache, `mongoose-diary-${Date.now()}.mbackup`);
     file.create({ overwrite: true });
-    file.write(JSON.stringify({ algorithm: 'AES-256-GCM', ciphertext: await sealed.combined('base64') }));
+    file.write(JSON.stringify({ algorithm: 'AES-256-GCM', keyDerivation: 'SHA-256(password + salt)', salt, ciphertext: await sealed.combined('base64') }));
     if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(file.uri, { mimeType: 'application/octet-stream' });
     return file.uri;
   }
 
-  public async importEncrypted(): Promise<BackupPayload | null> {
+  public async importEncrypted(password: string): Promise<BackupPayload | null> {
+    assertPassword(password);
     const result = await DocumentPicker.getDocumentAsync({ type: 'application/octet-stream', copyToCacheDirectory: true });
     if (result.canceled || !result.assets[0]) return null;
     const file = new File(result.assets[0].uri);
     const parsed: unknown = JSON.parse(await file.text());
-    if (!isRecord(parsed) || typeof parsed.ciphertext !== 'string') throw new Error('Invalid encrypted diary backup');
-    const key = await this.getKey();
+    if (!isRecord(parsed) || parsed.algorithm !== 'AES-256-GCM' || parsed.keyDerivation !== 'SHA-256(password + salt)' || typeof parsed.ciphertext !== 'string' || typeof parsed.salt !== 'string' || !/^[a-f0-9]{32}$/i.test(parsed.salt)) throw new Error('Invalid encrypted diary backup');
+    const key = await this.getKey(password, parsed.salt);
     const sealed = AESSealedData.fromCombined(parsed.ciphertext);
     const decrypted = await aesDecryptAsync(sealed, key, { output: 'base64' });
     const payload: unknown = JSON.parse(fromBase64(String(decrypted)));
@@ -63,13 +64,14 @@ export class DiaryBackupService {
     return { version: CURRENT_DIARY_SCHEMA_VERSION, exportedAt: new Date().toISOString(), entries, profile, journalExtras };
   }
 
-  private async getKey(): Promise<AESEncryptionKey> {
-    const stored = await SecureStore.getItemAsync(secureStorageKeys.backupEncryptionKey);
-    if (stored) return AESEncryptionKey.import(stored, 'hex');
-    const key = await AESEncryptionKey.generate(256);
-    await SecureStore.setItemAsync(secureStorageKeys.backupEncryptionKey, await key.encoded('hex'));
-    return key;
+  private async getKey(password: string, salt: string): Promise<AESEncryptionKey> {
+    const digest = await digestStringAsync(CryptoDigestAlgorithm.SHA256, `${password}:${salt}`, { encoding: CryptoEncoding.HEX });
+    return AESEncryptionKey.import(digest, 'hex');
   }
+}
+
+function assertPassword(password: string): void {
+  if (password.trim().length < 12) throw new Error('Backup password must be at least 12 characters.');
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -137,6 +139,10 @@ function decodeBase64(value: string): number[] {
     if (fourthChar !== '=') bytes.push(((third & 3) << 6) | fourth);
   }
   return bytes;
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
 export const diaryBackupService = new DiaryBackupService();

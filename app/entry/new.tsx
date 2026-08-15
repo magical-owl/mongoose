@@ -183,6 +183,7 @@ export default function CreateEntryScreen() {
       scale: 1,
       rotation: Math.floor(Math.random() * 30) - 15,
       zIndex: stickers.length + 1,
+      behindText: false,
     };
     setStickers((prev) => [...prev, newSticker]);
   }, [stickers.length]);
@@ -283,6 +284,17 @@ export default function CreateEntryScreen() {
           <MaterialCommunityIcons name="tune-variant" size={20} color={theme.colors.textSecondary} />
         </TouchableOpacity>
 
+        {stickers.some((sticker) => sticker.behindText) && (
+          <TouchableOpacity
+            onPress={() => setStickers((current) => current.map((sticker) => ({ ...sticker, behindText: false })))}
+            style={styles.headerIcon}
+            accessibilityRole="button"
+            accessibilityLabel="Bring all stickers in front of text"
+          >
+            <MaterialCommunityIcons name="layers" size={20} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           onPress={handleSave}
           disabled={isSaving}
@@ -311,7 +323,7 @@ export default function CreateEntryScreen() {
 
       {/* ── Journal body ─────────────────────────────────────────────────── */}
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{ flex: 1, zIndex: 2, elevation: 2 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? TOOLBAR_H : 0}
       >
@@ -504,6 +516,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
+    zIndex: 3000,
     flexDirection: 'row',
     alignItems: 'center',
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -513,7 +526,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
-    elevation: 8,
+    elevation: 20,
   },
   toolbarLeft: {
     flexDirection: 'row',

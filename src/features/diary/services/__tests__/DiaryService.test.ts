@@ -6,11 +6,17 @@ describe('DiaryService', () => {
   let service: DiaryService;
   let repo: DiaryRepository;
 
+  const dateOffset = (days: number): string => {
+    const date = new Date();
+    date.setDate(date.getDate() - days);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+
   const mockEntry: DiaryEntry = {
     id: '123e4567-e89b-12d3-a456-426614174000',
     title: 'Sunny Morning',
     content: 'Had a wonderful and happy day outdoors!',
-    date: '2026-08-13',
+    date: dateOffset(0),
     paperBackgroundId: 'vintage-parchment',
     stickers: [],
     companion: 'cat',
@@ -40,9 +46,9 @@ describe('DiaryService', () => {
 
   it('should calculate streak accurately', () => {
     const entries: DiaryEntry[] = [
-      { ...mockEntry, id: '1', date: '2026-08-13' },
-      { ...mockEntry, id: '2', date: '2026-08-12' },
-      { ...mockEntry, id: '3', date: '2026-08-11' },
+      { ...mockEntry, id: '1', date: dateOffset(0) },
+      { ...mockEntry, id: '2', date: dateOffset(1) },
+      { ...mockEntry, id: '3', date: dateOffset(2) },
     ];
     const streak = service.calculateStreak(entries);
     expect(streak.currentStreak).toBeGreaterThanOrEqual(1);

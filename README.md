@@ -152,6 +152,7 @@ meadow/
 - **AI Agent Rules & Compliance**: [`AGENTS.md`](AGENTS.md)
 - **Security Guide**: [`docs/Security.md`](docs/Security.md)
 - **App Store & Google Play Release**: [`agents/release.md`](agents/release.md)
+- **Production Readiness Gate**: [`docs/ProductionReadiness.md`](docs/ProductionReadiness.md)
 - **Privacy & GDPR Framework**: [`COMPLIANCE/PRIVACY.md`](COMPLIANCE/PRIVACY.md)
 - **Subscription Architecture**: [`src/features/subscription/`](src/features/subscription/) & [`src/shared/components/PaywallModal.tsx`](src/shared/components/PaywallModal.tsx)
 

@@ -10,6 +10,8 @@ export const PlacedStickerSchema = z.object({
   scale: z.number().default(1),
   rotation: z.number().default(0),
   zIndex: z.number().default(1),
+  // Optional keeps stickers saved before this feature readable on restore.
+  behindText: z.boolean().optional().default(false),
 });
 
 export type PlacedSticker = z.infer<typeof PlacedStickerSchema>;

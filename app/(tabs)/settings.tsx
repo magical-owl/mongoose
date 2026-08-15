@@ -50,6 +50,7 @@ export default function SettingsScreen() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showDataModal, setShowDataModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [backupPassword, setBackupPassword] = useState('');
 
   // Profile form state
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
@@ -69,23 +70,25 @@ export default function SettingsScreen() {
 
   const handleEncryptedExport = async () => {
     try {
-      await diaryBackupService.exportEncrypted(entries, profile, journalExtras);
+      await diaryBackupService.exportEncrypted(backupPassword, entries, profile, journalExtras);
       Alert.alert('Encrypted backup created', 'Keep this backup file in a secure location.');
-    } catch {
-      Alert.alert('Error', 'Failed to create encrypted backup.');
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to create encrypted backup.');
     }
   };
 
   const handleEncryptedImport = async () => {
     try {
-      const imported = await diaryBackupService.importEncrypted();
+      const imported = await diaryBackupService.importEncrypted(backupPassword);
       if (!imported) return;
       Alert.alert('Restore backup?', `This will add ${imported.entries.length} entries and restore profile data.`, [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Restore',
           onPress: async () => {
-            for (const entry of imported.entries) await saveDiaryEntry(entry);
+            const mergedEntries = new Map(entries.map((entry) => [entry.id, entry]));
+            imported.entries.forEach((entry) => mergedEntries.set(entry.id, entry));
+            for (const entry of mergedEntries.values()) await saveDiaryEntry(entry);
             if (imported.profile) {
               await saveProfile({
                 displayName: imported.profile.displayName,
@@ -98,8 +101,8 @@ export default function SettingsScreen() {
           },
         },
       ]);
-    } catch {
-      Alert.alert('Error', 'The backup could not be decrypted or was invalid.');
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'The backup could not be decrypted or was invalid.');
     }
   };
 
@@ -418,6 +421,19 @@ export default function SettingsScreen() {
         accessibilityLabel="Data and storage modal"
       >
         <View style={{ gap: 12, paddingVertical: 8 }}>
+          <View>
+            <Text preset="caption" color="textSecondary" style={{ marginBottom: 4 }}>Backup password</Text>
+            <TextInput
+              value={backupPassword}
+              onChangeText={setBackupPassword}
+              placeholder="At least 12 characters"
+              placeholderTextColor={theme.colors.textSecondary}
+              secureTextEntry
+              autoCapitalize="none"
+              style={[styles.modalInput, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+            />
+            <Text preset="caption" color="textSecondary" style={{ marginTop: 4 }}>Use the same password to restore this backup on another device.</Text>
+          </View>
           <TouchableOpacity
             style={[styles.modalRowBtn, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
             onPress={() => { void handleExportData(); }}

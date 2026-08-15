@@ -349,6 +349,7 @@ export default function TimelineScreen() {
                     >
                       {entry.date}
                     </Text>
+                    <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
                   </View>
                   <Text
                     style={[
@@ -370,10 +371,7 @@ export default function TimelineScreen() {
           <Pressable style={styles.drawerOverlay} onPress={() => setIsDrawerOpen(false)} accessibilityLabel="Close diary menu" />
           <View style={[styles.drawer, { backgroundColor: theme.colors.background, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}>
             <View style={styles.drawerHeader}>
-              <View>
-                <Text preset="h2" color="text">Diary menu</Text>
-                <Text preset="caption" color="textSecondary">Browse and refine your entries</Text>
-              </View>
+              <View />
               <TouchableOpacity onPress={() => setIsDrawerOpen(false)} style={styles.drawerClose} accessibilityRole="button" accessibilityLabel="Close diary menu">
                 <Ionicons name="close" size={22} color={theme.colors.text} />
               </TouchableOpacity>

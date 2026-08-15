@@ -39,7 +39,7 @@ export interface LoggingConfig {
 
 const DEFAULT_CONFIG: LoggingConfig = {
   minLevel: __DEV__ ? LogLevel.DEBUG : LogLevel.INFO,
-  enableConsole: true,
+  enableConsole: __DEV__,
   enableRemote: false,
   redactKeys: [
     'password',

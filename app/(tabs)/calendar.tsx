@@ -1,10 +1,13 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Modal as NativeModal,
+  Pressable,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@providers/ThemeProvider';
@@ -19,13 +22,17 @@ export default function CalendarScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { entries, isLoading, refresh } = useDiary();
+  const { entries, isLoading, refresh, saveDiaryEntry } = useDiary();
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
 
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [selectedDateStr, setSelectedDateStr] = useState<string>(() => {
-    return new Date().toISOString().split('T')[0]!;
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   });
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
+  const touchStartX = useRef<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -40,11 +47,40 @@ export default function CalendarScreen() {
   };
 
   const handlePrevMonth = () => {
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    setCurrentDate((prev) => {
+      const next = new Date(prev.getFullYear(), prev.getMonth() - 1, 1);
+      const key = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-01`;
+      setSelectedDateStr(key);
+      setSelectedCalendarDate(key);
+      return next;
+    });
   };
 
   const handleNextMonth = () => {
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    setCurrentDate((prev) => {
+      const next = new Date(prev.getFullYear(), prev.getMonth() + 1, 1);
+      const key = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-01`;
+      setSelectedDateStr(key);
+      setSelectedCalendarDate(key);
+      return next;
+    });
+  };
+
+  const handleSwipe = (endX: number) => {
+    if (touchStartX.current === null) return;
+    const distance = endX - touchStartX.current;
+    if (Math.abs(distance) > 60) {
+      if (distance > 0) handlePrevMonth();
+      else handleNextMonth();
+    }
+    touchStartX.current = null;
+  };
+
+  const handleJumpToToday = () => {
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1));
+    handleSelectDate(todayKey);
   };
 
   const year = currentDate.getFullYear();
@@ -69,6 +105,16 @@ export default function CalendarScreen() {
   }, [entries]);
 
   const selectedDayEntries = entryDateMap.get(selectedDateStr) || [];
+  const monthEntries = entries.filter((entry) => entry.date.startsWith(`${year}-${String(month + 1).padStart(2, '0')}-`));
+  const monthWritingDays = new Set(monthEntries.map((entry) => entry.date)).size;
+  const monthFavorites = monthEntries.filter((entry) => entry.isFavorite).length;
+
+  const moodColor = (mood: string) => {
+    if (mood === 'happy' || mood === 'excited' || mood === 'grateful') return theme.colors.success;
+    if (mood === 'sad' || mood === 'tired') return theme.colors.textSecondary;
+    if (mood === 'anxious' || mood === 'angry') return theme.colors.warning;
+    return theme.colors.tint;
+  };
 
   return (
     <View style={[styles.outerContainer, { backgroundColor: theme.colors.background }]}>
@@ -80,10 +126,12 @@ export default function CalendarScreen() {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          {/* Title */}
-          <Text style={[styles.heading, { color: theme.colors.text }]}>
-            Calendar
-          </Text>
+          <View style={styles.titleRow}>
+            <Text style={[styles.heading, { color: theme.colors.text }]}>Calendar</Text>
+            <TouchableOpacity onPress={handleJumpToToday} style={[styles.todayButton, { borderColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel="Jump to today">
+              <Text preset="caption" color="tint">Today</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Calendar Card Container */}
           <View
@@ -91,6 +139,8 @@ export default function CalendarScreen() {
               styles.calendarCard,
               { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
             ]}
+            onTouchStart={(event) => { touchStartX.current = event.nativeEvent.pageX; }}
+            onTouchEnd={(event) => handleSwipe(event.nativeEvent.pageX)}
           >
             {/* Month Navigation Header */}
             <View style={styles.monthHeaderRow}>
@@ -103,9 +153,12 @@ export default function CalendarScreen() {
                 <Text style={[styles.monthNavArrow, { color: theme.colors.text }]}>‹</Text>
               </TouchableOpacity>
 
-              <Text style={[styles.monthTitle, { color: theme.colors.text }]}>
-                {monthName}
-              </Text>
+              <TouchableOpacity onPress={() => { setPickerYear(year); setShowMonthPicker(true); }} accessibilityRole="button" accessibilityLabel="Choose month and year">
+                <View style={styles.monthTitleButton}>
+                  <Text style={[styles.monthTitle, { color: theme.colors.text }]}>{monthName}</Text>
+                  <Ionicons name="chevron-down" size={16} color={theme.colors.textSecondary} />
+                </View>
+              </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleNextMonth}
@@ -115,6 +168,11 @@ export default function CalendarScreen() {
               >
                 <Text style={[styles.monthNavArrow, { color: theme.colors.text }]}>›</Text>
               </TouchableOpacity>
+            </View>
+            <View style={styles.monthSummary}>
+              <Text preset="caption" color="textSecondary">{monthEntries.length} {monthEntries.length === 1 ? 'entry' : 'entries'}</Text>
+              <Text preset="caption" color="textSecondary">{monthWritingDays} writing {monthWritingDays === 1 ? 'day' : 'days'}</Text>
+              <Text preset="caption" color="textSecondary">{monthFavorites} {monthFavorites === 1 ? 'favorite' : 'favorites'}</Text>
             </View>
 
             {/* Weekday Row */}
@@ -140,7 +198,8 @@ export default function CalendarScreen() {
                 const isSelected = dateStr === selectedDateStr;
                 const dayEntries = entryDateMap.get(dateStr) || [];
                 const hasEntries = dayEntries.length > 0;
-                const hasMood = dayEntries.some((e) => !!e.manualMood);
+                const moodKeys = Array.from(new Set(dayEntries.flatMap((entry) => entry.manualMood ? [entry.manualMood] : []))).slice(0, 3);
+                const hasFavorite = dayEntries.some((entry) => entry.isFavorite);
 
                 return (
                   <TouchableOpacity
@@ -180,18 +239,11 @@ export default function CalendarScreen() {
                       {day}
                     </Text>
                     {hasEntries && (
-                      <View
-                        style={[
-                          styles.dot,
-                          {
-                            backgroundColor: isSelected
-                              ? theme.colors.background
-                              : hasMood
-                                ? theme.colors.tint
-                                : theme.colors.tint,
-                          },
-                        ]}
-                      />
+                      <View style={styles.markerRow}>
+                        {moodKeys.length > 0 ? moodKeys.map((mood) => <View key={mood} style={[styles.dot, { backgroundColor: isSelected ? theme.colors.background : moodColor(mood) }]} />) : <View style={[styles.dot, { backgroundColor: isSelected ? theme.colors.background : theme.colors.tint }]} />}
+                        {dayEntries.length > 1 && <Text style={[styles.entryCount, { color: isSelected ? theme.colors.background : theme.colors.textSecondary }]}>{dayEntries.length}</Text>}
+                        {hasFavorite && <Ionicons name="star" size={8} color={isSelected ? theme.colors.background : theme.colors.warning} />}
+                      </View>
                     )}
                   </TouchableOpacity>
                 );
@@ -199,16 +251,12 @@ export default function CalendarScreen() {
             </View>
           </View>
 
-          {/* Selected Day Entries Header */}
-          {/* <Text style={[styles.subHeading, { color: theme.colors.text }]}>
-          📝 Entries on {selectedDateStr}
-        </Text> */}
-
           {/* Entries List for Selected Date (Matches original reference layout 1:1) */}
           {selectedDayEntries.length === 0 ? (
-            <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-              No entries on this date.
-            </Text>
+            <View style={[styles.emptyState, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <Ionicons name="book-outline" size={28} color={theme.colors.textSecondary} />
+              <Text preset="bodySmall" color="textSecondary" style={styles.emptyStateText}>No entries on this date.</Text>
+            </View>
           ) : (
             selectedDayEntries.map((item) => {
               const hasMood = !!item.manualMood;
@@ -230,6 +278,12 @@ export default function CalendarScreen() {
                   ]}
                 >
                   <View style={styles.cardHeader}>
+                    <TouchableOpacity
+                      onPress={() => { void saveDiaryEntry({ ...item, isFavorite: !item.isFavorite, updatedAt: new Date().toISOString() }).then(() => refresh()); }}
+                      accessibilityLabel={item.isFavorite ? 'Remove favorite' : 'Add favorite'}
+                    >
+                      <Text style={[styles.favoriteMark, { color: theme.colors.warning }]}>{item.isFavorite ? '★' : '☆'}</Text>
+                    </TouchableOpacity>
                     <View style={styles.titleContainer}>
                       <Text style={[styles.title, { color: theme.colors.text }]}>
                         {item.title.substring(0, 30)}
@@ -241,9 +295,10 @@ export default function CalendarScreen() {
                         </View>
                       )}
                     </View>
-                    <Text style={[styles.date, { color: theme.colors.textSecondary }]}>
-                      {item.date}
-                    </Text>
+                    <View style={styles.dateAction}>
+                      <Text style={[styles.date, { color: theme.colors.textSecondary }]}>{item.date}</Text>
+                      <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
+                    </View>
                   </View>
                   <Text
                     style={[styles.content, { color: theme.colors.textSecondary }]}
@@ -257,6 +312,29 @@ export default function CalendarScreen() {
           )}
         </ScrollView>
       )}
+      <NativeModal visible={showMonthPicker} transparent animationType="fade" onRequestClose={() => setShowMonthPicker(false)}>
+        <Pressable style={styles.pickerBackdrop} onPress={() => setShowMonthPicker(false)}>
+          <Pressable style={[styles.monthPicker, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={(event) => event.stopPropagation()}>
+            <View style={styles.pickerHeader}>
+              <Text preset="h2" color="text">Choose month</Text>
+              <TouchableOpacity onPress={() => setShowMonthPicker(false)} accessibilityRole="button" accessibilityLabel="Close month picker">
+                <Ionicons name="close" size={22} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.yearRow}>
+              <TouchableOpacity onPress={() => setPickerYear((value) => value - 1)} accessibilityRole="button" accessibilityLabel="Previous year"><Ionicons name="chevron-back" size={20} color={theme.colors.text} /></TouchableOpacity>
+              <Text preset="label" color="text">{pickerYear}</Text>
+              <TouchableOpacity onPress={() => setPickerYear((value) => value + 1)} accessibilityRole="button" accessibilityLabel="Next year"><Ionicons name="chevron-forward" size={20} color={theme.colors.text} /></TouchableOpacity>
+            </View>
+            <View style={styles.monthGrid}>
+              {Array.from({ length: 12 }, (_, index) => index).map((monthIndex) => {
+                const selected = pickerYear === year && monthIndex === month;
+                return <TouchableOpacity key={monthIndex} onPress={() => { const key = `${pickerYear}-${String(monthIndex + 1).padStart(2, '0')}-01`; setCurrentDate(new Date(pickerYear, monthIndex, 1)); setSelectedDateStr(key); setSelectedCalendarDate(key); setShowMonthPicker(false); }} style={[styles.monthChoice, { borderColor: selected ? theme.colors.tint : theme.colors.border, backgroundColor: selected ? theme.colors.tint : 'transparent' }]}><Text preset="caption" style={{ color: selected ? theme.colors.background : theme.colors.text }}>{new Date(2000, monthIndex, 1).toLocaleDateString('en-US', { month: 'short' })}</Text></TouchableOpacity>;
+              })}
+            </View>
+          </Pressable>
+        </Pressable>
+      </NativeModal>
     </View>
   );
 }
@@ -273,6 +351,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 16,
   },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  todayButton: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, marginBottom: 16 },
   subHeading: {
     fontSize: 18,
     fontWeight: '500',
@@ -308,6 +388,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  monthTitleButton: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  monthSummary: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 10, marginBottom: 14 },
   gridRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -334,8 +416,9 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 2.5,
-    marginTop: 2,
   },
+  markerRow: { height: 10, flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
+  entryCount: { fontSize: 8, fontWeight: '700' },
   card: {
     borderWidth: 1,
     borderRadius: 8,
@@ -348,6 +431,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  emptyState: { alignItems: 'center', borderWidth: 1, borderRadius: 10, padding: 22, marginBottom: 12 },
+  emptyStateText: { marginTop: 8 },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -357,9 +442,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  favoriteMark: { fontSize: 18, width: 26, textAlign: 'center' },
   date: {
     fontSize: 12,
   },
+  dateAction: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   content: {
     fontSize: 14,
     lineHeight: 20,
@@ -374,4 +461,10 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
   },
+  pickerBackdrop: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.45)', justifyContent: 'center', padding: 20 },
+  monthPicker: { borderWidth: 1, borderRadius: 14, padding: 18 },
+  pickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
+  yearRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingHorizontal: 8 },
+  monthGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  monthChoice: { width: '30%', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingVertical: 11 },
 });

@@ -35,10 +35,12 @@ import { useDiary } from '@/features/diary/hooks/useDiary';
 import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { MarkdownText } from '@shared/components/MarkdownText';
 import { DiaryEntry, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
+import { CompanionType, COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { StickerPickerModal } from '@/features/diary/components/StickerPickerModal';
 import { TemplatePickerModal } from '@/features/diary/components/TemplatePickerModal';
+import { CompanionPickerModal } from '@/features/diary/components/CompanionPickerModal';
 import { Template } from '@/features/diary/domain/Template';
 import { generateUUID } from '@/shared/utils/uuid';
 import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
@@ -91,9 +93,11 @@ export default function EntryDetailScreen() {
   const [editLockbox, setEditLockbox] = useState(false);
   const [editUnlockAt, setEditUnlockAt] = useState('');
   const [editExpiresAt, setEditExpiresAt] = useState('');
+  const [editCompanion, setEditCompanion] = useState<CompanionType>('cat');
   const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [showCompanionPicker, setShowCompanionPicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSelectTemplate = (template: Template) => {
@@ -123,6 +127,7 @@ export default function EntryDetailScreen() {
         setEditContent(found.content);
         setEditDate(entryDate(found.date));
         setEditStickers(found.stickers);
+        setEditCompanion(found.companion);
         setEditTags(found.tags);
         setEditMood(found.manualMood ?? 'neutral'); setEditMoodWeather(found.manualMoodWeather); setEditWritingMode(found.writingMode); setEditLocation(found.sensory.locationLabel); setEditSounds(found.sensory.sounds); setEditSmells(found.sensory.smells); setEditEnergy(String(found.sensory.energyLevel)); setEditBody(found.sensory.bodyState); setEditLockbox(found.isLockbox); setEditUnlockAt(found.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(found.expiresAt ?? '');
       }
@@ -140,6 +145,7 @@ export default function EntryDetailScreen() {
     setEditContent(entry.content);
     setEditDate(entryDate(entry.date));
     setEditStickers(entry.stickers);
+    setEditCompanion(entry.companion);
     setEditTags(entry.tags);
     setEditMood(entry.manualMood ?? 'neutral'); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(true);
@@ -151,6 +157,7 @@ export default function EntryDetailScreen() {
     setEditContent(entry.content);
     setEditDate(entryDate(entry.date));
     setEditStickers(entry.stickers);
+    setEditCompanion(entry.companion);
     setEditTags(entry.tags);
     setEditMood(entry.manualMood ?? 'neutral'); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(false);
@@ -166,6 +173,7 @@ export default function EntryDetailScreen() {
       content: editContent.trim(),
       date: `${editDate.getFullYear()}-${String(editDate.getMonth() + 1).padStart(2, '0')}-${String(editDate.getDate()).padStart(2, '0')}`,
       stickers: editStickers,
+      companion: editCompanion,
       tags: editTags,
       manualMoodWeather: editMoodWeather,
       manualMood: editMood,
@@ -192,6 +200,7 @@ export default function EntryDetailScreen() {
       scale: 1,
       rotation: Math.floor(Math.random() * 30) - 15,
       zIndex: editStickers.length + 1,
+      behindText: false,
     };
     setEditStickers((prev) => [...prev, newSticker]);
   }, [editStickers.length]);
@@ -233,6 +242,7 @@ export default function EntryDetailScreen() {
   }
 
   const displayStickers = isEditing ? editStickers : entry.stickers;
+  const activeCompanion = COMPANION_OPTIONS.find((item) => item.id === editCompanion) ?? COMPANION_OPTIONS[0]!;
   const wordCount = countWords(isEditing ? editContent : entry.content);
 
   const TOOLBAR_H = 56;
@@ -261,6 +271,16 @@ export default function EntryDetailScreen() {
               <TouchableOpacity onPress={() => setShowEntryDetails(true)} style={styles.headerIcon} accessibilityRole="button" accessibilityLabel="Open entry details">
                 <MaterialCommunityIcons name="tune-variant" size={20} color={theme.colors.textSecondary} />
               </TouchableOpacity>
+              {editStickers.some((sticker) => sticker.behindText) && (
+                <TouchableOpacity
+                  onPress={() => setEditStickers((current) => current.map((sticker) => ({ ...sticker, behindText: false })))}
+                  style={styles.headerIcon}
+                  accessibilityRole="button"
+                  accessibilityLabel="Bring all stickers in front of text"
+                >
+                  <MaterialCommunityIcons name="layers" size={20} color={theme.colors.textSecondary} />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity onPress={handleSaveEdit} disabled={isSaving} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Save changes">
                 <Text preset="label" style={{ color: isSaving ? theme.colors.textSecondary : '#1E90FF', fontWeight: '600', textAlign: 'right' }}>
                   {isSaving ? 'Saving…' : 'Save'}
@@ -302,7 +322,7 @@ export default function EntryDetailScreen() {
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{ flex: 1, zIndex: 2, elevation: 2 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? TOOLBAR_H : 0}
       >
@@ -463,7 +483,15 @@ export default function EntryDetailScreen() {
               <RNText style={[styles.wordCount, { color: theme.colors.textSecondary }]}>
                 {wordCount}w
               </RNText>
-            )}
+              )}
+            <TouchableOpacity
+              onPress={() => setShowCompanionPicker(true)}
+              style={styles.companionAvatar}
+              accessibilityLabel={`AI Companion: ${activeCompanion.name}. Tap to change.`}
+              accessibilityRole="button"
+            >
+              <RNText style={{ fontSize: 22 }}>{activeCompanion.avatar}</RNText>
+            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -477,6 +505,12 @@ export default function EntryDetailScreen() {
         visible={showTemplatePicker}
         onClose={() => setShowTemplatePicker(false)}
         onSelectTemplate={handleSelectTemplate}
+      />
+      <CompanionPickerModal
+        visible={showCompanionPicker}
+        onClose={() => setShowCompanionPicker(false)}
+        selectedCompanion={editCompanion}
+        onSelectCompanion={setEditCompanion}
       />
       <EntryDetailsModal
         visible={showEntryDetails}
@@ -527,6 +561,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
+    zIndex: 3000,
     flexDirection: 'row',
     alignItems: 'center',
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -536,7 +571,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
-    elevation: 8,
+    elevation: 20,
   },
   toolbarLeft: {
     flexDirection: 'row',
@@ -564,5 +599,12 @@ const styles = StyleSheet.create({
   wordCount: {
     fontSize: 11,
     fontVariant: ['tabular-nums'],
+  },
+  companionAvatar: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
   },
 });

@@ -8,8 +8,9 @@
  * Interactions:
  *   • Drag to move
  *   • Tap to select (shows control strip)
- *   • ← / → buttons to rotate in 15° steps
+ *   • Rotate control supports tap and horizontal drag
  *   • + / − buttons to resize in 20% steps
+ *   • Send an individual sticker behind the text canvas
  *   • ✕ button to delete
  *
  * State persistence:
@@ -27,6 +28,7 @@ import {
   View,
   StyleSheet,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PlacedSticker, findStickerItem } from '../domain/Sticker';
 
 interface StickerCanvasItemProps {
@@ -55,6 +57,9 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const pan = useRef(new Animated.ValueXY({ x: sticker.x, y: sticker.y })).current;
   // Track absolute position so we can persist on release
   const position = useRef({ x: sticker.x, y: sticker.y });
+  const dragMoved = useRef(false);
+  const editableRef = useRef(isEditable);
+  editableRef.current = isEditable;
 
   // Resolve the sticker data
   const stickerItem = findStickerItem(sticker.stickerId);
@@ -63,23 +68,28 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => isEditable,
+      onStartShouldSetPanResponder: () => editableRef.current,
       onMoveShouldSetPanResponder: (_, gs) =>
-        isEditable && (Math.abs(gs.dx) > 4 || Math.abs(gs.dy) > 4),
+        editableRef.current && (Math.abs(gs.dx) > 4 || Math.abs(gs.dy) > 4),
 
       onPanResponderGrant: () => {
         pan.setOffset({ x: position.current.x, y: position.current.y });
         pan.setValue({ x: 0, y: 0 });
+        dragMoved.current = false;
         setIsSelected(false); // hide controls while dragging
       },
 
-      onPanResponderMove: Animated.event(
-        [null, { dx: pan.x, dy: pan.y }],
-        { useNativeDriver: false }
-      ),
+      onPanResponderMove: (_, gesture) => {
+        if (Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4) dragMoved.current = true;
+        pan.setValue({ x: gesture.dx, y: gesture.dy });
+      },
 
       onPanResponderRelease: (_, gs) => {
         pan.flattenOffset();
+        if (!dragMoved.current) {
+          setIsSelected((selected) => !selected);
+          return;
+        }
         const newX = position.current.x + gs.dx;
         const newY = position.current.y + gs.dy;
         position.current = { x: newX, y: newY };
@@ -124,20 +134,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   }, [sticker, onUpdate]);
 
   // ── Rotation controls ─────────────────────────────────────────────────────
-  const handleRotateCCW = useCallback(() => {
-    const next = rotationRef.current - 15;
-    rotationRef.current = next;
-    setCurrentRotation(next);
-    onUpdate({
-      ...sticker,
-      x: position.current.x,
-      y: position.current.y,
-      scale: scaleRef.current,
-      rotation: next,
-    });
-  }, [sticker, onUpdate]);
-
-  const handleRotateCW = useCallback(() => {
+  const handleRotate = useCallback(() => {
     const next = rotationRef.current + 15;
     rotationRef.current = next;
     setCurrentRotation(next);
@@ -150,33 +147,81 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
     });
   }, [sticker, onUpdate]);
 
-  const animatedStyle = {
+  const handleToggleBehindText = useCallback(() => {
+    // Release the editing layer immediately so the new stack order is visible.
+    setIsSelected(false);
+    onUpdate({
+      ...sticker,
+      x: position.current.x,
+      y: position.current.y,
+      scale: scaleRef.current,
+      rotation: rotationRef.current,
+      behindText: !sticker.behindText,
+    });
+  }, [sticker, onUpdate]);
+
+  const rotateGestureStart = useRef({ rotation: sticker.rotation, moved: false });
+  const rotatePanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 2 || Math.abs(gesture.dy) > 2,
+      onPanResponderGrant: () => {
+        rotateGestureStart.current = { rotation: rotationRef.current, moved: false };
+      },
+      onPanResponderMove: (_, gesture) => {
+        if (Math.abs(gesture.dx) < 2 && Math.abs(gesture.dy) < 2) return;
+        rotateGestureStart.current.moved = true;
+        const next = rotateGestureStart.current.rotation + gesture.dx * 0.75;
+        rotationRef.current = next;
+        setCurrentRotation(next);
+        onUpdate({
+          ...sticker,
+          x: position.current.x,
+          y: position.current.y,
+          scale: scaleRef.current,
+          rotation: next,
+        });
+      },
+      onPanResponderRelease: () => {
+        if (!rotateGestureStart.current.moved) handleRotate();
+      },
+    })
+  ).current;
+
+  const positionStyle = {
     transform: [
       { translateX: pan.x },
       { translateY: pan.y },
-      { scale: currentScale },       // state drives re-render
-      { rotate: `${currentRotation}deg` }, // state drives re-render
     ],
-    zIndex: isSelected ? 999 : sticker.zIndex,
+    // Keep a selected sticker and its controls reachable while editing. Once
+    // deselected, the visual sticker moves below the editor layer.
+    zIndex: isSelected ? 999 : sticker.behindText ? 1 : sticker.zIndex + 3,
+    elevation: isSelected ? 999 : sticker.behindText ? 1 : sticker.zIndex + 3,
+  };
+
+  const stickerTransformStyle = {
+    transform: [
+      { scale: currentScale },
+      { rotate: `${currentRotation}deg` },
+    ],
   };
 
   return (
     <Animated.View
-      style={[styles.container, animatedStyle]}
-      {...panResponder.panHandlers}
+      style={[styles.container, positionStyle]}
     >
       {/* Control strip (only when selected and editable) */}
       {isEditable && isSelected && (
         <View style={styles.controls}>
-          {/* Rotate CCW */}
-          <TouchableOpacity
+          {/* Rotate */}
+          <View
             style={styles.controlBtn}
-            onPress={handleRotateCCW}
-            accessibilityLabel="Rotate sticker counter-clockwise"
+            {...rotatePanResponder.panHandlers}
+            accessibilityLabel="Rotate sticker"
             accessibilityRole="button"
           >
-            <Text style={styles.controlText}>↺</Text>
-          </TouchableOpacity>
+            <MaterialCommunityIcons name="rotate-right" size={16} color="#FFFFFF" />
+          </View>
 
           {/* Shrink */}
           <TouchableOpacity
@@ -208,37 +253,43 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
             <Text style={styles.controlText}>+</Text>
           </TouchableOpacity>
 
-          {/* Rotate CW */}
+          {/* Text layer */}
           <TouchableOpacity
-            style={styles.controlBtn}
-            onPress={handleRotateCW}
-            accessibilityLabel="Rotate sticker clockwise"
+            style={[styles.controlBtn, sticker.behindText && styles.activeControlBtn]}
+            onPress={handleToggleBehindText}
+            accessibilityLabel={sticker.behindText ? 'Bring sticker in front of text' : 'Send sticker behind text'}
             accessibilityRole="button"
           >
-            <Text style={styles.controlText}>↻</Text>
+            <MaterialCommunityIcons
+              name={sticker.behindText ? 'layers' : 'layers-minus'}
+              size={16}
+              color="#FFFFFF"
+            />
           </TouchableOpacity>
+
         </View>
       )}
 
       {/* Sticker body — tap to toggle selection */}
-      <TouchableOpacity
-        onPress={() => isEditable && setIsSelected((s) => !s)}
-        activeOpacity={isEditable ? 0.8 : 1}
-        accessibilityLabel={`Sticker${isEditable ? ', tap to select' : ''}`}
-        accessibilityRole={isEditable ? 'button' : 'image'}
-      >
-        {stickerSource != null ? (
-          <Image
-            source={stickerSource}
-            style={[styles.stickerImage, isSelected && styles.selectedOverlay]}
-            resizeMode="contain"
-          />
-        ) : (
-          <Text style={[styles.emoji, isSelected && styles.emojiSelected]}>
-            {stickerIcon}
-          </Text>
-        )}
-      </TouchableOpacity>
+      <Animated.View style={stickerTransformStyle}>
+        <View
+          accessibilityLabel={`Sticker${isEditable ? ', tap to select' : ''}`}
+          accessibilityRole={isEditable ? 'button' : 'image'}
+          {...panResponder.panHandlers}
+        >
+          {stickerSource != null ? (
+            <Image
+              source={stickerSource}
+              style={[styles.stickerImage, isSelected && styles.selectedOverlay]}
+              resizeMode="contain"
+            />
+          ) : (
+            <Text style={[styles.emoji, isSelected && styles.emojiSelected]}>
+              {stickerIcon}
+            </Text>
+          )}
+        </View>
+      </Animated.View>
     </Animated.View>
   );
 };
@@ -268,6 +319,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 5,
     alignItems: 'center',
+    zIndex: 1000,
+    elevation: 10,
   },
   controlBtn: {
     width: 30,
@@ -279,6 +332,9 @@ const styles = StyleSheet.create({
   },
   deleteBtn: {
     backgroundColor: '#EF4444',
+  },
+  activeControlBtn: {
+    backgroundColor: '#0F766E',
   },
   controlText: {
     color: '#FFFFFF',

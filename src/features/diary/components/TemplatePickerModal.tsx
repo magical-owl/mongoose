@@ -11,8 +11,8 @@ import {
   ScrollView,
   FlatList,
   StyleSheet,
-  Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Modal } from '@shared/components/Modal';
 import { Text } from '@shared/components/Text';
 import { useTheme } from '@providers/ThemeProvider';
@@ -36,23 +36,14 @@ export function TemplatePickerModal({
   const templateIds = TEMPLATE_CATEGORIES[activeCategory] || [];
   const currentTemplates = templateIds.map((id) => TEMPLATES[id]!).filter(Boolean);
 
-  const getTypeColor = (type: Template['type']) => {
+  const getTypeIcon = (type: Template['type']): keyof typeof Ionicons.glyphMap => {
     switch (type) {
-      case 'reflection': return '#1E90FF';
-      case 'gratitude':  return '#FF6B6B';
-      case 'planning':   return '#4ECDC4';
-      case 'review':     return '#45B7D1';
-      case 'creative':   return '#96CEB4';
-      default:           return theme.colors.tint;
+      case 'gratitude': return 'heart-outline';
+      case 'planning': return 'checkmark-circle-outline';
+      case 'review': return 'refresh-outline';
+      case 'creative': return 'color-palette-outline';
+      default: return 'document-text-outline';
     }
-  };
-
-  const handlePreview = (item: Template) => {
-    Alert.alert(
-      `${item.icon} ${item.title} Preview`,
-      item.content,
-      [{ text: 'Close', style: 'cancel' }, { text: 'Use Template', onPress: () => { onSelectTemplate(item); onClose(); } }]
-    );
   };
 
   return (
@@ -97,7 +88,6 @@ export function TemplatePickerModal({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => {
-          const accentColor = getTypeColor(item.type);
           return (
             <View
               style={[
@@ -109,7 +99,9 @@ export function TemplatePickerModal({
               ]}
             >
               <View style={styles.cardHeader}>
-                <Text style={{ fontSize: 24, marginRight: 10 }}>{item.icon}</Text>
+                <View style={[styles.typeMark, { backgroundColor: theme.colors.tint + '18' }]}>
+                  <Ionicons name={getTypeIcon(item.type)} size={19} color={theme.colors.tint} />
+                </View>
                 <View style={{ flex: 1 }}>
                   <Text preset="label" color="text" style={{ fontWeight: '700' }}>
                     {item.title}
@@ -127,7 +119,7 @@ export function TemplatePickerModal({
 
               <View style={styles.cardActions}>
                 <TouchableOpacity
-                  style={[styles.btn, { backgroundColor: accentColor }]}
+                  style={[styles.btn, { backgroundColor: theme.colors.tint }]}
                   onPress={() => {
                     onSelectTemplate(item);
                     onClose();
@@ -135,19 +127,9 @@ export function TemplatePickerModal({
                   activeOpacity={0.7}
                   accessibilityLabel={`Add ${item.title} template`}
                 >
+                  <Ionicons name="add" size={16} color="#fff" />
                   <Text preset="caption" style={{ color: '#fff', fontWeight: '700' }}>
-                    + Insert Template
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.btnOutline, { borderColor: theme.colors.border }]}
-                  onPress={() => handlePreview(item)}
-                  activeOpacity={0.7}
-                  accessibilityLabel={`Preview ${item.title}`}
-                >
-                  <Text preset="caption" color="textSecondary">
-                    Preview
+                    Insert
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -168,8 +150,8 @@ const styles = StyleSheet.create({
   },
   tab: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingVertical: 8,
+    borderRadius: 8,
     borderWidth: 1,
   },
   list: {
@@ -177,9 +159,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   card: {
-    borderRadius: 14,
+    borderRadius: 8,
     borderWidth: 1,
-    padding: 14,
+    padding: 12,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -191,15 +173,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  typeMark: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
   btn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 8,
-  },
-  btnOutline: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
   },
 });
