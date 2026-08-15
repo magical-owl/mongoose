@@ -129,6 +129,7 @@ export function ThemeProvider({
     : mode === 'light'
       ? 'light'
       : 'dark';
+  const selectedAccent = accentColors[accentColor] ?? accentColors.blue;
 
   const setThemeMode = useCallback((newMode: ThemeMode) => {
     persistThemeMode(newMode);
@@ -140,12 +141,12 @@ export function ThemeProvider({
   const theme = useMemo<Theme>(
     () => ({
       mode,
-      accentColor,
+        accentColor: accentColors[accentColor] ? accentColor : 'blue',
       isDark: resolvedMode === 'dark',
       colors: {
         ...(resolvedMode === 'dark' ? darkColors : lightColors),
-        tint: accentColors[accentColor][resolvedMode],
-        tabIconSelected: accentColors[accentColor][resolvedMode],
+        tint: selectedAccent[resolvedMode],
+        tabIconSelected: selectedAccent[resolvedMode],
       },
       spacing,
       borderRadius,
@@ -155,7 +156,7 @@ export function ThemeProvider({
       setThemeMode,
       setAccentColor,
     }),
-    [mode, resolvedMode, accentColor, setThemeMode, setAccentColor]
+    [mode, resolvedMode, accentColor, selectedAccent, setThemeMode, setAccentColor]
   );
 
   return (

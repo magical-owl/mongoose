@@ -12,6 +12,7 @@ import { View, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@providers/ThemeProvider";
 import { Text } from "@shared/components/Text";
+import { Icon } from "@shared/components/Icon";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import { getMoodLabel } from "@/ai/Mood";
 
@@ -110,7 +111,7 @@ export default function InsightsScreen() {
       >
         {/* <View style={[styles.hero, { backgroundColor: theme.colors.tint }]}><Text style={styles.heroLabel}>YOUR WRITING RHYTHM</Text><Text style={styles.heroNumber}>{streakStats.currentStreak} days</Text><Text style={styles.heroCopy}>{stats.consistency}% of the last 30 days had a little room for reflection.</Text></View> */}
         <Text style={[styles.title, { color: theme.colors.text }]}>
-          💡 Analytics & Insights
+          Analytics & Insights
         </Text>
 
         <Text
@@ -130,7 +131,7 @@ export default function InsightsScreen() {
               },
             ]}
           >
-            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Text style={styles.icon}>📝</Text></View>
+            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Icon name="document-text-outline" size={20} color="tint" /></View>
             <Text style={[styles.statNumber, { color: theme.colors.text }]}>
               {stats.totalEntries}
             </Text>
@@ -151,7 +152,7 @@ export default function InsightsScreen() {
               },
             ]}
           >
-            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Text style={styles.icon}>🔥</Text></View>
+            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Icon name="flame-outline" size={20} color="tint" /></View>
             <Text style={[styles.statNumber, { color: theme.colors.tint }]}>
               {streakStats.currentStreak} Days
             </Text>
@@ -172,7 +173,7 @@ export default function InsightsScreen() {
               },
             ]}
           >
-            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Text style={styles.icon}>✍️</Text></View>
+            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Icon name="create-outline" size={20} color="tint" /></View>
             <Text style={[styles.statNumber, { color: theme.colors.text }]}>
               {stats.avgWords}
             </Text>
@@ -193,7 +194,7 @@ export default function InsightsScreen() {
               },
             ]}
           >
-            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Text style={styles.icon}>📚</Text></View>
+            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Icon name="book-outline" size={20} color="tint" /></View>
             <Text style={[styles.statNumber, { color: theme.colors.text }]}>
               {stats.totalWords}
             </Text>
@@ -215,7 +216,7 @@ export default function InsightsScreen() {
               },
             ]}
           >
-            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Text style={styles.icon}>📅</Text></View>
+            <View style={[styles.iconBadge, { backgroundColor: theme.colors.tint + "18" }]}><Icon name="calendar-outline" size={20} color="tint" /></View>
             <Text style={[styles.statNumber, { color: theme.colors.text }]}>
               {stats.mostActiveDay}
             </Text>

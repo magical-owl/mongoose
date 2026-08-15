@@ -20,6 +20,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
+import { Icon, type IconProps } from '@shared/components/Icon';
 import { Modal } from '@shared/components/Modal';
 import { Button } from '@shared/components/Button';
 import { CompanionPickerModal } from '@/features/diary/components/CompanionPickerModal';
@@ -140,21 +141,21 @@ export default function SettingsScreen() {
       id: 'appearance',
       title: 'Appearance',
       subtitle: 'Dark mode, theme',
-      icon: '🎨',
+      icon: 'color-palette-outline' as IconProps['name'],
       onPress: () => setShowAppearanceModal(true),
     },
     {
       id: 'companion',
       title: 'AI Companion',
       subtitle: `${activeCompanion.avatar} ${activeCompanion.name}`,
-      icon: '🤖',
+      icon: 'sparkles-outline' as IconProps['name'],
       onPress: () => setShowCompanionModal(true),
     },
     {
       id: 'profile',
       title: 'Profile Details',
       subtitle: profile?.displayName || 'Set display name and bio',
-      icon: '👤',
+      icon: 'person-outline' as IconProps['name'],
       onPress: () => {
         setDisplayName(profile?.displayName ?? '');
         setEmail(profile?.email ?? '');
@@ -166,21 +167,21 @@ export default function SettingsScreen() {
       id: 'security',
       title: 'Security & Privacy',
       subtitle: 'Biometric lock and AI privacy controls',
-      icon: '🔒',
+      icon: 'lock-closed-outline' as IconProps['name'],
       onPress: () => setShowSecurityModal(true),
     },
     {
       id: 'data',
       title: 'Data & Storage',
       subtitle: `Export ${entries.length} entries or backup JSON`,
-      icon: '💾',
+      icon: 'archive-outline' as IconProps['name'],
       onPress: () => setShowDataModal(true),
     },
     {
       id: 'reset',
       title: 'Reset App',
       subtitle: 'Delete all entries and start fresh',
-      icon: '🗑️',
+      icon: 'trash-outline' as IconProps['name'],
       onPress: handleResetApp,
       isDestructive: true,
     },
@@ -196,7 +197,7 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.title, { color: theme.colors.text }]}>
-          ⚙️ Settings
+          Settings
         </Text>
 
         <View style={styles.optionsContainer}>
@@ -213,7 +214,7 @@ export default function SettingsScreen() {
               accessibilityRole="button"
             >
               <View style={styles.optionLeft}>
-                <Text style={styles.optionIcon}>{option.icon}</Text>
+                <Icon name={option.icon} size={22} color={option.isDestructive ? 'error' : 'textSecondary'} style={styles.optionIcon} />
                 <View style={styles.optionText}>
                   <Text
                     style={[
@@ -240,7 +241,7 @@ export default function SettingsScreen() {
       <Modal
         visible={showAppearanceModal}
         onDismiss={() => setShowAppearanceModal(false)}
-        title="🎨 Appearance & Theme"
+        title="Appearance & Theme"
         accessibilityLabel="Appearance settings"
       >
         <View style={[styles.modalRow, { borderBottomColor: theme.colors.border }]}>
@@ -265,7 +266,7 @@ export default function SettingsScreen() {
           <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
             THEME MODE PREFERENCE
           </Text>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {(['light', 'dark', 'system'] as const).map((m) => {
               const active = theme.mode === m;
               return (
@@ -302,8 +303,8 @@ export default function SettingsScreen() {
           <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
             ACCENT COLOR
           </Text>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            {(['blue', 'violet', 'green', 'rose', 'amber'] as AccentColor[]).map((color) => {
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+            {(['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet', 'teal', 'coral', 'rose', 'plum', 'mint', 'slate'] as AccentColor[]).map((color) => {
               const active = theme.accentColor === color;
               return (
                 <TouchableOpacity
@@ -325,7 +326,7 @@ export default function SettingsScreen() {
       <Modal
         visible={showSecurityModal}
         onDismiss={() => setShowSecurityModal(false)}
-        title="🔒 Security & Privacy"
+        title="Security & Privacy"
         accessibilityLabel="Security and privacy settings"
       >
         <View style={{ gap: 16, paddingVertical: 8 }}>
@@ -358,7 +359,7 @@ export default function SettingsScreen() {
       <Modal
         visible={showProfileModal}
         onDismiss={() => setShowProfileModal(false)}
-        title="👤 Profile Details"
+        title="Profile Details"
         accessibilityLabel="Profile details modal"
       >
         <View style={{ gap: 12, paddingVertical: 8 }}>
@@ -413,7 +414,7 @@ export default function SettingsScreen() {
       <Modal
         visible={showDataModal}
         onDismiss={() => setShowDataModal(false)}
-        title="💾 Data & Storage"
+        title="Data & Storage"
         accessibilityLabel="Data and storage modal"
       >
         <View style={{ gap: 12, paddingVertical: 8 }}>

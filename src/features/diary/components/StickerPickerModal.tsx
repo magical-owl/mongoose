@@ -91,7 +91,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
     : activePack.stickers.map((item) => ({ item, packId: activePack.id }));
 
   return (
-    <Modal visible={visible} onDismiss={onClose} title="🎨 Choose a Sticker" accessibilityLabel="Sticker picker">
+    <Modal visible={visible} onDismiss={onClose} title="Choose a Sticker" accessibilityLabel="Sticker picker">
       {/* Search bar */}
       <View style={[styles.searchRow, { borderBottomColor: theme.colors.border }]}>
         <View style={[styles.searchBox, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
@@ -150,7 +150,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
       {/* 4-col grid */}
       {isSearching && flatData.length === 0 ? (
         <View style={styles.empty}>
-          <Text preset="caption" color="textSecondary">No stickers found for "{search}"</Text>
+          <Text preset="caption" color="textSecondary">No stickers found for &quot;{search}&quot;</Text>
         </View>
       ) : (
         <FlatList

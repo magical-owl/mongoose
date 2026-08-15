@@ -82,7 +82,7 @@ export default function CalendarScreen() {
         >
           {/* Title */}
           <Text style={[styles.heading, { color: theme.colors.text }]}>
-            📅 Calendar
+            Calendar
           </Text>
 
           {/* Calendar Card Container */}
@@ -338,13 +338,9 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: 8,
+    padding: 14,
     marginBottom: 12,
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 3,
   },
   cardHeader: {
     flexDirection: 'row',
