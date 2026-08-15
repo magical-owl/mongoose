@@ -4,6 +4,7 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Image,
   StyleSheet,
   Pressable,
   Modal as RNModal,
@@ -13,11 +14,18 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@providers/ThemeProvider";
 import { Text } from "@shared/components/Text";
+import { MarkdownText } from "@shared/components/MarkdownText";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import { stripHtml } from "@shared/utils/html";
 import { getMoodEmoji } from "@/ai/Mood";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
 import { appLockService } from "@/services/AppLockService";
+import { findStickerItem, PlacedSticker } from "@/features/diary/domain/Sticker";
+
+// Sticker coordinates are stored relative to the entry screen. Feed cards
+// begin inside the scroll content and below their card header.
+const FEED_STICKER_ORIGIN_X = 36;
+const FEED_STICKER_ORIGIN_Y = 90;
 
 function formatTimelineDate(value: string): string {
   const [year, month, day] = value.split("-").map(Number);
@@ -29,18 +37,48 @@ function formatTimelineDate(value: string): string {
   }).format(new Date(year, month - 1, day, 12));
 }
 
+function FeedStickerPreview({ sticker }: { readonly sticker: PlacedSticker }) {
+  const stickerItem = findStickerItem(sticker.stickerId);
+  if (!stickerItem) return null;
+
+  return (
+    <View
+      pointerEvents="none"
+      style={[
+        styles.feedSticker,
+        {
+          left: sticker.x - FEED_STICKER_ORIGIN_X,
+          top: sticker.y - FEED_STICKER_ORIGIN_Y,
+          zIndex: sticker.behindText ? 1 : sticker.zIndex + 3,
+          transform: [
+            { scale: sticker.scale },
+            { rotate: `${sticker.rotation}deg` },
+          ],
+        },
+      ]}
+    >
+      {stickerItem.source != null ? (
+        <Image source={stickerItem.source} style={styles.feedStickerImage} resizeMode="contain" />
+      ) : (
+        <Text style={styles.feedStickerEmoji}>{stickerItem.icon ?? "⭐"}</Text>
+      )}
+    </View>
+  );
+}
+
 export default function TimelineScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { entries, isLoading, refresh, saveDiaryEntry } = useDiary();
-  const [viewModeIndex, setViewModeIndex] = useState(0); // 0: Detailed, 1: Simple
+  const [viewModeIndex, setViewModeIndex] = useState(0); // 0: Detailed, 1: Simple, 2: Feed
   const [search, setSearch] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterTag, setFilterTag] = useState("");
   const [filterMood, setFilterMood] = useState("");
   const [filterCompanion, setFilterCompanion] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const [expandedFilter, setExpandedFilter] = useState<
     "date" | "tag" | "mood" | "companion" | null
   >(null);
@@ -86,7 +124,7 @@ export default function TimelineScreen() {
     }, [refresh]),
   );
 
-  const viewMode = viewModeIndex === 0 ? "detailed" : "simple";
+  const viewMode = viewModeIndex === 0 ? "detailed" : viewModeIndex === 1 ? "simple" : "feed";
 
   const filteredEntries = useMemo(() => {
     if (
@@ -157,7 +195,7 @@ export default function TimelineScreen() {
               <Ionicons name="menu-outline" size={28} color={theme.colors.text} />
             </TouchableOpacity>
 
-            {/* Detailed / Simple Switcher */}
+            {/* Detailed / Simple / Feed Switcher */}
             <View
               style={[
                 styles.switcherWrap,
@@ -167,7 +205,7 @@ export default function TimelineScreen() {
                 },
               ]}
             >
-              {(["Detailed", "Simple"] as const).map((label, idx) => (
+              {(["Detailed", "Simple", "Feed"] as const).map((label, idx) => (
                 <TouchableOpacity
                   key={label}
                   onPress={() => setViewModeIndex(idx)}
@@ -232,13 +270,31 @@ export default function TimelineScreen() {
           ) : (
             groupedEntries.map(([date, dateEntries]) => (
               <View key={date} style={styles.dateGroup}>
-                <Text
-                  preset="label"
-                  style={[styles.dateHeading, { color: theme.colors.text }]}
+                <TouchableOpacity
+                  onPress={() => setCollapsedDates((current) => {
+                    const next = new Set(current);
+                    if (next.has(date)) next.delete(date);
+                    else next.add(date);
+                    return next;
+                  })}
+                  style={styles.dateHeadingRow}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${formatTimelineDate(date)} date group`}
+                  accessibilityState={{ expanded: !collapsedDates.has(date) }}
                 >
-                  {formatTimelineDate(date)}
-                </Text>
-                {dateEntries.map((entry) => {
+                  <Text
+                    preset="label"
+                    style={[styles.dateHeading, { color: theme.colors.text }]}
+                  >
+                    {formatTimelineDate(date)}
+                  </Text>
+                  <Ionicons
+                    name={collapsedDates.has(date) ? "chevron-forward" : "chevron-down"}
+                    size={16}
+                    color={theme.colors.textSecondary}
+                  />
+                </TouchableOpacity>
+                {!collapsedDates.has(date) && dateEntries.map((entry) => {
               const hasMood = !!entry.manualMood;
               const moodEmoji = hasMood
                 ? getMoodEmoji(entry.manualMood!)
@@ -306,6 +362,64 @@ export default function TimelineScreen() {
                     >
                       ›
                     </Text>
+                  </TouchableOpacity>
+                );
+              }
+
+              if (viewMode === "feed") {
+                return (
+                  <TouchableOpacity
+                    key={entry.id}
+                    activeOpacity={0.8}
+                    onPress={async () => {
+                      if (entry.isLockbox && !(await appLockService.authenticate())) return;
+                      router.push(`/entry/${entry.id}`);
+                    }}
+                    style={[
+                      styles.feedCard,
+                      { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                    ]}
+                  >
+                    <View style={styles.feedHeader}>
+                      <TouchableOpacity
+                        onPress={() => { void toggleFavorite(entry); }}
+                        accessibilityLabel={entry.isFavorite ? "Remove favorite" : "Add favorite"}
+                      >
+                        <Text style={[styles.favoriteMark, { color: theme.colors.warning }]}>
+                          {entry.isFavorite ? "★" : "☆"}
+                        </Text>
+                      </TouchableOpacity>
+                      <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
+                    </View>
+                    <View
+                      style={[
+                        styles.feedCanvas,
+                        {
+                          minHeight: Math.max(
+                            220,
+                            ...entry.stickers.map(
+                              (sticker) =>
+                                sticker.y - FEED_STICKER_ORIGIN_Y + 80 * sticker.scale,
+                            ),
+                          ),
+                        },
+                      ]}
+                    >
+                      {entry.stickers.map((sticker) => (
+                        <FeedStickerPreview key={sticker.id} sticker={sticker} />
+                      ))}
+                      <View style={styles.feedTextLayer}>
+                        <Text style={[styles.feedTitle, { color: theme.colors.text }]}>{entry.title}</Text>
+                        <View style={styles.feedMetaRow}>
+                          {entry.tags.map((tag) => (
+                            <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>
+                          ))}
+                        </View>
+                        <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>
+                          {entry.content}
+                        </MarkdownText>
+                      </View>
+                    </View>
                   </TouchableOpacity>
                 );
               }
@@ -507,6 +621,56 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 10,
   },
+  feedCard: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 14,
+  },
+  feedCanvas: {
+    position: "relative",
+    minHeight: 220,
+    overflow: "visible",
+  },
+  feedTextLayer: {
+    position: "relative",
+    zIndex: 2,
+  },
+  feedSticker: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  feedStickerImage: {
+    width: 80,
+    height: 80,
+  },
+  feedStickerEmoji: {
+    fontSize: 48,
+  },
+  feedHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  feedTitle: {
+    fontSize: 21,
+    lineHeight: 27,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  feedContent: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  feedMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -546,6 +710,11 @@ const styles = StyleSheet.create({
   },
   dateGroup: {
     marginBottom: 6,
+  },
+  dateHeadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   dateHeading: {
     marginTop: 10,

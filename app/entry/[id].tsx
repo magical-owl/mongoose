@@ -80,8 +80,6 @@ export default function EntryDetailScreen() {
   const [editContent, setEditContent] = useState('');
   const [editDate, setEditDate] = useState(new Date());
   const [editStickers, setEditStickers] = useState<PlacedSticker[]>([]);
-  const [editTags, setEditTags] = useState<string[]>([]);
-  const [editTagInput, setEditTagInput] = useState('');
   const [editMoodWeather, setEditMoodWeather] = useState<ManualMoodWeather>('calm');
   const [editMood, setEditMood] = useState<ManualMood>('neutral');
   const [editWritingMode, setEditWritingMode] = useState<WritingMode>('free-write');
@@ -128,7 +126,6 @@ export default function EntryDetailScreen() {
         setEditDate(entryDate(found.date));
         setEditStickers(found.stickers);
         setEditCompanion(found.companion);
-        setEditTags(found.tags);
         setEditMood(found.manualMood ?? 'neutral'); setEditMoodWeather(found.manualMoodWeather); setEditWritingMode(found.writingMode); setEditLocation(found.sensory.locationLabel); setEditSounds(found.sensory.sounds); setEditSmells(found.sensory.smells); setEditEnergy(String(found.sensory.energyLevel)); setEditBody(found.sensory.bodyState); setEditLockbox(found.isLockbox); setEditUnlockAt(found.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(found.expiresAt ?? '');
       }
     }
@@ -146,7 +143,6 @@ export default function EntryDetailScreen() {
     setEditDate(entryDate(entry.date));
     setEditStickers(entry.stickers);
     setEditCompanion(entry.companion);
-    setEditTags(entry.tags);
     setEditMood(entry.manualMood ?? 'neutral'); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(true);
   };
@@ -158,7 +154,6 @@ export default function EntryDetailScreen() {
     setEditDate(entryDate(entry.date));
     setEditStickers(entry.stickers);
     setEditCompanion(entry.companion);
-    setEditTags(entry.tags);
     setEditMood(entry.manualMood ?? 'neutral'); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(false);
   };
@@ -174,7 +169,8 @@ export default function EntryDetailScreen() {
       date: `${editDate.getFullYear()}-${String(editDate.getMonth() + 1).padStart(2, '0')}-${String(editDate.getDate()).padStart(2, '0')}`,
       stickers: editStickers,
       companion: editCompanion,
-      tags: editTags,
+      // Tags are intentionally preserved while tag editing is shelved.
+      tags: entry.tags,
       manualMoodWeather: editMoodWeather,
       manualMood: editMood,
       writingMode: editWritingMode,
@@ -362,29 +358,6 @@ export default function EntryDetailScreen() {
                 showToolbar={false}
                 accessibilityLabel="Entry content"
               />
-              <View style={styles.tagEditor}>
-                <Text preset="caption" color="textSecondary">Tags</Text>
-                <View style={styles.tagRow}>
-                  {editTags.map((tag) => (
-                    <TouchableOpacity key={tag} onPress={() => setEditTags((current) => current.filter((item) => item !== tag))} style={[styles.tag, { backgroundColor: theme.colors.tint + '20' }]}>
-                      <Text preset="caption" color="tint">#{tag} ×</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <NativeTextInput
-                  value={editTagInput}
-                  onChangeText={setEditTagInput}
-                  onSubmitEditing={() => {
-                    const tag = editTagInput.trim().toLowerCase().replace(/\s+/g, '-');
-                    if (tag && !editTags.includes(tag)) setEditTags((current) => [...current, tag]);
-                    setEditTagInput('');
-                  }}
-                  placeholder="Add a tag and press return"
-                  placeholderTextColor={theme.colors.textSecondary}
-                  style={[styles.tagInput, { color: theme.colors.text, borderColor: theme.colors.border }]}
-                  returnKeyType="done"
-                />
-              </View>
             </>
           ) : (
             /* ── View mode ──────────────────────────────────────────────── */
@@ -551,10 +524,8 @@ const styles = StyleSheet.create({
   },
   headerActions: { flexDirection: 'row', alignItems: 'center' },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  tagEditor: { marginTop: 16, gap: 8 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   tag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
-  tagInput: { borderWidth: 1, borderRadius: 8, padding: 10 },
   entryMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
   favorite: { color: '#E5A72D', fontWeight: '700' },
   floatingBar: {
