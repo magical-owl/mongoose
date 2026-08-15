@@ -88,7 +88,7 @@ export default function TimelineScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { entries, isLoading, refresh, saveDiaryEntry } = useDiary();
-  const [viewModeIndex, setViewModeIndex] = useState(0); // 0: Detailed, 1: Simple, 2: Feed
+  const [viewModeIndex, setViewModeIndex] = useState(0); // 0: Detailed, 1: Feed
   const [search, setSearch] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterTag, setFilterTag] = useState("");
@@ -144,7 +144,7 @@ export default function TimelineScreen() {
     }, [refresh]),
   );
 
-  const viewMode = viewModeIndex === 0 ? "detailed" : viewModeIndex === 1 ? "simple" : "feed";
+  const viewMode = viewModeIndex === 0 ? "detailed" : "feed";
 
   const filteredEntries = useMemo(() => {
     if (
@@ -215,7 +215,7 @@ export default function TimelineScreen() {
               <Ionicons name="menu-outline" size={28} color={theme.colors.text} />
             </TouchableOpacity>
 
-            {/* Detailed / Simple / Feed Switcher */}
+            {/* Detailed / Feed Switcher */}
             <View
               style={[
                 styles.switcherWrap,
@@ -225,7 +225,7 @@ export default function TimelineScreen() {
                 },
               ]}
             >
-              {(["Detailed", "Simple", "Feed"] as const).map((label, idx) => (
+              {(["Detailed", "Feed"] as const).map((label, idx) => (
                 <TouchableOpacity
                   key={label}
                   onPress={() => setViewModeIndex(idx)}
@@ -382,67 +382,6 @@ export default function TimelineScreen() {
                 </TouchableOpacity>}
                 {(!isDateVisible || !collapsedDates.has(date)) && dateEntries.map((entry) => {
               const hasMood = !!entry.manualMood;
-
-              if (viewMode === "simple") {
-                {
-                  /* Simple Mode Row */
-                }
-                return (
-                  <TouchableOpacity
-                    key={entry.id}
-                    activeOpacity={0.8}
-                    onPress={async () => {
-                      if (
-                        entry.isLockbox &&
-                        !(await appLockService.authenticate())
-                      )
-                        return;
-                      router.push(`/entry/${entry.id}`);
-                    }}
-                    style={[
-                      styles.simpleRow,
-                      {
-                        backgroundColor: theme.colors.surface,
-                        borderColor: theme.colors.border,
-                        borderLeftWidth: hasMood ? 4 : 1,
-                        borderLeftColor: hasMood
-                          ? theme.colors.tint
-                          : theme.colors.border,
-                      },
-                    ]}
-                  >
-                    <TouchableOpacity
-                      onPress={() => {
-                        void toggleFavorite(entry);
-                      }}
-                      accessibilityLabel={
-                        entry.isFavorite ? "Remove favorite" : "Add favorite"
-                      }
-                    >
-                      <Text style={[styles.favoriteMark, { color: theme.colors.warning }]}>
-                        {entry.isFavorite ? "★" : "☆"}
-                      </Text>
-                    </TouchableOpacity>
-                    <Text
-                      style={[
-                        styles.title,
-                        { color: theme.colors.text, flex: 1, marginRight: 8 },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {entry.title}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.arrow,
-                        { color: theme.colors.textSecondary },
-                      ]}
-                    >
-                      ›
-                    </Text>
-                  </TouchableOpacity>
-                );
-              }
 
               if (viewMode === "feed") {
                 return (
@@ -699,15 +638,6 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
   },
-  simpleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
-  },
   feedCard: {
     padding: 16,
     marginBottom: 14,
@@ -780,10 +710,6 @@ const styles = StyleSheet.create({
   content: {
     fontSize: 14,
     lineHeight: 20,
-  },
-  arrow: {
-    fontSize: 18,
-    marginLeft: 6,
   },
   emptyText: {
     marginTop: 10,
