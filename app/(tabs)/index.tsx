@@ -19,6 +19,16 @@ import { getMoodEmoji } from "@/ai/Mood";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
 import { appLockService } from "@/services/AppLockService";
 
+function formatTimelineDate(value: string): string {
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return value;
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(year, month - 1, day, 12));
+}
+
 export default function TimelineScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -117,6 +127,18 @@ export default function TimelineScreen() {
     favoritesOnly,
   ]);
 
+  const groupedEntries = useMemo(() => {
+    const groups = new Map<string, typeof filteredEntries>();
+    [...filteredEntries]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .forEach((entry) => {
+        const group = groups.get(entry.date);
+        if (group) group.push(entry);
+        else groups.set(entry.date, [entry]);
+      });
+    return Array.from(groups.entries());
+  }, [filteredEntries]);
+
   return (
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
@@ -208,7 +230,15 @@ export default function TimelineScreen() {
               {search.trim() ? "No matching entries." : "No entries yet."}
             </Text>
           ) : (
-            filteredEntries.map((entry) => {
+            groupedEntries.map(([date, dateEntries]) => (
+              <View key={date} style={styles.dateGroup}>
+                <Text
+                  preset="label"
+                  style={[styles.dateHeading, { color: theme.colors.text }]}
+                >
+                  {formatTimelineDate(date)}
+                </Text>
+                {dateEntries.map((entry) => {
               const hasMood = !!entry.manualMood;
               const moodEmoji = hasMood
                 ? getMoodEmoji(entry.manualMood!)
@@ -254,14 +284,6 @@ export default function TimelineScreen() {
                         {entry.isFavorite ? "★" : "☆"}
                       </Text>
                     </TouchableOpacity>
-                    <Text
-                      style={[
-                        styles.date,
-                        { color: theme.colors.textSecondary, minWidth: 75 },
-                      ]}
-                    >
-                      {entry.date}
-                    </Text>
                     <Text
                       style={[
                         styles.title,
@@ -341,14 +363,6 @@ export default function TimelineScreen() {
                         </View>
                       )}
                     </View>
-                    <Text
-                      style={[
-                        styles.date,
-                        { color: theme.colors.textSecondary },
-                      ]}
-                    >
-                      {entry.date}
-                    </Text>
                     <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
                   </View>
                   <Text
@@ -362,7 +376,9 @@ export default function TimelineScreen() {
                   </Text>
                 </TouchableOpacity>
               );
-            })
+                })}
+              </View>
+            ))
           )}
         </ScrollView>
       )}
@@ -527,6 +543,15 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 10,
     fontSize: 15,
+  },
+  dateGroup: {
+    marginBottom: 6,
+  },
+  dateHeading: {
+    marginTop: 10,
+    marginBottom: 10,
+    fontSize: 15,
+    fontWeight: "700",
   },
   favoriteMark: {
     fontSize: 18,

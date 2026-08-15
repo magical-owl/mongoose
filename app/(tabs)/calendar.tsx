@@ -17,6 +17,15 @@ import { useAppStore } from '@/stores/useAppStore';
 import { stripHtml } from '@shared/utils/html';
 import { getMoodEmoji } from '@/ai/Mood';
 
+function formatCalendarDate(value: string): string {
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return value;
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(year, month - 1, day, 12));
+}
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -258,7 +267,11 @@ export default function CalendarScreen() {
               <Text preset="bodySmall" color="textSecondary" style={styles.emptyStateText}>No entries on this date.</Text>
             </View>
           ) : (
-            selectedDayEntries.map((item) => {
+            <View style={styles.dateGroup}>
+              <Text preset="label" style={[styles.dateHeading, { color: theme.colors.text }]}>
+                {formatCalendarDate(selectedDateStr)}
+              </Text>
+              {selectedDayEntries.map((item) => {
               const hasMood = !!item.manualMood;
               const moodEmoji = hasMood ? getMoodEmoji(item.manualMood!) : null;
 
@@ -295,10 +308,7 @@ export default function CalendarScreen() {
                         </View>
                       )}
                     </View>
-                    <View style={styles.dateAction}>
-                      <Text style={[styles.date, { color: theme.colors.textSecondary }]}>{item.date}</Text>
-                      <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
-                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
                   </View>
                   <Text
                     style={[styles.content, { color: theme.colors.textSecondary }]}
@@ -308,7 +318,8 @@ export default function CalendarScreen() {
                   </Text>
                 </TouchableOpacity>
               );
-            })
+              })}
+            </View>
           )}
         </ScrollView>
       )}
@@ -425,6 +436,8 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
   },
+  dateGroup: { marginBottom: 6 },
+  dateHeading: { fontSize: 15, fontWeight: '700', marginTop: 4, marginBottom: 10 },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -446,7 +459,6 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 12,
   },
-  dateAction: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   content: {
     fontSize: 14,
     lineHeight: 20,
