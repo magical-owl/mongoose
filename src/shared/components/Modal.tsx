@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  ScrollView,
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -113,9 +114,14 @@ export function Modal({
             </View>
           </View>
 
-          <View style={{ paddingHorizontal: theme.spacing.lg }}>
+          <ScrollView
+            style={{ flexShrink: 1 }}
+            contentContainerStyle={{ paddingHorizontal: theme.spacing.lg }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             {children}
-          </View>
+          </ScrollView>
         </Animated.View>
       </View>
     </RNModal>

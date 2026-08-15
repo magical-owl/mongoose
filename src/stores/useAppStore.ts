@@ -27,6 +27,7 @@ export type SessionState = 'idle' | 'active' | 'expired';
 export type CalendarDateFormat = 'month-day-year' | 'day-month-year' | 'year-month-day';
 export type FontScale = 'small' | 'default' | 'large';
 export type FontFamily = 'system' | 'serif' | 'monospace';
+export type HomeViewMode = 'detailed' | 'timeline' | 'feed';
 
 /**
  * App state interface.
@@ -47,6 +48,8 @@ export interface AppState {
   calendarFirstDay: 0 | 1;
   fontScale: FontScale;
   fontFamily: FontFamily;
+  homeViewModes: Record<HomeViewMode, boolean>;
+  homeViewMode: HomeViewMode;
 
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
@@ -62,6 +65,8 @@ export interface AppState {
   setCalendarFirstDay: (day: 0 | 1) => void;
   setFontScale: (scale: FontScale) => void;
   setFontFamily: (family: FontFamily) => void;
+  setHomeViewModeEnabled: (mode: HomeViewMode, enabled: boolean) => void;
+  setHomeViewMode: (mode: HomeViewMode) => void;
   reset: () => void;
 }
 
@@ -81,6 +86,8 @@ const initialState: Pick<
   | 'calendarFirstDay'
   | 'fontScale'
   | 'fontFamily'
+  | 'homeViewModes'
+  | 'homeViewMode'
 > = {
   themeMode: 'dark',
   accentColor: 'blue',
@@ -96,6 +103,8 @@ const initialState: Pick<
   calendarFirstDay: 0,
   fontScale: 'default',
   fontFamily: 'system',
+  homeViewModes: { detailed: true, timeline: true, feed: true },
+  homeViewMode: 'detailed',
 };
 
 /**
@@ -124,6 +133,10 @@ export const useAppStore = create<AppState>()(
       setCalendarFirstDay: (calendarFirstDay: 0 | 1) => set({ calendarFirstDay }),
       setFontScale: (fontScale: FontScale) => set({ fontScale }),
       setFontFamily: (fontFamily: FontFamily) => set({ fontFamily }),
+      setHomeViewModeEnabled: (mode: HomeViewMode, enabled: boolean) => set((state) => ({
+        homeViewModes: { ...state.homeViewModes, [mode]: enabled },
+      })),
+      setHomeViewMode: (homeViewMode: HomeViewMode) => set({ homeViewMode }),
 
       setOnboardingStatus: (onboardingStatus: OnboardingStatus) =>
         set({
@@ -154,6 +167,8 @@ export const useAppStore = create<AppState>()(
         calendarFirstDay: state.calendarFirstDay,
         fontScale: state.fontScale,
         fontFamily: state.fontFamily,
+        homeViewModes: state.homeViewModes,
+        homeViewMode: state.homeViewMode,
       }),
     }
   )

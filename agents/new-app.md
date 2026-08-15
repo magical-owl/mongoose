@@ -33,6 +33,10 @@ Before writing app-specific code, update core configuration:
 - Adjust typography tokens in `@theme/typography`.
 - **Strict Rule**: Use theme tokens in all components. Never hardcode hex colors or raw pixel values.
 
+### 3. Establish Reusable UI Boundaries
+
+Before adding app-specific screens, review [`agents/componentization.md`](componentization.md). Keep route files thin, place domain UI in `src/features/<feature>/components/`, and place domain-neutral controls in `src/shared/components/`. New screens should compose existing components instead of copying cards, filters, calendars, editors, or analytics layouts. Every extracted component must expose typed props, preserve accessibility behavior, and include focused component tests.
+
 ---
 
 ## Phase 2: Feature-First Clean Architecture Blueprint

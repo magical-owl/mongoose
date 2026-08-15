@@ -14,9 +14,9 @@ import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useAppStore } from '@/stores/useAppStore';
-import { stripHtml } from '@shared/utils/html';
-import { getMoodEmoji } from '@/ai/Mood';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
+import { DiaryEntryView } from '@/features/diary/components/DiaryEntryView';
+import { appLockService } from '@/services/AppLockService';
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -26,6 +26,9 @@ export default function CalendarScreen() {
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const calendarFirstDay = useAppStore((state) => state.calendarFirstDay);
+  const homeViewMode = useAppStore((state) => state.homeViewMode);
+  const homeViewModes = useAppStore((state) => state.homeViewModes);
+  const calendarViewMode = homeViewModes[homeViewMode] ? homeViewMode : 'detailed';
 
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [selectedDateStr, setSelectedDateStr] = useState<string>(() => {
@@ -265,45 +268,16 @@ export default function CalendarScreen() {
                 {formatDisplayDate(selectedDateStr, calendarDateFormat)}
               </Text>
               {selectedDayEntries.map((item) => {
-              const hasMood = !!item.manualMood;
-              const moodEmoji = hasMood ? getMoodEmoji(item.manualMood!) : null;
-
               return (
-                <TouchableOpacity
+                <DiaryEntryView
                   key={item.id}
-                  activeOpacity={0.8}
-                  onPress={() => router.push(`/entry/${item.id}`)}
-                  style={[
-                    styles.card,
-                    {
-                      backgroundColor: theme.colors.surface,
-                      borderColor: theme.colors.border,
-                      borderLeftWidth: hasMood ? 4 : 1,
-                      borderLeftColor: hasMood ? theme.colors.tint : theme.colors.border,
-                    },
-                  ]}
-                >
-                  <View style={styles.cardHeader}>
-                    <View style={styles.titleContainer}>
-                      <Text style={[styles.title, { color: theme.colors.text }]}>
-                        {item.title.substring(0, 30)}
-                        {item.title.length > 30 ? '...' : ''}
-                      </Text>
-                      {hasMood && (
-                        <View style={styles.moodIndicator}>
-                          <Text style={styles.moodEmoji}>{moodEmoji}</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
-                  </View>
-                  <Text
-                    style={[styles.content, { color: theme.colors.textSecondary }]}
-                    numberOfLines={2}
-                  >
-                    {stripHtml(item.content)}
-                  </Text>
-                </TouchableOpacity>
+                  entry={item}
+                  mode={calendarViewMode}
+                  onPress={async () => {
+                    if (item.isLockbox && !(await appLockService.authenticate())) return;
+                    router.push(`/entry/${item.id}`);
+                  }}
+                />
               );
               })}
             </View>
@@ -422,6 +396,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 14,
     marginBottom: 12,
+  },
+  feedEntry: {
+    borderWidth: 0,
+    padding: 14,
+    marginBottom: 12,
+  },
+  timelineEntry: {
+    borderWidth: 0,
+    borderLeftWidth: 2,
+    borderRadius: 0,
+    paddingLeft: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  timelineContent: {
+    flex: 1,
   },
   dateGroup: { marginBottom: 6 },
   dateHeading: { fontSize: 15, fontWeight: '700', marginTop: 4, marginBottom: 10 },

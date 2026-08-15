@@ -27,7 +27,7 @@ import { CompanionPickerModal } from '@/features/diary/components/CompanionPicke
 import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
-import { useAppStore, type CalendarDateFormat, type FontFamily, type FontScale } from '@/stores/useAppStore';
+import { useAppStore, type CalendarDateFormat, type FontFamily, type FontScale, type HomeViewMode } from '@/stores/useAppStore';
 import { appLockService } from '@/services/AppLockService';
 import { dataDeletionService } from '@/services/DataDeletionService';
 import { diaryBackupService } from '@/services/DiaryBackupService';
@@ -45,10 +45,12 @@ export default function SettingsScreen() {
   const calendarFirstDay = useAppStore((state) => state.calendarFirstDay);
   const fontScale = useAppStore((state) => state.fontScale);
   const fontFamily = useAppStore((state) => state.fontFamily);
+  const homeViewModes = useAppStore((state) => state.homeViewModes);
   const setCalendarDateFormat = useAppStore((state) => state.setCalendarDateFormat);
   const setCalendarFirstDay = useAppStore((state) => state.setCalendarFirstDay);
   const setFontScale = useAppStore((state) => state.setFontScale);
   const setFontFamily = useAppStore((state) => state.setFontFamily);
+  const setHomeViewModeEnabled = useAppStore((state) => state.setHomeViewModeEnabled);
   const { profile, saveProfile } = useProfileForm();
   const { state: journalExtras, replace: replaceJournalExtras } = useJournalExtras();
 
@@ -412,6 +414,29 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>HOME VIEWS</Text>
+        <View>
+          {([['detailed', 'Card'], ['timeline', 'Timeline'], ['feed', 'Feed']] as const satisfies (readonly [HomeViewMode, string])[]).map(([value, label]) => (
+            <View
+              key={value}
+              style={[styles.displayToggleRow, { borderBottomColor: theme.colors.border }]}
+            >
+              <Text preset="bodySmall" color="text">{label}</Text>
+              <Switch
+                value={homeViewModes[value]}
+                onValueChange={(enabled) => {
+                  const enabledCount = (['detailed', 'timeline', 'feed'] as const).filter((view) => homeViewModes[view]).length;
+                  if (!enabled && enabledCount === 1) return;
+                  setHomeViewModeEnabled(value, enabled);
+                }}
+                trackColor={{ false: theme.colors.border, true: theme.colors.tint }}
+                thumbColor="#fff"
+                accessibilityLabel={`${label} view available in Home`}
+              />
+            </View>
+          ))}
+        </View>
+        <Text preset="caption" color="textSecondary" style={styles.displayHint}>Choose which layouts appear in the Home view switcher. Keep at least one enabled.</Text>
       </Modal>
 
       <Modal
@@ -636,4 +661,5 @@ const styles = StyleSheet.create({
   displayOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   displayOption: { flexGrow: 1, minWidth: '30%', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingVertical: 11, paddingHorizontal: 10 },
   displayHint: { marginTop: 16, lineHeight: 18 },
+  displayToggleRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 4 },
 });

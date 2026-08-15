@@ -4,7 +4,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Image,
   StyleSheet,
   Pressable,
   Modal as RNModal,
@@ -14,20 +13,15 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@providers/ThemeProvider";
 import { Text } from "@shared/components/Text";
-import { MarkdownText } from "@shared/components/MarkdownText";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import { stripHtml } from "@shared/utils/html";
 import { getMoodEmoji } from "@/ai/Mood";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
 import { appLockService } from "@/services/AppLockService";
-import { findStickerItem, PlacedSticker } from "@/features/diary/domain/Sticker";
+import { DiaryEntryView } from "@/features/diary/components/DiaryEntryView";
 import { formatDisplayDate } from "@shared/utils/dateFormat";
 import { useAppStore } from "@/stores/useAppStore";
-
-// Sticker coordinates are stored relative to the entry screen. Feed cards
-// begin inside the scroll content and below their card header.
-const FEED_STICKER_ORIGIN_X = 36;
-const FEED_STICKER_ORIGIN_Y = 90;
+import type { HomeViewMode } from "@/stores/useAppStore";
 
 function formatTimelineMonth(value: string): string {
   const [year, month] = value.split("-").map(Number);
@@ -39,6 +33,11 @@ function formatTimelineMonth(value: string): string {
 
 type HierarchyMode = "year-month-date" | "month-date" | "date" | "none";
 const HIERARCHY_MODES: HierarchyMode[] = ["year-month-date", "month-date", "date", "none"];
+const HOME_VIEW_MODES = [
+  ["detailed", "Card"],
+  ["timeline", "Timeline"],
+  ["feed", "Feed"],
+] as const satisfies (readonly [HomeViewMode, string])[];
 
 function hierarchyModeLabel(mode: HierarchyMode): string {
   if (mode === "month-date") return "Month / Date";
@@ -47,42 +46,16 @@ function hierarchyModeLabel(mode: HierarchyMode): string {
   return "Year / Month / Date";
 }
 
-function FeedStickerPreview({ sticker }: { readonly sticker: PlacedSticker }) {
-  const stickerItem = findStickerItem(sticker.stickerId);
-  if (!stickerItem) return null;
-
-  return (
-    <View
-      pointerEvents="none"
-      style={[
-        styles.feedSticker,
-        {
-          left: sticker.x - FEED_STICKER_ORIGIN_X,
-          top: sticker.y - FEED_STICKER_ORIGIN_Y,
-          zIndex: sticker.behindText ? 1 : sticker.zIndex + 3,
-          transform: [
-            { scale: sticker.scale },
-            { rotate: `${sticker.rotation}deg` },
-          ],
-        },
-      ]}
-    >
-      {stickerItem.source != null ? (
-        <Image source={stickerItem.source} style={styles.feedStickerImage} resizeMode="contain" />
-      ) : (
-        <Text style={styles.feedStickerEmoji}>{stickerItem.icon ?? "⭐"}</Text>
-      )}
-    </View>
-  );
-}
-
 export default function TimelineScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { entries, isLoading, refresh } = useDiary();
-  const [viewModeIndex, setViewModeIndex] = useState(0); // 0: Detailed, 1: Feed, 2: Timeline
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
+  const homeViewModes = useAppStore((state) => state.homeViewModes);
+  const homeViewMode = useAppStore((state) => state.homeViewMode);
+  const setHomeViewMode = useAppStore((state) => state.setHomeViewMode);
+  const selectableViewModes = HOME_VIEW_MODES.filter(([mode]) => homeViewModes[mode]);
   const [search, setSearch] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterTag, setFilterTag] = useState("");
@@ -126,7 +99,11 @@ export default function TimelineScreen() {
     }, [refresh]),
   );
 
-  const viewMode = viewModeIndex === 0 ? "detailed" : viewModeIndex === 1 ? "feed" : "timeline";
+  const [viewModeIndex, setViewModeIndex] = useState(() => {
+    const selectedIndex = selectableViewModes.findIndex(([mode]) => mode === homeViewMode);
+    return selectedIndex >= 0 ? selectedIndex : 0;
+  });
+  const viewMode = selectableViewModes[viewModeIndex]?.[0] ?? "detailed";
 
   const filteredEntries = useMemo(() => {
     if (
@@ -197,7 +174,7 @@ export default function TimelineScreen() {
               <Ionicons name="menu-outline" size={28} color={theme.colors.text} />
             </TouchableOpacity>
 
-            {/* Detailed / Feed Switcher */}
+            {/* Home view switcher */}
             <View
               style={[
                 styles.switcherWrap,
@@ -207,10 +184,10 @@ export default function TimelineScreen() {
                 },
               ]}
             >
-              {(["Detailed", "Feed", "Timeline"] as const).map((label, idx) => (
+              {selectableViewModes.map(([mode, label], idx) => (
                 <TouchableOpacity
                   key={label}
-                  onPress={() => setViewModeIndex(idx)}
+                  onPress={() => { setViewModeIndex(idx); setHomeViewMode(mode); }}
                   style={[
                     styles.switcherBtn,
                     {
@@ -363,126 +340,16 @@ export default function TimelineScreen() {
                   />
                 </TouchableOpacity>}
                 {(!isDateVisible || !collapsedDates.has(date)) && dateEntries.map((entry) => {
-              const hasMood = !!entry.manualMood;
-
-              if (viewMode === "timeline") {
-                return (
-                  <TouchableOpacity
-                    key={entry.id}
-                    activeOpacity={0.8}
-                    onPress={async () => {
-                      if (entry.isLockbox && !(await appLockService.authenticate())) return;
-                      router.push(`/entry/${entry.id}`);
-                    }}
-                    style={styles.timelineEntry}
-                  >
-                    <View style={[styles.timelineRail, { backgroundColor: theme.colors.border }]}>
-                      <View style={[styles.timelineDot, { backgroundColor: theme.colors.tint }]} />
-                    </View>
-                    <View style={styles.timelineBody}>
-                      <Text style={[styles.timelineTitle, { color: theme.colors.text }]} numberOfLines={1}>{entry.title}</Text>
-                      <Text style={[styles.timelineContent, { color: theme.colors.textSecondary }]} numberOfLines={3}>{stripHtml(entry.content)}</Text>
-                      {entry.tags.length > 0 && <Text preset="caption" color="textSecondary" numberOfLines={1}>{entry.tags.map((tag) => `#${tag}`).join('  ')}</Text>}
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
-                  </TouchableOpacity>
-                );
-              }
-
-              if (viewMode === "feed") {
-                return (
-                  <TouchableOpacity
-                    key={entry.id}
-                    activeOpacity={0.8}
-                    onPress={async () => {
-                      if (entry.isLockbox && !(await appLockService.authenticate())) return;
-                      router.push(`/entry/${entry.id}`);
-                    }}
-                    style={[
-                      styles.feedCard,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.feedCanvas,
-                        {
-                          minHeight: Math.max(
-                            220,
-                            ...entry.stickers.map(
-                              (sticker) =>
-                                sticker.y - FEED_STICKER_ORIGIN_Y + 80 * sticker.scale,
-                            ),
-                          ),
-                        },
-                      ]}
-                    >
-                      {entry.stickers.map((sticker) => (
-                        <FeedStickerPreview key={sticker.id} sticker={sticker} />
-                      ))}
-                      <View style={styles.feedTextLayer}>
-                        <Text style={[styles.feedTitle, { color: theme.colors.text }]}>{entry.title}</Text>
-                        <View style={styles.feedMetaRow}>
-                          {entry.tags.map((tag) => (
-                            <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>
-                          ))}
-                        </View>
-                        <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>
-                          {entry.content}
-                        </MarkdownText>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              }
-
-              {
-                /* Detailed Mode Card (Matches original reference layout 1:1) */
-              }
               return (
-                <TouchableOpacity
+                <DiaryEntryView
                   key={entry.id}
-                  activeOpacity={0.8}
+                  entry={entry}
+                  mode={viewMode}
                   onPress={async () => {
-                    if (
-                      entry.isLockbox &&
-                      !(await appLockService.authenticate())
-                    )
-                      return;
+                    if (entry.isLockbox && !(await appLockService.authenticate())) return;
                     router.push(`/entry/${entry.id}`);
                   }}
-                  style={[
-                    styles.card,
-                    {
-                      backgroundColor: theme.colors.surface,
-                      borderColor: theme.colors.border,
-                      borderLeftWidth: hasMood ? 4 : 1,
-                      borderLeftColor: hasMood
-                        ? theme.colors.tint
-                        : theme.colors.border,
-                    },
-                  ]}
-                >
-                  <View style={styles.cardHeader}>
-                    <View style={styles.titleContainer}>
-                      <Text
-                        style={[styles.title, { color: theme.colors.text }]}
-                      >
-                        {entry.title.substring(0, 30)}
-                        {entry.title.length > 30 ? "..." : ""}
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
-                  </View>
-                  <Text
-                    style={[
-                      styles.content,
-                      { color: theme.colors.textSecondary },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {stripHtml(entry.content)}
-                  </Text>
-                </TouchableOpacity>
+                />
               );
                 })}
               </View>}
@@ -617,7 +484,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 4,
     padding: 14,
     marginBottom: 12,
   },
