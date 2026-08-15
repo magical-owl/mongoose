@@ -91,6 +91,7 @@ export default function EntryDetailScreen() {
   const [editLockbox, setEditLockbox] = useState(false);
   const [editUnlockAt, setEditUnlockAt] = useState('');
   const [editExpiresAt, setEditExpiresAt] = useState('');
+  const [editFavorite, setEditFavorite] = useState(false);
   const [editCompanion, setEditCompanion] = useState<CompanionType>('cat');
   const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
@@ -126,6 +127,7 @@ export default function EntryDetailScreen() {
         setEditDate(entryDate(found.date));
         setEditStickers(found.stickers);
         setEditCompanion(found.companion);
+        setEditFavorite(found.isFavorite);
         setEditMood(found.manualMood ?? 'neutral'); setEditMoodWeather(found.manualMoodWeather); setEditWritingMode(found.writingMode); setEditLocation(found.sensory.locationLabel); setEditSounds(found.sensory.sounds); setEditSmells(found.sensory.smells); setEditEnergy(String(found.sensory.energyLevel)); setEditBody(found.sensory.bodyState); setEditLockbox(found.isLockbox); setEditUnlockAt(found.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(found.expiresAt ?? '');
       }
     }
@@ -143,6 +145,7 @@ export default function EntryDetailScreen() {
     setEditDate(entryDate(entry.date));
     setEditStickers(entry.stickers);
     setEditCompanion(entry.companion);
+    setEditFavorite(entry.isFavorite);
     setEditMood(entry.manualMood ?? 'neutral'); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(true);
   };
@@ -154,6 +157,7 @@ export default function EntryDetailScreen() {
     setEditDate(entryDate(entry.date));
     setEditStickers(entry.stickers);
     setEditCompanion(entry.companion);
+    setEditFavorite(entry.isFavorite);
     setEditMood(entry.manualMood ?? 'neutral'); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(false);
   };
@@ -169,6 +173,7 @@ export default function EntryDetailScreen() {
       date: `${editDate.getFullYear()}-${String(editDate.getMonth() + 1).padStart(2, '0')}-${String(editDate.getDate()).padStart(2, '0')}`,
       stickers: editStickers,
       companion: editCompanion,
+      isFavorite: editFavorite,
       // Tags are intentionally preserved while tag editing is shelved.
       tags: entry.tags,
       manualMoodWeather: editMoodWeather,
@@ -264,9 +269,6 @@ export default function EntryDetailScreen() {
             </TouchableOpacity>
             <Text preset="label" color="text" style={{ fontWeight: '600' }}>Edit Entry</Text>
             <View style={styles.headerActions}>
-              <TouchableOpacity onPress={() => setShowEntryDetails(true)} style={styles.headerIcon} accessibilityRole="button" accessibilityLabel="Open entry details">
-                <MaterialCommunityIcons name="tune-variant" size={20} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
               {editStickers.some((sticker) => sticker.behindText) && (
                 <TouchableOpacity
                   onPress={() => setEditStickers((current) => current.map((sticker) => ({ ...sticker, behindText: false })))}
@@ -337,6 +339,24 @@ export default function EntryDetailScreen() {
           {isEditing ? (
             /* ── Edit mode ──────────────────────────────────────────────── */
             <>
+              <View style={styles.entryDetailsToggleRow}>
+                <TouchableOpacity
+                  onPress={() => setEditFavorite((current) => !current)}
+                  style={styles.entryFavoriteToggle}
+                  accessibilityRole="button"
+                  accessibilityLabel={editFavorite ? 'Remove favorite' : 'Add favorite'}
+                >
+                  <MaterialCommunityIcons name={editFavorite ? 'star' : 'star-outline'} size={20} color={theme.colors.warning} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowEntryDetails(true)}
+                  style={[styles.entryDetailsToggle, { borderColor: theme.colors.border }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open entry details"
+                >
+                  <MaterialCommunityIcons name="dots-horizontal" size={20} color={theme.colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
               <DiaryDatePicker value={editDate} onChange={setEditDate} maximumDate={new Date()} />
               <NativeTextInput
                 value={editTitle}
@@ -373,16 +393,6 @@ export default function EntryDetailScreen() {
                 {entry.title}
               </Text>
               <View style={styles.entryMetaRow}>
-                <TouchableOpacity
-                  onPress={() => {
-                    const updated = { ...entry, isFavorite: !entry.isFavorite, updatedAt: new Date().toISOString() };
-                    void saveDiaryEntry(updated).then((result) => { if (result.success) setEntry(updated); });
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={entry.isFavorite ? 'Remove favorite' : 'Add favorite'}
-                >
-                  <Text style={styles.favorite}>{entry.isFavorite ? '★ Favorite' : '☆ Favorite'}</Text>
-                </TouchableOpacity>
                 <View style={styles.tagRow}>
                   {entry.tags.map((tag) => <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>)}
                 </View>
@@ -524,10 +534,24 @@ const styles = StyleSheet.create({
   },
   headerActions: { flexDirection: 'row', alignItems: 'center' },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  entryDetailsToggleRow: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 4 },
+  entryFavoriteToggle: {
+    width: 42,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  entryDetailsToggle: {
+    width: 42,
+    height: 34,
+    borderWidth: 1,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   tag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
   entryMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  favorite: { color: '#E5A72D', fontWeight: '700' },
   floatingBar: {
     position: 'absolute',
     left: 0,

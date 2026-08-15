@@ -24,7 +24,6 @@ interface Props {
 
 const weather: ManualMoodWeather[] = ['sunny', 'cloudy', 'stormy', 'foggy', 'windy', 'calm'];
 const moods: ManualMood[] = ['neutral', 'happy', 'calm', 'sad', 'anxious', 'angry', 'grateful', 'excited', 'tired'];
-const modes: [WritingMode, string][] = [['free-write', 'Free write'], ['one-line', 'One line'], ['five-minute', '5 minutes'], ['gratitude', 'Gratitude'], ['travel', 'Travel'], ['dream', 'Dream'], ['evening-review', 'Evening review']];
 
 export function EntryDetailsModal({ visible, onDismiss, values, onChange }: Props) {
   const theme = useTheme();
@@ -52,12 +51,6 @@ export function EntryDetailsModal({ visible, onDismiss, values, onChange }: Prop
             {weather.map((item) => <TouchableOpacity key={item} onPress={() => onChange({ manualMoodWeather: item })} style={[styles.choice, { borderColor: values.manualMoodWeather === item ? theme.colors.tint : theme.colors.border, backgroundColor: values.manualMoodWeather === item ? theme.colors.tint + '20' : 'transparent' }]}><Text preset="caption" color="text">{item}</Text></TouchableOpacity>)}
           </ScrollView>
 
-          <Text preset="caption" color="textSecondary" style={styles.label}>WRITING MODE</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-            {modes.map(([value, label]) => <TouchableOpacity key={value} onPress={() => onChange({ writingMode: value })} style={[styles.choice, { borderColor: values.writingMode === value ? theme.colors.tint : theme.colors.border, backgroundColor: values.writingMode === value ? theme.colors.tint + '20' : 'transparent' }]}><Text preset="caption" color="text">{label}</Text></TouchableOpacity>)}
-          </ScrollView>
-
-          <TouchableOpacity onPress={() => onChange({ isLockbox: !values.isLockbox })} style={styles.lockbox}><Text style={{ fontSize: 20 }}>{values.isLockbox ? '🔐' : '🔓'}</Text><Text preset="caption" color="text">{values.isLockbox ? 'Offline lockbox entry enabled' : 'Keep this entry in the normal diary'}</Text></TouchableOpacity>
         </ScrollView>
       </Modal>
 
@@ -65,4 +58,4 @@ export function EntryDetailsModal({ visible, onDismiss, values, onChange }: Prop
   );
 }
 
-const styles = StyleSheet.create({ scroll: { maxHeight: 470 }, label: { marginTop: 12, marginBottom: 7, fontWeight: '700' }, labelRow: { flexDirection: 'row', alignItems: 'center', gap: 5 }, row: { gap: 8, paddingBottom: 4 }, choice: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 }, lockbox: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10 } });
+const styles = StyleSheet.create({ scroll: { maxHeight: 470 }, label: { marginTop: 12, marginBottom: 7, fontWeight: '700' }, labelRow: { flexDirection: 'row', alignItems: 'center', gap: 5 }, row: { gap: 8, paddingBottom: 4 }, choice: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 } });

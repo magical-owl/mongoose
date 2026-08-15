@@ -83,7 +83,6 @@ export default function CreateEntryScreen() {
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showCompanionPicker, setShowCompanionPicker] = useState(false);
-  const [draftStatus, setDraftStatus] = useState<'idle' | 'saved'>('idle');
   const [manualMoodWeather, setManualMoodWeather] = useState<ManualMoodWeather>('calm');
   const [manualMood, setManualMood] = useState<ManualMood>('neutral');
   const [writingMode, setWritingMode] = useState<WritingMode>('free-write');
@@ -95,6 +94,7 @@ export default function CreateEntryScreen() {
   const [isLockbox, setIsLockbox] = useState(false);
   const [timeCapsuleUnlockAt, setTimeCapsuleUnlockAt] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
+  const [isFavorite, setIsFavorite] = useState(false);
   const [showEntryDetails, setShowEntryDetails] = useState(false);
   const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
@@ -124,7 +124,6 @@ export default function CreateEntryScreen() {
       if (year && month && day) setSelectedDate(new Date(year, month - 1, day, 12, 0, 0));
       setTimeout(() => editorRef.current?.setContentHTML(draft.content), 50);
       isHydratingDraft.current = false;
-      setDraftStatus('saved');
     }).catch(() => {
       isHydratingDraft.current = false;
     });
@@ -144,7 +143,7 @@ export default function CreateEntryScreen() {
         sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState },
         isLockbox, timeCapsuleUnlockAt: timeCapsuleUnlockAt ? new Date(timeCapsuleUnlockAt).toISOString() : undefined,
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
-      }).then(() => setDraftStatus('saved'));
+      });
     }, 700);
     return () => clearTimeout(timer);
   }, [title, content, isoDate, selectedCompanion, stickers, manualMood, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
@@ -220,7 +219,7 @@ export default function CreateEntryScreen() {
       paperBackgroundId: 'vintage-parchment',
       stickers,
       companion: selectedCompanion,
-      isFavorite: false,
+      isFavorite,
       tags: [],
       manualMoodWeather,
       manualMood,
@@ -270,19 +269,9 @@ export default function CreateEntryScreen() {
           <Text preset="label" color="textSecondary">Cancel</Text>
         </TouchableOpacity>
 
-        {/* Date — tap to change */}
-        {draftStatus === 'saved' && (title.trim() || content.trim()) ? (
-          <Text preset="caption" color="textSecondary">Draft saved</Text>
-        ) : <View style={styles.headerBtn} />}
-
-        <TouchableOpacity
-          onPress={() => setShowEntryDetails(true)}
-          style={styles.headerIcon}
-          accessibilityRole="button"
-          accessibilityLabel="Open entry details"
-        >
-          <MaterialCommunityIcons name="tune-variant" size={20} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
+        <Text preset="label" color="text" style={{ fontWeight: '600' }}>
+          Create Entry
+        </Text>
 
         {stickers.some((sticker) => sticker.behindText) && (
           <TouchableOpacity
@@ -339,6 +328,24 @@ export default function CreateEntryScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <View style={styles.entryDetailsToggleRow}>
+            <TouchableOpacity
+              onPress={() => setIsFavorite((current) => !current)}
+              style={styles.entryFavoriteToggle}
+              accessibilityRole="button"
+              accessibilityLabel={isFavorite ? 'Remove favorite' : 'Add favorite'}
+            >
+              <MaterialCommunityIcons name={isFavorite ? 'star' : 'star-outline'} size={20} color={theme.colors.warning} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowEntryDetails(true)}
+              style={[styles.entryDetailsToggle, { borderColor: theme.colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Open entry details"
+            >
+              <MaterialCommunityIcons name="dots-horizontal" size={20} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
           <DiaryDatePicker value={selectedDate} onChange={setSelectedDate} maximumDate={new Date()} />
 
           {/* Title */}
@@ -497,7 +504,7 @@ const styles = StyleSheet.create({
   },
   headerBtn: { padding: 6, minWidth: 60 },
   scrollContent: {
-    paddingTop: 0,
+    paddingTop: 16,
     flexGrow: 1,
   },
   titleInput: {
@@ -512,6 +519,21 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  entryDetailsToggleRow: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 4 },
+  entryFavoriteToggle: {
+    width: 42,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  entryDetailsToggle: {
+    width: 42,
+    height: 34,
+    borderWidth: 1,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   floatingBar: {
     position: 'absolute',
     left: 0,

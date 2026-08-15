@@ -22,6 +22,7 @@ import {
   Dimensions,
   Text as RNText,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { Modal } from '@shared/components/Modal';
 import { Text } from '@shared/components/Text';
@@ -69,7 +70,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
 
   const renderSticker = ({ item, packId }: SearchResult) => (
     <TouchableOpacity
-      style={[styles.cell, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+      style={[styles.cell, { backgroundColor: theme.colors.surface }]}
       onPress={() => {
         onSelectSticker(item.id, packId);
         onClose();
@@ -93,21 +94,21 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
   return (
     <Modal visible={visible} onDismiss={onClose} title="Choose a Sticker" accessibilityLabel="Sticker picker">
       {/* Search bar */}
-      <View style={[styles.searchRow, { borderBottomColor: theme.colors.border }]}>
+      <View style={styles.searchRow}>
         <View style={[styles.searchBox, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-          <RNText style={{ fontSize: 14, marginRight: 6, color: theme.colors.textSecondary }}>🔍</RNText>
+          <MaterialCommunityIcons name="magnify" size={19} color={theme.colors.textSecondary} />
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder="Search stickers…"
             placeholderTextColor={theme.colors.textSecondary}
-            style={{ flex: 1, color: theme.colors.text, fontSize: 14, padding: 0 }}
+            style={[styles.searchInput, { color: theme.colors.text }]}
             autoCapitalize="none"
             autoCorrect={false}
           />
           {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')} accessibilityLabel="Clear search">
-              <RNText style={{ color: theme.colors.textSecondary, fontSize: 16, paddingLeft: 6 }}>✕</RNText>
+            <TouchableOpacity onPress={() => setSearch('')} style={styles.clearSearch} accessibilityLabel="Clear search">
+              <MaterialCommunityIcons name="close" size={17} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -118,7 +119,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabs}
+          contentContainerStyle={[styles.tabs, { borderBottomColor: theme.colors.border }]}
         >
           {STICKER_PACKS.map((pack) => {
             const active = pack.id === activePackId;
@@ -128,8 +129,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
                 style={[
                   styles.tab,
                   {
-                    backgroundColor: active ? theme.colors.tint : 'transparent',
-                    borderColor: active ? theme.colors.tint : theme.colors.border,
+                    borderBottomColor: active ? theme.colors.tint : 'transparent',
                   },
                 ]}
                 onPress={() => setActivePackId(pack.id)}
@@ -137,7 +137,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
               >
                 <Text
                   preset="caption"
-                  style={{ color: active ? '#fff' : theme.colors.text, fontWeight: '600' }}
+                  style={{ color: active ? theme.colors.tint : theme.colors.textSecondary, fontWeight: '600' }}
                 >
                   {pack.icon} {pack.name}
                 </Text>
@@ -170,29 +170,39 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
 const styles = StyleSheet.create({
   searchRow: {
     paddingHorizontal: 2,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    padding: 0,
+  },
+  clearSearch: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabs: {
     flexDirection: 'row',
     gap: 6,
-    paddingBottom: 10,
+    paddingBottom: 2,
     paddingHorizontal: 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   tab: {
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1,
+    paddingVertical: 8,
+    borderBottomWidth: 2,
   },
   grid: {
     paddingTop: 4,
@@ -203,8 +213,7 @@ const styles = StyleSheet.create({
     width: CELL,
     height: CELL,
     margin: 3,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },

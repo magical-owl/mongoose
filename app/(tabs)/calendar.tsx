@@ -31,7 +31,7 @@ export default function CalendarScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { entries, isLoading, refresh, saveDiaryEntry } = useDiary();
+  const { entries, isLoading, refresh } = useDiary();
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
 
   const [currentDate, setCurrentDate] = useState(() => new Date());
@@ -291,12 +291,6 @@ export default function CalendarScreen() {
                   ]}
                 >
                   <View style={styles.cardHeader}>
-                    <TouchableOpacity
-                      onPress={() => { void saveDiaryEntry({ ...item, isFavorite: !item.isFavorite, updatedAt: new Date().toISOString() }).then(() => refresh()); }}
-                      accessibilityLabel={item.isFavorite ? 'Remove favorite' : 'Add favorite'}
-                    >
-                      <Text style={[styles.favoriteMark, { color: theme.colors.warning }]}>{item.isFavorite ? '★' : '☆'}</Text>
-                    </TouchableOpacity>
                     <View style={styles.titleContainer}>
                       <Text style={[styles.title, { color: theme.colors.text }]}>
                         {item.title.substring(0, 30)}
@@ -455,7 +449,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
-  favoriteMark: { fontSize: 18, width: 26, textAlign: 'center' },
   date: {
     fontSize: 12,
   },

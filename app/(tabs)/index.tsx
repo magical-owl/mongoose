@@ -45,12 +45,13 @@ function formatTimelineMonth(value: string): string {
   );
 }
 
-type HierarchyMode = "year-month-date" | "month-date" | "date";
-const HIERARCHY_MODES: HierarchyMode[] = ["year-month-date", "month-date", "date"];
+type HierarchyMode = "year-month-date" | "month-date" | "date" | "none";
+const HIERARCHY_MODES: HierarchyMode[] = ["year-month-date", "month-date", "date", "none"];
 
 function hierarchyModeLabel(mode: HierarchyMode): string {
   if (mode === "month-date") return "Month / Date";
   if (mode === "date") return "Date only";
+  if (mode === "none") return "No dates";
   return "Year / Month / Date";
 }
 
@@ -87,7 +88,7 @@ export default function TimelineScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { entries, isLoading, refresh, saveDiaryEntry } = useDiary();
+  const { entries, isLoading, refresh } = useDiary();
   const [viewModeIndex, setViewModeIndex] = useState(0); // 0: Detailed, 1: Feed
   const [search, setSearch] = useState("");
   const [filterDate, setFilterDate] = useState("");
@@ -124,18 +125,6 @@ export default function TimelineScreen() {
       ).sort(),
     }),
     [entries],
-  );
-
-  const toggleFavorite = useCallback(
-    async (entry: (typeof entries)[number]) => {
-      await saveDiaryEntry({
-        ...entry,
-        isFavorite: !entry.isFavorite,
-        updatedAt: new Date().toISOString(),
-      });
-      await refresh();
-    },
-    [refresh, saveDiaryEntry],
   );
 
   useFocusEffect(
@@ -311,8 +300,8 @@ export default function TimelineScreen() {
               const yearKey = date.slice(0, 4);
               const monthKey = date.slice(0, 7);
               const isYearVisible = hierarchyMode === "year-month-date";
-              const isMonthVisible = hierarchyMode !== "date";
-              const isDateVisible = true;
+              const isMonthVisible = hierarchyMode === "year-month-date" || hierarchyMode === "month-date";
+              const isDateVisible = hierarchyMode !== "none";
               const isYearCollapsed = isYearVisible && collapsedYears.has(yearKey);
               const isMonthCollapsed = isMonthVisible && collapsedMonths.has(monthKey);
               return (
@@ -397,14 +386,6 @@ export default function TimelineScreen() {
                     ]}
                   >
                     <View style={styles.feedHeader}>
-                      <TouchableOpacity
-                        onPress={() => { void toggleFavorite(entry); }}
-                        accessibilityLabel={entry.isFavorite ? "Remove favorite" : "Add favorite"}
-                      >
-                        <Text style={[styles.favoriteMark, { color: theme.colors.warning }]}>
-                          {entry.isFavorite ? "★" : "☆"}
-                        </Text>
-                      </TouchableOpacity>
                       <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
                     </View>
                     <View
@@ -468,18 +449,6 @@ export default function TimelineScreen() {
                   ]}
                 >
                   <View style={styles.cardHeader}>
-                    <TouchableOpacity
-                      onPress={() => {
-                        void toggleFavorite(entry);
-                      }}
-                      accessibilityLabel={
-                        entry.isFavorite ? "Remove favorite" : "Add favorite"
-                      }
-                    >
-                      <Text style={[styles.favoriteMark, { color: theme.colors.warning }]}>
-                        {entry.isFavorite ? "★" : "☆"}
-                      </Text>
-                    </TouchableOpacity>
                     <View style={styles.titleContainer}>
                       <Text
                         style={[styles.title, { color: theme.colors.text }]}
@@ -761,10 +730,5 @@ const styles = StyleSheet.create({
     margin: 0,
     fontSize: 15,
     fontWeight: "700",
-  },
-  favoriteMark: {
-    fontSize: 18,
-    width: 26,
-    textAlign: "center",
   },
 });
