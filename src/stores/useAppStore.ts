@@ -24,6 +24,10 @@ export type OnboardingStatus = 'not_started' | 'in_progress' | 'completed';
  */
 export type SessionState = 'idle' | 'active' | 'expired';
 
+export type CalendarDateFormat = 'month-day-year' | 'day-month-year' | 'year-month-day';
+export type FontScale = 'small' | 'default' | 'large';
+export type FontFamily = 'system' | 'serif' | 'monospace';
+
 /**
  * App state interface.
  */
@@ -39,6 +43,10 @@ export interface AppState {
   biometricLockEnabled: boolean;
   isLocked: boolean;
   remoteAiConsent: boolean;
+  calendarDateFormat: CalendarDateFormat;
+  calendarFirstDay: 0 | 1;
+  fontScale: FontScale;
+  fontFamily: FontFamily;
 
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
@@ -50,6 +58,10 @@ export interface AppState {
   setBiometricLockEnabled: (enabled: boolean) => void;
   setLocked: (locked: boolean) => void;
   setRemoteAiConsent: (consent: boolean) => void;
+  setCalendarDateFormat: (format: CalendarDateFormat) => void;
+  setCalendarFirstDay: (day: 0 | 1) => void;
+  setFontScale: (scale: FontScale) => void;
+  setFontFamily: (family: FontFamily) => void;
   reset: () => void;
 }
 
@@ -65,6 +77,10 @@ const initialState: Pick<
   | 'biometricLockEnabled'
   | 'isLocked'
   | 'remoteAiConsent'
+  | 'calendarDateFormat'
+  | 'calendarFirstDay'
+  | 'fontScale'
+  | 'fontFamily'
 > = {
   themeMode: 'dark',
   accentColor: 'blue',
@@ -76,6 +92,10 @@ const initialState: Pick<
   biometricLockEnabled: false,
   isLocked: false,
   remoteAiConsent: false,
+  calendarDateFormat: 'month-day-year',
+  calendarFirstDay: 0,
+  fontScale: 'default',
+  fontFamily: 'system',
 };
 
 /**
@@ -99,6 +119,11 @@ export const useAppStore = create<AppState>()(
       setLocked: (isLocked: boolean) => set({ isLocked }),
 
       setRemoteAiConsent: (remoteAiConsent: boolean) => set({ remoteAiConsent }),
+
+      setCalendarDateFormat: (calendarDateFormat: CalendarDateFormat) => set({ calendarDateFormat }),
+      setCalendarFirstDay: (calendarFirstDay: 0 | 1) => set({ calendarFirstDay }),
+      setFontScale: (fontScale: FontScale) => set({ fontScale }),
+      setFontFamily: (fontFamily: FontFamily) => set({ fontFamily }),
 
       setOnboardingStatus: (onboardingStatus: OnboardingStatus) =>
         set({
@@ -125,6 +150,10 @@ export const useAppStore = create<AppState>()(
         selectedCompanion: state.selectedCompanion,
         biometricLockEnabled: state.biometricLockEnabled,
         remoteAiConsent: state.remoteAiConsent,
+        calendarDateFormat: state.calendarDateFormat,
+        calendarFirstDay: state.calendarFirstDay,
+        fontScale: state.fontScale,
+        fontFamily: state.fontFamily,
       }),
     }
   )

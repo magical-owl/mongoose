@@ -16,16 +16,7 @@ import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useAppStore } from '@/stores/useAppStore';
 import { stripHtml } from '@shared/utils/html';
 import { getMoodEmoji } from '@/ai/Mood';
-
-function formatCalendarDate(value: string): string {
-  const [year, month, day] = value.split('-').map(Number);
-  if (!year || !month || !day) return value;
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(new Date(year, month - 1, day, 12));
-}
+import { formatDisplayDate } from '@shared/utils/dateFormat';
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -33,6 +24,8 @@ export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const { entries, isLoading, refresh } = useDiary();
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
+  const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
+  const calendarFirstDay = useAppStore((state) => state.calendarFirstDay);
 
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [selectedDateStr, setSelectedDateStr] = useState<string>(() => {
@@ -96,7 +89,7 @@ export default function CalendarScreen() {
   const month = currentDate.getMonth();
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayOfWeek = new Date(year, month, 1).getDay();
+  const firstDayOfWeek = (new Date(year, month, 1).getDay() - calendarFirstDay + 7) % 7;
 
   const monthName = currentDate.toLocaleDateString('en-US', {
     month: 'long',
@@ -186,7 +179,7 @@ export default function CalendarScreen() {
 
             {/* Weekday Row */}
             <View style={styles.gridRow}>
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+              {(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].slice(calendarFirstDay).concat(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].slice(0, calendarFirstDay))).map((d) => (
                 <Text key={d} style={[styles.gridCellHeader, { color: theme.colors.textSecondary }]}>
                   {d}
                 </Text>
@@ -269,7 +262,7 @@ export default function CalendarScreen() {
           ) : (
             <View style={styles.dateGroup}>
               <Text preset="label" style={[styles.dateHeading, { color: theme.colors.text }]}>
-                {formatCalendarDate(selectedDateStr)}
+                {formatDisplayDate(selectedDateStr, calendarDateFormat)}
               </Text>
               {selectedDayEntries.map((item) => {
               const hasMood = !!item.manualMood;

@@ -19,7 +19,6 @@ import {
   Keyboard,
   TextInput as NativeTextInput,
   StyleSheet,
-  Text as RNText,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -442,9 +441,9 @@ export default function CreateEntryScreen() {
         {/* Right: word count + companion avatar */}
         <View style={styles.toolbarRight}>
           {wordCount > 0 && (
-            <RNText style={[styles.wordCount, { color: theme.colors.textSecondary }]}>
+            <Text preset="caption" style={[styles.wordCount, { color: theme.colors.textSecondary }]}> 
               {wordCount}w
-            </RNText>
+            </Text>
           )}
           <TouchableOpacity
             onPress={() => setShowCompanionPicker(true)}
@@ -452,7 +451,7 @@ export default function CreateEntryScreen() {
             accessibilityLabel={`AI Companion: ${activeCompanion.name}. Tap to change.`}
             accessibilityRole="button"
           >
-            <RNText style={{ fontSize: 22 }}>{activeCompanion.avatar}</RNText>
+            <Text style={{ fontSize: 22 }}>{activeCompanion.avatar}</Text>
           </TouchableOpacity>
         </View>
       </View>

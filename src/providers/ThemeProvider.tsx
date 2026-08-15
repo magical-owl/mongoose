@@ -6,12 +6,13 @@
  */
 
 import React, { createContext, useContext, useMemo, useCallback } from 'react';
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
 import { palette } from '@/theme/colors';
 import { spacing, borderRadius } from '@/theme/spacing';
 import { typography, fontSizes, fontWeights } from '@/theme/typography';
 import { useAppStore } from '@/stores/useAppStore';
 import { accentColors, type AccentColor } from '@/theme/accents';
+import type { FontFamily, FontScale } from '@/stores/useAppStore';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -52,11 +53,24 @@ export interface Theme {
   readonly spacing: typeof spacing;
   readonly borderRadius: typeof borderRadius;
   readonly typography: typeof typography;
-  readonly fontSizes: typeof fontSizes;
+  readonly fontSizes: { [K in keyof typeof fontSizes]: number };
   readonly fontWeights: typeof fontWeights;
+  readonly fontFamily: string;
   /** Update the theme mode (light / dark / system). Persisted automatically. */
   readonly setThemeMode: (mode: ThemeMode) => void;
   readonly setAccentColor: (color: AccentColor) => void;
+}
+
+function getFontScale(scale: FontScale): number {
+  if (scale === 'small') return 0.9;
+  if (scale === 'large') return 1.15;
+  return 1;
+}
+
+function getFontFamily(family: FontFamily): string {
+  if (family === 'serif') return Platform.OS === 'ios' ? 'Times New Roman' : 'serif';
+  if (family === 'monospace') return Platform.OS === 'ios' ? 'Courier New' : 'monospace';
+  return Platform.OS === 'ios' ? 'System' : 'sans-serif';
 }
 
 const lightColors: ThemeColors = {
@@ -123,6 +137,8 @@ export function ThemeProvider({
   const persistThemeMode = useAppStore((state) => state.setThemeMode);
   const accentColor = useAppStore((state) => state.accentColor);
   const persistAccentColor = useAppStore((state) => state.setAccentColor);
+  const fontScalePreference = useAppStore((state) => state.fontScale);
+  const fontFamilyPreference = useAppStore((state) => state.fontFamily);
   const mode = initialMode ?? persistedMode ?? 'dark';
   const resolvedMode = mode === 'system' && systemColorScheme === 'dark'
     ? 'dark'
@@ -130,6 +146,26 @@ export function ThemeProvider({
       ? 'light'
       : 'dark';
   const selectedAccent = accentColors[accentColor] ?? accentColors.blue;
+  const fontScale = getFontScale(fontScalePreference);
+  const fontFamily = getFontFamily(fontFamilyPreference);
+  const scaledFontSizes = useMemo(() => ({
+    xs: fontSizes.xs * fontScale,
+    sm: fontSizes.sm * fontScale,
+    base: fontSizes.base * fontScale,
+    lg: fontSizes.lg * fontScale,
+    xl: fontSizes.xl * fontScale,
+    xxl: fontSizes.xxl * fontScale,
+    xxxl: fontSizes.xxxl * fontScale,
+    huge: fontSizes.huge * fontScale,
+    massive: fontSizes.massive * fontScale,
+  }), [fontScale]);
+  const scaledTypography = useMemo(() => Object.fromEntries(
+    Object.entries(typography).map(([key, style]) => [key, {
+      ...style,
+      ...(typeof style.fontSize === 'number' ? { fontSize: style.fontSize * fontScale } : {}),
+      ...(typeof style.lineHeight === 'number' ? { lineHeight: style.lineHeight * fontScale } : {}),
+    }]),
+  ), [fontScale]);
 
   const setThemeMode = useCallback((newMode: ThemeMode) => {
     persistThemeMode(newMode);
@@ -150,13 +186,14 @@ export function ThemeProvider({
       },
       spacing,
       borderRadius,
-      typography,
-      fontSizes,
+      typography: scaledTypography,
+      fontSizes: scaledFontSizes,
       fontWeights,
+      fontFamily,
       setThemeMode,
       setAccentColor,
     }),
-    [mode, resolvedMode, accentColor, selectedAccent, setThemeMode, setAccentColor]
+    [mode, resolvedMode, accentColor, selectedAccent, scaledTypography, scaledFontSizes, fontFamily, setThemeMode, setAccentColor]
   );
 
   return (

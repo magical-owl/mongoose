@@ -114,10 +114,10 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
             placeholderColor: theme.colors.textSecondary,
             contentCSSText: `
               padding: 0 0 40px 0;
-              font-size: 18px;
-              font-family: -apple-system, Roboto, sans-serif;
+              font-size: ${theme.fontSizes.lg}px;
+              font-family: ${theme.fontFamily};
               color: ${theme.colors.text};
-              line-height: 26px;
+              line-height: ${Math.round(theme.fontSizes.lg * 1.45)}px;
               padding-bottom: 40px;
             `,
           }}
@@ -150,6 +150,8 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
     );
   }
 );
+
+RichTextEditor.displayName = 'RichTextEditor';
 
 const styles = StyleSheet.create({
   container: {

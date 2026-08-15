@@ -108,7 +108,7 @@ export function TextInput({
             flex: 1,
             color: disabled ? theme.colors.disabledText : theme.colors.text,
             fontSize: theme.fontSizes.base,
-            fontFamily: 'System',
+            fontFamily: theme.fontFamily,
             paddingVertical: theme.spacing.sm,
           }}
           value={value}

@@ -21,21 +21,13 @@ import { getMoodEmoji } from "@/ai/Mood";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
 import { appLockService } from "@/services/AppLockService";
 import { findStickerItem, PlacedSticker } from "@/features/diary/domain/Sticker";
+import { formatDisplayDate } from "@shared/utils/dateFormat";
+import { useAppStore } from "@/stores/useAppStore";
 
 // Sticker coordinates are stored relative to the entry screen. Feed cards
 // begin inside the scroll content and below their card header.
 const FEED_STICKER_ORIGIN_X = 36;
 const FEED_STICKER_ORIGIN_Y = 90;
-
-function formatTimelineDate(value: string): string {
-  const [year, month, day] = value.split("-").map(Number);
-  if (!year || !month || !day) return value;
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(year, month - 1, day, 12));
-}
 
 function formatTimelineMonth(value: string): string {
   const [year, month] = value.split("-").map(Number);
@@ -89,7 +81,8 @@ export default function TimelineScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { entries, isLoading, refresh } = useDiary();
-  const [viewModeIndex, setViewModeIndex] = useState(0); // 0: Detailed, 1: Feed
+  const [viewModeIndex, setViewModeIndex] = useState(0); // 0: Detailed, 1: Feed, 2: Timeline
+  const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const [search, setSearch] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterTag, setFilterTag] = useState("");
@@ -133,7 +126,7 @@ export default function TimelineScreen() {
     }, [refresh]),
   );
 
-  const viewMode = viewModeIndex === 0 ? "detailed" : "feed";
+  const viewMode = viewModeIndex === 0 ? "detailed" : viewModeIndex === 1 ? "feed" : "timeline";
 
   const filteredEntries = useMemo(() => {
     if (
@@ -214,7 +207,7 @@ export default function TimelineScreen() {
                 },
               ]}
             >
-              {(["Detailed", "Feed"] as const).map((label, idx) => (
+              {(["Detailed", "Feed", "Timeline"] as const).map((label, idx) => (
                 <TouchableOpacity
                   key={label}
                   onPress={() => setViewModeIndex(idx)}
@@ -354,14 +347,14 @@ export default function TimelineScreen() {
                   })}
                   style={styles.dateHeadingRow}
                   accessibilityRole="button"
-                  accessibilityLabel={`${formatTimelineDate(date)} date group`}
+                  accessibilityLabel={`${formatDisplayDate(date, calendarDateFormat)} date group`}
                   accessibilityState={{ expanded: !collapsedDates.has(date) }}
                 >
                   <Text
                     preset="label"
                     style={[styles.dateHeading, { color: theme.colors.text }]}
                   >
-                    {formatTimelineDate(date)}
+                    {formatDisplayDate(date, calendarDateFormat)}
                   </Text>
                   <Ionicons
                     name={collapsedDates.has(date) ? "chevron-forward" : "chevron-down"}
@@ -371,6 +364,30 @@ export default function TimelineScreen() {
                 </TouchableOpacity>}
                 {(!isDateVisible || !collapsedDates.has(date)) && dateEntries.map((entry) => {
               const hasMood = !!entry.manualMood;
+
+              if (viewMode === "timeline") {
+                return (
+                  <TouchableOpacity
+                    key={entry.id}
+                    activeOpacity={0.8}
+                    onPress={async () => {
+                      if (entry.isLockbox && !(await appLockService.authenticate())) return;
+                      router.push(`/entry/${entry.id}`);
+                    }}
+                    style={styles.timelineEntry}
+                  >
+                    <View style={[styles.timelineRail, { backgroundColor: theme.colors.border }]}>
+                      <View style={[styles.timelineDot, { backgroundColor: theme.colors.tint }]} />
+                    </View>
+                    <View style={styles.timelineBody}>
+                      <Text style={[styles.timelineTitle, { color: theme.colors.text }]} numberOfLines={1}>{entry.title}</Text>
+                      <Text style={[styles.timelineContent, { color: theme.colors.textSecondary }]} numberOfLines={3}>{stripHtml(entry.content)}</Text>
+                      {entry.tags.length > 0 && <Text preset="caption" color="textSecondary" numberOfLines={1}>{entry.tags.map((tag) => `#${tag}`).join('  ')}</Text>}
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
+                  </TouchableOpacity>
+                );
+              }
 
               if (viewMode === "feed") {
                 return (
@@ -385,9 +402,6 @@ export default function TimelineScreen() {
                       styles.feedCard,
                     ]}
                   >
-                    <View style={styles.feedHeader}>
-                      <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
-                    </View>
                     <View
                       style={[
                         styles.feedCanvas,
@@ -635,12 +649,6 @@ const styles = StyleSheet.create({
     includeFontPadding: true,
     textAlign: "center",
   },
-  feedHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
   feedTitle: {
     fontSize: 21,
     lineHeight: 27,
@@ -730,5 +738,39 @@ const styles = StyleSheet.create({
     margin: 0,
     fontSize: 15,
     fontWeight: "700",
+  },
+  timelineEntry: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    minHeight: 76,
+    marginBottom: 12,
+  },
+  timelineRail: {
+    width: 2,
+    marginHorizontal: 10,
+    position: "relative",
+  },
+  timelineDot: {
+    position: "absolute",
+    top: 10,
+    left: -4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  timelineBody: {
+    flex: 1,
+    paddingVertical: 4,
+    paddingRight: 10,
+  },
+  timelineTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    marginBottom: 5,
+  },
+  timelineContent: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 5,
   },
 });

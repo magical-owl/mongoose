@@ -8,8 +8,9 @@
  * No native dependencies — works in Expo Go.
  */
 
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet, type StyleProp, type TextStyle } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
+import { Text } from './Text';
 
 function convertHtmlToMarkdown(html: string): string {
   if (!html) return '';
@@ -84,7 +85,7 @@ function parseInline(raw: string): InlineSegment[] {
 
 interface InlineProps {
   readonly segments: InlineSegment[];
-  readonly baseStyle: object;
+  readonly baseStyle: StyleProp<TextStyle>;
   readonly tintColor: string;
 }
 
@@ -141,7 +142,7 @@ function parseLine(raw: string): BlockLine {
 
 interface MarkdownTextProps {
   readonly children: string;
-  readonly style?: object;
+  readonly style?: StyleProp<TextStyle>;
 }
 
 export function MarkdownText({ children, style }: MarkdownTextProps) {

@@ -27,7 +27,7 @@ import { CompanionPickerModal } from '@/features/diary/components/CompanionPicke
 import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
-import { useAppStore } from '@/stores/useAppStore';
+import { useAppStore, type CalendarDateFormat, type FontFamily, type FontScale } from '@/stores/useAppStore';
 import { appLockService } from '@/services/AppLockService';
 import { dataDeletionService } from '@/services/DataDeletionService';
 import { diaryBackupService } from '@/services/DiaryBackupService';
@@ -41,6 +41,14 @@ export default function SettingsScreen() {
   const biometricLockEnabled = useAppStore((state) => state.biometricLockEnabled);
   const remoteAiConsent = useAppStore((state) => state.remoteAiConsent);
   const setRemoteAiConsent = useAppStore((state) => state.setRemoteAiConsent);
+  const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
+  const calendarFirstDay = useAppStore((state) => state.calendarFirstDay);
+  const fontScale = useAppStore((state) => state.fontScale);
+  const fontFamily = useAppStore((state) => state.fontFamily);
+  const setCalendarDateFormat = useAppStore((state) => state.setCalendarDateFormat);
+  const setCalendarFirstDay = useAppStore((state) => state.setCalendarFirstDay);
+  const setFontScale = useAppStore((state) => state.setFontScale);
+  const setFontFamily = useAppStore((state) => state.setFontFamily);
   const { profile, saveProfile } = useProfileForm();
   const { state: journalExtras, replace: replaceJournalExtras } = useJournalExtras();
 
@@ -50,6 +58,7 @@ export default function SettingsScreen() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showDataModal, setShowDataModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [showDisplayModal, setShowDisplayModal] = useState(false);
   const [backupPassword, setBackupPassword] = useState('');
 
   // Profile form state
@@ -146,6 +155,13 @@ export default function SettingsScreen() {
       subtitle: 'Dark mode, theme',
       icon: 'color-palette-outline' as IconProps['name'],
       onPress: () => setShowAppearanceModal(true),
+    },
+    {
+      id: 'display',
+      title: 'Display',
+      subtitle: 'Calendar and accessibility',
+      icon: 'options-outline' as IconProps['name'],
+      onPress: () => setShowDisplayModal(true),
     },
     {
       id: 'companion',
@@ -323,6 +339,78 @@ export default function SettingsScreen() {
           <Text preset="caption" color="textSecondary" style={{ marginTop: 8 }}>
             Choose the accent used across buttons, highlights, and navigation.
           </Text>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showDisplayModal}
+        onDismiss={() => setShowDisplayModal(false)}
+        title="Display"
+        accessibilityLabel="Display settings"
+      >
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>CALENDAR DATE FORMAT</Text>
+        <View style={styles.displayOptions}>
+          {([
+            ['month-day-year', 'Aug 16, 2026'],
+            ['day-month-year', '16 Aug 2026'],
+            ['year-month-day', '2026-08-16'],
+          ] as const satisfies (readonly [CalendarDateFormat, string])[]).map(([value, label]) => (
+            <TouchableOpacity
+              key={value}
+              onPress={() => setCalendarDateFormat(value)}
+              style={[styles.displayOption, { borderColor: calendarDateFormat === value ? theme.colors.tint : theme.colors.border, backgroundColor: calendarDateFormat === value ? theme.colors.tint + '18' : theme.colors.surface }]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: calendarDateFormat === value }}
+            >
+              <Text preset="bodySmall" color={calendarDateFormat === value ? 'tint' : 'text'}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>WEEK STARTS ON</Text>
+        <View style={styles.displayOptions}>
+          {([[0, 'Sunday'], [1, 'Monday']] as const).map(([value, label]) => (
+            <TouchableOpacity
+              key={value}
+              onPress={() => setCalendarFirstDay(value)}
+              style={[styles.displayOption, { borderColor: calendarFirstDay === value ? theme.colors.tint : theme.colors.border, backgroundColor: calendarFirstDay === value ? theme.colors.tint + '18' : theme.colors.surface }]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: calendarFirstDay === value }}
+            >
+              <Text preset="bodySmall" color={calendarFirstDay === value ? 'tint' : 'text'}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>GLOBAL FONT SIZE</Text>
+        <View style={styles.displayOptions}>
+          {([['small', 'Small'], ['default', 'Default'], ['large', 'Large']] as const satisfies (readonly [FontScale, string])[]).map(([value, label]) => (
+            <TouchableOpacity
+              key={value}
+              onPress={() => setFontScale(value)}
+              style={[styles.displayOption, { borderColor: fontScale === value ? theme.colors.tint : theme.colors.border, backgroundColor: fontScale === value ? theme.colors.tint + '18' : theme.colors.surface }]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: fontScale === value }}
+            >
+              <Text preset="bodySmall" color={fontScale === value ? 'tint' : 'text'}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Text preset="caption" color="textSecondary" style={styles.displayHint}>Larger text improves readability across the app and works alongside device accessibility settings.</Text>
+
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>FONT STYLE</Text>
+        <View style={styles.displayOptions}>
+          {([['system', 'System'], ['serif', 'Serif'], ['monospace', 'Monospace']] as const satisfies (readonly [FontFamily, string])[]).map(([value, label]) => (
+            <TouchableOpacity
+              key={value}
+              onPress={() => setFontFamily(value)}
+              style={[styles.displayOption, { borderColor: fontFamily === value ? theme.colors.tint : theme.colors.border, backgroundColor: fontFamily === value ? theme.colors.tint + '18' : theme.colors.surface }]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: fontFamily === value }}
+            >
+              <Text preset="bodySmall" color={fontFamily === value ? 'tint' : 'text'} style={{ fontFamily: value === 'serif' ? 'serif' : value === 'monospace' ? 'monospace' : undefined }}>{label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </Modal>
 
@@ -544,4 +632,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
+  displaySectionLabel: { fontWeight: '700', marginTop: 12, marginBottom: 8 },
+  displayOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  displayOption: { flexGrow: 1, minWidth: '30%', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingVertical: 11, paddingHorizontal: 10 },
+  displayHint: { marginTop: 16, lineHeight: 18 },
 });

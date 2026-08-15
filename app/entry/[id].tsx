@@ -24,7 +24,6 @@ import {
   Keyboard,
   TextInput as NativeTextInput,
   StyleSheet,
-  Text as RNText,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -45,6 +44,8 @@ import { Template } from '@/features/diary/domain/Template';
 import { generateUUID } from '@/shared/utils/uuid';
 import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
+import { formatDisplayDate } from '@shared/utils/dateFormat';
+import { useAppStore } from '@/stores/useAppStore';
 
 function countWords(text: string): number {
   const clean = text.replace(/[*#`>•\-_]/g, '').trim();
@@ -72,6 +73,7 @@ export default function EntryDetailScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { entries, saveDiaryEntry, deleteDiaryEntry } = useDiary();
+  const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
 
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
@@ -387,7 +389,7 @@ export default function EntryDetailScreen() {
                 color="textSecondary"
                 style={{ marginBottom: 4, fontWeight: '600', marginTop: 4 }}
               >
-                {entry.date}
+                {formatDisplayDate(entry.date, calendarDateFormat)}
               </Text>
               <Text preset="h2" color="text" style={{ marginBottom: 16 }}>
                 {entry.title}
@@ -463,9 +465,9 @@ export default function EntryDetailScreen() {
           {/* Right: word count */}
           <View style={styles.toolbarRight}>
             {wordCount > 0 && (
-              <RNText style={[styles.wordCount, { color: theme.colors.textSecondary }]}>
+              <Text preset="caption" style={[styles.wordCount, { color: theme.colors.textSecondary }]}> 
                 {wordCount}w
-              </RNText>
+              </Text>
               )}
             <TouchableOpacity
               onPress={() => setShowCompanionPicker(true)}
@@ -473,7 +475,7 @@ export default function EntryDetailScreen() {
               accessibilityLabel={`AI Companion: ${activeCompanion.name}. Tap to change.`}
               accessibilityRole="button"
             >
-              <RNText style={{ fontSize: 22 }}>{activeCompanion.avatar}</RNText>
+              <Text style={{ fontSize: 22 }}>{activeCompanion.avatar}</Text>
             </TouchableOpacity>
           </View>
         </View>

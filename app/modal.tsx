@@ -1,7 +1,8 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/providers/ThemeProvider';
-import { spacing, borderRadius, typography } from '@/theme';
+import { spacing, borderRadius } from '@/theme';
+import { Text } from '@shared/components/Text';
 import { useRouter } from 'expo-router';
 
 /**
@@ -23,10 +24,10 @@ export default function ModalScreen() {
       <View style={[styles.handleBar, { backgroundColor: colors.textTertiary }]} />
 
       <View style={[styles.body, { paddingTop: insets.top }]}>
-        <Text style={[typography.h2, { color: colors.text, marginBottom: spacing.sm }]}>
+        <Text preset="h2" color="text" style={{ marginBottom: spacing.sm }}>
           Modal
         </Text>
-        <Text style={[typography.body, { color: colors.textSecondary }]}>
+        <Text preset="body" color="textSecondary">
           This is a reusable modal screen. Use it to present temporary content such as
           forms, confirmations, or quick information.
         </Text>
@@ -39,7 +40,7 @@ export default function ModalScreen() {
           onPress={() => router.back()}
           activeOpacity={0.8}
         >
-          <Text style={[typography.button, { color: colors.background }]}>Dismiss</Text>
+          <Text preset="button" color="background">Dismiss</Text>
         </TouchableOpacity>
       </View>
     </View>

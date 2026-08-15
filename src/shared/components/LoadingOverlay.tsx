@@ -9,12 +9,12 @@ import React, { useMemo } from 'react';
 import {
   View,
   ActivityIndicator,
-  Text,
   StyleSheet,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
+import { Text } from './Text';
 
 // ---------------------------------------------------------------------------
 // Types
