@@ -23,7 +23,7 @@ interface Props {
 }
 
 const weather: ManualMoodWeather[] = ['sunny', 'cloudy', 'stormy', 'foggy', 'windy', 'calm'];
-const moods: ManualMood[] = ['happy', 'calm', 'sad', 'anxious', 'angry', 'grateful', 'excited', 'tired', 'neutral'];
+const moods: ManualMood[] = ['neutral', 'happy', 'calm', 'sad', 'anxious', 'angry', 'grateful', 'excited', 'tired'];
 const modes: [WritingMode, string][] = [['free-write', 'Free write'], ['one-line', 'One line'], ['five-minute', '5 minutes'], ['gratitude', 'Gratitude'], ['travel', 'Travel'], ['dream', 'Dream'], ['evening-review', 'Evening review']];
 
 export function EntryDetailsModal({ visible, onDismiss, values, onChange }: Props) {
