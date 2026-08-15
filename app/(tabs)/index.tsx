@@ -37,6 +37,14 @@ function formatTimelineDate(value: string): string {
   }).format(new Date(year, month - 1, day, 12));
 }
 
+function formatTimelineMonth(value: string): string {
+  const [year, month] = value.split("-").map(Number);
+  if (!year || !month) return value;
+  return new Intl.DateTimeFormat(undefined, { month: "long" }).format(
+    new Date(year, month - 1, 1, 12),
+  );
+}
+
 function FeedStickerPreview({ sticker }: { readonly sticker: PlacedSticker }) {
   const stickerItem = findStickerItem(sticker.stickerId);
   if (!stickerItem) return null;
@@ -79,6 +87,8 @@ export default function TimelineScreen() {
   const [filterCompanion, setFilterCompanion] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
+  const [collapsedYears, setCollapsedYears] = useState<Set<string>>(new Set());
+  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
   const [expandedFilter, setExpandedFilter] = useState<
     "date" | "tag" | "mood" | "companion" | null
   >(null);
@@ -268,8 +278,55 @@ export default function TimelineScreen() {
               {search.trim() ? "No matching entries." : "No entries yet."}
             </Text>
           ) : (
-            groupedEntries.map(([date, dateEntries]) => (
-              <View key={date} style={styles.dateGroup}>
+            groupedEntries.map(([date, dateEntries], index) => {
+              const previousDate = groupedEntries[index - 1]?.[0];
+              const isNewYear = !previousDate || previousDate.slice(0, 4) !== date.slice(0, 4);
+              const isNewMonth = isNewYear || previousDate?.slice(0, 7) !== date.slice(0, 7);
+              const yearKey = date.slice(0, 4);
+              const monthKey = date.slice(0, 7);
+              const isYearCollapsed = collapsedYears.has(yearKey);
+              const isMonthCollapsed = collapsedMonths.has(monthKey);
+              return (
+              <Fragment key={date}>
+                {isNewYear && (
+                  <TouchableOpacity
+                    onPress={() => setCollapsedYears((current) => {
+                      const next = new Set(current);
+                      if (next.has(yearKey)) next.delete(yearKey);
+                      else next.add(yearKey);
+                      return next;
+                    })}
+                    style={styles.yearGroupRow}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${yearKey} year group`}
+                    accessibilityState={{ expanded: !isYearCollapsed }}
+                  >
+                    <Text preset="h2" style={[styles.yearHeading, { color: theme.colors.text }]}>
+                      {yearKey}
+                    </Text>
+                    <Ionicons name={isYearCollapsed ? "chevron-forward" : "chevron-down"} size={16} color={theme.colors.textSecondary} />
+                  </TouchableOpacity>
+                )}
+                {!isYearCollapsed && isNewMonth && (
+                  <TouchableOpacity
+                    onPress={() => setCollapsedMonths((current) => {
+                      const next = new Set(current);
+                      if (next.has(monthKey)) next.delete(monthKey);
+                      else next.add(monthKey);
+                      return next;
+                    })}
+                    style={[styles.monthGroupRow, { borderLeftColor: theme.colors.tint }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${formatTimelineMonth(monthKey)} month group`}
+                    accessibilityState={{ expanded: !isMonthCollapsed }}
+                  >
+                    <Text preset="label" style={[styles.monthHeading, { color: theme.colors.textSecondary }]}>
+                      {formatTimelineMonth(monthKey)}
+                    </Text>
+                    <Ionicons name={isMonthCollapsed ? "chevron-forward" : "chevron-down"} size={15} color={theme.colors.textSecondary} />
+                  </TouchableOpacity>
+                )}
+              {!isYearCollapsed && !isMonthCollapsed && <View style={styles.dateGroup}>
                 <TouchableOpacity
                   onPress={() => setCollapsedDates((current) => {
                     const next = new Set(current);
@@ -491,8 +548,10 @@ export default function TimelineScreen() {
                 </TouchableOpacity>
               );
                 })}
-              </View>
-            ))
+              </View>}
+              </Fragment>
+              );
+            })
           )}
         </ScrollView>
       )}
@@ -647,6 +706,9 @@ const styles = StyleSheet.create({
   },
   feedStickerEmoji: {
     fontSize: 48,
+    lineHeight: 60,
+    includeFontPadding: true,
+    textAlign: "center",
   },
   feedHeader: {
     flexDirection: "row",
@@ -710,15 +772,46 @@ const styles = StyleSheet.create({
   },
   dateGroup: {
     marginBottom: 6,
+    marginLeft: 23,
+  },
+  yearGroupRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+    marginBottom: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  yearHeading: {
+    margin: 0,
+    fontWeight: "700",
+  },
+  monthGroupRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 0,
+    marginBottom: 3,
+    marginLeft: 8,
+    paddingLeft: 12,
+    paddingVertical: 7,
+    borderLeftWidth: 3,
+  },
+  monthHeading: {
+    margin: 0,
+    fontSize: 14,
+    fontWeight: "700",
   },
   dateHeadingRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingVertical: 5,
+    paddingLeft: 10,
   },
   dateHeading: {
-    marginTop: 10,
-    marginBottom: 10,
+    margin: 0,
     fontSize: 15,
     fontWeight: "700",
   },
