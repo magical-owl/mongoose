@@ -494,8 +494,7 @@ export default function TimelineScreen() {
       )}
       <RNModal visible={isDrawerOpen} transparent animationType="slide" onRequestClose={() => setIsDrawerOpen(false)}>
         <View style={styles.drawerRoot}>
-          <Pressable style={styles.drawerOverlay} onPress={() => setIsDrawerOpen(false)} accessibilityLabel="Close diary menu" />
-          <View style={[styles.drawer, { backgroundColor: theme.colors.background, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}>
+          <View style={[styles.drawer, { backgroundColor: theme.colors.background, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}> 
             <View style={styles.drawerHeader}>
               <View />
               <TouchableOpacity onPress={() => setIsDrawerOpen(false)} style={styles.drawerClose} accessibilityRole="button" accessibilityLabel="Close diary menu">
@@ -542,6 +541,7 @@ export default function TimelineScreen() {
               </TouchableOpacity>
             </ScrollView>
           </View>
+          <Pressable style={styles.drawerOverlay} onPress={() => setIsDrawerOpen(false)} accessibilityLabel="Close diary menu" />
         </View>
       </RNModal>
     </View>
@@ -597,9 +597,9 @@ const styles = StyleSheet.create({
   hierarchyToggleLabel: {
     marginHorizontal: 7,
   },
-  drawerRoot: { flex: 1, flexDirection: "row" },
+  drawerRoot: { flex: 1, flexDirection: "row", alignItems: "stretch" },
   drawerOverlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.35)" },
-  drawer: { width: "84%", paddingHorizontal: 20, shadowColor: "#000", shadowOffset: { width: 3, height: 0 }, shadowOpacity: 0.18, shadowRadius: 12, elevation: 12 },
+  drawer: { width: "86%", maxWidth: 380, paddingHorizontal: 20, borderTopRightRadius: 22, borderBottomRightRadius: 22, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 5, height: 0 }, shadowOpacity: 0.24, shadowRadius: 18, elevation: 18 },
   drawerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 22 },
   drawerClose: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
   drawerSectionLabel: { fontWeight: "700", letterSpacing: 0.6, marginTop: 18, marginBottom: 8 },
