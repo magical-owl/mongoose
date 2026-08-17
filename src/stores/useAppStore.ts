@@ -30,7 +30,7 @@ export type TimeFormat = '24-hour' | '12-hour';
 export type FontScale = 'small' | 'default' | 'large';
 export type FontFamily = 'system' | 'serif' | 'monospace';
 export type HomeViewMode = 'detailed' | 'timeline' | 'feed';
-export type AppLanguage = 'en' | 'ja';
+export type AppLanguage = 'en' | 'ja' | 'zh' | 'de' | 'fr';
 
 /**
  * App state interface.

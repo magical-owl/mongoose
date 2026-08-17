@@ -50,7 +50,7 @@ import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
-import { useTranslation } from '@/localization/i18n';
+import { manualMoodLabel, useTranslation } from '@/localization/i18n';
 
 function countWords(text: string): number {
   const clean = text.replace(/[*#`>•\-_]/g, '').trim();
@@ -61,11 +61,6 @@ function entryDate(value: string): Date {
   const [year, month, day] = value.split('-').map(Number);
   return year && month && day ? new Date(year, month - 1, day, 12, 0, 0) : new Date();
 }
-
-function moodLabel(mood: ManualMood): string {
-  return mood.charAt(0).toUpperCase() + mood.slice(1);
-}
-
 
 const FORMAT_ITEMS: { kind: FormatActionKind; icon: string }[] = [
   { kind: 'bold',    icon: 'format-bold' },
@@ -180,7 +175,7 @@ export default function EntryDetailScreen() {
 
   const handleSaveEdit = async () => {
     if (!entry) return;
-    if (!editTitle.trim()) { Alert.alert('Title Required', 'Please enter a title.'); return; }
+    if (!editTitle.trim()) { Alert.alert(t('entryTitleRequiredTitle'), t('entryEditTitleRequiredMessage')); return; }
     setIsSaving(true);
     const updated: DiaryEntry = {
       ...entry,
@@ -204,7 +199,7 @@ export default function EntryDetailScreen() {
     const result = await saveDiaryEntry(updated);
     setIsSaving(false);
     if (result.success) { setEntry(updated); setIsEditing(false); }
-    else Alert.alert('Save Failed', result.error.message);
+    else Alert.alert(t('entrySaveFailedTitle'), result.error.message);
   };
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
@@ -232,10 +227,10 @@ export default function EntryDetailScreen() {
 
   const handleDelete = async () => {
     if (!entry) return;
-    Alert.alert('Delete Entry', 'Are you sure you want to delete this diary entry?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('entryDeleteTitle'), t('entryDeleteMessage'), [
+      { text: t('entryCancel'), style: 'cancel' },
       {
-        text: 'Delete', style: 'destructive',
+        text: t('entryDelete'), style: 'destructive',
         onPress: async () => { await deleteDiaryEntry(entry.id); navigateBack(); },
       },
     ]);
@@ -252,21 +247,21 @@ export default function EntryDetailScreen() {
       setEntry(result.data);
       setReflectionText('');
     } else {
-      Alert.alert('Reflection not saved', result.error.message);
+      Alert.alert(t('reflectionNotSavedTitle'), result.error.message);
     }
   };
 
   const handleDeleteReflection = (reflectionId: string) => {
     if (!entry) return;
-    Alert.alert('Delete reflection?', 'This reflection will be removed from the entry.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('reflectionDeleteTitle'), t('reflectionDeleteMessage'), [
+      { text: t('entryCancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('entryDelete'),
         style: 'destructive',
         onPress: async () => {
           const result = await deleteReflection(entry.id, reflectionId);
           if (result.success) setEntry(result.data);
-          else Alert.alert('Reflection not deleted', result.error.message);
+          else Alert.alert(t('reflectionNotDeletedTitle'), result.error.message);
         },
       },
     ]);
@@ -276,14 +271,14 @@ export default function EntryDetailScreen() {
     return (
       <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
         <View style={[styles.header, { paddingTop: insets.top + 4, borderBottomColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
-          <TouchableOpacity onPress={navigateBack} style={styles.headerBtn} accessibilityRole="button">
-            <Text preset="label" color="textSecondary">‹ Back</Text>
+          <TouchableOpacity onPress={navigateBack} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryBackA11y')}>
+            <Text preset="label" color="textSecondary">‹ {t('entryBack')}</Text>
           </TouchableOpacity>
           <View style={{ flex: 1 }} />
           <View style={styles.headerBtn} />
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text preset="body" color="textSecondary">Entry not found</Text>
+          <Text preset="body" color="textSecondary">{t('entryNotFound')}</Text>
         </View>
       </View>
     );
@@ -312,40 +307,40 @@ export default function EntryDetailScreen() {
       >
         {isEditing ? (
           <>
-            <TouchableOpacity onPress={handleCancelEdit} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Cancel editing">
-              <Text preset="label" color="textSecondary">Cancel</Text>
+            <TouchableOpacity onPress={handleCancelEdit} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryCancelEditingA11y')}>
+              <Text preset="label" color="textSecondary">{t('entryCancel')}</Text>
             </TouchableOpacity>
-            <Text preset="label" color="text" style={{ fontWeight: '600' }}>Edit Entry</Text>
+            <Text preset="label" color="text" style={{ fontWeight: '600' }}>{t('entryEditTitle')}</Text>
             <View style={styles.headerActions}>
               {editStickers.some((sticker) => sticker.behindText) && (
                 <TouchableOpacity
                   onPress={() => setEditStickers((current) => current.map((sticker) => ({ ...sticker, behindText: false })))}
                   style={styles.headerIcon}
                   accessibilityRole="button"
-                  accessibilityLabel="Bring all stickers in front of text"
+                  accessibilityLabel={t('entryBringStickersForwardA11y')}
                 >
                   <MaterialCommunityIcons name="layers" size={20} color={theme.colors.textSecondary} />
                 </TouchableOpacity>
               )}
-              <TouchableOpacity onPress={handleSaveEdit} disabled={isSaving} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Save changes">
+              <TouchableOpacity onPress={handleSaveEdit} disabled={isSaving} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entrySaveChangesA11y')}>
                 <Text preset="label" style={{ color: isSaving ? theme.colors.textSecondary : '#1E90FF', fontWeight: '600', textAlign: 'right' }}>
-                  {isSaving ? 'Saving…' : 'Save'}
+                  {isSaving ? t('entrySaving') : t('entrySave')}
                 </Text>
               </TouchableOpacity>
             </View>
           </>
         ) : (
           <>
-            <TouchableOpacity onPress={navigateBack} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Go back">
-              <Text preset="label" color="textSecondary">‹ Back</Text>
+            <TouchableOpacity onPress={navigateBack} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryBackA11y')}>
+              <Text preset="label" color="textSecondary">‹ {t('entryBack')}</Text>
             </TouchableOpacity>
             <View style={styles.headerDateSpacer} />
             <View style={[styles.headerBtn, { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }]}>
-              <TouchableOpacity onPress={handleStartEdit} accessibilityRole="button" accessibilityLabel="Edit this entry">
-                <Text preset="label" style={{ color: '#1E90FF', fontWeight: '600' }}>Edit</Text>
+              <TouchableOpacity onPress={handleStartEdit} accessibilityRole="button" accessibilityLabel={t('entryEditA11y')}>
+                <Text preset="label" style={{ color: '#1E90FF', fontWeight: '600' }}>{t('entryEdit')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleDelete} accessibilityRole="button" accessibilityLabel="Delete this entry">
-                <Text preset="label" color="textSecondary">Delete</Text>
+              <TouchableOpacity onPress={handleDelete} accessibilityRole="button" accessibilityLabel={t('entryDeleteA11y')}>
+                <Text preset="label" color="textSecondary">{t('entryDelete')}</Text>
               </TouchableOpacity>
             </View>
           </>
@@ -392,7 +387,7 @@ export default function EntryDetailScreen() {
                   onPress={() => setEditFavorite((current) => !current)}
                   style={styles.entryFavoriteToggle}
                   accessibilityRole="button"
-                  accessibilityLabel={editFavorite ? 'Remove favorite' : 'Add favorite'}
+                  accessibilityLabel={editFavorite ? t('entryRemoveFavoriteA11y') : t('entryAddFavoriteA11y')}
                 >
                   <MaterialCommunityIcons name={editFavorite ? 'star' : 'star-outline'} size={20} color={theme.colors.warning} />
                 </TouchableOpacity>
@@ -400,7 +395,7 @@ export default function EntryDetailScreen() {
                   onPress={() => setShowEntryDetails(true)}
                   style={[styles.entryDetailsToggle, { borderColor: theme.colors.border }]}
                   accessibilityRole="button"
-                  accessibilityLabel="Open entry details"
+                  accessibilityLabel={t('entryDetailsA11y')}
                 >
                   <MaterialCommunityIcons name="information-outline" size={20} color={theme.colors.textSecondary} />
                 </TouchableOpacity>
@@ -409,12 +404,12 @@ export default function EntryDetailScreen() {
               <NativeTextInput
                 value={editTitle}
                 onChangeText={setEditTitle}
-                placeholder="Entry title…"
+                placeholder={t('entryTitlePlaceholder')}
                 placeholderTextColor={theme.colors.textSecondary}
                 style={[styles.titleInput, { color: theme.colors.text }]}
                 multiline
                 returnKeyType="next"
-                accessibilityLabel="Entry title"
+                accessibilityLabel={t('entryTitleA11y')}
               />
               <ManualMoodPicker value={editMood} onChange={setEditMood} />
               <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
@@ -422,10 +417,10 @@ export default function EntryDetailScreen() {
                 ref={editorRef}
                 value={editContent}
                 onChangeText={setEditContent}
-                placeholder="Write your thoughts…"
+                placeholder={t('entryEditContentPlaceholder')}
                 minHeight={320}
                 showToolbar={false}
-                accessibilityLabel="Entry content"
+                accessibilityLabel={t('entryContentA11y')}
               />
             </>
           ) : (
@@ -453,7 +448,7 @@ export default function EntryDetailScreen() {
                 {entry.manualMood ? (
                   <View style={[styles.moodBadge, { backgroundColor: moodTone + '18', borderColor: moodTone }]}>
                     <Text preset="caption" style={[styles.moodBadgeText, { color: moodTone }]}>
-                      {moodLabel(entry.manualMood)}
+                      {manualMoodLabel(entry.manualMood, t)}
                     </Text>
                   </View>
                 ) : null}
@@ -487,7 +482,7 @@ export default function EntryDetailScreen() {
               style={styles.viewFooterButton}
               onPress={() => setShowReflections(true)}
               activeOpacity={0.6}
-              accessibilityLabel={`Open reflections. ${entry.reflections.length} saved.`}
+              accessibilityLabel={`${t('entryOpenReflectionsA11y')} ${entry.reflections.length} ${t('entrySavedA11y')}`}
               accessibilityRole="button"
             >
               <MaterialCommunityIcons name="comment-text-outline" size={21} color={theme.colors.tint} />
@@ -525,7 +520,7 @@ export default function EntryDetailScreen() {
                 setShowFormattingTools((current) => !current);
               }}
               activeOpacity={0.6}
-              accessibilityLabel={showFormattingTools ? 'Hide text formatting tools' : 'Show text formatting tools'}
+              accessibilityLabel={showFormattingTools ? t('entryHideFormattingA11y') : t('entryShowFormattingA11y')}
               accessibilityRole="button"
             >
               <MaterialCommunityIcons name="format-text" size={22} color={showFormattingTools ? theme.colors.tint : theme.colors.text} />
@@ -544,7 +539,7 @@ export default function EntryDetailScreen() {
               style={styles.toolbarIcon}
               onPress={() => setShowTemplatePicker(true)}
               activeOpacity={0.6}
-              accessibilityLabel="Choose writing template"
+              accessibilityLabel={t('entryChooseTemplateA11y')}
               accessibilityRole="button"
             >
               <MaterialCommunityIcons name="file-document-edit-outline" size={22} color={theme.colors.tint} />
@@ -554,7 +549,7 @@ export default function EntryDetailScreen() {
               style={styles.toolbarIcon}
               onPress={() => setShowStickerPicker(true)}
               activeOpacity={0.6}
-              accessibilityLabel={`Add sticker. ${editStickers.length} placed.`}
+              accessibilityLabel={`${t('entryAddStickerA11y')} ${editStickers.length} ${t('entryStickerPlacedA11y')}`}
               accessibilityRole="button"
             >
               <MaterialCommunityIcons name="sticker-outline" size={22} color={theme.colors.tint} />
@@ -571,7 +566,7 @@ export default function EntryDetailScreen() {
             <TouchableOpacity
               onPress={() => setShowCompanionPicker(true)}
               style={styles.companionAvatar}
-              accessibilityLabel={`AI Companion: ${activeCompanion.name}. Tap to change.`}
+              accessibilityLabel={`${t('entryCompanionA11y')}: ${activeCompanion.name}. ${t('entryCompanionChangeA11y')}`}
               accessibilityRole="button"
             >
               <Text style={{ fontSize: 22 }}>{activeCompanion.avatar}</Text>
@@ -600,7 +595,7 @@ export default function EntryDetailScreen() {
         visible={showReflections}
         onDismiss={() => setShowReflections(false)}
         title={t('reflections')}
-        accessibilityLabel="Entry reflections"
+        accessibilityLabel={t('entryReflectionsA11y')}
         scrollable={false}
       >
         <View style={styles.reflectionsModalBody}>
@@ -615,8 +610,8 @@ export default function EntryDetailScreen() {
                   <Text preset="caption" color="textTertiary">
                     {new Date(reflection.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   </Text>
-                  <TouchableOpacity onPress={() => handleDeleteReflection(reflection.id)} accessibilityRole="button" accessibilityLabel="Delete reflection">
-                    <Text preset="caption" color="textSecondary">Delete</Text>
+                  <TouchableOpacity onPress={() => handleDeleteReflection(reflection.id)} accessibilityRole="button" accessibilityLabel={t('reflectionDeleteA11y')}>
+                    <Text preset="caption" color="textSecondary">{t('entryDelete')}</Text>
                   </TouchableOpacity>
                 </View>
                 <Text preset="bodySmall" color="text" style={styles.reflectionText}>{reflection.text}</Text>
@@ -643,7 +638,7 @@ export default function EntryDetailScreen() {
             ]}
             returnKeyType="send"
             onSubmitEditing={handleAddReflection}
-            accessibilityLabel="Reflection text"
+            accessibilityLabel={t('reflectionTextA11y')}
           />
           <TouchableOpacity
             onPress={handleAddReflection}
@@ -653,7 +648,7 @@ export default function EntryDetailScreen() {
               { backgroundColor: reflectionText.trim() && !isSavingReflection ? theme.colors.tint : 'transparent' },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Add reflection"
+            accessibilityLabel={t('reflectionAddA11y')}
           >
             <MaterialCommunityIcons name="plus" size={18} color={reflectionText.trim() && !isSavingReflection ? '#fff' : theme.colors.textSecondary} />
           </TouchableOpacity>

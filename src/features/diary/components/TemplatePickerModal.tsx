@@ -17,6 +17,7 @@ import { Modal } from '@shared/components/Modal';
 import { Text } from '@shared/components/Text';
 import { useTheme } from '@providers/ThemeProvider';
 import { TEMPLATES, TEMPLATE_CATEGORIES, Template } from '../domain/Template';
+import { useTranslation } from '@/localization/i18n';
 
 interface TemplatePickerModalProps {
   readonly visible: boolean;
@@ -30,6 +31,7 @@ export function TemplatePickerModal({
   onSelectTemplate,
 }: TemplatePickerModalProps) {
   const theme = useTheme();
+  const t = useTranslation();
   const categoryKeys = Object.keys(TEMPLATE_CATEGORIES);
   const [activeCategory, setActiveCategory] = useState<string>(categoryKeys[0] || '');
 
@@ -47,7 +49,7 @@ export function TemplatePickerModal({
   };
 
   return (
-    <Modal visible={visible} onDismiss={onClose} title="Writing Templates" accessibilityLabel="Writing templates picker" scrollable={false}>
+    <Modal visible={visible} onDismiss={onClose} title={t('templatesTitle')} accessibilityLabel={t('templatesPickerA11y')} scrollable={false}>
       {/* Category Tabs */}
       <ScrollView
         horizontal
@@ -67,7 +69,7 @@ export function TemplatePickerModal({
                 },
               ]}
               onPress={() => setActiveCategory(cat)}
-              accessibilityLabel={`Category ${cat}`}
+              accessibilityLabel={`${t('templateCategoryA11y')} ${cat}`}
             >
               <Text
                 preset="caption"
@@ -125,11 +127,11 @@ export function TemplatePickerModal({
                     onClose();
                   }}
                   activeOpacity={0.7}
-                  accessibilityLabel={`Add ${item.title} template`}
+                  accessibilityLabel={`${t('templateAddA11y')}: ${item.title}`}
                 >
                   <Ionicons name="add" size={16} color="#fff" />
                   <Text preset="caption" style={{ color: '#fff', fontWeight: '700' }}>
-                    Insert
+                    {t('templateInsert')}
                   </Text>
                 </TouchableOpacity>
               </View>

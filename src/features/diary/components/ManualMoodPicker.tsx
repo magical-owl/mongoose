@@ -3,18 +3,16 @@ import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { MANUAL_MOOD_OPTIONS, type ManualMood } from '@/features/diary/domain/DiaryEntry';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
+import { manualMoodLabel, useTranslation } from '@/localization/i18n';
 
 interface ManualMoodPickerProps {
   readonly value: ManualMood;
   readonly onChange: (mood: ManualMood) => void;
 }
 
-function moodLabel(mood: ManualMood): string {
-  return mood.charAt(0).toUpperCase() + mood.slice(1);
-}
-
 export function ManualMoodPicker({ value, onChange }: ManualMoodPickerProps): React.JSX.Element {
   const theme = useTheme();
+  const t = useTranslation();
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scroll} contentContainerStyle={styles.row}>
@@ -28,9 +26,9 @@ export function ManualMoodPicker({ value, onChange }: ManualMoodPickerProps): Re
             style={[styles.option, { borderColor: selected ? color : theme.colors.border, backgroundColor: selected ? color + '20' : 'transparent' }]}
             accessibilityRole="radio"
             accessibilityState={{ selected }}
-            accessibilityLabel={`${moodLabel(mood)} emotion${selected ? ', selected' : ''}`}
+            accessibilityLabel={`${manualMoodLabel(mood, t)} ${t('moodEmotionA11y')}${selected ? `, ${t('moodSelectedA11y')}` : ''}`}
           >
-            <Text preset="caption" style={{ color }}>{moodLabel(mood)}</Text>
+            <Text preset="caption" style={{ color }}>{manualMoodLabel(mood, t)}</Text>
           </TouchableOpacity>
         );
       })}

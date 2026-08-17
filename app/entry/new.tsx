@@ -42,6 +42,7 @@ import { diaryDraftService } from '@/features/diary/services/DiaryDraftService';
 import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
 import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
+import { useTranslation } from '@/localization/i18n';
 
 // Word count helper (strips markdown syntax)
 function countWords(text: string): number {
@@ -64,6 +65,7 @@ export default function CreateEntryScreen() {
   const { date: paramDate } = useLocalSearchParams<{ date?: string }>();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const { saveDiaryEntry, selectedCompanion, setSelectedCompanion } = useDiary();
   const selectedCalendarDate = useAppStore((state) => state.selectedCalendarDate);
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
@@ -205,11 +207,11 @@ export default function CreateEntryScreen() {
 
   const handleSave = async () => {
     if (!title.trim()) {
-      Alert.alert('Title Required', 'Please enter a title for your diary entry.');
+      Alert.alert(t('entryTitleRequiredTitle'), t('entryCreateTitleRequiredMessage'));
       return;
     }
     if (!content.trim()) {
-      Alert.alert('Content Required', 'Please write a few thoughts before saving.');
+      Alert.alert(t('entryContentRequiredTitle'), t('entryContentRequiredMessage'));
       return;
     }
     setIsSaving(true);
@@ -242,7 +244,7 @@ export default function CreateEntryScreen() {
       setSelectedCalendarDate(null);
       navigateBack();
     } else {
-      Alert.alert('Error', result.error.message);
+      Alert.alert(t('entryErrorTitle'), result.error.message);
     }
   };
 
@@ -266,14 +268,14 @@ export default function CreateEntryScreen() {
         <TouchableOpacity
           onPress={navigateBack}
           style={styles.headerBtn}
-          accessibilityLabel="Cancel and go back"
+          accessibilityLabel={t('entryCancelA11y')}
           accessibilityRole="button"
         >
-          <Text preset="label" color="textSecondary">Cancel</Text>
+          <Text preset="label" color="textSecondary">{t('entryCancel')}</Text>
         </TouchableOpacity>
 
         <Text preset="label" color="text" style={{ fontWeight: '600' }}>
-          Create Entry
+          {t('entryCreateTitle')}
         </Text>
 
         {stickers.some((sticker) => sticker.behindText) && (
@@ -281,7 +283,7 @@ export default function CreateEntryScreen() {
             onPress={() => setStickers((current) => current.map((sticker) => ({ ...sticker, behindText: false })))}
             style={styles.headerIcon}
             accessibilityRole="button"
-            accessibilityLabel="Bring all stickers in front of text"
+            accessibilityLabel={t('entryBringStickersForwardA11y')}
           >
             <MaterialCommunityIcons name="layers" size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
@@ -291,14 +293,14 @@ export default function CreateEntryScreen() {
           onPress={handleSave}
           disabled={isSaving}
           style={styles.headerBtn}
-          accessibilityLabel="Save diary entry"
+          accessibilityLabel={t('entrySaveA11y')}
           accessibilityRole="button"
         >
           <Text
             preset="label"
             style={{ color: isSaving ? theme.colors.textSecondary : '#1E90FF', fontWeight: '600' }}
           >
-            {isSaving ? 'Saving…' : 'Save'}
+            {isSaving ? t('entrySaving') : t('entrySave')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -336,7 +338,7 @@ export default function CreateEntryScreen() {
               onPress={() => setIsFavorite((current) => !current)}
               style={styles.entryFavoriteToggle}
               accessibilityRole="button"
-              accessibilityLabel={isFavorite ? 'Remove favorite' : 'Add favorite'}
+              accessibilityLabel={isFavorite ? t('entryRemoveFavoriteA11y') : t('entryAddFavoriteA11y')}
             >
               <MaterialCommunityIcons name={isFavorite ? 'star' : 'star-outline'} size={20} color={theme.colors.warning} />
             </TouchableOpacity>
@@ -344,7 +346,7 @@ export default function CreateEntryScreen() {
               onPress={() => setShowEntryDetails(true)}
               style={[styles.entryDetailsToggle, { borderColor: theme.colors.border }]}
               accessibilityRole="button"
-              accessibilityLabel="Open entry details"
+              accessibilityLabel={t('entryDetailsA11y')}
             >
               <MaterialCommunityIcons name="information-outline" size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
@@ -355,13 +357,13 @@ export default function CreateEntryScreen() {
           <NativeTextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="Entry title…"
+            placeholder={t('entryTitlePlaceholder')}
             placeholderTextColor={theme.colors.textSecondary}
             style={[styles.titleInput, { color: theme.colors.text }]}
             multiline
             returnKeyType="next"
-            accessibilityLabel="Entry title"
-            accessibilityHint="Write the title of your diary entry"
+            accessibilityLabel={t('entryTitleA11y')}
+            accessibilityHint={t('entryTitleHint')}
           />
 
           <ManualMoodPicker value={manualMood} onChange={setManualMood} />
@@ -374,10 +376,10 @@ export default function CreateEntryScreen() {
             ref={editorRef}
             value={content}
             onChangeText={setContent}
-            placeholder="What's on your mind today? Write freely…"
+            placeholder={t('entryCreateContentPlaceholder')}
             minHeight={320}
             showToolbar={false}
-            accessibilityLabel="Entry content"
+            accessibilityLabel={t('entryContentA11y')}
           />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -402,7 +404,7 @@ export default function CreateEntryScreen() {
               setShowFormattingTools((current) => !current);
             }}
             activeOpacity={0.6}
-            accessibilityLabel={showFormattingTools ? 'Hide text formatting tools' : 'Show text formatting tools'}
+            accessibilityLabel={showFormattingTools ? t('entryHideFormattingA11y') : t('entryShowFormattingA11y')}
             accessibilityRole="button"
           >
             <MaterialCommunityIcons name="format-text" size={22} color={showFormattingTools ? theme.colors.tint : theme.colors.text} />
@@ -422,7 +424,7 @@ export default function CreateEntryScreen() {
             style={styles.toolbarIcon}
             onPress={() => setShowTemplatePicker(true)}
             activeOpacity={0.6}
-            accessibilityLabel="Choose writing template"
+            accessibilityLabel={t('entryChooseTemplateA11y')}
             accessibilityRole="button"
           >
             <MaterialCommunityIcons name="file-document-edit-outline" size={22} color={theme.colors.tint} />
@@ -433,7 +435,7 @@ export default function CreateEntryScreen() {
             style={styles.toolbarIcon}
             onPress={() => setShowStickerPicker(true)}
             activeOpacity={0.6}
-            accessibilityLabel={`Add sticker. ${stickers.length} placed.`}
+            accessibilityLabel={`${t('entryAddStickerA11y')} ${stickers.length} ${t('entryStickerPlacedA11y')}`}
             accessibilityRole="button"
           >
             <MaterialCommunityIcons name="sticker-outline" size={22} color={theme.colors.tint} />
@@ -450,7 +452,7 @@ export default function CreateEntryScreen() {
           <TouchableOpacity
             onPress={() => setShowCompanionPicker(true)}
             style={styles.companionAvatar}
-            accessibilityLabel={`AI Companion: ${activeCompanion.name}. Tap to change.`}
+            accessibilityLabel={`${t('entryCompanionA11y')}: ${activeCompanion.name}. ${t('entryCompanionChangeA11y')}`}
             accessibilityRole="button"
           >
             <Text style={{ fontSize: 22 }}>{activeCompanion.avatar}</Text>

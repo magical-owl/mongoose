@@ -28,6 +28,7 @@ import { Modal } from '@shared/components/Modal';
 import { Text } from '@shared/components/Text';
 import { useTheme } from '@providers/ThemeProvider';
 import { STICKER_PACKS, StickerItem } from '../domain/Sticker';
+import { useTranslation } from '@/localization/i18n';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // 4 columns with 8px gap each side + outer padding
@@ -43,6 +44,7 @@ type SearchResult = { item: StickerItem; packId: string };
 
 export function StickerPickerModal({ visible, onClose, onSelectSticker }: StickerPickerModalProps) {
   const theme = useTheme();
+  const t = useTranslation();
   const [activePackId, setActivePackId] = useState(STICKER_PACKS[0]?.id ?? '');
   const [search, setSearch] = useState('');
 
@@ -76,7 +78,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
         onClose();
       }}
       activeOpacity={0.65}
-      accessibilityLabel={`Add ${item.name} sticker`}
+      accessibilityLabel={`${t('stickerAddA11y')}: ${item.name}`}
       accessibilityRole="button"
     >
       {item.source != null ? (
@@ -92,7 +94,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
     : activePack.stickers.map((item) => ({ item, packId: activePack.id }));
 
   return (
-    <Modal visible={visible} onDismiss={onClose} title="Choose a Sticker" accessibilityLabel="Sticker picker" scrollable={false}>
+    <Modal visible={visible} onDismiss={onClose} title={t('stickerChooseTitle')} accessibilityLabel={t('stickerPickerA11y')} scrollable={false}>
       {/* Search bar */}
       <View style={styles.searchRow}>
         <View style={[styles.searchBox, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
@@ -100,14 +102,14 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Search stickers…"
+            placeholder={t('stickerSearchPlaceholder')}
             placeholderTextColor={theme.colors.textSecondary}
             style={[styles.searchInput, { color: theme.colors.text }]}
             autoCapitalize="none"
             autoCorrect={false}
           />
           {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')} style={styles.clearSearch} accessibilityLabel="Clear search">
+            <TouchableOpacity onPress={() => setSearch('')} style={styles.clearSearch} accessibilityLabel={t('stickerClearSearchA11y')}>
               <MaterialCommunityIcons name="close" size={17} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           )}
@@ -133,7 +135,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
                   },
                 ]}
                 onPress={() => setActivePackId(pack.id)}
-                accessibilityLabel={`Category: ${pack.name}`}
+                accessibilityLabel={`${t('stickerCategoryA11y')}: ${pack.name}`}
               >
                 <Text
                   preset="caption"
@@ -150,7 +152,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
       {/* 4-col grid */}
       {isSearching && flatData.length === 0 ? (
         <View style={styles.empty}>
-          <Text preset="caption" color="textSecondary">No stickers found for &quot;{search}&quot;</Text>
+          <Text preset="caption" color="textSecondary">{t('stickerNoResultsPrefix')} &quot;{search}&quot;</Text>
         </View>
       ) : (
         <FlatList

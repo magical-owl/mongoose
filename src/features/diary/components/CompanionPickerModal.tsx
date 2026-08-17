@@ -5,6 +5,7 @@ import { Modal } from '@shared/components/Modal';
 import { Text } from '@shared/components/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { CompanionType, COMPANION_OPTIONS } from '../domain/Companion';
+import { useTranslation } from '@/localization/i18n';
 
 interface CompanionPickerModalProps {
   readonly visible: boolean;
@@ -20,9 +21,10 @@ export const CompanionPickerModal: React.FC<CompanionPickerModalProps> = ({
   onSelectCompanion,
 }) => {
   const theme = useTheme();
+  const t = useTranslation();
 
   return (
-    <Modal visible={visible} onDismiss={onClose} title="Select AI Companion" accessibilityLabel="Companion picker">
+    <Modal visible={visible} onDismiss={onClose} title={t('companionSelectTitle')} accessibilityLabel={t('companionPickerA11y')}>
       <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
         {COMPANION_OPTIONS.map((item) => {
           const isSelected = item.id === selectedCompanion;
@@ -44,7 +46,7 @@ export const CompanionPickerModal: React.FC<CompanionPickerModalProps> = ({
                 onClose();
               }}
               activeOpacity={0.8}
-              accessibilityLabel={`Select ${item.name}${isSelected ? ', currently selected' : ''}`}
+              accessibilityLabel={`${t('companionSelectA11y')}: ${item.name}${isSelected ? `, ${t('companionSelectedA11y')}` : ''}`}
               accessibilityRole="button"
               accessibilityState={{ selected: isSelected }}
             >
