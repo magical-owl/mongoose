@@ -7,9 +7,7 @@ describe('DiaryService', () => {
   let repo: DiaryRepository;
 
   const dateOffset = (days: number): string => {
-    const date = new Date();
-    date.setDate(date.getDate() - days);
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return new Date(Date.now() - days * 86400000).toISOString().split('T')[0]!;
   };
 
   const mockEntry: DiaryEntry = {
@@ -29,6 +27,7 @@ describe('DiaryService', () => {
     sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' },
     isLockbox: false,
     collectionIds: [],
+    reflections: [],
   };
 
   beforeEach(() => {
@@ -52,5 +51,25 @@ describe('DiaryService', () => {
     ];
     const streak = service.calculateStreak(entries);
     expect(streak.currentStreak).toBeGreaterThanOrEqual(1);
+  });
+
+  it('should add and delete reflections on an entry', async () => {
+    await service.saveEntry(mockEntry);
+
+    const addResult = await service.addReflection(mockEntry.id, 'I understand this differently now.');
+    expect(addResult.success).toBe(true);
+    if (!addResult.success) return;
+    expect(addResult.data.reflections).toHaveLength(1);
+    expect(addResult.data.reflections[0]?.text).toBe('I understand this differently now.');
+
+    const reflectionId = addResult.data.reflections[0]?.id;
+    expect(reflectionId).toBeDefined();
+    if (!reflectionId) return;
+
+    const deleteResult = await service.deleteReflection(mockEntry.id, reflectionId);
+    expect(deleteResult.success).toBe(true);
+    if (deleteResult.success) {
+      expect(deleteResult.data.reflections).toHaveLength(0);
+    }
   });
 });

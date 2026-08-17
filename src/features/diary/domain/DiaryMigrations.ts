@@ -1,6 +1,6 @@
 import { DiaryEntry, DiaryEntrySchema } from './DiaryEntry';
 
-export const CURRENT_DIARY_SCHEMA_VERSION = 2;
+export const CURRENT_DIARY_SCHEMA_VERSION = 3;
 
 export interface DiaryStorageEnvelope {
   readonly version: number;

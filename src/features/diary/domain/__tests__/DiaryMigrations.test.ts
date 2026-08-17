@@ -26,4 +26,9 @@ describe('Diary migrations', () => {
     expect(result.entries).toHaveLength(1);
     expect(result.entries[0]?.title).toBe('Legacy');
   });
+
+  it('defaults reflections for legacy entries', () => {
+    const result = migrateDiaryStorage([entry]);
+    expect(result.entries[0]?.reflections).toEqual([]);
+  });
 });

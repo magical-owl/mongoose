@@ -43,6 +43,22 @@ export function useDiary() {
     return result;
   };
 
+  const addReflection = async (entryId: string, text: string) => {
+    const result = await diaryService.addReflection(entryId, text);
+    if (result.success) {
+      await fetchEntries();
+    }
+    return result;
+  };
+
+  const deleteReflection = async (entryId: string, reflectionId: string) => {
+    const result = await diaryService.deleteReflection(entryId, reflectionId);
+    if (result.success) {
+      await fetchEntries();
+    }
+    return result;
+  };
+
   const streakStats = diaryService.calculateStreak(entries);
 
   return {
@@ -55,6 +71,8 @@ export function useDiary() {
     saveDiaryEntry: saveEntry,
     deleteEntry,
     deleteDiaryEntry: deleteEntry,
+    addReflection,
+    deleteReflection,
     refresh: fetchEntries,
     streakStats,
   };

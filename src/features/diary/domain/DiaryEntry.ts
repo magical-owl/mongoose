@@ -54,6 +54,14 @@ export const SensoryDetailsSchema = z.object({
 });
 export type SensoryDetails = z.infer<typeof SensoryDetailsSchema>;
 
+export const DiaryReflectionSchema = z.object({
+  id: z.string().uuid(),
+  text: z.string().min(1).max(2000),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+export type DiaryReflection = z.infer<typeof DiaryReflectionSchema>;
+
 export const DiaryEntrySchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1, 'Title is required').max(150),
@@ -76,6 +84,7 @@ export const DiaryEntrySchema = z.object({
   isLockbox: z.boolean().default(false),
   chapterId: z.string().uuid().optional(),
   collectionIds: z.array(z.string().uuid()).default([]),
+  reflections: z.array(DiaryReflectionSchema).default([]),
 });
 
 export type DiaryEntry = z.infer<typeof DiaryEntrySchema>;

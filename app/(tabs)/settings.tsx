@@ -213,17 +213,18 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          Settings
+        </Text>
+      </View>
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 16,
+          paddingTop: 4,
           paddingBottom: insets.bottom + 80,
         }}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          Settings
-        </Text>
-
         <View style={styles.optionsContainer}>
           {settingsOptions.map((option) => (
             <TouchableOpacity
@@ -470,7 +471,7 @@ export default function SettingsScreen() {
         </View>
         <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>HOME VIEWS</Text>
         <View>
-          {([['detailed', 'Card'], ['timeline', 'Timeline'], ['feed', 'Feed']] as const satisfies (readonly [HomeViewMode, string])[]).map(([value, label]) => (
+          {([['timeline', 'Timeline'], ['detailed', 'Card'], ['feed', 'Feed']] as const satisfies (readonly [HomeViewMode, string])[]).map(([value, label]) => (
             <View
               key={value}
               style={[styles.displayToggleRow, { borderBottomColor: theme.colors.border }]}
@@ -479,7 +480,7 @@ export default function SettingsScreen() {
               <Switch
                 value={homeViewModes[value]}
                 onValueChange={(enabled) => {
-                  const enabledCount = (['detailed', 'timeline', 'feed'] as const).filter((view) => homeViewModes[view]).length;
+                  const enabledCount = (['timeline', 'detailed', 'feed'] as const).filter((view) => homeViewModes[view]).length;
                   if (!enabled && enabledCount === 1) return;
                   setHomeViewModeEnabled(value, enabled);
                 }}
@@ -642,10 +643,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  fixedHeader: {
+    zIndex: 30,
+    elevation: 30,
+    paddingHorizontal: 20,
+  },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    paddingHorizontal: 20,
     marginBottom: 16,
   },
   optionsContainer: {

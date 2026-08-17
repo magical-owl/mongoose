@@ -54,12 +54,13 @@ export default function InsightsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.fixedHeader, { paddingTop: insets.top + 20, backgroundColor: theme.colors.background }]}>
+        <Text color="text" style={styles.title}>Insights</Text>
+      </View>
       <ScrollView
-        contentContainerStyle={{ paddingTop: insets.top + 20, paddingHorizontal: 20, paddingBottom: insets.bottom + 80 }}
+        contentContainerStyle={{ paddingTop: 4, paddingHorizontal: 20, paddingBottom: insets.bottom + 80 }}
         showsVerticalScrollIndicator={false}
       >
-        <Text color="text" style={styles.title}>Insights</Text>
-
         <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>MOOD — LAST 30 DAYS</Text>
         <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
           {moodTotal > 0 ? (
@@ -121,6 +122,7 @@ export default function InsightsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
   title: { fontSize: 24, fontWeight: "700", marginBottom: 16 },
   sectionLabel: { fontWeight: "700", letterSpacing: 0.5, marginBottom: 10 },
   card: { borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 24 },

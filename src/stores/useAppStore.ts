@@ -114,7 +114,7 @@ const initialState: Pick<
   fontScale: 'default',
   fontFamily: 'system',
   homeViewModes: { detailed: true, timeline: true, feed: true },
-  homeViewMode: 'detailed',
+  homeViewMode: 'timeline',
 };
 
 /**

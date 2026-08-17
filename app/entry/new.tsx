@@ -231,6 +231,7 @@ export default function CreateEntryScreen() {
       timeCapsuleUnlockAt: timeCapsuleUnlockAt ? new Date(timeCapsuleUnlockAt).toISOString() : undefined,
       expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
       collectionIds: [],
+      reflections: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

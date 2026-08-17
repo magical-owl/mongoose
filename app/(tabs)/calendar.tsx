@@ -119,21 +119,22 @@ export default function CalendarScreen() {
 
   return (
     <View style={[styles.outerContainer, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
+        <View style={styles.titleRow}>
+          <Text style={[styles.heading, { color: theme.colors.text }]}>Calendar</Text>
+          <TouchableOpacity onPress={handleJumpToToday} style={[styles.todayButton, { borderColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel="Jump to today">
+            <Text preset="caption" color="tint">Today</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
       {isLoading ? null : (
         <ScrollView
           contentContainerStyle={[
             styles.container,
-            { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 80 },
+            { paddingBottom: insets.bottom + 80 },
           ]}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.titleRow}>
-            <Text style={[styles.heading, { color: theme.colors.text }]}>Calendar</Text>
-            <TouchableOpacity onPress={handleJumpToToday} style={[styles.todayButton, { borderColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel="Jump to today">
-              <Text preset="caption" color="tint">Today</Text>
-            </TouchableOpacity>
-          </View>
-
           {/* Calendar Card Container */}
           <View
             style={[
@@ -311,16 +312,17 @@ const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
   },
+  fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
   container: {
     paddingHorizontal: 20,
+    paddingTop: 4,
   },
   heading: {
     fontSize: 24,
     fontWeight: '700',
-    marginBottom: 16,
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  todayButton: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, marginBottom: 16 },
+  todayButton: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
   subHeading: {
     fontSize: 18,
     fontWeight: '500',

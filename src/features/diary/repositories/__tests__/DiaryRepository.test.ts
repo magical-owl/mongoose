@@ -51,6 +51,7 @@ describe('DiaryRepository', () => {
     sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' },
     isLockbox: false,
     collectionIds: [],
+    reflections: [],
   };
 
   beforeEach(() => {

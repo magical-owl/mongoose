@@ -8,6 +8,9 @@ import {
   TextInput,
   StyleSheet,
   Pressable,
+  Alert,
+  UIManager,
+  findNodeHandle,
   useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,8 +40,8 @@ function formatTimelineMonth(value: string): string {
 type HierarchyMode = "year-month-date" | "month-date" | "date" | "none";
 const HIERARCHY_MODES: HierarchyMode[] = ["year-month-date", "month-date", "date", "none"];
 const HOME_VIEW_MODES = [
-  ["detailed", "Card"],
   ["timeline", "Timeline"],
+  ["detailed", "Card"],
   ["feed", "Feed"],
 ] as const satisfies (readonly [HomeViewMode, string])[];
 const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
@@ -68,7 +71,7 @@ export default function TimelineScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
-  const { entries, isLoading, refresh } = useDiary();
+  const { entries, isLoading, refresh, addReflection } = useDiary();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const homeViewModes = useAppStore((state) => state.homeViewModes);
   const homeViewMode = useAppStore((state) => state.homeViewMode);
@@ -96,6 +99,13 @@ export default function TimelineScreen() {
   const drawerProgress = useRef(new Animated.Value(0)).current;
   const drawerProgressValue = useRef(0);
   const drawerDragStart = useRef(0);
+  const scrollRef = useRef<ScrollView | null>(null);
+  const entryLayoutY = useRef(new Map<string, number>());
+  const dateGroupLayoutY = useRef(new Map<string, number>());
+  const entryDateById = useRef(new Map<string, string>());
+  const entryRefs = useRef(new Map<string, View>());
+  const scrollOffsetY = useRef(0);
+  const pendingScrollEntryId = useRef<string | null>(null);
 
   const filterOptions = useMemo(
     () => ({
@@ -192,6 +202,104 @@ export default function TimelineScreen() {
     return selectedIndex >= 0 ? selectedIndex : 0;
   });
   const viewMode = selectableViewModes[viewModeIndex]?.[0] ?? "detailed";
+
+  const handleAddReflection = useCallback(
+    async (entryId: string, text: string) => {
+      const result = await addReflection(entryId, text);
+      if (!result.success) {
+        Alert.alert("Reflection not saved", result.error.message);
+        return false;
+      }
+      return true;
+    },
+    [addReflection],
+  );
+
+  const scrollToEntry = useCallback((entryId: string) => {
+    const entryNode = entryRefs.current.get(entryId);
+    if (entryNode && scrollRef.current) {
+      const entryHandle = findNodeHandle(entryNode);
+      const scrollHandle = findNodeHandle(scrollRef.current);
+      if (entryHandle !== null && scrollHandle !== null) {
+        UIManager.measure(entryHandle, (_entryX: number, _entryY: number, _entryWidth: number, _entryHeight: number, _entryPageX: number, entryPageY: number) => {
+          UIManager.measure(scrollHandle, (_scrollX: number, _scrollY: number, _scrollWidth: number, _scrollHeight: number, _scrollPageX: number, scrollPageY: number) => {
+          const nextY = scrollOffsetY.current + entryPageY - scrollPageY - 72;
+          scrollRef.current?.scrollTo({ y: Math.max(0, nextY), animated: true });
+          pendingScrollEntryId.current = null;
+          });
+        });
+        return true;
+      }
+    }
+
+    const entryY = entryLayoutY.current.get(entryId);
+    const entryDate = entryDateById.current.get(entryId);
+    const groupY = entryDate ? dateGroupLayoutY.current.get(entryDate) : undefined;
+    if (entryY === undefined || groupY === undefined) return false;
+    scrollRef.current?.scrollTo({ y: Math.max(0, groupY + entryY - 72), animated: true });
+    pendingScrollEntryId.current = null;
+    return true;
+  }, []);
+
+  const handleEntryLayout = useCallback(
+    (entryId: string, entryDate: string, y: number) => {
+      entryDateById.current.set(entryId, entryDate);
+      entryLayoutY.current.set(entryId, y);
+      if (pendingScrollEntryId.current === entryId && viewMode === "timeline") {
+        scrollToEntry(entryId);
+      }
+    },
+    [scrollToEntry, viewMode],
+  );
+
+  const handleDateGroupLayout = useCallback(
+    (date: string, y: number) => {
+      dateGroupLayoutY.current.set(date, y);
+      const pendingId = pendingScrollEntryId.current;
+      if (pendingId && entryDateById.current.get(pendingId) === date && viewMode === "timeline") {
+        scrollToEntry(pendingId);
+      }
+    },
+    [scrollToEntry, viewMode],
+  );
+
+  const handleReflectionSummaryPress = useCallback(
+    (entryId: string) => {
+      const entry = entries.find((item) => item.id === entryId);
+      const timelineIndex = selectableViewModes.findIndex(([mode]) => mode === "timeline");
+      if (!entry || timelineIndex < 0) {
+        Alert.alert("Timeline unavailable", "Enable Timeline in Display settings to view reflections inline.");
+        return;
+      }
+
+      pendingScrollEntryId.current = entryId;
+      setCollapsedYears((current) => {
+        const next = new Set(current);
+        next.delete(entry.date.slice(0, 4));
+        return next;
+      });
+      setCollapsedMonths((current) => {
+        const next = new Set(current);
+        next.delete(entry.date.slice(0, 7));
+        return next;
+      });
+      setCollapsedDates((current) => {
+        const next = new Set(current);
+        next.delete(entry.date);
+        return next;
+      });
+      setViewModeIndex(timelineIndex);
+      setHomeViewMode("timeline");
+      [80, 180, 320].forEach((delay) => {
+        setTimeout(() => {
+          if (pendingScrollEntryId.current === entryId) {
+            scrollToEntry(entryId);
+          }
+        }, delay);
+      });
+    },
+    [entries, scrollToEntry, selectableViewModes, setHomeViewMode],
+  );
 
   const filteredEntries = useMemo(() => {
     if (
@@ -339,22 +447,13 @@ export default function TimelineScreen() {
           },
         ]}
       >
-        {isLoading ? null : (
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 80 },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header Row */}
+        <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
           <View style={styles.headerRow}>
             <TouchableOpacity onPress={openDrawer} style={styles.menuButton} accessibilityRole="button" accessibilityLabel="Open diary menu">
               <Ionicons name="menu-outline" size={26} color={theme.colors.text} />
             </TouchableOpacity>
 
             <View style={styles.headerControls}>
-            {/* Home view switcher */}
             <View
               style={[
                 styles.switcherWrap,
@@ -383,6 +482,16 @@ export default function TimelineScreen() {
                     size={16}
                     color={viewModeIndex === idx ? "#fff" : theme.colors.textSecondary}
                   />
+                  <Text
+                    preset="caption"
+                    style={[
+                      styles.switcherText,
+                      { color: viewModeIndex === idx ? "#fff" : theme.colors.textSecondary },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {label}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -441,7 +550,20 @@ export default function TimelineScreen() {
               },
             ]}
           />}
-
+        </View>
+        {isLoading ? null : (
+        <ScrollView
+          ref={scrollRef}
+          onScroll={(event) => {
+            scrollOffsetY.current = event.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: insets.bottom + 80 },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
           {/* {onThisDay.length > 0 && (
             <View style={[styles.memoryBanner, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <Text preset="label" color="text">On this day</Text>
@@ -508,7 +630,7 @@ export default function TimelineScreen() {
                     <Ionicons name={isMonthCollapsed ? "chevron-forward" : "chevron-down"} size={15} color={theme.colors.textSecondary} />
                   </TouchableOpacity>
                 )}
-              {!isYearCollapsed && !isMonthCollapsed && <View style={[styles.dateGroup, !isDateVisible && styles.flatDateGroup]}>
+              {!isYearCollapsed && !isMonthCollapsed && <View style={[styles.dateGroup, !isDateVisible && styles.flatDateGroup]} onLayout={(event) => handleDateGroupLayout(date, event.nativeEvent.layout.y)}>
                 {isDateVisible && <TouchableOpacity
                   onPress={() => setCollapsedDates((current) => {
                     const next = new Set(current);
@@ -535,15 +657,26 @@ export default function TimelineScreen() {
                 </TouchableOpacity>}
                 {(!isDateVisible || !collapsedDates.has(date)) && dateEntries.map((entry) => {
               return (
-                <DiaryEntryView
+                <View
                   key={entry.id}
-                  entry={entry}
-                  mode={viewMode}
-                  onPress={async () => {
-                    if (entry.isLockbox && !(await appLockService.authenticate())) return;
-                    router.push(`/entry/${entry.id}`);
+                  collapsable={false}
+                  ref={(node) => {
+                    if (node) entryRefs.current.set(entry.id, node);
+                    else entryRefs.current.delete(entry.id);
                   }}
-                />
+                  onLayout={(event) => handleEntryLayout(entry.id, entry.date, event.nativeEvent.layout.y)}
+                >
+                  <DiaryEntryView
+                    entry={entry}
+                    mode={viewMode}
+                    onPress={async () => {
+                      if (entry.isLockbox && !(await appLockService.authenticate())) return;
+                      router.push(`/entry/${entry.id}`);
+                    }}
+                    onAddReflection={viewMode === "timeline" ? handleAddReflection : undefined}
+                    onReflectionSummaryPress={viewMode === "timeline" ? undefined : handleReflectionSummaryPress}
+                  />
+                </View>
               );
                 })}
               </View>}
@@ -582,8 +715,14 @@ const styles = StyleSheet.create({
   contentPane: {
     flex: 1,
   },
+  fixedHeader: {
+    zIndex: 30,
+    elevation: 30,
+    paddingHorizontal: 20,
+  },
   scrollContent: {
     paddingHorizontal: 20,
+    paddingTop: 4,
   },
   headerRow: {
     flexDirection: "row",
@@ -603,15 +742,17 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   switcherBtn: {
-    width: 34,
+    minWidth: 82,
     height: 30,
+    flexDirection: "row",
+    gap: 5,
+    paddingHorizontal: 10,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
   },
   switcherText: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   searchInput: {
     height: 44,

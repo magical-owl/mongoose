@@ -31,6 +31,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@shared/components/Text';
+import { Modal } from '@shared/components/Modal';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { MarkdownText } from '@shared/components/MarkdownText';
@@ -79,7 +80,7 @@ export default function EntryDetailScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { entries, saveDiaryEntry, deleteDiaryEntry } = useDiary();
+  const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection } = useDiary();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
 
@@ -107,7 +108,10 @@ export default function EntryDetailScreen() {
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showFormattingTools, setShowFormattingTools] = useState(false);
   const [showCompanionPicker, setShowCompanionPicker] = useState(false);
+  const [showReflections, setShowReflections] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [reflectionText, setReflectionText] = useState('');
+  const [isSavingReflection, setIsSavingReflection] = useState(false);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = editContent
@@ -235,6 +239,37 @@ export default function EntryDetailScreen() {
     ]);
   };
 
+  const handleAddReflection = async () => {
+    if (!entry) return;
+    const trimmed = reflectionText.trim();
+    if (!trimmed) return;
+    setIsSavingReflection(true);
+    const result = await addReflection(entry.id, trimmed);
+    setIsSavingReflection(false);
+    if (result.success) {
+      setEntry(result.data);
+      setReflectionText('');
+    } else {
+      Alert.alert('Reflection not saved', result.error.message);
+    }
+  };
+
+  const handleDeleteReflection = (reflectionId: string) => {
+    if (!entry) return;
+    Alert.alert('Delete reflection?', 'This reflection will be removed from the entry.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          const result = await deleteReflection(entry.id, reflectionId);
+          if (result.success) setEntry(result.data);
+          else Alert.alert('Reflection not deleted', result.error.message);
+        },
+      },
+    ]);
+  };
+
   if (!entry) {
     return (
       <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
@@ -341,7 +376,7 @@ export default function EntryDetailScreen() {
             styles.scrollContent,
             {
               paddingHorizontal: theme.spacing.lg,
-              paddingBottom: (isEditing ? TOOLBAR_H : 0) + theme.spacing.xl,
+              paddingBottom: TOOLBAR_H + theme.spacing.xl,
             },
           ]}
           showsVerticalScrollIndicator={false}
@@ -432,6 +467,40 @@ export default function EntryDetailScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {!isEditing && (
+        <View
+          style={[
+            styles.floatingBar,
+            {
+              bottom: 0,
+              backgroundColor: theme.colors.background,
+              borderTopColor: theme.colors.border,
+              paddingBottom: insets.bottom,
+            },
+          ]}
+        >
+          <View style={styles.toolbarLeft}>
+            <TouchableOpacity
+              style={styles.viewFooterButton}
+              onPress={() => setShowReflections(true)}
+              activeOpacity={0.6}
+              accessibilityLabel={`Open reflections. ${entry.reflections.length} saved.`}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="comment-text-outline" size={21} color={theme.colors.tint} />
+              <Text preset="caption" color="text" style={styles.viewFooterLabel}>
+                Reflections
+              </Text>
+              {entry.reflections.length > 0 ? (
+                <View style={[styles.reflectionCountBadge, { backgroundColor: theme.colors.tint }]}>
+                  <Text preset="caption" style={styles.reflectionCountText}>{entry.reflections.length}</Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* ── Floating bottom toolbar (edit mode only) ────────────────────── */}
       {isEditing && (
@@ -525,6 +594,70 @@ export default function EntryDetailScreen() {
         selectedCompanion={editCompanion}
         onSelectCompanion={setEditCompanion}
       />
+      <Modal
+        visible={showReflections}
+        onDismiss={() => setShowReflections(false)}
+        title="Reflections"
+        accessibilityLabel="Entry reflections"
+        scrollable={false}
+      >
+        <View style={styles.reflectionsModalBody}>
+          <ScrollView style={styles.reflectionsScroll} contentContainerStyle={styles.reflectionsScrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            {entry.reflections.length === 0 ? (
+              <Text preset="bodySmall" color="textSecondary" style={styles.reflectionsEmpty}>No reflections yet.</Text>
+            ) : (
+              <View style={styles.reflectionsList}>
+            {entry.reflections.map((reflection) => (
+              <View key={reflection.id} style={styles.reflectionItem}>
+                <View style={styles.reflectionHeader}>
+                  <Text preset="caption" color="textTertiary">
+                    {new Date(reflection.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  </Text>
+                  <TouchableOpacity onPress={() => handleDeleteReflection(reflection.id)} accessibilityRole="button" accessibilityLabel="Delete reflection">
+                    <Text preset="caption" color="textSecondary">Delete</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text preset="bodySmall" color="text" style={styles.reflectionText}>{reflection.text}</Text>
+              </View>
+            ))}
+              </View>
+            )}
+          </ScrollView>
+          <View style={[styles.reflectionInputBox, { minHeight: Math.max(38, theme.fontSizes.sm * 2.7), borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+          <NativeTextInput
+            value={reflectionText}
+            onChangeText={setReflectionText}
+            placeholder="Add a reflection..."
+            placeholderTextColor={theme.colors.textSecondary}
+            style={[
+              styles.reflectionInput,
+              {
+                height: Math.max(36, theme.fontSizes.sm * 2.5),
+                color: theme.colors.text,
+                fontFamily: theme.fontFamily,
+                fontSize: theme.fontSizes.sm,
+                lineHeight: theme.fontSizes.sm * 1.35,
+              },
+            ]}
+            returnKeyType="send"
+            onSubmitEditing={handleAddReflection}
+            accessibilityLabel="Reflection text"
+          />
+          <TouchableOpacity
+            onPress={handleAddReflection}
+            disabled={isSavingReflection || !reflectionText.trim()}
+            style={[
+              styles.reflectionButton,
+              { backgroundColor: reflectionText.trim() && !isSavingReflection ? theme.colors.tint : 'transparent' },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Add reflection"
+          >
+            <MaterialCommunityIcons name="plus" size={18} color={reflectionText.trim() && !isSavingReflection ? '#fff' : theme.colors.textSecondary} />
+          </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       <EntryDetailsModal
         visible={showEntryDetails}
         onDismiss={() => setShowEntryDetails(false)}
@@ -589,6 +722,63 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   moodBadgeText: { fontWeight: '700' },
+  reflectionsModalBody: { maxHeight: 520 },
+  reflectionsScroll: { maxHeight: 440 },
+  reflectionsScrollContent: { paddingBottom: 12 },
+  reflectionsEmpty: { marginBottom: 12 },
+  reflectionsList: { gap: 8, marginBottom: 12 },
+  reflectionItem: {
+    paddingVertical: 3,
+  },
+  reflectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  reflectionText: { lineHeight: 20, marginTop: 4 },
+  reflectionInputBox: {
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingLeft: 10,
+    paddingRight: 4,
+  },
+  reflectionInput: {
+    flex: 1,
+    paddingVertical: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  reflectionButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewFooterButton: {
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  viewFooterLabel: { fontWeight: '700' },
+  reflectionCountBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  reflectionCountText: { color: '#fff', fontWeight: '700' },
   floatingBar: {
     position: 'absolute',
     left: 0,
