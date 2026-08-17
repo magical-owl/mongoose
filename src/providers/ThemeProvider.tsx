@@ -13,6 +13,7 @@ import { typography, fontSizes, fontWeights } from '@/theme/typography';
 import { useAppStore } from '@/stores/useAppStore';
 import { accentColors, type AccentColor } from '@/theme/accents';
 import type { FontFamily, FontScale } from '@/stores/useAppStore';
+import { colorThemes } from '@/theme/colorThemes';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -48,6 +49,7 @@ export interface ThemeColors {
 export interface Theme {
   readonly mode: ThemeMode;
   readonly accentColor: AccentColor;
+  readonly colorTheme: keyof typeof colorThemes;
   readonly isDark: boolean;
   readonly colors: ThemeColors;
   readonly spacing: typeof spacing;
@@ -59,6 +61,7 @@ export interface Theme {
   /** Update the theme mode (light / dark / system). Persisted automatically. */
   readonly setThemeMode: (mode: ThemeMode) => void;
   readonly setAccentColor: (color: AccentColor) => void;
+  readonly setColorTheme: (theme: keyof typeof colorThemes) => void;
 }
 
 function getFontScale(scale: FontScale): number {
@@ -136,7 +139,9 @@ export function ThemeProvider({
   const persistedMode = useAppStore((state) => state.themeMode);
   const persistThemeMode = useAppStore((state) => state.setThemeMode);
   const accentColor = useAppStore((state) => state.accentColor);
+  const colorTheme = useAppStore((state) => state.colorTheme);
   const persistAccentColor = useAppStore((state) => state.setAccentColor);
+  const persistColorTheme = useAppStore((state) => state.setColorTheme);
   const fontScalePreference = useAppStore((state) => state.fontScale);
   const fontFamilyPreference = useAppStore((state) => state.fontFamily);
   const mode = initialMode ?? persistedMode ?? 'dark';
@@ -146,6 +151,7 @@ export function ThemeProvider({
       ? 'light'
       : 'dark';
   const selectedAccent = accentColors[accentColor] ?? accentColors.blue;
+  const selectedColorTheme = colorThemes[colorTheme] ?? colorThemes.default;
   const fontScale = getFontScale(fontScalePreference);
   const fontFamily = getFontFamily(fontFamilyPreference);
   const scaledFontSizes = useMemo(() => ({
@@ -173,14 +179,19 @@ export function ThemeProvider({
   const setAccentColor = useCallback((newColor: AccentColor) => {
     persistAccentColor(newColor);
   }, [persistAccentColor]);
+  const setColorTheme = useCallback((newTheme: keyof typeof colorThemes) => {
+    persistColorTheme(newTheme);
+  }, [persistColorTheme]);
 
   const theme = useMemo<Theme>(
     () => ({
       mode,
-        accentColor: accentColors[accentColor] ? accentColor : 'blue',
+      accentColor: accentColors[accentColor] ? accentColor : 'blue',
+      colorTheme: colorThemes[colorTheme] ? colorTheme : 'default',
       isDark: resolvedMode === 'dark',
       colors: {
         ...(resolvedMode === 'dark' ? darkColors : lightColors),
+        ...(resolvedMode === 'dark' ? selectedColorTheme.dark : selectedColorTheme.light),
         tint: selectedAccent[resolvedMode],
         tabIconSelected: selectedAccent[resolvedMode],
       },
@@ -192,8 +203,9 @@ export function ThemeProvider({
       fontFamily,
       setThemeMode,
       setAccentColor,
+      setColorTheme,
     }),
-    [mode, resolvedMode, accentColor, selectedAccent, scaledTypography, scaledFontSizes, fontFamily, setThemeMode, setAccentColor]
+    [mode, resolvedMode, accentColor, colorTheme, selectedAccent, selectedColorTheme, scaledTypography, scaledFontSizes, fontFamily, setThemeMode, setAccentColor, setColorTheme]
   );
 
   return (

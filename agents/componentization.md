@@ -44,7 +44,8 @@ Use a typed public interface and export only the intended API. Keep feature inte
 
 Already reusable:
 
-- `DiaryEntryView`: Card, Timeline, and Feed entry presentations shared by Home and Calendar.
+- `DiaryEntryView`: Card, Timeline, and Feed entry presentations used by Home.
+- `CalendarEntryView`: Calendar-specific compact activity rows used by Calendar.
 - `DiaryDatePicker`, `EntryDetailsModal`, `StickerPickerModal`, `TemplatePickerModal`, and `CompanionPickerModal`.
 - Shared typography, modal, input, button, and feedback components.
 

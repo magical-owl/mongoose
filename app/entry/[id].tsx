@@ -391,7 +391,15 @@ export default function EntryDetailScreen() {
               >
                 {formatDisplayDate(entry.date, calendarDateFormat)}
               </Text>
-              <Text preset="h2" color="text" style={{ marginBottom: 16 }}>
+              <Text
+                preset="h1"
+                color="text"
+                style={{
+                  fontSize: theme.fontSizes.xxxl,
+                  lineHeight: theme.fontSizes.xxxl * 1.25,
+                  marginBottom: 20,
+                }}
+              >
                 {entry.title}
               </Text>
               <View style={styles.entryMetaRow}>

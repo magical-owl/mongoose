@@ -55,7 +55,13 @@ Hidden or shelved routes:
 
 ### Color and Theme
 
-The default theme is dark with an accent color. Light and system modes are supported.
+The default theme is dark with an accent color. Light and system modes are supported. Appearance has three independent controls:
+
+- **Theme mode:** Light, Dark, or System controls contrast and operating-system preference.
+- **Color theme:** Default, Amber Night, Sage, or Rosewood changes the background, surface, border, and text palette while preserving contrast in both light and dark modes.
+- **Accent color:** The existing accent choices control active navigation, buttons, highlights, selected calendar dates, and mood accents.
+
+The warm reference design shown in the Home, Calendar, and Insights screenshots is represented by **Amber Night** in dark mode, paired with a gold/orange accent.
 
 Use semantic tokens rather than hardcoded colors:
 
@@ -150,7 +156,7 @@ Use the existing Ionicons and Material Community Icons style: simple outline ico
 - Selected date has a strong accent state with readable contrast.
 - Entry list below the grid is grouped under the selected date.
 
-**Entry presentation:** The selected-date entry list uses the active Home view selection: Card, Timeline, or Feed. This is a shared component contract, not a separate Calendar-only visual language.
+**Entry presentation:** The selected-date entry list uses a Calendar-specific compact activity row: accent activity rail, title, two-line preview, diary-entry metadata, optional tags, and chevron. It intentionally has a separate visual language from Home Card, Timeline, and Feed modes.
 
 **States:** no entries on selected date, month with no writing days, selected day with entries, month picker open, today selected, swipe month navigation.
 
@@ -229,7 +235,7 @@ The route uses the same screen for read mode and edit mode.
 
 **List rows:**
 
-- Appearance: dark/light/system and accent color.
+- Appearance: dark/light/system, color theme, and accent color.
 - Display: date format, first day of week, global font size, font style, and Home view availability toggles.
 - AI Companion: choose companion.
 - Profile Details: name, email, bio.
@@ -290,7 +296,7 @@ Settings → Security & Privacy → enable biometric lock or opt into remote AI 
 - Keep interactive states as variants, not separate unlinked drawings.
 - Annotate scrolling regions, safe areas, keyboard behavior, and bottom-sheet boundaries.
 - Annotate every tap target with action and destination.
-- Include light, dark, and at least one alternate accent theme.
+- Include light, dark, and at least one alternate color theme and accent theme.
 - Include Small, Default, and Large font-size examples for text-heavy screens.
 - Include empty, loading, error, locked, selected, and destructive states.
 - Do not invent automated mood analysis, social sharing, archive navigation, or subscription purchase behavior that is not part of the current workflow.

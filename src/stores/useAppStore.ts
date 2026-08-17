@@ -11,6 +11,7 @@ import { createSafeMMKV } from '@/database/mmkvSafe';
 import type { ThemeMode } from '@/providers/ThemeProvider';
 import type { CompanionType } from '@/features/diary/domain/Companion';
 import type { AccentColor } from '@/theme/accents';
+import type { ColorTheme } from '@/theme/colorThemes';
 
 const storage = createSafeMMKV({ id: 'app-store' });
 
@@ -36,6 +37,7 @@ export interface AppState {
   // State
   themeMode: ThemeMode;
   accentColor: AccentColor;
+  colorTheme: ColorTheme;
   onboardingStatus: OnboardingStatus;
   sessionState: SessionState;
   isOnboarded: boolean;
@@ -54,6 +56,7 @@ export interface AppState {
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
   setAccentColor: (color: AccentColor) => void;
+  setColorTheme: (theme: ColorTheme) => void;
   setOnboardingStatus: (status: OnboardingStatus) => void;
   setSessionState: (state: SessionState) => void;
   setSelectedCalendarDate: (date: string | null) => void;
@@ -74,6 +77,7 @@ const initialState: Pick<
   AppState,
   | 'themeMode'
   | 'accentColor'
+  | 'colorTheme'
   | 'onboardingStatus'
   | 'sessionState'
   | 'isOnboarded'
@@ -91,6 +95,7 @@ const initialState: Pick<
 > = {
   themeMode: 'dark',
   accentColor: 'blue',
+  colorTheme: 'default',
   onboardingStatus: 'not_started',
   sessionState: 'idle',
   isOnboarded: false,
@@ -118,6 +123,7 @@ export const useAppStore = create<AppState>()(
 
       setThemeMode: (themeMode: ThemeMode) => set({ themeMode }),
       setAccentColor: (accentColor: AccentColor) => set({ accentColor }),
+      setColorTheme: (colorTheme: ColorTheme) => set({ colorTheme }),
 
       setSelectedCalendarDate: (selectedCalendarDate: string | null) => set({ selectedCalendarDate }),
 
@@ -158,6 +164,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         themeMode: state.themeMode,
         accentColor: state.accentColor,
+        colorTheme: state.colorTheme,
         onboardingStatus: state.onboardingStatus,
         isOnboarded: state.isOnboarded,
         selectedCompanion: state.selectedCompanion,

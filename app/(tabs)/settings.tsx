@@ -33,6 +33,7 @@ import { dataDeletionService } from '@/services/DataDeletionService';
 import { diaryBackupService } from '@/services/DiaryBackupService';
 import { useJournalExtras } from '@/features/journal/hooks/useJournalExtras';
 import { accentColors, type AccentColor } from '@/theme/accents';
+import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
 
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -318,6 +319,42 @@ export default function SettingsScreen() {
               );
             })}
           </View>
+        </View>
+
+        <View style={{ paddingTop: 20 }}>
+          <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
+            COLOR THEME
+          </Text>
+          <View style={styles.themeOptions}>
+            {(Object.keys(colorThemes) as ColorTheme[]).map((colorThemeKey) => {
+              const active = theme.colorTheme === colorThemeKey;
+              return (
+                <TouchableOpacity
+                  key={colorThemeKey}
+                  onPress={() => theme.setColorTheme(colorThemeKey)}
+                  style={[
+                    styles.themeOption,
+                    {
+                      backgroundColor: theme.colors.surface,
+                      borderColor: active ? theme.colors.tint : theme.colors.border,
+                    },
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={`${colorThemes[colorThemeKey].label} color theme${active ? ', selected' : ''}`}
+                >
+                  <View style={[styles.themePreview, { backgroundColor: colorThemes[colorThemeKey].preview }]} />
+                  <Text preset="bodySmall" color={active ? 'tint' : 'text'} style={styles.themeOptionLabel}>
+                    {colorThemes[colorThemeKey].label}
+                  </Text>
+                  {active ? <Icon name="checkmark" size={18} color="tint" /> : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <Text preset="caption" color="textSecondary" style={{ marginTop: 8 }}>
+            Choose the overall surface and text palette. Accent color remains independent.
+          </Text>
         </View>
 
         <View style={{ paddingTop: 20 }}>
@@ -631,6 +668,27 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
+  },
+  themeOptions: {
+    gap: 8,
+  },
+  themeOption: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  themePreview: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  themeOptionLabel: {
+    flex: 1,
+    fontWeight: '600',
   },
   arrow: {
     fontSize: 20,

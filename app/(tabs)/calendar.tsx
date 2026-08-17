@@ -15,7 +15,7 @@ import { Text } from '@shared/components/Text';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useAppStore } from '@/stores/useAppStore';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
-import { DiaryEntryView } from '@/features/diary/components/DiaryEntryView';
+import { CalendarEntryView } from '@/features/diary/components/CalendarEntryView';
 import { appLockService } from '@/services/AppLockService';
 
 export default function CalendarScreen() {
@@ -26,9 +26,6 @@ export default function CalendarScreen() {
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const calendarFirstDay = useAppStore((state) => state.calendarFirstDay);
-  const homeViewMode = useAppStore((state) => state.homeViewMode);
-  const homeViewModes = useAppStore((state) => state.homeViewModes);
-  const calendarViewMode = homeViewModes[homeViewMode] ? homeViewMode : 'detailed';
 
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [selectedDateStr, setSelectedDateStr] = useState<string>(() => {
@@ -267,12 +264,12 @@ export default function CalendarScreen() {
               <Text preset="label" style={[styles.dateHeading, { color: theme.colors.text }]}>
                 {formatDisplayDate(selectedDateStr, calendarDateFormat)}
               </Text>
-              {selectedDayEntries.map((item) => {
+              {selectedDayEntries.map((item, index) => {
               return (
-                <DiaryEntryView
+                <CalendarEntryView
                   key={item.id}
                   entry={item}
-                  mode={calendarViewMode}
+                  position={index}
                   onPress={async () => {
                     if (item.isLockbox && !(await appLockService.authenticate())) return;
                     router.push(`/entry/${item.id}`);

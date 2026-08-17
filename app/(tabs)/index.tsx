@@ -237,7 +237,7 @@ export default function TimelineScreen() {
                       accessibilityRole="radio"
                       accessibilityState={{ selected: mode === hierarchyMode }}
                     >
-                      <Text preset="caption" color={mode === hierarchyMode ? "tint" : "text"} style={styles.hierarchyMenuLabel}>{hierarchyModeLabel(mode)}</Text>
+                      <Text preset="caption" color={mode === hierarchyMode ? "tint" : "text"} style={styles.hierarchyMenuLabel} numberOfLines={1}>{hierarchyModeLabel(mode)}</Text>
                       {mode === hierarchyMode && <Ionicons name="checkmark" size={16} color={theme.colors.tint} style={styles.hierarchyMenuCheck} />}
                     </TouchableOpacity>
                   ))}
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 40,
     right: 0,
-    width: 154,
+    width: 190,
     borderWidth: 1,
     borderRadius: 8,
     padding: 4,
