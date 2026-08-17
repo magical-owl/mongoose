@@ -17,6 +17,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   ScrollView,
+  LayoutAnimation,
   Alert,
   TouchableOpacity,
   Platform,
@@ -43,6 +44,7 @@ import { CompanionPickerModal } from '@/features/diary/components/CompanionPicke
 import { Template } from '@/features/diary/domain/Template';
 import { generateUUID } from '@/shared/utils/uuid';
 import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
+import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { useAppStore } from '@/stores/useAppStore';
@@ -82,7 +84,7 @@ export default function EntryDetailScreen() {
   const [editContent, setEditContent] = useState('');
   const [editDate, setEditDate] = useState(new Date());
   const [editStickers, setEditStickers] = useState<PlacedSticker[]>([]);
-  const [editMoodWeather, setEditMoodWeather] = useState<ManualMoodWeather>('calm');
+  const [editMoodWeather, setEditMoodWeather] = useState<ManualMoodWeather>('neutral');
   const [editMood, setEditMood] = useState<ManualMood>('neutral');
   const [editWritingMode, setEditWritingMode] = useState<WritingMode>('free-write');
   const [editLocation, setEditLocation] = useState('');
@@ -98,6 +100,7 @@ export default function EntryDetailScreen() {
   const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [showFormattingTools, setShowFormattingTools] = useState(false);
   const [showCompanionPicker, setShowCompanionPicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -356,7 +359,7 @@ export default function EntryDetailScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Open entry details"
                 >
-                  <MaterialCommunityIcons name="dots-horizontal" size={20} color={theme.colors.textSecondary} />
+                  <MaterialCommunityIcons name="information-outline" size={20} color={theme.colors.textSecondary} />
                 </TouchableOpacity>
               </View>
               <DiaryDatePicker value={editDate} onChange={setEditDate} maximumDate={new Date()} />
@@ -370,6 +373,7 @@ export default function EntryDetailScreen() {
                 returnKeyType="next"
                 accessibilityLabel="Entry title"
               />
+              <ManualMoodPicker value={editMood} onChange={setEditMood} />
               <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
               <RichTextEditor
                 ref={editorRef}
@@ -429,26 +433,29 @@ export default function EntryDetailScreen() {
             },
           ]}
         >
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.toolbarLeft}
-            keyboardShouldPersistTaps="always"
-          >
-            {FORMAT_ITEMS.map((item) => (
-              <TouchableOpacity
-                key={item.kind}
-                style={styles.toolbarIcon}
-                onPressIn={() => editorRef.current?.applyFormat(item.kind)}
-                activeOpacity={0.6}
-                accessibilityLabel={item.kind}
-                accessibilityRole="button"
-              >
-                <MaterialCommunityIcons name={item.icon as any} size={22} color={theme.colors.text} />
-              </TouchableOpacity>
-            ))}
+          <View style={styles.toolbarLeft}>
+            <TouchableOpacity
+              style={[styles.toolbarIcon, showFormattingTools && { backgroundColor: theme.colors.tint + '18' }]}
+              onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                setShowFormattingTools((current) => !current);
+              }}
+              activeOpacity={0.6}
+              accessibilityLabel={showFormattingTools ? 'Hide text formatting tools' : 'Show text formatting tools'}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="format-text" size={22} color={showFormattingTools ? theme.colors.tint : theme.colors.text} />
+            </TouchableOpacity>
+            {showFormattingTools && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" style={styles.formattingDrawer}>
+                {FORMAT_ITEMS.map((item) => (
+                  <TouchableOpacity key={item.kind} style={styles.toolbarIcon} onPressIn={() => editorRef.current?.applyFormat(item.kind)} activeOpacity={0.6} accessibilityLabel={item.kind} accessibilityRole="button">
+                    <MaterialCommunityIcons name={item.icon as any} size={22} color={theme.colors.text} />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
             <View style={[styles.barDivider, { backgroundColor: theme.colors.border }]} />
-            {/* Template button */}
             <TouchableOpacity
               style={styles.toolbarIcon}
               onPress={() => setShowTemplatePicker(true)}
@@ -456,7 +463,7 @@ export default function EntryDetailScreen() {
               accessibilityLabel="Choose writing template"
               accessibilityRole="button"
             >
-              <MaterialCommunityIcons name="file-document-outline" size={22} color="#1E90FF" />
+              <MaterialCommunityIcons name="file-document-edit-outline" size={22} color={theme.colors.tint} />
             </TouchableOpacity>
             {/* Sticker button */}
             <TouchableOpacity
@@ -466,9 +473,9 @@ export default function EntryDetailScreen() {
               accessibilityLabel={`Add sticker. ${editStickers.length} placed.`}
               accessibilityRole="button"
             >
-              <MaterialCommunityIcons name="sticker-emoji" size={22} color="#FF6B6B" />
+              <MaterialCommunityIcons name="sticker-outline" size={22} color={theme.colors.tint} />
             </TouchableOpacity>
-          </ScrollView>
+          </View>
 
           {/* Right: word count */}
           <View style={styles.toolbarRight}>
@@ -544,7 +551,7 @@ const styles = StyleSheet.create({
   },
   headerActions: { flexDirection: 'row', alignItems: 'center' },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  entryDetailsToggleRow: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 4 },
+  entryDetailsToggleRow: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 8, marginBottom: 4 },
   entryFavoriteToggle: {
     width: 42,
     height: 34,
@@ -579,10 +586,12 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   toolbarLeft: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
   },
+  formattingDrawer: { flex: 1 },
   toolbarIcon: {
     width: 38,
     height: 38,

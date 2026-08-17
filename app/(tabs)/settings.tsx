@@ -27,7 +27,7 @@ import { CompanionPickerModal } from '@/features/diary/components/CompanionPicke
 import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
-import { useAppStore, type CalendarDateFormat, type FontFamily, type FontScale, type HomeViewMode } from '@/stores/useAppStore';
+import { useAppStore, type CalendarDateFormat, type FontFamily, type FontScale, type HomeViewMode, type TimeFormat } from '@/stores/useAppStore';
 import { appLockService } from '@/services/AppLockService';
 import { dataDeletionService } from '@/services/DataDeletionService';
 import { diaryBackupService } from '@/services/DiaryBackupService';
@@ -43,11 +43,13 @@ export default function SettingsScreen() {
   const remoteAiConsent = useAppStore((state) => state.remoteAiConsent);
   const setRemoteAiConsent = useAppStore((state) => state.setRemoteAiConsent);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
+  const timeFormat = useAppStore((state) => state.timeFormat);
   const calendarFirstDay = useAppStore((state) => state.calendarFirstDay);
   const fontScale = useAppStore((state) => state.fontScale);
   const fontFamily = useAppStore((state) => state.fontFamily);
   const homeViewModes = useAppStore((state) => state.homeViewModes);
   const setCalendarDateFormat = useAppStore((state) => state.setCalendarDateFormat);
+  const setTimeFormat = useAppStore((state) => state.setTimeFormat);
   const setCalendarFirstDay = useAppStore((state) => state.setCalendarFirstDay);
   const setFontScale = useAppStore((state) => state.setFontScale);
   const setFontFamily = useAppStore((state) => state.setFontFamily);
@@ -417,6 +419,21 @@ export default function SettingsScreen() {
               accessibilityState={{ selected: calendarFirstDay === value }}
             >
               <Text preset="bodySmall" color={calendarFirstDay === value ? 'tint' : 'text'}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>TIME FORMAT</Text>
+        <View style={styles.displayOptions}>
+          {([['24-hour', '24-hour'], ['12-hour', '12-hour (AM/PM)']] as const satisfies (readonly [TimeFormat, string])[]).map(([value, label]) => (
+            <TouchableOpacity
+              key={value}
+              onPress={() => setTimeFormat(value)}
+              style={[styles.displayOption, { borderColor: timeFormat === value ? theme.colors.tint : theme.colors.border, backgroundColor: timeFormat === value ? theme.colors.tint + '18' : theme.colors.surface }]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: timeFormat === value }}
+            >
+              <Text preset="bodySmall" color={timeFormat === value ? 'tint' : 'text'}>{label}</Text>
             </TouchableOpacity>
           ))}
         </View>

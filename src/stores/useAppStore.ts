@@ -26,6 +26,7 @@ export type OnboardingStatus = 'not_started' | 'in_progress' | 'completed';
 export type SessionState = 'idle' | 'active' | 'expired';
 
 export type CalendarDateFormat = 'month-day-year' | 'day-month-year' | 'year-month-day';
+export type TimeFormat = '24-hour' | '12-hour';
 export type FontScale = 'small' | 'default' | 'large';
 export type FontFamily = 'system' | 'serif' | 'monospace';
 export type HomeViewMode = 'detailed' | 'timeline' | 'feed';
@@ -47,6 +48,7 @@ export interface AppState {
   isLocked: boolean;
   remoteAiConsent: boolean;
   calendarDateFormat: CalendarDateFormat;
+  timeFormat: TimeFormat;
   calendarFirstDay: 0 | 1;
   fontScale: FontScale;
   fontFamily: FontFamily;
@@ -65,6 +67,7 @@ export interface AppState {
   setLocked: (locked: boolean) => void;
   setRemoteAiConsent: (consent: boolean) => void;
   setCalendarDateFormat: (format: CalendarDateFormat) => void;
+  setTimeFormat: (format: TimeFormat) => void;
   setCalendarFirstDay: (day: 0 | 1) => void;
   setFontScale: (scale: FontScale) => void;
   setFontFamily: (family: FontFamily) => void;
@@ -87,6 +90,7 @@ const initialState: Pick<
   | 'isLocked'
   | 'remoteAiConsent'
   | 'calendarDateFormat'
+  | 'timeFormat'
   | 'calendarFirstDay'
   | 'fontScale'
   | 'fontFamily'
@@ -105,6 +109,7 @@ const initialState: Pick<
   isLocked: false,
   remoteAiConsent: false,
   calendarDateFormat: 'month-day-year',
+  timeFormat: '24-hour',
   calendarFirstDay: 0,
   fontScale: 'default',
   fontFamily: 'system',
@@ -136,6 +141,7 @@ export const useAppStore = create<AppState>()(
       setRemoteAiConsent: (remoteAiConsent: boolean) => set({ remoteAiConsent }),
 
       setCalendarDateFormat: (calendarDateFormat: CalendarDateFormat) => set({ calendarDateFormat }),
+      setTimeFormat: (timeFormat: TimeFormat) => set({ timeFormat }),
       setCalendarFirstDay: (calendarFirstDay: 0 | 1) => set({ calendarFirstDay }),
       setFontScale: (fontScale: FontScale) => set({ fontScale }),
       setFontFamily: (fontFamily: FontFamily) => set({ fontFamily }),
@@ -171,6 +177,7 @@ export const useAppStore = create<AppState>()(
         biometricLockEnabled: state.biometricLockEnabled,
         remoteAiConsent: state.remoteAiConsent,
         calendarDateFormat: state.calendarDateFormat,
+        timeFormat: state.timeFormat,
         calendarFirstDay: state.calendarFirstDay,
         fontScale: state.fontScale,
         fontFamily: state.fontFamily,

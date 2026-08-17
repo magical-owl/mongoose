@@ -5,6 +5,9 @@ import { Text } from '@shared/components/Text';
 import { stripHtml } from '@shared/utils/html';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { diaryEntryListTitle } from './diaryEntryTypography';
+import { formatDisplayTime } from '@shared/utils/timeFormat';
+import { useAppStore } from '@/stores/useAppStore';
+import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 
 interface CalendarEntryViewProps {
   readonly entry: DiaryEntry;
@@ -12,15 +15,11 @@ interface CalendarEntryViewProps {
   readonly onPress: () => void | Promise<void>;
 }
 
-function formatEntryTime(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-}
-
 export function CalendarEntryView({ entry, position, onPress }: CalendarEntryViewProps): React.JSX.Element {
   const theme = useTheme();
-  const entryTime = formatEntryTime(entry.createdAt);
+  const timeFormat = useAppStore((state) => state.timeFormat);
+  const entryTime = formatDisplayTime(entry.createdAt, timeFormat);
+  const moodColor = getManualMoodColor(entry.manualMood, theme.colors);
 
   return (
     <TouchableOpacity
@@ -39,15 +38,14 @@ export function CalendarEntryView({ entry, position, onPress }: CalendarEntryVie
       <View style={styles.contentColumn}>
         <View style={styles.headerRow}>
           <Text preset="body" color="text" style={styles.title} numberOfLines={1}>{entry.title}</Text>
+          {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.entryTime}>{entryTime}</Text> : null}
+          {entry.manualMood ? <Text preset="caption" numberOfLines={1} style={[styles.mood, { color: moodColor }]}>{entry.manualMood.charAt(0).toUpperCase() + entry.manualMood.slice(1)}</Text> : null}
           <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
         </View>
         <Text preset="caption" color="textSecondary" numberOfLines={2} style={styles.preview}>
           {stripHtml(entry.content)}
         </Text>
-        <View style={styles.metaRow}>
-          {entryTime ? <Text preset="caption" color="textTertiary">{entryTime}</Text> : null}
-          {entry.tags.length > 0 ? <Text preset="caption" color="textTertiary" numberOfLines={1}>{entry.tags.map((tag) => `#${tag}`).join(' ')}</Text> : null}
-        </View>
+        {entry.tags.length > 0 ? <View style={styles.metaRow}><Text preset="caption" color="textTertiary" numberOfLines={1}>{entry.tags.map((tag) => `#${tag}`).join(' ')}</Text></View> : null}
       </View>
     </TouchableOpacity>
   );
@@ -58,6 +56,8 @@ const styles = StyleSheet.create({
   markerColumn: { width: 42, alignItems: 'center', position: 'relative' },
   marker: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   markerNumber: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
+  entryTime: { flexShrink: 0 },
+  mood: { flexShrink: 1, fontWeight: '600' },
   rail: { position: 'absolute', top: 38, bottom: -14, width: 1 },
   contentColumn: { flex: 1, paddingLeft: 8, paddingRight: 2 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },

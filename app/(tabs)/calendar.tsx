@@ -17,6 +17,8 @@ import { useAppStore } from '@/stores/useAppStore';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { CalendarEntryView } from '@/features/diary/components/CalendarEntryView';
 import { appLockService } from '@/services/AppLockService';
+import { getManualMoodColor } from '@/features/diary/domain/moodColors';
+import type { ManualMood } from '@/features/diary/domain/DiaryEntry';
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -112,10 +114,7 @@ export default function CalendarScreen() {
   const monthFavorites = monthEntries.filter((entry) => entry.isFavorite).length;
 
   const moodColor = (mood: string) => {
-    if (mood === 'happy' || mood === 'excited' || mood === 'grateful') return theme.colors.success;
-    if (mood === 'sad' || mood === 'tired') return theme.colors.textSecondary;
-    if (mood === 'anxious' || mood === 'angry') return theme.colors.warning;
-    return theme.colors.tint;
+    return getManualMoodColor(mood as ManualMood, theme.colors);
   };
 
   return (

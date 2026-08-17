@@ -30,7 +30,7 @@ export class DiaryDraftService {
       const parsed: unknown = JSON.parse(raw);
       if (!isDraft(parsed)) return null;
       const legacyDraft = parsed as Partial<DiaryDraft>;
-      return { manualMood: 'neutral', manualMoodWeather: 'calm', writingMode: 'free-write', sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' }, isLockbox: false, ...legacyDraft } as DiaryDraft;
+      return { manualMood: 'neutral', manualMoodWeather: 'neutral', writingMode: 'free-write', sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' }, isLockbox: false, ...legacyDraft } as DiaryDraft;
     } catch {
       return null;
     }

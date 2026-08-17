@@ -3,7 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { Modal } from '@shared/components/Modal';
-import type { ManualMood, ManualMoodWeather, SensoryDetails, WritingMode } from '@/features/diary/domain/DiaryEntry';
+import { MANUAL_MOOD_OPTIONS, MANUAL_MOOD_WEATHER_OPTIONS, type ManualMood, type ManualMoodWeather, type SensoryDetails, type WritingMode } from '@/features/diary/domain/DiaryEntry';
+import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 
 export interface EntryDetailsValues {
   manualMoodWeather: ManualMoodWeather;
@@ -22,8 +23,8 @@ interface Props {
   onChange: (values: Partial<EntryDetailsValues>) => void;
 }
 
-const weather: ManualMoodWeather[] = ['sunny', 'cloudy', 'stormy', 'foggy', 'windy', 'calm'];
-const moods: ManualMood[] = ['neutral', 'happy', 'calm', 'sad', 'anxious', 'angry', 'grateful', 'excited', 'tired'];
+const weather: readonly ManualMoodWeather[] = MANUAL_MOOD_WEATHER_OPTIONS;
+const moods: readonly ManualMood[] = MANUAL_MOOD_OPTIONS;
 
 export function EntryDetailsModal({ visible, onDismiss, values, onChange }: Props) {
   const theme = useTheme();
@@ -39,7 +40,7 @@ export function EntryDetailsModal({ visible, onDismiss, values, onChange }: Prop
             </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-            {moods.map((item) => <TouchableOpacity key={item} onPress={() => onChange({ manualMood: item })} style={[styles.choice, { borderColor: values.manualMood === item ? theme.colors.tint : theme.colors.border, backgroundColor: values.manualMood === item ? theme.colors.tint + '20' : 'transparent' }]}><Text preset="caption" color="text">{item}</Text></TouchableOpacity>)}
+            {moods.map((item) => { const color = getManualMoodColor(item, theme.colors); const moodLabel = item.charAt(0).toUpperCase() + item.slice(1); return <TouchableOpacity key={item} onPress={() => onChange({ manualMood: item })} style={[styles.choice, { borderColor: values.manualMood === item ? color : theme.colors.border, backgroundColor: values.manualMood === item ? color + '20' : 'transparent' }]}><Text preset="caption" style={{ color }}>{moodLabel}</Text></TouchableOpacity>; })}
           </ScrollView>
           <View style={styles.labelRow}>
             <Text preset="caption" color="textSecondary" style={styles.label}>MOOD WEATHER</Text>
@@ -48,7 +49,7 @@ export function EntryDetailsModal({ visible, onDismiss, values, onChange }: Prop
             </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-            {weather.map((item) => <TouchableOpacity key={item} onPress={() => onChange({ manualMoodWeather: item })} style={[styles.choice, { borderColor: values.manualMoodWeather === item ? theme.colors.tint : theme.colors.border, backgroundColor: values.manualMoodWeather === item ? theme.colors.tint + '20' : 'transparent' }]}><Text preset="caption" color="text">{item}</Text></TouchableOpacity>)}
+            {weather.map((item) => { const weatherLabel = item.charAt(0).toUpperCase() + item.slice(1); return <TouchableOpacity key={item} onPress={() => onChange({ manualMoodWeather: item })} style={[styles.choice, { borderColor: values.manualMoodWeather === item ? theme.colors.tint : theme.colors.border, backgroundColor: values.manualMoodWeather === item ? theme.colors.tint + '20' : 'transparent' }]}><Text preset="caption" color="text">{weatherLabel}</Text></TouchableOpacity>; })}
           </ScrollView>
 
         </ScrollView>
