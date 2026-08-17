@@ -53,6 +53,13 @@ function hierarchyModeLabel(mode: HierarchyMode): string {
   return "Year / Month / Date";
 }
 
+function capitalizeFilterLabel(value: string): string {
+  return value
+    .split(/(\s+|-)/)
+    .map((part) => /^[A-Za-z]/.test(part) ? `${part.charAt(0).toUpperCase()}${part.slice(1)}` : part)
+    .join("");
+}
+
 export default function TimelineScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -401,19 +408,19 @@ export default function TimelineScreen() {
                   <Fragment key={kind}>
                     <TouchableOpacity onPress={() => setExpandedFilter(expandedFilter === kind ? null : kind)} style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel={`Filter by ${kind}`}>
                       <Ionicons name={icon} size={20} color={value ? theme.colors.tint : theme.colors.textSecondary} />
-                      <Text preset="bodySmall" color="text" style={styles.drawerRowText}>{value || kind.charAt(0).toUpperCase() + kind.slice(1)}</Text>
+                      <Text preset="bodySmall" color="text" style={styles.drawerRowText}>{value ? capitalizeFilterLabel(value) : capitalizeFilterLabel(kind)}</Text>
                       <Ionicons name={expandedFilter === kind ? "chevron-down" : "chevron-forward"} size={16} color={theme.colors.textSecondary} />
                     </TouchableOpacity>
                     {expandedFilter === kind && (
                       <View style={[styles.inlineOptions, { borderBottomColor: theme.colors.border }]}>
                         <TouchableOpacity onPress={() => { if (kind === "date") setFilterDate(""); if (kind === "tag") setFilterTag(""); if (kind === "mood") setFilterMood(""); if (kind === "companion") setFilterCompanion(""); setExpandedFilter(null); }} style={styles.inlineOption}>
-                          <Text preset="caption" color={!value ? "tint" : "textSecondary"}>All {kind}s</Text>
+                          <Text preset="caption" color={!value ? "tint" : "textSecondary"}>All {capitalizeFilterLabel(kind)}s</Text>
                         </TouchableOpacity>
                         {filterOptions[kind].map((option) => {
                           const selected = option === value;
                           return (
                             <TouchableOpacity key={option} onPress={() => { if (kind === "date") setFilterDate(option); if (kind === "tag") setFilterTag(option); if (kind === "mood") setFilterMood(option); if (kind === "companion") setFilterCompanion(option); setExpandedFilter(null); }} style={[styles.inlineOption, selected && { backgroundColor: theme.colors.tint + "18" }]}>
-                              <Text preset="caption" color={selected ? "tint" : "text"}>{kind === "mood" ? `${getMoodEmoji(option)} ${option}` : option}</Text>
+                              <Text preset="caption" color={selected ? "tint" : "text"}>{kind === "mood" ? `${getMoodEmoji(option)} ${capitalizeFilterLabel(option)}` : capitalizeFilterLabel(option)}</Text>
                             </TouchableOpacity>
                           );
                         })}

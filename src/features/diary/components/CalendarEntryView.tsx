@@ -4,6 +4,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { stripHtml } from '@shared/utils/html';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import { diaryEntryListTitle } from './diaryEntryTypography';
 
 interface CalendarEntryViewProps {
   readonly entry: DiaryEntry;
@@ -60,7 +61,7 @@ const styles = StyleSheet.create({
   rail: { position: 'absolute', top: 38, bottom: -14, width: 1 },
   contentColumn: { flex: 1, paddingLeft: 8, paddingRight: 2 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  title: { flex: 1, fontSize: 17, fontWeight: '700' },
+  title: { flex: 1, ...diaryEntryListTitle },
   preview: { lineHeight: 18, marginTop: 5 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
 });

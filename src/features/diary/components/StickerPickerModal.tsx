@@ -92,7 +92,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
     : activePack.stickers.map((item) => ({ item, packId: activePack.id }));
 
   return (
-    <Modal visible={visible} onDismiss={onClose} title="Choose a Sticker" accessibilityLabel="Sticker picker">
+    <Modal visible={visible} onDismiss={onClose} title="Choose a Sticker" accessibilityLabel="Sticker picker" scrollable={false}>
       {/* Search bar */}
       <View style={styles.searchRow}>
         <View style={[styles.searchBox, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>

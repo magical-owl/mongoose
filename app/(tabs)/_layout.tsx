@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/providers/ThemeProvider';
 
 export default function TabLayout() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const router = useRouter();
 
   return (
@@ -62,7 +62,7 @@ export default function TabLayout() {
                 elevation: 5,
               }}
             >
-              <Ionicons name="add" size={28} color="#ffffff" />
+              <Ionicons name="add" size={28} color={isDark ? colors.background : colors.card} />
             </View>
           ),
         }}

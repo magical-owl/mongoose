@@ -27,6 +27,8 @@ export interface ModalProps {
   readonly title?: string;
   readonly children: React.ReactNode;
   readonly accessibilityLabel?: string;
+  /** Disable the body ScrollView when children provide their own virtualized list. */
+  readonly scrollable?: boolean;
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -39,6 +41,7 @@ export function Modal({
   title,
   children,
   accessibilityLabel,
+  scrollable = true,
 }: ModalProps): React.JSX.Element | null {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -114,14 +117,20 @@ export function Modal({
             </View>
           </View>
 
-          <ScrollView
-            style={{ flexShrink: 1 }}
-            contentContainerStyle={{ paddingHorizontal: theme.spacing.lg }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {children}
-          </ScrollView>
+          {scrollable ? (
+            <ScrollView
+              style={{ flexShrink: 1 }}
+              contentContainerStyle={{ paddingHorizontal: theme.spacing.lg }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {children}
+            </ScrollView>
+          ) : (
+            <View style={{ flexShrink: 1, paddingHorizontal: theme.spacing.lg }}>
+              {children}
+            </View>
+          )}
         </Animated.View>
       </View>
     </RNModal>

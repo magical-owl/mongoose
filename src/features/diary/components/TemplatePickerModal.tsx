@@ -47,7 +47,7 @@ export function TemplatePickerModal({
   };
 
   return (
-    <Modal visible={visible} onDismiss={onClose} title="Writing Templates" accessibilityLabel="Writing templates picker">
+    <Modal visible={visible} onDismiss={onClose} title="Writing Templates" accessibilityLabel="Writing templates picker" scrollable={false}>
       {/* Category Tabs */}
       <ScrollView
         horizontal

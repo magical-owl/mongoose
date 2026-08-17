@@ -6,6 +6,7 @@ import { MarkdownText } from '@shared/components/MarkdownText';
 import { stripHtml } from '@shared/utils/html';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { findStickerItem, type PlacedSticker } from '@/features/diary/domain/Sticker';
+import { diaryEntryListTitle } from './diaryEntryTypography';
 
 export type DiaryEntryViewMode = 'detailed' | 'timeline' | 'feed';
 
@@ -59,7 +60,18 @@ export function DiaryEntryView({ entry, mode, onPress }: DiaryEntryViewProps): R
         >
           {entry.stickers.map((sticker) => <FeedStickerPreview key={sticker.id} sticker={sticker} />)}
           <View style={styles.feedTextLayer}>
-            <Text style={[styles.feedTitle, { color: theme.colors.text }]}>{entry.title}</Text>
+            <Text
+              style={[
+                styles.feedTitle,
+                {
+                  color: theme.colors.text,
+                  fontSize: theme.fontSizes.xxxl,
+                  lineHeight: theme.fontSizes.xxxl * 1.25,
+                },
+              ]}
+            >
+              {entry.title}
+            </Text>
             <View style={styles.feedMetaRow}>
               {entry.tags.map((tag) => <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>)}
             </View>
@@ -106,7 +118,7 @@ export function DiaryEntryView({ entry, mode, onPress }: DiaryEntryViewProps): R
 const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 4, padding: 14, marginBottom: 12 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  title: { flex: 1, fontSize: 17, fontWeight: '700', marginRight: 10 },
+  title: { flex: 1, ...diaryEntryListTitle, marginRight: 10 },
   content: { fontSize: 14, lineHeight: 20 },
   feedCard: { padding: 16, marginBottom: 14 },
   feedCanvas: { position: 'relative', minHeight: 220, overflow: 'visible' },
@@ -114,13 +126,13 @@ const styles = StyleSheet.create({
   feedSticker: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   feedStickerImage: { width: 80, height: 80 },
   feedStickerEmoji: { fontSize: 48, lineHeight: 60, includeFontPadding: true, textAlign: 'center' },
-  feedTitle: { fontSize: 17, lineHeight: 24, fontWeight: '700', marginBottom: 10 },
+  feedTitle: { fontWeight: '700', marginBottom: 10 },
   feedContent: { fontSize: 16, lineHeight: 24 },
   feedMetaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   timelineEntry: { flexDirection: 'row', alignItems: 'stretch', minHeight: 76, marginBottom: 12 },
   timelineRail: { width: 2, marginHorizontal: 10, position: 'relative' },
   timelineDot: { position: 'absolute', top: 10, left: -4, width: 10, height: 10, borderRadius: 5 },
   timelineBody: { flex: 1, paddingVertical: 4, paddingRight: 10 },
-  timelineTitle: { fontSize: 17, lineHeight: 24, fontWeight: '700', marginBottom: 5 },
+  timelineTitle: { ...diaryEntryListTitle, marginBottom: 5 },
   timelineContent: { fontSize: 14, lineHeight: 20, marginBottom: 5 },
 });
