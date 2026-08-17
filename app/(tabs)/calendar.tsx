@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
   container: {
     paddingHorizontal: 20,
-    paddingTop: 4,
+    paddingTop: 18,
   },
   heading: {
     fontSize: 24,
