@@ -148,6 +148,8 @@ meadow/
 ## 📖 Documentation & Guidelines
 
 - **New App Starter Guide**: [`agents/new-app.md`](agents/new-app.md)
+- **Figma Workflow & Screen Specification**: [`docs/FigmaWorkflow.md`](docs/FigmaWorkflow.md)
+- **Componentization & Reuse Rules**: [`agents/componentization.md`](agents/componentization.md)
 - **ZenJournal Technical Blueprint**: [`docs/ZenJournalBlueprint.md`](docs/ZenJournalBlueprint.md)
 - **AI Agent Rules & Compliance**: [`AGENTS.md`](AGENTS.md)
 - **Security Guide**: [`docs/Security.md`](docs/Security.md)

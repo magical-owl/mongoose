@@ -38,6 +38,13 @@ const HOME_VIEW_MODES = [
   ["timeline", "Timeline"],
   ["feed", "Feed"],
 ] as const satisfies (readonly [HomeViewMode, string])[];
+const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
+
+function viewModeIcon(mode: HomeViewMode): "albums-outline" | "git-branch-outline" | "newspaper-outline" {
+  if (mode === "timeline") return "git-branch-outline";
+  if (mode === "feed") return "newspaper-outline";
+  return "albums-outline";
+}
 
 function hierarchyModeLabel(mode: HierarchyMode): string {
   if (mode === "month-date") return "Month / Date";
@@ -70,6 +77,8 @@ export default function TimelineScreen() {
     "date" | "tag" | "mood" | "companion" | null
   >(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showHierarchyMenu, setShowHierarchyMenu] = useState(false);
 
   const filterOptions = useMemo(
     () => ({
@@ -171,9 +180,10 @@ export default function TimelineScreen() {
           {/* Header Row */}
           <View style={styles.headerRow}>
             <TouchableOpacity onPress={() => setIsDrawerOpen(true)} style={styles.menuButton} accessibilityRole="button" accessibilityLabel="Open diary menu">
-              <Ionicons name="menu-outline" size={28} color={theme.colors.text} />
+              <Ionicons name="menu-outline" size={26} color={theme.colors.text} />
             </TouchableOpacity>
 
+            <View style={styles.headerControls}>
             {/* Home view switcher */}
             <View
               style={[
@@ -198,26 +208,56 @@ export default function TimelineScreen() {
                     },
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.switcherText,
-                      {
-                        color:
-                          viewModeIndex === idx
-                            ? "#fff"
-                            : theme.colors.textSecondary,
-                      },
-                    ]}
-                  >
-                    {label}
-                  </Text>
+                  <Ionicons
+                    name={viewModeIcon(mode)}
+                    size={16}
+                    color={viewModeIndex === idx ? "#fff" : theme.colors.textSecondary}
+                  />
                 </TouchableOpacity>
               ))}
             </View>
+
+            <View style={styles.headerHierarchyWrap}>
+              <TouchableOpacity
+                onPress={() => setShowHierarchyMenu((current) => !current)}
+                style={[styles.headerHierarchy, { borderColor: showHierarchyMenu ? theme.colors.tint : theme.colors.border }]}
+                accessibilityRole="button"
+                accessibilityLabel={`Entry hierarchy: ${hierarchyModeLabel(hierarchyMode)}. Open options.`}
+                accessibilityState={{ expanded: showHierarchyMenu }}
+              >
+                <Ionicons name="calendar-outline" size={19} color={showHierarchyMenu ? theme.colors.tint : theme.colors.textSecondary} />
+              </TouchableOpacity>
+              {showHierarchyMenu && (
+                <View style={[styles.hierarchyMenu, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                  {HIERARCHY_MODES.map((mode) => (
+                    <TouchableOpacity
+                      key={mode}
+                      onPress={() => { setHierarchyMode(mode); setShowHierarchyMenu(false); }}
+                      style={[styles.hierarchyMenuOption, mode === hierarchyMode && { backgroundColor: theme.colors.tint + "18" }]}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: mode === hierarchyMode }}
+                    >
+                      <Text preset="caption" color={mode === hierarchyMode ? "tint" : "text"} style={styles.hierarchyMenuLabel}>{hierarchyModeLabel(mode)}</Text>
+                      {mode === hierarchyMode && <Ionicons name="checkmark" size={16} color={theme.colors.tint} style={styles.hierarchyMenuCheck} />}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <TouchableOpacity
+              onPress={() => setIsSearchOpen((current) => !current)}
+              style={styles.headerIconButton}
+              accessibilityRole="button"
+              accessibilityLabel={isSearchOpen ? "Close search" : "Open search"}
+            >
+              <Ionicons name={isSearchOpen ? "close" : "search-outline"} size={21} color={theme.colors.text} />
+            </TouchableOpacity>
+            </View>
           </View>
 
-          {/* Search Bar */}
-          <TextInput
+          {isSearchOpen && <TextInput
+            autoFocus
             value={search}
             onChangeText={setSearch}
             placeholder="Search by title or content..."
@@ -230,23 +270,7 @@ export default function TimelineScreen() {
                 color: theme.colors.text,
               },
             ]}
-          />
-
-          <TouchableOpacity
-            onPress={() => setHierarchyMode((current) => {
-              const index = HIERARCHY_MODES.indexOf(current);
-              return HIERARCHY_MODES[(index + 1) % HIERARCHY_MODES.length]!;
-            })}
-            style={[styles.hierarchyToggle, { borderColor: theme.colors.border }]}
-            accessibilityRole="button"
-            accessibilityLabel={`Entry hierarchy: ${hierarchyModeLabel(hierarchyMode)}. Tap to change.`}
-          >
-            <Ionicons name="git-branch-outline" size={16} color={theme.colors.textSecondary} />
-            <Text preset="caption" color="textSecondary" style={styles.hierarchyToggleLabel}>
-              {hierarchyModeLabel(hierarchyMode)}
-            </Text>
-            <Ionicons name="swap-vertical-outline" size={15} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
+          />}
 
           {/* {onThisDay.length > 0 && (
             <View style={[styles.memoryBanner, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
@@ -303,7 +327,7 @@ export default function TimelineScreen() {
                       else next.add(monthKey);
                       return next;
                     })}
-                    style={styles.monthGroupRow}
+                    style={[styles.monthGroupRow, !isYearVisible && styles.flatMonthGroupRow]}
                     accessibilityRole="button"
                     accessibilityLabel={`${formatTimelineMonth(monthKey)} month group`}
                     accessibilityState={{ expanded: !isMonthCollapsed }}
@@ -322,7 +346,7 @@ export default function TimelineScreen() {
                     else next.add(date);
                     return next;
                   })}
-                  style={styles.dateHeadingRow}
+                  style={[styles.dateHeadingRow, !isYearVisible && (hierarchyMode === "month-date" ? styles.monthDateHeadingRow : styles.flatDateHeadingRow)]}
                   accessibilityRole="button"
                   accessibilityLabel={`${formatDisplayDate(date, calendarDateFormat)} date group`}
                   accessibilityState={{ expanded: !collapsedDates.has(date) }}
@@ -427,17 +451,23 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
+    gap: 6,
   },
-  menuButton: { width: 40, height: 40, alignItems: "flex-start", justifyContent: "center" },
+  menuButton: { width: 30, height: 36, alignItems: "flex-start", justifyContent: "center" },
+  headerControls: { flexDirection: "row", alignItems: "center", gap: 6 },
   switcherWrap: {
+    flex: 0,
     flexDirection: "row",
     borderRadius: 20,
     borderWidth: 1,
     padding: 2,
+    minWidth: 0,
   },
   switcherBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    width: 34,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 16,
   },
   switcherText: {
@@ -451,18 +481,51 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 16,
   },
-  hierarchyToggle: {
-    minHeight: 36,
+  headerHierarchy: {
+    width: 34,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderRadius: 17,
+  },
+  headerHierarchyWrap: {
+    position: "relative",
+    zIndex: 20,
+  },
+  hierarchyMenu: {
+    position: "absolute",
+    top: 40,
+    right: 0,
+    width: 154,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  hierarchyMenuOption: {
+    minHeight: 34,
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    borderRadius: 18,
+    justifyContent: "space-between",
     paddingHorizontal: 12,
-    marginBottom: 8,
+    borderRadius: 5,
   },
-  hierarchyToggleLabel: {
-    marginHorizontal: 7,
+  hierarchyMenuLabel: {
+    flex: 1,
+  },
+  hierarchyMenuCheck: {
+    marginLeft: 16,
+  },
+  headerIconButton: {
+    width: 34,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
   },
   drawerRoot: { flex: 1, flexDirection: "row", alignItems: "stretch" },
   drawerOverlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.35)" },
@@ -561,10 +624,10 @@ const styles = StyleSheet.create({
   },
   dateGroup: {
     marginBottom: 6,
-    marginLeft: 23,
+    marginLeft: HIERARCHY_INDENT.year,
   },
   flatDateGroup: {
-    marginLeft: 0,
+    marginLeft: HIERARCHY_INDENT.year,
   },
   yearGroupRow: {
     flexDirection: "row",
@@ -572,7 +635,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 8,
     marginBottom: 0,
-    paddingHorizontal: 12,
+    paddingHorizontal: 0,
     paddingVertical: 9,
   },
   yearHeading: {
@@ -585,9 +648,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 0,
     marginBottom: 3,
-    marginLeft: 8,
-    paddingLeft: 12,
+    marginLeft: 0,
+    paddingLeft: HIERARCHY_INDENT.month,
     paddingVertical: 7,
+  },
+  flatMonthGroupRow: {
+    paddingLeft: HIERARCHY_INDENT.year,
   },
   monthHeading: {
     margin: 0,
@@ -599,7 +665,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 5,
-    paddingLeft: 10,
+    paddingLeft: HIERARCHY_INDENT.date,
+  },
+  monthDateHeadingRow: {
+    paddingLeft: HIERARCHY_INDENT.month,
+  },
+  flatDateHeadingRow: {
+    paddingLeft: HIERARCHY_INDENT.year,
   },
   dateHeading: {
     margin: 0,
