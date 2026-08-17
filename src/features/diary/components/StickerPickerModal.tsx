@@ -70,7 +70,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
 
   const renderSticker = ({ item, packId }: SearchResult) => (
     <TouchableOpacity
-      style={[styles.cell, { backgroundColor: theme.colors.surface }]}
+      style={styles.cell}
       onPress={() => {
         onSelectSticker(item.id, packId);
         onClose();

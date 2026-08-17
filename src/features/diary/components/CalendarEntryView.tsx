@@ -28,7 +28,7 @@ export function CalendarEntryView({ entry, position, onPress }: CalendarEntryVie
       style={[styles.entry, { borderBottomColor: theme.colors.border }]}
     >
       <View style={styles.markerColumn}>
-        <View style={[styles.marker, { backgroundColor: theme.colors.tint }]}>
+        <View style={[styles.marker, { backgroundColor: entry.manualMood ? moodColor : theme.colors.tint }]}>
           <Text style={[styles.markerNumber, { color: theme.colors.background }]}>
             {String(position + 1).padStart(2, '0')}
           </Text>

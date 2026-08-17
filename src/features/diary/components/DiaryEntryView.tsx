@@ -130,7 +130,7 @@ export function DiaryEntryView({ entry, mode, onPress }: DiaryEntryViewProps): R
       onPress={onPress}
       style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
     >
-      <View style={[styles.cardRail, { backgroundColor: theme.colors.tint }]} />
+      <View style={[styles.cardRail, { backgroundColor: hasMood ? moodTone : theme.colors.tint }]} />
       <View style={styles.cardDateColumn}>
         <Text preset="caption" color="textSecondary" style={styles.cardWeekday}>{cardDate.weekday}</Text>
         <Text style={[styles.cardDay, { color: theme.colors.text }]}>{cardDate.day}</Text>

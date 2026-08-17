@@ -482,11 +482,15 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   searchInput: {
+    height: 44,
     borderWidth: 1,
     borderRadius: 8,
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 0,
     marginBottom: 12,
     fontSize: 16,
+    lineHeight: 20,
+    textAlignVertical: "center",
   },
   headerHierarchy: {
     width: 34,
