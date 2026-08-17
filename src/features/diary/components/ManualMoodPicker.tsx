@@ -41,5 +41,5 @@ export function ManualMoodPicker({ value, onChange }: ManualMoodPickerProps): Re
 const styles = StyleSheet.create({
   scroll: { height: 34, maxHeight: 34, marginBottom: 8, flexGrow: 0, flexShrink: 0 },
   row: { height: 34, alignItems: 'flex-start', gap: 8 },
-  option: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  option: { alignSelf: 'flex-start', minHeight: 30, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 0, alignItems: 'center', justifyContent: 'center' },
 });

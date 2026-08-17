@@ -15,6 +15,10 @@ interface CalendarEntryViewProps {
   readonly onPress: () => void | Promise<void>;
 }
 
+function moodLabel(mood: string): string {
+  return mood.charAt(0).toUpperCase() + mood.slice(1);
+}
+
 export function CalendarEntryView({ entry, position, onPress }: CalendarEntryViewProps): React.JSX.Element {
   const theme = useTheme();
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -39,7 +43,11 @@ export function CalendarEntryView({ entry, position, onPress }: CalendarEntryVie
         <View style={styles.headerRow}>
           <Text preset="body" color="text" style={styles.title} numberOfLines={1}>{entry.title}</Text>
           {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.entryTime}>{entryTime}</Text> : null}
-          {entry.manualMood ? <Text preset="caption" numberOfLines={1} style={[styles.mood, { color: moodColor }]}>{entry.manualMood.charAt(0).toUpperCase() + entry.manualMood.slice(1)}</Text> : null}
+          {entry.manualMood ? (
+            <View style={[styles.moodBadge, { backgroundColor: moodColor + '18', borderColor: moodColor }]}>
+              <Text preset="caption" numberOfLines={1} style={[styles.moodBadgeText, { color: moodColor }]}>{moodLabel(entry.manualMood)}</Text>
+            </View>
+          ) : null}
           <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
         </View>
         <Text preset="caption" color="textSecondary" numberOfLines={2} style={styles.preview}>
@@ -57,7 +65,8 @@ const styles = StyleSheet.create({
   marker: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   markerNumber: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
   entryTime: { flexShrink: 0 },
-  mood: { flexShrink: 1, fontWeight: '600' },
+  moodBadge: { maxWidth: 86, minHeight: 24, borderWidth: 1, borderRadius: 12, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center' },
+  moodBadgeText: { fontWeight: '700' },
   rail: { position: 'absolute', top: 38, bottom: -14, width: 1 },
   contentColumn: { flex: 1, paddingLeft: 8, paddingRight: 2 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },

@@ -48,6 +48,7 @@ import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { useAppStore } from '@/stores/useAppStore';
+import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 
 function countWords(text: string): number {
   const clean = text.replace(/[*#`>•\-_]/g, '').trim();
@@ -57,6 +58,10 @@ function countWords(text: string): number {
 function entryDate(value: string): Date {
   const [year, month, day] = value.split('-').map(Number);
   return year && month && day ? new Date(year, month - 1, day, 12, 0, 0) : new Date();
+}
+
+function moodLabel(mood: ManualMood): string {
+  return mood.charAt(0).toUpperCase() + mood.slice(1);
 }
 
 
@@ -250,6 +255,7 @@ export default function EntryDetailScreen() {
   const displayStickers = isEditing ? editStickers : entry.stickers;
   const activeCompanion = COMPANION_OPTIONS.find((item) => item.id === editCompanion) ?? COMPANION_OPTIONS[0]!;
   const wordCount = countWords(isEditing ? editContent : entry.content);
+  const moodTone = getManualMoodColor(entry.manualMood, theme.colors);
 
   const TOOLBAR_H = 56;
 
@@ -401,12 +407,19 @@ export default function EntryDetailScreen() {
                 style={{
                   fontSize: theme.fontSizes.xxxl,
                   lineHeight: theme.fontSizes.xxxl * 1.25,
-                  marginBottom: 20,
+                  marginBottom: 12,
                 }}
               >
                 {entry.title}
               </Text>
               <View style={styles.entryMetaRow}>
+                {entry.manualMood ? (
+                  <View style={[styles.moodBadge, { backgroundColor: moodTone + '18', borderColor: moodTone }]}>
+                    <Text preset="caption" style={[styles.moodBadgeText, { color: moodTone }]}>
+                      {moodLabel(entry.manualMood)}
+                    </Text>
+                  </View>
+                ) : null}
                 <View style={styles.tagRow}>
                   {entry.tags.map((tag) => <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>)}
                 </View>
@@ -569,6 +582,13 @@ const styles = StyleSheet.create({
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   tag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
   entryMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  moodBadge: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  moodBadgeText: { fontWeight: '700' },
   floatingBar: {
     position: 'absolute',
     left: 0,

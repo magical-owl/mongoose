@@ -57,6 +57,10 @@ function formatCardDay(value: string): { weekday: string; day: string } {
   };
 }
 
+function moodLabel(mood: string): string {
+  return mood.charAt(0).toUpperCase() + mood.slice(1);
+}
+
 export function DiaryEntryView({ entry, mode, onPress }: DiaryEntryViewProps): React.JSX.Element {
   const theme = useTheme();
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -87,9 +91,15 @@ export function DiaryEntryView({ entry, mode, onPress }: DiaryEntryViewProps): R
               >
                 {entry.title}
               </Text>
-              {hasMood ? <Text preset="caption" style={[styles.feedMood, { color: moodTone }]} numberOfLines={1}>{entry.manualMood ? entry.manualMood.charAt(0).toUpperCase() + entry.manualMood.slice(1) : ''}</Text> : null}
             </View>
             <View style={styles.feedMetaRow}>
+              {hasMood && entry.manualMood ? (
+                <View style={[styles.feedMoodBadge, { backgroundColor: moodTone + '18', borderColor: moodTone }]}>
+                  <Text preset="caption" style={[styles.feedMoodBadgeText, { color: moodTone }]} numberOfLines={1}>
+                    {moodLabel(entry.manualMood)}
+                  </Text>
+                </View>
+              ) : null}
               {entry.tags.map((tag) => <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>)}
             </View>
             <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>{entry.content}</MarkdownText>
@@ -110,7 +120,11 @@ export function DiaryEntryView({ entry, mode, onPress }: DiaryEntryViewProps): R
             <Text style={[styles.timelineTitle, { color: theme.colors.text }]} numberOfLines={1}>{entry.title}</Text>
             <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.timelineTime}>{formatDisplayTime(entry.createdAt, timeFormat)}</Text>
             <View style={styles.timelineActions}>
-              {hasMood ? <Text preset="caption" style={[styles.timelineMood, { color: moodTone }]} numberOfLines={1}>{entry.manualMood ? entry.manualMood.charAt(0).toUpperCase() + entry.manualMood.slice(1) : ''}</Text> : null}
+              {hasMood && entry.manualMood ? (
+                <View style={[styles.compactMoodBadge, { backgroundColor: moodTone + '18', borderColor: moodTone }]}>
+                  <Text preset="caption" style={[styles.compactMoodBadgeText, { color: moodTone }]} numberOfLines={1}>{moodLabel(entry.manualMood)}</Text>
+                </View>
+              ) : null}
               <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
             </View>
           </View>
@@ -134,12 +148,16 @@ export function DiaryEntryView({ entry, mode, onPress }: DiaryEntryViewProps): R
       <View style={styles.cardDateColumn}>
         <Text preset="caption" color="textSecondary" style={styles.cardWeekday}>{cardDate.weekday}</Text>
         <Text style={[styles.cardDay, { color: theme.colors.text }]}>{cardDate.day}</Text>
-        {cardTime ? <Text preset="caption" color="textSecondary" numberOfLines={1} style={styles.cardTime}>{cardTime}</Text> : null}
       </View>
       <View style={styles.cardContentColumn}>
         <View style={styles.cardHeader}>
           <Text preset="h3" color="text" style={styles.title} numberOfLines={1}>{entry.title}</Text>
-          {hasMood ? <Text preset="caption" style={[styles.cardMood, { color: moodTone }]}>{entry.manualMood ? entry.manualMood.charAt(0).toUpperCase() + entry.manualMood.slice(1) : ''}</Text> : null}
+          {cardTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.cardTime}>{cardTime}</Text> : null}
+          {hasMood && entry.manualMood ? (
+            <View style={[styles.compactMoodBadge, { backgroundColor: moodTone + '18', borderColor: moodTone }]}>
+              <Text preset="caption" style={[styles.compactMoodBadgeText, { color: moodTone }]} numberOfLines={1}>{moodLabel(entry.manualMood)}</Text>
+            </View>
+          ) : null}
           <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
         </View>
         <Text style={[styles.content, { color: theme.colors.textSecondary }]} numberOfLines={3}>{stripHtml(entry.content)}</Text>
@@ -156,14 +174,15 @@ export function DiaryEntryView({ entry, mode, onPress }: DiaryEntryViewProps): R
 const styles = StyleSheet.create({
   card: { flexDirection: 'row', borderWidth: 1, borderRadius: 4, marginBottom: 8, overflow: 'hidden' },
   cardRail: { width: 4 },
-  cardDateColumn: { width: 66, alignItems: 'center', paddingTop: 7, paddingHorizontal: 6 },
+  cardDateColumn: { width: 66, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   cardWeekday: { fontWeight: '600' },
-  cardDay: { fontSize: 34, lineHeight: 40, fontWeight: '300', marginVertical: 2 },
-  cardTime: { flexShrink: 0, fontSize: 11, lineHeight: 14 },
-  cardContentColumn: { flex: 1, paddingHorizontal: 14, paddingVertical: 7 },
+  cardDay: { fontSize: 34, lineHeight: 40, fontWeight: '300', marginTop: 2 },
+  cardTime: { flexShrink: 0, minWidth: 48, textAlign: 'right', fontSize: 11, lineHeight: 14 },
+  cardContentColumn: { flex: 1, paddingLeft: 0, paddingRight: 14, paddingVertical: 7 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 5 },
   title: { flex: 1 },
-  cardMood: { fontWeight: '600' },
+  compactMoodBadge: { maxWidth: 86, minHeight: 24, borderWidth: 1, borderRadius: 12, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center' },
+  compactMoodBadgeText: { fontWeight: '700' },
   content: { fontSize: 16, lineHeight: 22 },
   cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   feedCard: { padding: 16, marginBottom: 14 },
@@ -174,7 +193,8 @@ const styles = StyleSheet.create({
   feedStickerEmoji: { fontSize: 48, lineHeight: 60, includeFontPadding: true, textAlign: 'center' },
   feedTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 10 },
   feedTitle: { flex: 1, fontWeight: '700' },
-  feedMood: { maxWidth: 82, fontWeight: '600' },
+  feedMoodBadge: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 4 },
+  feedMoodBadgeText: { fontWeight: '700' },
   feedContent: { fontSize: 16, lineHeight: 24 },
   feedMetaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   timelineEntry: { flexDirection: 'row', alignItems: 'stretch', minHeight: 76, marginBottom: 12 },
@@ -186,5 +206,4 @@ const styles = StyleSheet.create({
   timelineTime: { flexShrink: 0 },
   timelineActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   timelineContent: { fontSize: 14, lineHeight: 20, marginBottom: 5 },
-  timelineMood: { maxWidth: 74, fontWeight: '600' },
 });

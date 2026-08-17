@@ -71,9 +71,8 @@ export default function InsightsScreen() {
               </View>
               <View style={styles.moodLegend}>
                 {stats.moodCounts.map(([mood, count]) => (
-                  <View key={mood} style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: moodColor(mood) }]} />
-                    <Text preset="caption" color="textSecondary">{label(mood)} <Text preset="caption" color="text" style={styles.legendCount}>{count}</Text></Text>
+                  <View key={mood} style={[styles.moodBadge, { backgroundColor: moodColor(mood) + "18", borderColor: moodColor(mood) }]}>
+                    <Text preset="caption" style={[styles.moodBadgeText, { color: moodColor(mood) }]}>{label(mood)} <Text preset="caption" style={[styles.moodBadgeText, { color: moodColor(mood) }]}>{count}</Text></Text>
                   </View>
                 ))}
               </View>
@@ -109,8 +108,8 @@ export default function InsightsScreen() {
             </View>
           ))}
           {stats.moodCounts.slice(0, 3).map(([mood, count]) => (
-            <View key={`mood-${mood}`} style={[styles.chip, { backgroundColor: moodColor(mood) + "20" }]}>
-              <Text preset="caption" color="text" style={styles.chipText}>{label(mood)} ({count})</Text>
+            <View key={`mood-${mood}`} style={[styles.moodBadge, { backgroundColor: moodColor(mood) + "18", borderColor: moodColor(mood) }]}>
+              <Text preset="caption" style={[styles.moodBadgeText, { color: moodColor(mood) }]}>{label(mood)} ({count})</Text>
             </View>
           ))}
           {stats.tagCounts.length === 0 && stats.moodCounts.length === 0 ? <Text preset="caption" color="textSecondary">Your most-used tags and moods will appear here.</Text> : null}
@@ -126,10 +125,9 @@ const styles = StyleSheet.create({
   sectionLabel: { fontWeight: "700", letterSpacing: 0.5, marginBottom: 10 },
   card: { borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 24 },
   moodBar: { height: 18, flexDirection: "row", borderRadius: 9, overflow: "hidden", marginBottom: 16 },
-  moodLegend: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendCount: { fontWeight: "700" },
+  moodLegend: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  moodBadge: { minHeight: 30, borderWidth: 1, borderRadius: 15, paddingHorizontal: 10, alignItems: "center", justifyContent: "center" },
+  moodBadgeText: { fontWeight: "700" },
   chart: { height: 154, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-around" },
   barColumn: { height: "100%", flex: 1, alignItems: "center", justifyContent: "flex-end", gap: 8 },
   barTrack: { width: 18, height: 112, borderRadius: 4, justifyContent: "flex-end", overflow: "hidden" },
