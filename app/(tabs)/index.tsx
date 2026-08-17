@@ -1,6 +1,7 @@
 import { Fragment, useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Animated,
+  LayoutAnimation,
   PanResponder,
   View,
   ScrollView,
@@ -28,6 +29,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import type { HomeViewMode } from "@/stores/useAppStore";
 import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
+import { homeViewModeLabel, useTranslation } from "@/localization/i18n";
 
 function formatTimelineMonth(value: string): string {
   const [year, month] = value.split("-").map(Number);
@@ -39,11 +41,7 @@ function formatTimelineMonth(value: string): string {
 
 type HierarchyMode = "year-month-date" | "month-date" | "date" | "none";
 const HIERARCHY_MODES: HierarchyMode[] = ["year-month-date", "month-date", "date", "none"];
-const HOME_VIEW_MODES = [
-  ["timeline", "Timeline"],
-  ["detailed", "Card"],
-  ["feed", "Feed"],
-] as const satisfies (readonly [HomeViewMode, string])[];
+const HOME_VIEW_MODES = ["timeline", "detailed", "feed"] as const satisfies readonly HomeViewMode[];
 const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
 
 function viewModeIcon(mode: HomeViewMode): "albums-outline" | "git-branch-outline" | "newspaper-outline" {
@@ -54,8 +52,8 @@ function viewModeIcon(mode: HomeViewMode): "albums-outline" | "git-branch-outlin
 
 function hierarchyModeLabel(mode: HierarchyMode): string {
   if (mode === "month-date") return "Month / Date";
-  if (mode === "date") return "Date only";
-  if (mode === "none") return "No dates";
+  if (mode === "date") return "Date";
+  if (mode === "none") return "Flat list";
   return "Year / Month / Date";
 }
 
@@ -70,13 +68,14 @@ export default function TimelineScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const { entries, isLoading, refresh, addReflection } = useDiary();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const homeViewModes = useAppStore((state) => state.homeViewModes);
   const homeViewMode = useAppStore((state) => state.homeViewMode);
   const setHomeViewMode = useAppStore((state) => state.setHomeViewMode);
-  const selectableViewModes = HOME_VIEW_MODES.filter(([mode]) => homeViewModes[mode]);
+  const selectableViewModes = HOME_VIEW_MODES.filter((mode) => homeViewModes[mode]);
   const moodColor = useCallback((mood: string) => getManualMoodColor(mood as ManualMood, theme.colors), [theme.colors]);
   const [search, setSearch] = useState("");
   const [filterDate, setFilterDate] = useState("");
@@ -94,6 +93,7 @@ export default function TimelineScreen() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isDrawerMounted, setIsDrawerMounted] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showHeaderOptions, setShowHeaderOptions] = useState(false);
   const [showHierarchyMenu, setShowHierarchyMenu] = useState(false);
   const drawerWidth = Math.min(windowWidth * 0.86, 380);
   const drawerProgress = useRef(new Animated.Value(0)).current;
@@ -198,10 +198,10 @@ export default function TimelineScreen() {
   );
 
   const [viewModeIndex, setViewModeIndex] = useState(() => {
-    const selectedIndex = selectableViewModes.findIndex(([mode]) => mode === homeViewMode);
+    const selectedIndex = selectableViewModes.findIndex((mode) => mode === homeViewMode);
     return selectedIndex >= 0 ? selectedIndex : 0;
   });
-  const viewMode = selectableViewModes[viewModeIndex]?.[0] ?? "detailed";
+  const viewMode: HomeViewMode = selectableViewModes[viewModeIndex] ?? "detailed";
 
   const handleAddReflection = useCallback(
     async (entryId: string, text: string) => {
@@ -266,9 +266,9 @@ export default function TimelineScreen() {
   const handleReflectionSummaryPress = useCallback(
     (entryId: string) => {
       const entry = entries.find((item) => item.id === entryId);
-      const timelineIndex = selectableViewModes.findIndex(([mode]) => mode === "timeline");
+      const timelineIndex = selectableViewModes.findIndex((mode) => mode === "timeline");
       if (!entry || timelineIndex < 0) {
-        Alert.alert("Timeline unavailable", "Enable Timeline in Display settings to view reflections inline.");
+        Alert.alert(t("timelineUnavailableTitle"), t("timelineUnavailableMessage"));
         return;
       }
 
@@ -298,7 +298,7 @@ export default function TimelineScreen() {
         }, delay);
       });
     },
-    [entries, scrollToEntry, selectableViewModes, setHomeViewMode],
+    [entries, scrollToEntry, selectableViewModes, setHomeViewMode, t],
   );
 
   const filteredEntries = useMemo(() => {
@@ -454,86 +454,99 @@ export default function TimelineScreen() {
             </TouchableOpacity>
 
             <View style={styles.headerControls}>
-            <View
-              style={[
-                styles.switcherWrap,
-                {
-                  backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              {selectableViewModes.map(([mode, label], idx) => (
-                <TouchableOpacity
-                  key={label}
-                  onPress={() => { setViewModeIndex(idx); setHomeViewMode(mode); }}
-                  style={[
-                    styles.switcherBtn,
-                    {
-                      backgroundColor:
-                        viewModeIndex === idx
-                          ? theme.colors.tint
-                          : "transparent",
-                    },
-                  ]}
+              {showHeaderOptions && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="always"
+                  style={styles.headerOptionsSlider}
+                  contentContainerStyle={styles.headerOptionsSliderContent}
                 >
-                  <Ionicons
-                    name={viewModeIcon(mode)}
-                    size={16}
-                    color={viewModeIndex === idx ? "#fff" : theme.colors.textSecondary}
-                  />
-                  <Text
-                    preset="caption"
+                  {selectableViewModes.map((mode, idx) => (
+                    <TouchableOpacity
+                      key={mode}
+                      onPress={() => { setViewModeIndex(idx); setHomeViewMode(mode); }}
+                      style={[
+                        styles.headerSliderButton,
+                        viewModeIndex === idx && { backgroundColor: theme.colors.tint + "18" },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={homeViewModeLabel(mode, t)}
+                      accessibilityState={{ selected: viewModeIndex === idx }}
+                    >
+                      <Ionicons
+                        name={viewModeIcon(mode)}
+                        size={20}
+                        color={viewModeIndex === idx ? theme.colors.tint : theme.colors.text}
+                      />
+                    </TouchableOpacity>
+                  ))}
+
+                  <View style={[styles.headerSliderDivider, { backgroundColor: theme.colors.border }]} />
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                      setShowHierarchyMenu((current) => !current);
+                    }}
                     style={[
-                      styles.switcherText,
-                      { color: viewModeIndex === idx ? "#fff" : theme.colors.textSecondary },
+                      styles.headerSliderButton,
+                      showHierarchyMenu && { backgroundColor: theme.colors.tint + "18" },
                     ]}
-                    numberOfLines={1}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Entry hierarchy: ${hierarchyModeLabel(hierarchyMode)}. Open options.`}
+                    accessibilityState={{ expanded: showHierarchyMenu }}
                   >
-                    {label}
-                  </Text>
+                    <Ionicons name="calendar-outline" size={20} color={showHierarchyMenu ? theme.colors.tint : theme.colors.text} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => setIsSearchOpen((current) => !current)}
+                    style={[
+                      styles.headerSliderButton,
+                      isSearchOpen && { backgroundColor: theme.colors.tint + "18" },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={isSearchOpen ? t("homeHeaderCloseSearch") : t("homeHeaderSearch")}
+                  >
+                    <Ionicons name={isSearchOpen ? "close" : "search-outline"} size={20} color={isSearchOpen ? theme.colors.tint : theme.colors.text} />
+                  </TouchableOpacity>
+                </ScrollView>
+              )}
+
+              <TouchableOpacity
+                onPress={() => {
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                  const next = !showHeaderOptions;
+                  setShowHeaderOptions(next);
+                  if (!next) setShowHierarchyMenu(false);
+                }}
+                style={[styles.headerOptionToggle, showHeaderOptions && { backgroundColor: theme.colors.tint + "18" }]}
+                accessibilityRole="button"
+                accessibilityLabel={t("homeHeaderOptions")}
+                accessibilityState={{ expanded: showHeaderOptions }}
+              >
+                <Ionicons name="options-outline" size={22} color={showHeaderOptions ? theme.colors.tint : theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {showHeaderOptions && showHierarchyMenu && (
+            <View style={[styles.hierarchyInlineMenu, { borderTopColor: theme.colors.border }]}>
+              {HIERARCHY_MODES.map((mode) => (
+                <TouchableOpacity
+                  key={mode}
+                  onPress={() => { setHierarchyMode(mode); setShowHierarchyMenu(false); }}
+                  style={[styles.hierarchyMenuOption, mode === hierarchyMode && { backgroundColor: theme.colors.tint + "18" }]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: mode === hierarchyMode }}
+                >
+                  <Text preset="caption" color={mode === hierarchyMode ? "tint" : "text"} style={styles.hierarchyMenuLabel} numberOfLines={1}>{hierarchyModeLabel(mode)}</Text>
+                  {mode === hierarchyMode && <Ionicons name="checkmark" size={16} color={theme.colors.tint} style={styles.hierarchyMenuCheck} />}
                 </TouchableOpacity>
               ))}
             </View>
-
-            <View style={styles.headerHierarchyWrap}>
-              <TouchableOpacity
-                onPress={() => setShowHierarchyMenu((current) => !current)}
-                style={[styles.headerHierarchy, { borderColor: showHierarchyMenu ? theme.colors.tint : theme.colors.border }]}
-                accessibilityRole="button"
-                accessibilityLabel={`Entry hierarchy: ${hierarchyModeLabel(hierarchyMode)}. Open options.`}
-                accessibilityState={{ expanded: showHierarchyMenu }}
-              >
-                <Ionicons name="calendar-outline" size={19} color={showHierarchyMenu ? theme.colors.tint : theme.colors.textSecondary} />
-              </TouchableOpacity>
-              {showHierarchyMenu && (
-                <View style={[styles.hierarchyMenu, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                  {HIERARCHY_MODES.map((mode) => (
-                    <TouchableOpacity
-                      key={mode}
-                      onPress={() => { setHierarchyMode(mode); setShowHierarchyMenu(false); }}
-                      style={[styles.hierarchyMenuOption, mode === hierarchyMode && { backgroundColor: theme.colors.tint + "18" }]}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: mode === hierarchyMode }}
-                    >
-                      <Text preset="caption" color={mode === hierarchyMode ? "tint" : "text"} style={styles.hierarchyMenuLabel} numberOfLines={1}>{hierarchyModeLabel(mode)}</Text>
-                      {mode === hierarchyMode && <Ionicons name="checkmark" size={16} color={theme.colors.tint} style={styles.hierarchyMenuCheck} />}
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
-
-            <TouchableOpacity
-              onPress={() => setIsSearchOpen((current) => !current)}
-              style={styles.headerIconButton}
-              accessibilityRole="button"
-              accessibilityLabel={isSearchOpen ? "Close search" : "Open search"}
-            >
-              <Ionicons name={isSearchOpen ? "close" : "search-outline"} size={21} color={theme.colors.text} />
-            </TouchableOpacity>
-            </View>
-          </View>
+          )}
 
           {isSearchOpen && <TextInput
             autoFocus
@@ -732,27 +745,36 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   menuButton: { width: 30, height: 36, alignItems: "flex-start", justifyContent: "center" },
-  headerControls: { flexDirection: "row", alignItems: "center", gap: 6 },
-  switcherWrap: {
-    flex: 0,
-    flexDirection: "row",
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 2,
-    minWidth: 0,
-  },
-  switcherBtn: {
-    minWidth: 82,
-    height: 30,
-    flexDirection: "row",
-    gap: 5,
-    paddingHorizontal: 10,
+  headerControls: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 2 },
+  headerOptionToggle: {
+    width: 38,
+    height: 38,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 16,
+    borderRadius: 8,
   },
-  switcherText: {
-    fontWeight: "700",
+  headerOptionsSlider: {
+    flex: 1,
+    minWidth: 0,
+  },
+  headerOptionsSliderContent: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 2,
+    paddingRight: 2,
+  },
+  headerSliderButton: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+  },
+  headerSliderDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 22,
+    marginHorizontal: 4,
   },
   searchInput: {
     height: 44,
@@ -765,32 +787,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlignVertical: "center",
   },
-  headerHierarchy: {
-    width: 34,
-    height: 34,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderRadius: 17,
-  },
-  headerHierarchyWrap: {
-    position: "relative",
-    zIndex: 20,
-  },
-  hierarchyMenu: {
-    position: "absolute",
-    top: 40,
-    right: 0,
-    width: 190,
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 8,
-  },
+  hierarchyInlineMenu: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 8, marginBottom: 8, gap: 4 },
   hierarchyMenuOption: {
     minHeight: 34,
     flexDirection: "row",
@@ -804,12 +801,6 @@ const styles = StyleSheet.create({
   },
   hierarchyMenuCheck: {
     marginLeft: 16,
-  },
-  headerIconButton: {
-    width: 34,
-    height: 34,
-    alignItems: "center",
-    justifyContent: "center",
   },
   drawerOverlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: "rgba(0, 0, 0, 0.35)" },
   drawer: { position: "absolute", top: 0, bottom: 0, left: 0, zIndex: 2, paddingHorizontal: 20, borderTopRightRadius: 22, borderBottomRightRadius: 22, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 5, height: 0 }, shadowOpacity: 0.24, shadowRadius: 18, elevation: 18 },

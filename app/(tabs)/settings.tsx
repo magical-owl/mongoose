@@ -34,10 +34,12 @@ import { diaryBackupService } from '@/services/DiaryBackupService';
 import { useJournalExtras } from '@/features/journal/hooks/useJournalExtras';
 import { accentColors, type AccentColor } from '@/theme/accents';
 import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
+import { APP_LANGUAGES, homeViewModeLabel, useTranslation } from '@/localization/i18n';
 
 export default function SettingsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const { entries, selectedCompanion, setSelectedCompanion, saveDiaryEntry } = useDiary();
   const biometricLockEnabled = useAppStore((state) => state.biometricLockEnabled);
   const remoteAiConsent = useAppStore((state) => state.remoteAiConsent);
@@ -48,14 +50,17 @@ export default function SettingsScreen() {
   const fontScale = useAppStore((state) => state.fontScale);
   const fontFamily = useAppStore((state) => state.fontFamily);
   const homeViewModes = useAppStore((state) => state.homeViewModes);
+  const appLanguage = useAppStore((state) => state.appLanguage);
   const setCalendarDateFormat = useAppStore((state) => state.setCalendarDateFormat);
   const setTimeFormat = useAppStore((state) => state.setTimeFormat);
   const setCalendarFirstDay = useAppStore((state) => state.setCalendarFirstDay);
   const setFontScale = useAppStore((state) => state.setFontScale);
   const setFontFamily = useAppStore((state) => state.setFontFamily);
   const setHomeViewModeEnabled = useAppStore((state) => state.setHomeViewModeEnabled);
+  const setAppLanguage = useAppStore((state) => state.setAppLanguage);
   const { profile, saveProfile } = useProfileForm();
   const { state: journalExtras, replace: replaceJournalExtras } = useJournalExtras();
+  const activeLanguage = APP_LANGUAGES.find((language) => language.value === appLanguage) ?? APP_LANGUAGES[0]!;
 
   // Modals
   const [showAppearanceModal, setShowAppearanceModal] = useState(false);
@@ -64,6 +69,7 @@ export default function SettingsScreen() {
   const [showDataModal, setShowDataModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showDisplayModal, setShowDisplayModal] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [backupPassword, setBackupPassword] = useState('');
 
   // Profile form state
@@ -156,29 +162,36 @@ export default function SettingsScreen() {
   const settingsOptions = [
     {
       id: 'appearance',
-      title: 'Appearance',
-      subtitle: 'Dark mode, theme',
+      title: t('settingsAppearanceTitle'),
+      subtitle: t('settingsAppearanceSubtitle'),
       icon: 'color-palette-outline' as IconProps['name'],
       onPress: () => setShowAppearanceModal(true),
     },
     {
       id: 'display',
-      title: 'Display',
-      subtitle: 'Calendar and accessibility',
+      title: t('settingsDisplayTitle'),
+      subtitle: t('settingsDisplaySubtitle'),
       icon: 'options-outline' as IconProps['name'],
       onPress: () => setShowDisplayModal(true),
     },
     {
+      id: 'language',
+      title: t('settingsLanguageTitle'),
+      subtitle: `${t('settingsLanguageSubtitle')}: ${activeLanguage.nativeLabel}`,
+      icon: 'language-outline' as IconProps['name'],
+      onPress: () => setShowLanguageModal(true),
+    },
+    {
       id: 'companion',
-      title: 'AI Companion',
+      title: t('settingsCompanionTitle'),
       subtitle: `${activeCompanion.avatar} ${activeCompanion.name}`,
       icon: 'sparkles-outline' as IconProps['name'],
       onPress: () => setShowCompanionModal(true),
     },
     {
       id: 'profile',
-      title: 'Profile Details',
-      subtitle: profile?.displayName || 'Set display name and bio',
+      title: t('settingsProfileTitle'),
+      subtitle: profile?.displayName || t('settingsProfileSubtitle'),
       icon: 'person-outline' as IconProps['name'],
       onPress: () => {
         setDisplayName(profile?.displayName ?? '');
@@ -189,21 +202,21 @@ export default function SettingsScreen() {
     },
     {
       id: 'security',
-      title: 'Security & Privacy',
-      subtitle: 'Biometric lock and AI privacy controls',
+      title: t('settingsSecurityTitle'),
+      subtitle: t('settingsSecuritySubtitle'),
       icon: 'lock-closed-outline' as IconProps['name'],
       onPress: () => setShowSecurityModal(true),
     },
     {
       id: 'data',
-      title: 'Data & Storage',
+      title: t('settingsDataTitle'),
       subtitle: `Export ${entries.length} entries or backup JSON`,
       icon: 'archive-outline' as IconProps['name'],
       onPress: () => setShowDataModal(true),
     },
     {
       id: 'reset',
-      title: 'Reset App',
+      title: t('settingsResetTitle'),
       subtitle: 'Delete all entries and start fresh',
       icon: 'trash-outline' as IconProps['name'],
       onPress: handleResetApp,
@@ -215,7 +228,7 @@ export default function SettingsScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
-          Settings
+          {t('settingsTitle')}
         </Text>
       </View>
       <ScrollView
@@ -387,7 +400,7 @@ export default function SettingsScreen() {
       <Modal
         visible={showDisplayModal}
         onDismiss={() => setShowDisplayModal(false)}
-        title="Display"
+        title={t('displayModalTitle')}
         accessibilityLabel="Display settings"
       >
         <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>CALENDAR DATE FORMAT</Text>
@@ -471,12 +484,12 @@ export default function SettingsScreen() {
         </View>
         <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>HOME VIEWS</Text>
         <View>
-          {([['timeline', 'Timeline'], ['detailed', 'Card'], ['feed', 'Feed']] as const satisfies (readonly [HomeViewMode, string])[]).map(([value, label]) => (
+          {(['timeline', 'detailed', 'feed'] as const satisfies readonly HomeViewMode[]).map((value) => (
             <View
               key={value}
               style={[styles.displayToggleRow, { borderBottomColor: theme.colors.border }]}
             >
-              <Text preset="bodySmall" color="text">{label}</Text>
+              <Text preset="bodySmall" color="text">{homeViewModeLabel(value, t)}</Text>
               <Switch
                 value={homeViewModes[value]}
                 onValueChange={(enabled) => {
@@ -486,12 +499,35 @@ export default function SettingsScreen() {
                 }}
                 trackColor={{ false: theme.colors.border, true: theme.colors.tint }}
                 thumbColor="#fff"
-                accessibilityLabel={`${label} view available in Home`}
+                accessibilityLabel={`${homeViewModeLabel(value, t)} view available in Home`}
               />
             </View>
           ))}
         </View>
         <Text preset="caption" color="textSecondary" style={styles.displayHint}>Choose which layouts appear in the Home view switcher. Keep at least one enabled.</Text>
+      </Modal>
+
+      <Modal
+        visible={showLanguageModal}
+        onDismiss={() => setShowLanguageModal(false)}
+        title={t('languageModalTitle')}
+        accessibilityLabel="Language settings"
+      >
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('displayLanguageSection')}</Text>
+        <View style={styles.displayOptions}>
+          {APP_LANGUAGES.map(({ value, nativeLabel }) => (
+            <TouchableOpacity
+              key={value}
+              onPress={() => setAppLanguage(value)}
+              style={[styles.displayOption, { borderColor: appLanguage === value ? theme.colors.tint : theme.colors.border, backgroundColor: appLanguage === value ? theme.colors.tint + '18' : theme.colors.surface }]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: appLanguage === value }}
+            >
+              <Text preset="bodySmall" color={appLanguage === value ? 'tint' : 'text'}>{nativeLabel}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Text preset="caption" color="textSecondary" style={styles.displayHint}>{t('displayLanguageHint')}</Text>
       </Modal>
 
       <Modal
@@ -692,9 +728,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   themeOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   themeOption: {
+    width: '48%',
     minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',

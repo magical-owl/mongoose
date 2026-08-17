@@ -30,6 +30,7 @@ export type TimeFormat = '24-hour' | '12-hour';
 export type FontScale = 'small' | 'default' | 'large';
 export type FontFamily = 'system' | 'serif' | 'monospace';
 export type HomeViewMode = 'detailed' | 'timeline' | 'feed';
+export type AppLanguage = 'en' | 'ja';
 
 /**
  * App state interface.
@@ -54,6 +55,7 @@ export interface AppState {
   fontFamily: FontFamily;
   homeViewModes: Record<HomeViewMode, boolean>;
   homeViewMode: HomeViewMode;
+  appLanguage: AppLanguage;
 
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
@@ -73,6 +75,7 @@ export interface AppState {
   setFontFamily: (family: FontFamily) => void;
   setHomeViewModeEnabled: (mode: HomeViewMode, enabled: boolean) => void;
   setHomeViewMode: (mode: HomeViewMode) => void;
+  setAppLanguage: (language: AppLanguage) => void;
   reset: () => void;
 }
 
@@ -96,6 +99,7 @@ const initialState: Pick<
   | 'fontFamily'
   | 'homeViewModes'
   | 'homeViewMode'
+  | 'appLanguage'
 > = {
   themeMode: 'dark',
   accentColor: 'blue',
@@ -115,6 +119,7 @@ const initialState: Pick<
   fontFamily: 'system',
   homeViewModes: { detailed: true, timeline: true, feed: true },
   homeViewMode: 'timeline',
+  appLanguage: 'en',
 };
 
 /**
@@ -149,6 +154,7 @@ export const useAppStore = create<AppState>()(
         homeViewModes: { ...state.homeViewModes, [mode]: enabled },
       })),
       setHomeViewMode: (homeViewMode: HomeViewMode) => set({ homeViewMode }),
+      setAppLanguage: (appLanguage: AppLanguage) => set({ appLanguage }),
 
       setOnboardingStatus: (onboardingStatus: OnboardingStatus) =>
         set({
@@ -183,6 +189,7 @@ export const useAppStore = create<AppState>()(
         fontFamily: state.fontFamily,
         homeViewModes: state.homeViewModes,
         homeViewMode: state.homeViewMode,
+        appLanguage: state.appLanguage,
       }),
     }
   )

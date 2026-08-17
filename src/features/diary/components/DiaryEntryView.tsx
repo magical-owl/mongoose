@@ -11,6 +11,7 @@ import { diaryEntryListTitle } from './diaryEntryTypography';
 import { formatDisplayTime } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
+import { useTranslation } from '@/localization/i18n';
 
 export type DiaryEntryViewMode = 'detailed' | 'timeline' | 'feed';
 
@@ -67,6 +68,7 @@ function moodLabel(mood: string): string {
 export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflectionSummaryPress }: DiaryEntryViewProps): React.JSX.Element {
   const theme = useTheme();
   const timeFormat = useAppStore((state) => state.timeFormat);
+  const t = useTranslation();
   const [reflectionText, setReflectionText] = useState('');
   const [isAddingReflection, setIsAddingReflection] = useState(false);
   const hasMood = Boolean(entry.manualMood);
@@ -122,7 +124,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
                   style={styles.reflectionSummary}
                   onPress={() => onReflectionSummaryPress?.(entry.id)}
                 >
-                  {entry.reflections.length} {entry.reflections.length === 1 ? 'reflection' : 'reflections'}
+                  {entry.reflections.length} {t('reflections')}
                 </Text>
               ) : null}
             </View>
@@ -177,7 +179,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
               <TextInput
                 value={reflectionText}
                 onChangeText={setReflectionText}
-                placeholder="Add a reflection..."
+                placeholder={t('addReflectionPlaceholder')}
                 placeholderTextColor={theme.colors.textSecondary}
                 style={[
                   styles.timelineReflectionInput,
@@ -245,7 +247,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
                 style={styles.reflectionSummary}
                 onPress={() => onReflectionSummaryPress?.(entry.id)}
               >
-                {entry.reflections.length} {entry.reflections.length === 1 ? 'reflection' : 'reflections'}
+                {entry.reflections.length} {t('reflections')}
               </Text>
             ) : null}
           </View>
@@ -257,7 +259,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
               style={styles.reflectionSummary}
               onPress={() => onReflectionSummaryPress?.(entry.id)}
             >
-              {entry.reflections.length} {entry.reflections.length === 1 ? 'reflection' : 'reflections'}
+              {entry.reflections.length} {t('reflections')}
             </Text>
           </View>
         ) : null}

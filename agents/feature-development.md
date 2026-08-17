@@ -1,6 +1,7 @@
 # AI Agent Feature Development Instructions
 
 > **See also:** `docs/CreatingAnApp.md` for the complete human-readable guide with code examples for every layer.
+> **Localization:** Follow `agents/localization.md` whenever adding a feature, renaming a feature, or changing user-facing text.
 
 ## Overview
 

@@ -19,11 +19,13 @@ import { CalendarEntryView } from '@/features/diary/components/CalendarEntryView
 import { appLockService } from '@/services/AppLockService';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import type { ManualMood } from '@/features/diary/domain/DiaryEntry';
+import { useTranslation } from '@/localization/i18n';
 
 export default function CalendarScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const { entries, isLoading, refresh } = useDiary();
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
@@ -121,9 +123,9 @@ export default function CalendarScreen() {
     <View style={[styles.outerContainer, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
         <View style={styles.titleRow}>
-          <Text style={[styles.heading, { color: theme.colors.text }]}>Calendar</Text>
+          <Text style={[styles.heading, { color: theme.colors.text }]}>{t('calendarTitle')}</Text>
           <TouchableOpacity onPress={handleJumpToToday} style={[styles.todayButton, { borderColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel="Jump to today">
-            <Text preset="caption" color="tint">Today</Text>
+            <Text preset="caption" color="tint">{t('calendarToday')}</Text>
           </TouchableOpacity>
         </View>
       </View>

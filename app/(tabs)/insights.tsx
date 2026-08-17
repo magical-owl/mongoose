@@ -1,11 +1,14 @@
-import { useMemo } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { useCallback, useMemo } from "react";
+import { View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@providers/ThemeProvider";
 import { Text } from "@shared/components/Text";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
+import { useTranslation } from "@/localization/i18n";
 
 function label(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -14,7 +17,14 @@ function label(value: string): string {
 export default function InsightsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { entries } = useDiary();
+  const t = useTranslation();
+  const { entries, refresh } = useDiary();
+
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
 
   const stats = useMemo(() => {
     const today = new Date();
@@ -55,7 +65,19 @@ export default function InsightsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 20, backgroundColor: theme.colors.background }]}>
-        <Text color="text" style={styles.title}>Insights</Text>
+        <View style={styles.headerRow}>
+          <Text color="text" style={styles.title}>{t("insightsTitle")}</Text>
+          <TouchableOpacity
+            onPress={() => {
+              void refresh();
+            }}
+            style={styles.headerIcon}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh insights"
+          >
+            <Ionicons name="refresh-outline" size={22} color={theme.colors.text} />
+          </TouchableOpacity>
+        </View>
       </View>
       <ScrollView
         contentContainerStyle={{ paddingTop: 4, paddingHorizontal: 20, paddingBottom: insets.bottom + 80 }}
@@ -123,7 +145,9 @@ export default function InsightsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
-  title: { fontSize: 24, fontWeight: "700", marginBottom: 16 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
+  title: { fontSize: 24, fontWeight: "700" },
+  headerIcon: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 8 },
   sectionLabel: { fontWeight: "700", letterSpacing: 0.5, marginBottom: 10 },
   card: { borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 24 },
   moodBar: { height: 18, flexDirection: "row", borderRadius: 9, overflow: "hidden", marginBottom: 16 },

@@ -50,6 +50,7 @@ import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
+import { useTranslation } from '@/localization/i18n';
 
 function countWords(text: string): number {
   const clean = text.replace(/[*#`>•\-_]/g, '').trim();
@@ -80,6 +81,7 @@ export default function EntryDetailScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection } = useDiary();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
@@ -490,7 +492,7 @@ export default function EntryDetailScreen() {
             >
               <MaterialCommunityIcons name="comment-text-outline" size={21} color={theme.colors.tint} />
               <Text preset="caption" color="text" style={styles.viewFooterLabel}>
-                Reflections
+                {t('reflections')}
               </Text>
               {entry.reflections.length > 0 ? (
                 <View style={[styles.reflectionCountBadge, { backgroundColor: theme.colors.tint }]}>
@@ -597,14 +599,14 @@ export default function EntryDetailScreen() {
       <Modal
         visible={showReflections}
         onDismiss={() => setShowReflections(false)}
-        title="Reflections"
+        title={t('reflections')}
         accessibilityLabel="Entry reflections"
         scrollable={false}
       >
         <View style={styles.reflectionsModalBody}>
           <ScrollView style={styles.reflectionsScroll} contentContainerStyle={styles.reflectionsScrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {entry.reflections.length === 0 ? (
-              <Text preset="bodySmall" color="textSecondary" style={styles.reflectionsEmpty}>No reflections yet.</Text>
+              <Text preset="bodySmall" color="textSecondary" style={styles.reflectionsEmpty}>{t('noReflections')}</Text>
             ) : (
               <View style={styles.reflectionsList}>
             {entry.reflections.map((reflection) => (
@@ -627,7 +629,7 @@ export default function EntryDetailScreen() {
           <NativeTextInput
             value={reflectionText}
             onChangeText={setReflectionText}
-            placeholder="Add a reflection..."
+            placeholder={t('addReflectionPlaceholder')}
             placeholderTextColor={theme.colors.textSecondary}
             style={[
               styles.reflectionInput,

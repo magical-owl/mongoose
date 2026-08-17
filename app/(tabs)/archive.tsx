@@ -9,6 +9,7 @@ import { useJournalExtras } from '@/features/journal/hooks/useJournalExtras';
 import { annualMemoryBookService } from '@/services/AnnualMemoryBookService';
 import type { ManualMood } from '@/features/diary/domain/DiaryEntry';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
+import { useTranslation } from '@/localization/i18n';
 
 type ArchiveSection = 'chapters' | 'rituals' | 'collections' | 'replay' | 'garden';
 type ReplayMode = 'same-date' | 'same-month' | 'one-year';
@@ -21,6 +22,7 @@ export default function ArchiveScreen() {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const { entries } = useDiary();
   const extras = useJournalExtras();
   const [section, setSection] = useState<ArchiveSection>('chapters');
@@ -54,7 +56,7 @@ export default function ArchiveScreen() {
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Personal Archive</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>{t('archiveTitle')}</Text>
       </View>
       <ScrollView contentContainerStyle={{ paddingTop: 4, paddingHorizontal: 20, paddingBottom: insets.bottom + 80 }} showsVerticalScrollIndicator={false}>
         <View style={[styles.hero, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}><Text preset="caption" color="tint" style={styles.eyebrow}>YOUR PRIVATE INDEX</Text><Text preset="bodySmall" color="textSecondary">A quieter view of the stories, rituals, and memories you choose to keep.</Text><View style={styles.stats}><Text preset="caption" color="textSecondary">{entries.length} entries</Text><Text preset="caption" color="textSecondary">{extras.chapters.length} chapters</Text><Text preset="caption" color="textSecondary">{extras.rituals.length} rituals</Text></View></View>
