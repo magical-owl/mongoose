@@ -11,7 +11,7 @@ import { diaryEntryListTitle } from './diaryEntryTypography';
 import { formatDisplayTime } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
-import { useTranslation } from '@/localization/i18n';
+import { reflectionCountLabel, useTranslation } from '@/localization/i18n';
 
 export type DiaryEntryViewMode = 'detailed' | 'timeline' | 'feed';
 
@@ -124,7 +124,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
                   style={styles.reflectionSummary}
                   onPress={() => onReflectionSummaryPress?.(entry.id)}
                 >
-                  {entry.reflections.length} {t('reflections')}
+                  {reflectionCountLabel(entry.reflections.length, t)}
                 </Text>
               ) : null}
             </View>
@@ -247,7 +247,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
                 style={styles.reflectionSummary}
                 onPress={() => onReflectionSummaryPress?.(entry.id)}
               >
-                {entry.reflections.length} {t('reflections')}
+                {reflectionCountLabel(entry.reflections.length, t)}
               </Text>
             ) : null}
           </View>
@@ -259,7 +259,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
               style={styles.reflectionSummary}
               onPress={() => onReflectionSummaryPress?.(entry.id)}
             >
-              {entry.reflections.length} {t('reflections')}
+              {reflectionCountLabel(entry.reflections.length, t)}
             </Text>
           </View>
         ) : null}

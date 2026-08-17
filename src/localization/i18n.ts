@@ -42,6 +42,7 @@ const translations = {
     languageModalTitle: 'Language',
     displayLanguageSection: 'LANGUAGE',
     displayLanguageHint: 'Choose the language used for app navigation and supported UI labels.',
+    reflection: 'Reflection',
     reflections: 'Reflections',
     noReflections: 'No reflections yet.',
     addReflectionPlaceholder: 'Add a reflection...',
@@ -82,6 +83,7 @@ const translations = {
     languageModalTitle: '言語',
     displayLanguageSection: '言語',
     displayLanguageHint: 'ナビゲーションと対応済みUIラベルで使う言語を選択します。',
+    reflection: 'リフレクション',
     reflections: 'リフレクション',
     noReflections: 'リフレクションはまだありません。',
     addReflectionPlaceholder: 'リフレクションを追加...',
@@ -103,4 +105,8 @@ export function homeViewModeLabel(mode: HomeViewMode, t: (key: TranslationKey) =
   if (mode === 'timeline') return t('homeTimeline');
   if (mode === 'feed') return t('homeFeed');
   return t('homeCard');
+}
+
+export function reflectionCountLabel(count: number, t: (key: TranslationKey) => string): string {
+  return `${count} ${count === 1 ? t('reflection') : t('reflections')}`;
 }
