@@ -203,12 +203,12 @@ export default function TimelineScreen() {
     async (entryId: string, text: string) => {
       const result = await addReflection(entryId, text);
       if (!result.success) {
-        Alert.alert("Reflection not saved", result.error.message);
+        Alert.alert(t("reflectionNotSavedTitle"), result.error.message);
         return false;
       }
       return true;
     },
-    [addReflection],
+    [addReflection, t],
   );
 
   const scrollToEntry = useCallback((entryId: string) => {
@@ -545,7 +545,7 @@ export default function TimelineScreen() {
             autoFocus
             value={search}
             onChangeText={setSearch}
-            placeholder="Search by title or content..."
+            placeholder={t("homeSearchPlaceholder")}
             placeholderTextColor={theme.colors.textSecondary}
             style={[
               styles.searchInput,
@@ -582,7 +582,7 @@ export default function TimelineScreen() {
             <Text
               style={[styles.emptyText, { color: theme.colors.textSecondary }]}
             >
-              {search.trim() ? "No matching entries." : "No entries yet."}
+              {search.trim() ? t("homeNoMatchingEntries") : t("homeNoEntriesYet")}
             </Text>
           ) : (
             groupedEntries.map(([date, dateEntries], index) => {

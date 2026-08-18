@@ -30,6 +30,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PlacedSticker, findStickerItem } from '../domain/Sticker';
+import { useTranslation } from '@/localization/i18n';
 
 interface StickerCanvasItemProps {
   readonly sticker: PlacedSticker;
@@ -44,6 +45,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   onDelete,
   isEditable = true,
 }) => {
+  const t = useTranslation();
   const [isSelected, setIsSelected] = useState(false);
   // Local mutable state — initialised from persisted values
   const [currentScale, setCurrentScale] = useState(sticker.scale);
@@ -217,7 +219,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
           <View
             style={styles.controlBtn}
             {...rotatePanResponder.panHandlers}
-            accessibilityLabel="Rotate sticker"
+            accessibilityLabel={t('stickerRotateA11y')}
             accessibilityRole="button"
           >
             <MaterialCommunityIcons name="rotate-right" size={16} color="#FFFFFF" />
@@ -227,7 +229,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
           <TouchableOpacity
             style={styles.controlBtn}
             onPress={handleScaleDown}
-            accessibilityLabel="Shrink sticker"
+            accessibilityLabel={t('stickerShrinkA11y')}
             accessibilityRole="button"
           >
             <Text style={styles.controlText}>−</Text>
@@ -237,7 +239,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
           <TouchableOpacity
             style={[styles.controlBtn, styles.deleteBtn]}
             onPress={() => onDelete(sticker.id)}
-            accessibilityLabel="Delete sticker"
+            accessibilityLabel={t('stickerDeleteA11y')}
             accessibilityRole="button"
           >
             <Text style={styles.controlText}>✕</Text>
@@ -247,7 +249,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
           <TouchableOpacity
             style={styles.controlBtn}
             onPress={handleScaleUp}
-            accessibilityLabel="Grow sticker"
+            accessibilityLabel={t('stickerGrowA11y')}
             accessibilityRole="button"
           >
             <Text style={styles.controlText}>+</Text>
@@ -257,7 +259,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
           <TouchableOpacity
             style={[styles.controlBtn, sticker.behindText && styles.activeControlBtn]}
             onPress={handleToggleBehindText}
-            accessibilityLabel={sticker.behindText ? 'Bring sticker in front of text' : 'Send sticker behind text'}
+            accessibilityLabel={sticker.behindText ? t('stickerBringForwardA11y') : t('stickerSendBehindA11y')}
             accessibilityRole="button"
           >
             <MaterialCommunityIcons

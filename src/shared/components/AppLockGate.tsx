@@ -4,9 +4,11 @@ import { Text } from './Text';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useAppStore } from '@/stores/useAppStore';
 import { appLockService } from '@/services/AppLockService';
+import { useTranslation } from '@/localization/i18n';
 
 export function AppLockGate({ children }: { readonly children: React.ReactNode }): React.JSX.Element {
   const theme = useTheme();
+  const t = useTranslation();
   const enabled = useAppStore((state) => state.biometricLockEnabled);
   const locked = useAppStore((state) => state.isLocked);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -32,10 +34,10 @@ export function AppLockGate({ children }: { readonly children: React.ReactNode }
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Text style={[styles.icon, { color: theme.colors.text }]}>🔒</Text>
-      <Text preset="h2" color="text">Diary Locked</Text>
-      <Text preset="body" color="textSecondary" style={styles.subtitle}>Authenticate to access your private entries.</Text>
+      <Text preset="h2" color="text">{t('lockTitle')}</Text>
+      <Text preset="body" color="textSecondary" style={styles.subtitle}>{t('lockMessage')}</Text>
       <TouchableOpacity onPress={unlock} disabled={isAuthenticating} style={[styles.button, { backgroundColor: theme.colors.tint }]}>
-        <Text preset="label" style={styles.buttonText}>{isAuthenticating ? 'Authenticating…' : 'Unlock Diary'}</Text>
+        <Text preset="label" style={styles.buttonText}>{isAuthenticating ? t('lockAuthenticating') : t('lockUnlockButton')}</Text>
       </TouchableOpacity>
     </View>
   );

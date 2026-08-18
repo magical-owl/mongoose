@@ -189,14 +189,14 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
                 ]}
                 returnKeyType="send"
                 onSubmitEditing={() => { void handleAddTimelineReflection(); }}
-                accessibilityLabel="Add reflection"
+                accessibilityLabel={t('reflectionAddA11y')}
               />
               <TouchableOpacity
                 onPress={() => { void handleAddTimelineReflection(); }}
                 disabled={!reflectionText.trim() || isAddingReflection}
                 style={[styles.timelineReflectionButton, { backgroundColor: reflectionText.trim() && !isAddingReflection ? theme.colors.tint : 'transparent' }]}
                 accessibilityRole="button"
-                accessibilityLabel="Save reflection"
+                accessibilityLabel={t('reflectionSaveA11y')}
               >
                 <Ionicons name="add" size={18} color={reflectionText.trim() && !isAddingReflection ? '#fff' : theme.colors.textSecondary} />
               </TouchableOpacity>

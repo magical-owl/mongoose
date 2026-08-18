@@ -13,9 +13,6 @@
       "buildNumber": "1",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Face ID is used to securely authenticate and protect your data.",
-        "NSCameraUsageDescription": "Camera access is required for profile photos and content creation.",
-        "NSPhotoLibraryUsageDescription": "Photo library access is required to upload images.",
-        "NSPhotoLibraryAddUsageDescription": "Permission is needed to save images to your photo library.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false
         }

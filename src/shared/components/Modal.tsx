@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';
+import { useTranslation } from '@/localization/i18n';
 
 export interface ModalProps {
   readonly visible: boolean;
@@ -44,6 +45,7 @@ export function Modal({
   scrollable = true,
 }: ModalProps): React.JSX.Element | null {
   const theme = useTheme();
+  const t = useTranslation();
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(PANEL_HEIGHT)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -84,7 +86,7 @@ export function Modal({
   return (
     <RNModal transparent visible={visible} animationType="none" onRequestClose={onDismiss}>
       <View style={StyleSheet.absoluteFill}>
-        <TouchableWithoutFeedback onPress={onDismiss} accessibilityLabel="Close modal">
+        <TouchableWithoutFeedback onPress={onDismiss} accessibilityLabel={t('modalCloseBackdropA11y')}>
           <Animated.View style={{ flex: 1, backgroundColor: theme.colors.overlay, opacity: backdropOpacity }} />
         </TouchableWithoutFeedback>
 
@@ -111,7 +113,7 @@ export function Modal({
 
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.md }}>
               {title && <Text preset="h3" style={{ flex: 1 }}>{title}</Text>}
-              <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Close" accessibilityRole="button">
+              <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel={t('modalCloseA11y')} accessibilityRole="button">
                 <Ionicons name="close" size={24} color={theme.colors.text} />
               </TouchableOpacity>
             </View>

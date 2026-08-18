@@ -124,7 +124,7 @@ export default function CalendarScreen() {
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
         <View style={styles.titleRow}>
           <Text style={[styles.heading, { color: theme.colors.text }]}>{t('calendarTitle')}</Text>
-          <TouchableOpacity onPress={handleJumpToToday} style={[styles.todayButton, { borderColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel="Jump to today">
+          <TouchableOpacity onPress={handleJumpToToday} style={[styles.todayButton, { borderColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel={t('calendarJumpTodayA11y')}>
             <Text preset="caption" color="tint">{t('calendarToday')}</Text>
           </TouchableOpacity>
         </View>
@@ -151,13 +151,13 @@ export default function CalendarScreen() {
               <TouchableOpacity
                 onPress={handlePrevMonth}
                 style={styles.monthNavBtn}
-                accessibilityLabel="Previous month"
+                accessibilityLabel={t('calendarPreviousMonthA11y')}
                 accessibilityRole="button"
               >
                 <Text style={[styles.monthNavArrow, { color: theme.colors.text }]}>‹</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => { setPickerYear(year); setShowMonthPicker(true); }} accessibilityRole="button" accessibilityLabel="Choose month and year">
+              <TouchableOpacity onPress={() => { setPickerYear(year); setShowMonthPicker(true); }} accessibilityRole="button" accessibilityLabel={t('calendarChooseMonthYearA11y')}>
                 <View style={styles.monthTitleButton}>
                   <Text style={[styles.monthTitle, { color: theme.colors.text }]}>{monthName}</Text>
                   <Ionicons name="chevron-down" size={16} color={theme.colors.textSecondary} />
@@ -167,7 +167,7 @@ export default function CalendarScreen() {
               <TouchableOpacity
                 onPress={handleNextMonth}
                 style={styles.monthNavBtn}
-                accessibilityLabel="Next month"
+                accessibilityLabel={t('calendarNextMonthA11y')}
                 accessibilityRole="button"
               >
                 <Text style={[styles.monthNavArrow, { color: theme.colors.text }]}>›</Text>
@@ -232,7 +232,7 @@ export default function CalendarScreen() {
                       },
                     ]}
                     onPress={() => handleSelectDate(dateStr)}
-                    accessibilityLabel={`${day} ${monthName}${hasEntries ? ', has entries' : ''}`}
+                    accessibilityLabel={`${day} ${monthName}${hasEntries ? `, ${t('calendarHasEntriesA11y')}` : ''}`}
                   >
                     <Text
                       style={[
@@ -266,7 +266,7 @@ export default function CalendarScreen() {
           {selectedDayEntries.length === 0 ? (
             <View style={[styles.emptyState, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <Ionicons name="book-outline" size={28} color={theme.colors.textSecondary} />
-              <Text preset="bodySmall" color="textSecondary" style={styles.emptyStateText}>No entries on this date.</Text>
+              <Text preset="bodySmall" color="textSecondary" style={styles.emptyStateText}>{t('calendarNoEntriesOnDate')}</Text>
             </View>
           ) : (
             <View style={styles.dateGroup}>
@@ -294,15 +294,15 @@ export default function CalendarScreen() {
         <Pressable style={styles.pickerBackdrop} onPress={() => setShowMonthPicker(false)}>
           <Pressable style={[styles.monthPicker, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={(event) => event.stopPropagation()}>
             <View style={styles.pickerHeader}>
-              <Text preset="h2" color="text">Choose month</Text>
-              <TouchableOpacity onPress={() => setShowMonthPicker(false)} accessibilityRole="button" accessibilityLabel="Close month picker">
+              <Text preset="h2" color="text">{t('calendarChooseMonth')}</Text>
+              <TouchableOpacity onPress={() => setShowMonthPicker(false)} accessibilityRole="button" accessibilityLabel={t('calendarCloseMonthPickerA11y')}>
                 <Ionicons name="close" size={22} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
             <View style={styles.yearRow}>
-              <TouchableOpacity onPress={() => setPickerYear((value) => value - 1)} accessibilityRole="button" accessibilityLabel="Previous year"><Ionicons name="chevron-back" size={20} color={theme.colors.text} /></TouchableOpacity>
+              <TouchableOpacity onPress={() => setPickerYear((value) => value - 1)} accessibilityRole="button" accessibilityLabel={t('insightsPreviousYearA11y')}><Ionicons name="chevron-back" size={20} color={theme.colors.text} /></TouchableOpacity>
               <Text preset="label" color="text">{pickerYear}</Text>
-              <TouchableOpacity onPress={() => setPickerYear((value) => value + 1)} accessibilityRole="button" accessibilityLabel="Next year"><Ionicons name="chevron-forward" size={20} color={theme.colors.text} /></TouchableOpacity>
+              <TouchableOpacity onPress={() => setPickerYear((value) => value + 1)} accessibilityRole="button" accessibilityLabel={t('insightsNextYearA11y')}><Ionicons name="chevron-forward" size={20} color={theme.colors.text} /></TouchableOpacity>
             </View>
             <View style={styles.monthGrid}>
               {Array.from({ length: 12 }, (_, index) => index).map((monthIndex) => {

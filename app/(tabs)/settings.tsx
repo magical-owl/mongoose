@@ -41,6 +41,10 @@ import { formatDisplayDate } from '@/shared/utils/dateFormat';
 import { planUsageRepository } from '@/features/subscription/repositories/PlanUsageRepository';
 import { useSubscription } from '@/features/subscription/hooks/useSubscription';
 
+function withCount(value: string, count: number): string {
+  return value.replace('{count}', String(count));
+}
+
 export default function SettingsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -133,18 +137,18 @@ export default function SettingsScreen() {
   const handleExportData = async () => {
     try {
       await diaryBackupService.exportJson(entries, profile, journalExtras);
-      Alert.alert('Exported', 'Your complete diary JSON is ready to share.');
+      Alert.alert(t('settingsExportedTitle'), t('settingsExportedMessage'));
     } catch {
-      Alert.alert('Error', 'Failed to export data.');
+      Alert.alert(t('entryErrorTitle'), t('settingsExportFailedMessage'));
     }
   };
 
   const handleEncryptedExport = async () => {
     try {
       await diaryBackupService.exportEncrypted(backupPassword, entries, profile, journalExtras);
-      Alert.alert('Encrypted backup created', 'Keep this backup file in a secure location.');
+      Alert.alert(t('settingsEncryptedBackupCreatedTitle'), t('settingsEncryptedBackupCreatedMessage'));
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to create encrypted backup.');
+      Alert.alert(t('entryErrorTitle'), error instanceof Error ? error.message : t('settingsEncryptedBackupFailedMessage'));
     }
   };
 
@@ -152,10 +156,10 @@ export default function SettingsScreen() {
     try {
       const imported = await diaryBackupService.importEncrypted(backupPassword);
       if (!imported) return;
-      Alert.alert('Restore backup?', `This will add ${imported.entries.length} entries and restore profile data.`, [
-        { text: 'Cancel', style: 'cancel' },
+      Alert.alert(t('settingsRestoreBackupPromptTitle'), withCount(t('settingsRestoreBackupPromptMessage'), imported.entries.length), [
+        { text: t('entryCancel'), style: 'cancel' },
         {
-          text: 'Restore',
+          text: t('settingsRestoreAction'),
           onPress: async () => {
             const mergedEntries = new Map(entries.map((entry) => [entry.id, entry]));
             imported.entries.forEach((entry) => mergedEntries.set(entry.id, entry));
@@ -168,19 +172,19 @@ export default function SettingsScreen() {
               });
             }
             if (imported.journalExtras) await replaceJournalExtras(imported.journalExtras);
-            Alert.alert('Restored', 'Your encrypted backup has been restored.');
+            Alert.alert(t('settingsRestoredTitle'), t('settingsRestoredMessage'));
           },
         },
       ]);
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'The backup could not be decrypted or was invalid.');
+      Alert.alert(t('entryErrorTitle'), error instanceof Error ? error.message : t('settingsRestoreFailedMessage'));
     }
   };
 
   const handleBiometricToggle = async (enabled: boolean) => {
     if (enabled) {
       const activated = await appLockService.enable();
-      if (!activated) Alert.alert('Biometrics unavailable', 'Set up Face ID, Touch ID, or device biometrics first.');
+      if (!activated) Alert.alert(t('settingsBiometricsUnavailableTitle'), t('settingsBiometricsUnavailableMessage'));
     } else {
       appLockService.disable();
     }
@@ -188,16 +192,16 @@ export default function SettingsScreen() {
 
   const handleResetApp = () => {
     Alert.alert(
-      '⚠️ Reset App',
-      'This will delete all your diary entries and profile data. This action cannot be undone.',
+      t('settingsResetPromptTitle'),
+      t('settingsResetPromptMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('entryCancel'), style: 'cancel' },
         {
-          text: 'Yes, Reset Everything',
+          text: t('settingsResetConfirm'),
           style: 'destructive',
           onPress: async () => {
             await dataDeletionService.deleteAll();
-            Alert.alert('✅ App Reset', 'All data has been cleared.');
+            Alert.alert(t('settingsResetDoneTitle'), t('settingsResetDoneMessage'));
           },
         },
       ]
@@ -255,14 +259,14 @@ export default function SettingsScreen() {
     {
       id: 'data',
       title: t('settingsDataTitle'),
-      subtitle: `Export ${entries.length} entries or backup JSON`,
+      subtitle: withCount(t('settingsDataSubtitle'), entries.length),
       icon: 'archive-outline' as IconProps['name'],
       onPress: () => setShowDataModal(true),
     },
     {
       id: 'reset',
       title: t('settingsResetTitle'),
-      subtitle: 'Delete all entries and start fresh',
+      subtitle: t('settingsResetSubtitle'),
       icon: 'trash-outline' as IconProps['name'],
       onPress: handleResetApp,
       isDestructive: true,
@@ -324,16 +328,16 @@ export default function SettingsScreen() {
       <Modal
         visible={showAppearanceModal}
         onDismiss={() => setShowAppearanceModal(false)}
-        title="Appearance & Theme"
-        accessibilityLabel="Appearance settings"
+        title={t('settingsAppearanceModalTitle')}
+        accessibilityLabel={t('settingsAppearanceA11y')}
       >
         <View style={[styles.modalRow, { borderBottomColor: theme.colors.border }]}>
           <View style={{ flex: 1 }}>
             <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>
-              🌙 Dark Mode
+              {t('settingsDarkMode')}
             </Text>
           <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>
-              Toggle between light and dark themes
+              {t('settingsDarkModeHint')}
             </Text>
           </View>
 
@@ -347,7 +351,7 @@ export default function SettingsScreen() {
 
         <View style={{ paddingTop: 16 }}>
           <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
-            THEME MODE PREFERENCE
+            {t('settingsThemeModeSection')}
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {(['light', 'dark', 'system'] as const).map((m) => {
@@ -374,7 +378,7 @@ export default function SettingsScreen() {
                       color: active ? theme.colors.tint : theme.colors.text,
                     }}
                   >
-                    {m === 'light' ? '☀️ Light' : m === 'dark' ? '🌙 Dark' : '📱 System'}
+                    {m === 'light' ? t('settingsThemeLight') : m === 'dark' ? t('settingsThemeDark') : t('settingsThemeSystem')}
                   </Text>
                 </TouchableOpacity>
               );
@@ -384,7 +388,7 @@ export default function SettingsScreen() {
 
         <View style={{ paddingTop: 20 }}>
           <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
-            COLOR THEME
+            {t('settingsColorThemeSection')}
           </Text>
           <View style={styles.themeOptions}>
             {(Object.keys(colorThemes) as ColorTheme[]).map((colorThemeKey) => {
@@ -414,13 +418,13 @@ export default function SettingsScreen() {
             })}
           </View>
           <Text preset="caption" color="textSecondary" style={{ marginTop: 8 }}>
-            Choose the overall surface and text palette. Accent color remains independent.
+            {t('settingsColorThemeHint')}
           </Text>
         </View>
 
         <View style={{ paddingTop: 20 }}>
           <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
-            ACCENT COLOR
+            {t('settingsAccentColorSection')}
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {(['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet', 'teal', 'coral', 'rose', 'plum', 'mint', 'slate'] as AccentColor[]).map((color) => {
@@ -437,7 +441,7 @@ export default function SettingsScreen() {
             })}
           </View>
           <Text preset="caption" color="textSecondary" style={{ marginTop: 8 }}>
-            Choose the accent used across buttons, highlights, and navigation.
+            {t('settingsAccentColorHint')}
           </Text>
         </View>
       </Modal>
@@ -446,9 +450,9 @@ export default function SettingsScreen() {
         visible={showDisplayModal}
         onDismiss={() => setShowDisplayModal(false)}
         title={t('displayModalTitle')}
-        accessibilityLabel="Display settings"
+        accessibilityLabel={t('settingsDisplayA11y')}
       >
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>CALENDAR DATE FORMAT</Text>
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsCalendarDateFormatSection')}</Text>
         <View style={styles.displayOptions}>
           {([
             ['month-day-year', 'Aug 16, 2026'],
@@ -467,9 +471,9 @@ export default function SettingsScreen() {
           ))}
         </View>
 
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>WEEK STARTS ON</Text>
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsWeekStartsOnSection')}</Text>
         <View style={styles.displayOptions}>
-          {([[0, 'Sunday'], [1, 'Monday']] as const).map(([value, label]) => (
+          {([[0, t('settingsWeekStartsSunday')], [1, t('settingsWeekStartsMonday')]] as const).map(([value, label]) => (
             <TouchableOpacity
               key={value}
               onPress={() => setCalendarFirstDay(value)}
@@ -482,7 +486,7 @@ export default function SettingsScreen() {
           ))}
         </View>
 
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>TIME FORMAT</Text>
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsTimeFormatSection')}</Text>
         <View style={styles.displayOptions}>
           {([['24-hour', '24-hour'], ['12-hour', '12-hour (AM/PM)']] as const satisfies (readonly [TimeFormat, string])[]).map(([value, label]) => (
             <TouchableOpacity
@@ -497,9 +501,9 @@ export default function SettingsScreen() {
           ))}
         </View>
 
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>GLOBAL FONT SIZE</Text>
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsGlobalFontSizeSection')}</Text>
         <View style={styles.displayOptions}>
-          {([['small', 'Small'], ['default', 'Default'], ['large', 'Large']] as const satisfies (readonly [FontScale, string])[]).map(([value, label]) => (
+          {([['small', t('settingsFontSmall')], ['default', t('settingsFontDefault')], ['large', t('settingsFontLarge')]] as const satisfies (readonly [FontScale, string])[]).map(([value, label]) => (
             <TouchableOpacity
               key={value}
               onPress={() => setFontScale(value)}
@@ -511,11 +515,11 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        <Text preset="caption" color="textSecondary" style={styles.displayHint}>Larger text improves readability across the app and works alongside device accessibility settings.</Text>
+        <Text preset="caption" color="textSecondary" style={styles.displayHint}>{t('settingsGlobalFontSizeHint')}</Text>
 
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>FONT STYLE</Text>
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsFontStyleSection')}</Text>
         <View style={styles.displayOptions}>
-          {([['system', 'System'], ['serif', 'Serif'], ['monospace', 'Monospace']] as const satisfies (readonly [FontFamily, string])[]).map(([value, label]) => (
+          {([['system', t('settingsFontSystem')], ['serif', t('settingsFontSerif')], ['monospace', t('settingsFontMonospace')]] as const satisfies (readonly [FontFamily, string])[]).map(([value, label]) => (
             <TouchableOpacity
               key={value}
               onPress={() => setFontFamily(value)}
@@ -527,7 +531,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>HOME VIEWS</Text>
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsHomeViewsSection')}</Text>
         <View>
           {(['timeline', 'detailed', 'feed'] as const satisfies readonly HomeViewMode[]).map((value) => (
             <View
@@ -544,19 +548,19 @@ export default function SettingsScreen() {
                 }}
                 trackColor={{ false: theme.colors.border, true: theme.colors.tint }}
                 thumbColor="#fff"
-                accessibilityLabel={`${homeViewModeLabel(value, t)} view available in Home`}
+                accessibilityLabel={`${homeViewModeLabel(value, t)} ${t('settingsHomeViewToggleA11ySuffix')}`}
               />
             </View>
           ))}
         </View>
-        <Text preset="caption" color="textSecondary" style={styles.displayHint}>Choose which layouts appear in the Home view switcher. Keep at least one enabled.</Text>
+        <Text preset="caption" color="textSecondary" style={styles.displayHint}>{t('settingsHomeViewsHint')}</Text>
       </Modal>
 
       <Modal
         visible={showLanguageModal}
         onDismiss={() => setShowLanguageModal(false)}
         title={t('languageModalTitle')}
-        accessibilityLabel="Language settings"
+        accessibilityLabel={t('settingsLanguageTitle')}
       >
         <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('displayLanguageSection')}</Text>
         <View style={styles.displayOptions}>
@@ -688,14 +692,14 @@ export default function SettingsScreen() {
       <Modal
         visible={showSecurityModal}
         onDismiss={() => setShowSecurityModal(false)}
-        title="Security & Privacy"
-        accessibilityLabel="Security and privacy settings"
+        title={t('settingsSecurityTitle')}
+        accessibilityLabel={t('settingsSecurityTitle')}
       >
         <View style={{ gap: 16, paddingVertical: 8 }}>
           <View style={[styles.modalRow, { borderBottomColor: theme.colors.border }]}>
             <View style={{ flex: 1 }}>
-              <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>Biometric App Lock</Text>
-              <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>Require Face ID, Touch ID, or device biometrics before opening the diary.</Text>
+              <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>{t('settingsBiometricLockTitle')}</Text>
+              <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>{t('settingsBiometricLockHint')}</Text>
             </View>
             <Switch value={biometricLockEnabled} onValueChange={handleBiometricToggle} trackColor={{ false: theme.colors.border, true: theme.colors.tint }} thumbColor="#fff" />
           </View>
@@ -706,22 +710,22 @@ export default function SettingsScreen() {
       <Modal
         visible={showDataModal}
         onDismiss={() => setShowDataModal(false)}
-        title="Data & Storage"
-        accessibilityLabel="Data and storage modal"
+        title={t('settingsDataTitle')}
+        accessibilityLabel={t('settingsDataA11y')}
       >
         <View style={{ gap: 12, paddingVertical: 8 }}>
           <View>
-            <Text preset="caption" color="textSecondary" style={{ marginBottom: 4 }}>Backup password</Text>
+            <Text preset="caption" color="textSecondary" style={{ marginBottom: 4 }}>{t('settingsBackupPassword')}</Text>
             <TextInput
               value={backupPassword}
               onChangeText={setBackupPassword}
-              placeholder="At least 12 characters"
+              placeholder={t('settingsBackupPasswordPlaceholder')}
               placeholderTextColor={theme.colors.textSecondary}
               secureTextEntry
               autoCapitalize="none"
               style={[styles.modalInput, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
             />
-            <Text preset="caption" color="textSecondary" style={{ marginTop: 4 }}>Use the same password to restore this backup on another device.</Text>
+            <Text preset="caption" color="textSecondary" style={{ marginTop: 4 }}>{t('settingsBackupPasswordHint')}</Text>
           </View>
           <TouchableOpacity
             style={[styles.modalRowBtn, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
@@ -729,8 +733,8 @@ export default function SettingsScreen() {
           >
             <Text style={{ fontSize: 22, marginRight: 12 }}>📋</Text>
             <View style={{ flex: 1 }}>
-              <Text preset="label" color="text">Export Data (JSON)</Text>
-              <Text preset="caption" color="textSecondary">Share a complete JSON export file</Text>
+              <Text preset="label" color="text">{t('settingsExportJsonTitle')}</Text>
+              <Text preset="caption" color="textSecondary">{t('settingsExportJsonSubtitle')}</Text>
             </View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -739,8 +743,8 @@ export default function SettingsScreen() {
           >
             <Text style={{ fontSize: 22, marginRight: 12 }}>🔐</Text>
             <View style={{ flex: 1 }}>
-              <Text preset="label" color="text">Create Encrypted Backup</Text>
-              <Text preset="caption" color="textSecondary">AES-256-GCM backup for private storage</Text>
+              <Text preset="label" color="text">{t('settingsEncryptedBackupTitle')}</Text>
+              <Text preset="caption" color="textSecondary">{t('settingsEncryptedBackupSubtitle')}</Text>
             </View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -749,8 +753,8 @@ export default function SettingsScreen() {
           >
             <Text style={{ fontSize: 22, marginRight: 12 }}>📥</Text>
             <View style={{ flex: 1 }}>
-              <Text preset="label" color="text">Restore Encrypted Backup</Text>
-              <Text preset="caption" color="textSecondary">Import entries from a backup file</Text>
+              <Text preset="label" color="text">{t('settingsRestoreBackupTitle')}</Text>
+              <Text preset="caption" color="textSecondary">{t('settingsRestoreBackupSubtitle')}</Text>
             </View>
           </TouchableOpacity>
         </View>
