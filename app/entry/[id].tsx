@@ -36,12 +36,11 @@ import { useDiary } from '@/features/diary/hooks/useDiary';
 import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { MarkdownText } from '@shared/components/MarkdownText';
 import { DiaryEntry, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
-import { CompanionType, COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
+import type { CompanionType } from '@/features/diary/domain/Companion';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { StickerPickerModal } from '@/features/diary/components/StickerPickerModal';
 import { TemplatePickerModal } from '@/features/diary/components/TemplatePickerModal';
-import { CompanionPickerModal } from '@/features/diary/components/CompanionPickerModal';
 import { Template } from '@/features/diary/domain/Template';
 import { generateUUID } from '@/shared/utils/uuid';
 import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
@@ -106,7 +105,6 @@ export default function EntryDetailScreen() {
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showFormattingTools, setShowFormattingTools] = useState(false);
-  const [showCompanionPicker, setShowCompanionPicker] = useState(false);
   const [showReflections, setShowReflections] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [reflectionText, setReflectionText] = useState('');
@@ -287,7 +285,6 @@ export default function EntryDetailScreen() {
   }
 
   const displayStickers = isEditing ? editStickers : entry.stickers;
-  const activeCompanion = COMPANION_OPTIONS.find((item) => item.id === editCompanion) ?? COMPANION_OPTIONS[0]!;
   const wordCount = countWords(isEditing ? editContent : entry.content);
   const moodTone = getManualMoodColor(entry.manualMood, theme.colors);
 
@@ -565,14 +562,6 @@ export default function EntryDetailScreen() {
                 {wordCount}w
               </Text>
               )}
-            <TouchableOpacity
-              onPress={() => setShowCompanionPicker(true)}
-              style={styles.companionAvatar}
-              accessibilityLabel={`${t('entryCompanionA11y')}: ${activeCompanion.name}. ${t('entryCompanionChangeA11y')}`}
-              accessibilityRole="button"
-            >
-              <Text style={{ fontSize: 22 }}>{activeCompanion.avatar}</Text>
-            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -586,12 +575,6 @@ export default function EntryDetailScreen() {
         visible={showTemplatePicker}
         onClose={() => setShowTemplatePicker(false)}
         onSelectTemplate={handleSelectTemplate}
-      />
-      <CompanionPickerModal
-        visible={showCompanionPicker}
-        onClose={() => setShowCompanionPicker(false)}
-        selectedCompanion={editCompanion}
-        onSelectCompanion={setEditCompanion}
       />
       <Modal
         visible={showReflections}
@@ -821,12 +804,5 @@ const styles = StyleSheet.create({
   wordCount: {
     fontSize: 11,
     fontVariant: ['tabular-nums'],
-  },
-  companionAvatar: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 18,
   },
 });

@@ -81,14 +81,13 @@ export default function TimelineScreen() {
   const [filterDate, setFilterDate] = useState("");
   const [filterTag, setFilterTag] = useState("");
   const [filterMood, setFilterMood] = useState("");
-  const [filterCompanion, setFilterCompanion] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const [collapsedYears, setCollapsedYears] = useState<Set<string>>(new Set());
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
   const [hierarchyMode, setHierarchyMode] = useState<HierarchyMode>("year-month-date");
   const [expandedFilter, setExpandedFilter] = useState<
-    "date" | "tag" | "mood" | "companion" | null
+    "date" | "tag" | "mood" | null
   >(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isDrawerMounted, setIsDrawerMounted] = useState(false);
@@ -121,9 +120,6 @@ export default function TimelineScreen() {
               : [],
           ),
         ),
-      ).sort(),
-      companion: Array.from(
-        new Set(entries.map((entry) => entry.companion)),
       ).sort(),
     }),
     [entries],
@@ -307,7 +303,6 @@ export default function TimelineScreen() {
       !filterDate &&
       !filterTag &&
       !filterMood &&
-      !filterCompanion &&
       !favoritesOnly
     )
       return entries.filter((entry) => isDiaryEntryVisible(entry));
@@ -327,7 +322,6 @@ export default function TimelineScreen() {
           (e.manualMood
             ? e.manualMood === filterMood.toLowerCase()
             : false)) &&
-        (!filterCompanion || e.companion === filterCompanion.toLowerCase()) &&
         (!favoritesOnly || e.isFavorite),
     );
   }, [
@@ -336,7 +330,6 @@ export default function TimelineScreen() {
     filterDate,
     filterTag,
     filterMood,
-    filterCompanion,
     favoritesOnly,
   ]);
 
@@ -386,9 +379,9 @@ export default function TimelineScreen() {
           </View>
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text preset="caption" color="textSecondary" style={styles.drawerSectionLabel}>{t("homeDrawerFilterEntries")}</Text>
-            {(["date", "tag", "mood", "companion"] as const).map((kind) => {
-              const value = kind === "date" ? filterDate : kind === "tag" ? filterTag : kind === "mood" ? filterMood : filterCompanion;
-              const icon = kind === "date" ? "calendar-outline" : kind === "tag" ? "pricetag-outline" : kind === "mood" ? "heart-outline" : "people-outline";
+            {(["date", "tag", "mood"] as const).map((kind) => {
+              const value = kind === "date" ? filterDate : kind === "tag" ? filterTag : filterMood;
+              const icon = kind === "date" ? "calendar-outline" : kind === "tag" ? "pricetag-outline" : "heart-outline";
               return (
                 <Fragment key={kind}>
                   <TouchableOpacity onPress={() => setExpandedFilter(expandedFilter === kind ? null : kind)} style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel={`${t("homeDrawerFilterBy")} ${homeFilterKindLabel(kind, t)}`}>
@@ -398,14 +391,14 @@ export default function TimelineScreen() {
                   </TouchableOpacity>
                   {expandedFilter === kind && (
                     <View style={[styles.inlineOptions, { borderBottomColor: theme.colors.border }]}>
-                      <TouchableOpacity onPress={() => { if (kind === "date") setFilterDate(""); if (kind === "tag") setFilterTag(""); if (kind === "mood") setFilterMood(""); if (kind === "companion") setFilterCompanion(""); setExpandedFilter(null); }} style={styles.inlineOption}>
+                      <TouchableOpacity onPress={() => { if (kind === "date") setFilterDate(""); if (kind === "tag") setFilterTag(""); if (kind === "mood") setFilterMood(""); setExpandedFilter(null); }} style={styles.inlineOption}>
                         <Text preset="caption" color={!value ? "tint" : "textSecondary"}>{homeFilterAllLabel(kind, t)}</Text>
                       </TouchableOpacity>
                       {filterOptions[kind].map((option) => {
                         const selected = option === value;
                         const optionMoodColor = kind === "mood" ? moodColor(option) : theme.colors.text;
                         return (
-                          <TouchableOpacity key={option} onPress={() => { if (kind === "date") setFilterDate(option); if (kind === "tag") setFilterTag(option); if (kind === "mood") setFilterMood(option); if (kind === "companion") setFilterCompanion(option); setExpandedFilter(null); }} style={[styles.inlineOption, selected && { backgroundColor: theme.colors.tint + "18" }]}>
+                          <TouchableOpacity key={option} onPress={() => { if (kind === "date") setFilterDate(option); if (kind === "tag") setFilterTag(option); if (kind === "mood") setFilterMood(option); setExpandedFilter(null); }} style={[styles.inlineOption, selected && { backgroundColor: theme.colors.tint + "18" }]}>
                             {kind === "mood" ? (
                               <View style={[styles.filterMoodBadge, { backgroundColor: optionMoodColor + "18", borderColor: optionMoodColor }]}>
                                 <Text preset="caption" style={[styles.filterMoodBadgeText, { color: optionMoodColor }]}>{manualMoodLabel(option, t)}</Text>
@@ -426,7 +419,7 @@ export default function TimelineScreen() {
               <Text preset="bodySmall" color="text" style={styles.drawerRowText}>{t("homeFavoritesOnly")}</Text>
               <Ionicons name={favoritesOnly ? "checkbox" : "square-outline"} size={20} color={favoritesOnly ? theme.colors.tint : theme.colors.textSecondary} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => { setFilterDate(""); setFilterTag(""); setFilterMood(""); setFilterCompanion(""); setFavoritesOnly(false); }} style={styles.clearFilters} accessibilityRole="button">
+            <TouchableOpacity onPress={() => { setFilterDate(""); setFilterTag(""); setFilterMood(""); setFavoritesOnly(false); }} style={styles.clearFilters} accessibilityRole="button">
               <Text preset="bodySmall" color="tint">{t("homeClearAllFilters")}</Text>
             </TouchableOpacity>
           </ScrollView>

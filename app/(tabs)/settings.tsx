@@ -3,8 +3,8 @@
  *
  * Consolidated Settings & Profile screen:
  * - Title: ⚙️ Settings (24px bold)
- * - Defined option rows: Appearance, AI Companion, Profile Details, Data & Storage, Reset App
- * - Modals for Appearance, Companion, Profile Details and Data Export
+ * - Defined option rows: Appearance, Data & Storage, Reset App
+ * - Modals for Appearance and Data Export
  */
 
 import { useState } from 'react';
@@ -22,9 +22,6 @@ import { useTheme } from '@/providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { Icon, type IconProps } from '@shared/components/Icon';
 import { Modal } from '@shared/components/Modal';
-import { Button } from '@shared/components/Button';
-import { CompanionPickerModal } from '@/features/diary/components/CompanionPickerModal';
-import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { useAppStore, type CalendarDateFormat, type FontFamily, type FontScale, type HomeViewMode, type TimeFormat } from '@/stores/useAppStore';
@@ -40,10 +37,8 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useTranslation();
-  const { entries, selectedCompanion, setSelectedCompanion, saveDiaryEntry } = useDiary();
+  const { entries, saveDiaryEntry } = useDiary();
   const biometricLockEnabled = useAppStore((state) => state.biometricLockEnabled);
-  const remoteAiConsent = useAppStore((state) => state.remoteAiConsent);
-  const setRemoteAiConsent = useAppStore((state) => state.setRemoteAiConsent);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const timeFormat = useAppStore((state) => state.timeFormat);
   const calendarFirstDay = useAppStore((state) => state.calendarFirstDay);
@@ -64,20 +59,11 @@ export default function SettingsScreen() {
 
   // Modals
   const [showAppearanceModal, setShowAppearanceModal] = useState(false);
-  const [showCompanionModal, setShowCompanionModal] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showDataModal, setShowDataModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showDisplayModal, setShowDisplayModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [backupPassword, setBackupPassword] = useState('');
-
-  // Profile form state
-  const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
-  const [email, setEmail] = useState(profile?.email ?? '');
-  const [bio, setBio] = useState(profile?.bio ?? '');
-
-  const activeCompanion = COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
 
   const handleExportData = async () => {
     try {
@@ -153,12 +139,6 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleSaveProfileDetails = async () => {
-    await saveProfile({ displayName, email, bio });
-    setShowProfileModal(false);
-    Alert.alert('Saved', 'Profile updated successfully.');
-  };
-
   const settingsOptions = [
     {
       id: 'appearance',
@@ -180,25 +160,6 @@ export default function SettingsScreen() {
       subtitle: `${t('settingsLanguageSubtitle')}: ${activeLanguage.nativeLabel}`,
       icon: 'language-outline' as IconProps['name'],
       onPress: () => setShowLanguageModal(true),
-    },
-    {
-      id: 'companion',
-      title: t('settingsCompanionTitle'),
-      subtitle: `${activeCompanion.avatar} ${activeCompanion.name}`,
-      icon: 'sparkles-outline' as IconProps['name'],
-      onPress: () => setShowCompanionModal(true),
-    },
-    {
-      id: 'profile',
-      title: t('settingsProfileTitle'),
-      subtitle: profile?.displayName || t('settingsProfileSubtitle'),
-      icon: 'person-outline' as IconProps['name'],
-      onPress: () => {
-        setDisplayName(profile?.displayName ?? '');
-        setEmail(profile?.email ?? '');
-        setBio(profile?.bio ?? '');
-        setShowProfileModal(true);
-      },
     },
     {
       id: 'security',
@@ -544,76 +505,6 @@ export default function SettingsScreen() {
             </View>
             <Switch value={biometricLockEnabled} onValueChange={handleBiometricToggle} trackColor={{ false: theme.colors.border, true: theme.colors.tint }} thumbColor="#fff" />
           </View>
-          <View style={[styles.modalRow, { borderBottomColor: theme.colors.border }]}>
-            <View style={{ flex: 1 }}>
-              <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>Remote AI Summaries</Text>
-              <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>Allow only when the configured endpoint confirms zero data retention.</Text>
-            </View>
-            <Switch value={remoteAiConsent} onValueChange={setRemoteAiConsent} trackColor={{ false: theme.colors.border, true: theme.colors.tint }} thumbColor="#fff" />
-          </View>
-        </View>
-      </Modal>
-
-      {/* ── 2. Companion Modal ───────────────────────────────────────────── */}
-      <CompanionPickerModal
-        visible={showCompanionModal}
-        onClose={() => setShowCompanionModal(false)}
-        selectedCompanion={selectedCompanion}
-        onSelectCompanion={setSelectedCompanion}
-      />
-
-      {/* ── 3. Profile Details Modal ─────────────────────────────────────── */}
-      <Modal
-        visible={showProfileModal}
-        onDismiss={() => setShowProfileModal(false)}
-        title="Profile Details"
-        accessibilityLabel="Profile details modal"
-      >
-        <View style={{ gap: 12, paddingVertical: 8 }}>
-          <View>
-            <Text preset="caption" color="textSecondary" style={{ marginBottom: 4 }}>Display Name</Text>
-            <TextInput
-              value={displayName}
-              onChangeText={setDisplayName}
-              placeholder="Your name"
-              placeholderTextColor={theme.colors.textSecondary}
-              style={[
-                styles.modalInput,
-                { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
-              ]}
-            />
-          </View>
-          <View>
-            <Text preset="caption" color="textSecondary" style={{ marginBottom: 4 }}>Email</Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholderTextColor={theme.colors.textSecondary}
-              style={[
-                styles.modalInput,
-                { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
-              ]}
-            />
-          </View>
-          <View>
-            <Text preset="caption" color="textSecondary" style={{ marginBottom: 4 }}>Bio</Text>
-            <TextInput
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Write a short bio…"
-              multiline
-              numberOfLines={3}
-              placeholderTextColor={theme.colors.textSecondary}
-              style={[
-                styles.modalInput,
-                { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, minHeight: 70 },
-              ]}
-            />
-          </View>
-          <Button label="Save Changes" variant="primary" onPress={handleSaveProfileDetails} style={{ marginTop: 8 }} />
         </View>
       </Modal>
 

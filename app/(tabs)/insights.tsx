@@ -5,12 +5,13 @@ import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@providers/ThemeProvider";
 import { Text } from "@shared/components/Text";
+import { stripHtml } from "@shared/utils/html";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
 import { findStickerItem } from "@/features/diary/domain/Sticker";
 import { useAppStore } from "@/stores/useAppStore";
-import { manualMoodLabel, useTranslation } from "@/localization/i18n";
+import { manualMoodLabel, type TranslationKey, useTranslation } from "@/localization/i18n";
 
 type InsightsRange = "year" | "month" | "week";
 type JournalTimeBucket = "morning" | "afternoon" | "evening" | "night";
@@ -30,6 +31,11 @@ function dateKey(date: Date): string {
 
 function entryDate(value: string): Date {
   return new Date(`${value}T12:00:00`);
+}
+
+function countWords(value: string): number {
+  const clean = stripHtml(value).replace(/[*#`>_-]/g, " ").trim();
+  return clean ? clean.split(/\s+/).filter(Boolean).length : 0;
 }
 
 function journalTimeBucket(value: string): JournalTimeBucket | null {
@@ -128,8 +134,16 @@ export default function InsightsScreen() {
     const moodCounts = new Map<string, number>();
     const stickerCounts = new Map<string, number>();
     const journalTimeCounts = new Map<JournalTimeBucket, number>();
+    const writingDays = new Set<string>();
+    let wordTotal = 0;
+    let stickerTotal = 0;
+    let reflectionTotal = 0;
 
     scopedEntries.forEach((entry) => {
+      writingDays.add(entry.date);
+      wordTotal += countWords(entry.content);
+      stickerTotal += entry.stickers.length;
+      reflectionTotal += entry.reflections.length;
       if (entry.manualMood) moodCounts.set(entry.manualMood, (moodCounts.get(entry.manualMood) ?? 0) + 1);
       entry.stickers.forEach((sticker) => {
         stickerCounts.set(sticker.stickerId, (stickerCounts.get(sticker.stickerId) ?? 0) + 1);
@@ -202,6 +216,10 @@ export default function InsightsScreen() {
       usualJournalTime,
       activityBuckets,
       entryTotal: scopedEntries.length,
+      wordTotal,
+      stickerTotal,
+      reflectionTotal,
+      writingDayTotal: writingDays.size,
       periodLabel: range === "week"
         ? formatWeekRange(rangeStart, rangeEnd)
         : range === "month"
@@ -213,6 +231,13 @@ export default function InsightsScreen() {
   const moodTotal = stats.moodCounts.reduce((sum, [, count]) => sum + count, 0);
   const maxActivityCount = Math.max(...stats.activityBuckets.map((day) => day.count), 1);
   const moodColor = (mood: string) => getManualMoodColor(mood as ManualMood, theme.colors);
+  const numberStats: readonly { readonly label: TranslationKey; readonly value: number; readonly tone: string }[] = [
+    { label: "insightsNumberEntries", value: stats.entryTotal, tone: theme.colors.tint },
+    { label: "insightsNumberWords", value: stats.wordTotal, tone: theme.colors.tint },
+    { label: "insightsNumberStickers", value: stats.stickerTotal, tone: theme.colors.tint },
+    { label: "insightsNumberWritingDays", value: stats.writingDayTotal, tone: theme.colors.tint },
+    { label: "insightsNumberReflections", value: stats.reflectionTotal, tone: theme.colors.tint },
+  ];
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -275,6 +300,50 @@ export default function InsightsScreen() {
         contentContainerStyle={{ paddingTop: 4, paddingHorizontal: 20, paddingBottom: insets.bottom + 80 }}
         showsVerticalScrollIndicator={false}
       >
+        <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>
+          {`${rangeLabel(range)} ${t("insightsNumbersSection")}`.toUpperCase()}
+        </Text>
+        <View style={styles.numbersList}>
+          {numberStats.map((item, index) => {
+            const isFull = index === numberStats.length - 1;
+            return (
+            <View
+              key={item.label}
+              style={[
+                styles.numberCard,
+                isFull ? styles.numberCardFull : styles.numberCardHalf,
+                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+              ]}
+            >
+              <View style={styles.numberCardLabelColumn}>
+                <Text preset="bodySmall" color="textTertiary" style={styles.numberCardMuted}>{rangeLabel(range)}</Text>
+                <Text preset="h3" color="text" style={styles.numberCardTitle} numberOfLines={2}>{t(item.label)}</Text>
+                <Text preset="bodySmall" color="textTertiary" style={styles.numberCardMuted}>{t("insightsNumbersSection")}</Text>
+              </View>
+              <View style={[styles.numberCardValueColumn, isFull && styles.numberCardFullValueColumn]}>
+                <Text
+                  style={[styles.numberCardValue, isFull && styles.numberCardFullValue, { color: item.tone }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={!isFull}
+                  minimumFontScale={0.72}
+                >
+                  {item.value.toLocaleString()}
+                </Text>
+                <Text
+                  preset="label"
+                  style={[styles.numberCardUnit, isFull && styles.numberCardFullUnit, { color: item.tone }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.6}
+                >
+                  {t(item.label)}
+                </Text>
+              </View>
+            </View>
+          );
+          })}
+        </View>
+
         <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>{t("insightsMoodSection")}</Text>
         <View style={[styles.card, styles.compactCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
           {moodTotal > 0 ? (
@@ -409,6 +478,31 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
   },
+  numbersList: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 12, marginBottom: 24 },
+  numberCard: {
+    minHeight: 96,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  numberCardHalf: {
+    width: "48%",
+  },
+  numberCardFull: { width: "100%", minHeight: 112, paddingHorizontal: 18 },
+  numberCardLabelColumn: { flex: 1, minWidth: 0, paddingRight: 2 },
+  numberCardMuted: { fontSize: 15, lineHeight: 19, fontWeight: "300" },
+  numberCardTitle: { fontSize: 15, lineHeight: 19, fontWeight: "800" },
+  numberCardValueColumn: { width: 64, alignItems: "center", justifyContent: "center" },
+  numberCardValue: { fontSize: 32, lineHeight: 36, fontWeight: "800", fontVariant: ["tabular-nums"], textAlign: "center" },
+  numberCardUnit: { width: 64, fontSize: 10, lineHeight: 13, fontWeight: "800", textAlign: "center" },
+  numberCardFullValueColumn: { width: 132 },
+  numberCardFullValue: { width: 132, fontSize: 46, lineHeight: 56 },
+  numberCardFullUnit: { width: 112, fontSize: 15, lineHeight: 19 },
   sectionLabel: { fontWeight: "700", letterSpacing: 0.5, marginBottom: 10 },
   card: { borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 24 },
   compactCard: { padding: 12 },

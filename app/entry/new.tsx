@@ -5,7 +5,7 @@
  *   - Thin header:  Cancel | date | Save
  *   - Full-bleed journal body: title → rich editor
  *   - Stickers float absolutely over the scroll area
- *   - Floating bottom toolbar (above keyboard) with formatting + sticker + companion icons
+ *   - Floating bottom toolbar (above keyboard) with formatting + sticker icons
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -35,8 +35,6 @@ import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem
 import { StickerPickerModal } from '@/features/diary/components/StickerPickerModal';
 import { TemplatePickerModal } from '@/features/diary/components/TemplatePickerModal';
 import { Template } from '@/features/diary/domain/Template';
-import { CompanionPickerModal } from '@/features/diary/components/CompanionPickerModal';
-import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
 import { generateUUID } from '@/shared/utils/uuid';
 import { diaryDraftService } from '@/features/diary/services/DiaryDraftService';
 import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
@@ -59,6 +57,7 @@ const FORMAT_ITEMS: { kind: FormatActionKind; icon: string }[] = [
   { kind: 'quote',   icon: 'format-quote-close' },
   { kind: 'code',    icon: 'code-tags' },
 ];
+const DEFAULT_COMPANION = 'cat' as const;
 
 export default function CreateEntryScreen() {
   const router = useRouter();
@@ -66,7 +65,7 @@ export default function CreateEntryScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useTranslation();
-  const { saveDiaryEntry, selectedCompanion, setSelectedCompanion } = useDiary();
+  const { saveDiaryEntry } = useDiary();
   const selectedCalendarDate = useAppStore((state) => state.selectedCalendarDate);
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const editorRef = useRef<RichTextEditorHandle>(null);
@@ -86,7 +85,6 @@ export default function CreateEntryScreen() {
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showFormattingTools, setShowFormattingTools] = useState(false);
-  const [showCompanionPicker, setShowCompanionPicker] = useState(false);
   const [manualMoodWeather, setManualMoodWeather] = useState<ManualMoodWeather>('neutral');
   const [manualMood, setManualMood] = useState<ManualMood>('neutral');
   const [writingMode, setWritingMode] = useState<WritingMode>('free-write');
@@ -112,7 +110,6 @@ export default function CreateEntryScreen() {
       setTitle(draft.title);
       setContent(draft.content);
       setStickers(draft.stickers);
-      setSelectedCompanion(draft.companion);
       setManualMoodWeather(draft.manualMoodWeather);
       setManualMood(draft.manualMood ?? 'neutral');
       setWritingMode(draft.writingMode);
@@ -132,7 +129,7 @@ export default function CreateEntryScreen() {
       isHydratingDraft.current = false;
     });
     return () => { active = false; };
-  }, [setSelectedCompanion]);
+  }, []);
 
   useEffect(() => {
     if (isHydratingDraft.current || (!title.trim() && !content.trim())) return;
@@ -141,7 +138,7 @@ export default function CreateEntryScreen() {
         title,
         content,
         date: isoDate,
-        companion: selectedCompanion,
+        companion: DEFAULT_COMPANION,
         stickers,
         manualMood, manualMoodWeather, writingMode,
         sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState },
@@ -150,7 +147,7 @@ export default function CreateEntryScreen() {
       });
     }, 700);
     return () => clearTimeout(timer);
-  }, [title, content, isoDate, selectedCompanion, stickers, manualMood, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
+  }, [title, content, isoDate, stickers, manualMood, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = content
@@ -173,8 +170,6 @@ export default function CreateEntryScreen() {
   }, []);
 
   const wordCount = countWords(content);
-
-  const activeCompanion = COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
     const newSticker: PlacedSticker = {
@@ -222,7 +217,7 @@ export default function CreateEntryScreen() {
       date: isoDate,
       paperBackgroundId: 'vintage-parchment',
       stickers,
-      companion: selectedCompanion,
+      companion: DEFAULT_COMPANION,
       isFavorite,
       tags: [],
       manualMoodWeather,
@@ -442,21 +437,13 @@ export default function CreateEntryScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Right: word count + companion avatar */}
+        {/* Right: word count */}
         <View style={styles.toolbarRight}>
           {wordCount > 0 && (
             <Text preset="caption" style={[styles.wordCount, { color: theme.colors.textSecondary }]}> 
               {wordCount}w
             </Text>
           )}
-          <TouchableOpacity
-            onPress={() => setShowCompanionPicker(true)}
-            style={styles.companionAvatar}
-            accessibilityLabel={`${t('entryCompanionA11y')}: ${activeCompanion.name}. ${t('entryCompanionChangeA11y')}`}
-            accessibilityRole="button"
-          >
-            <Text style={{ fontSize: 22 }}>{activeCompanion.avatar}</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -470,12 +457,6 @@ export default function CreateEntryScreen() {
         visible={showTemplatePicker}
         onClose={() => setShowTemplatePicker(false)}
         onSelectTemplate={handleSelectTemplate}
-      />
-      <CompanionPickerModal
-        visible={showCompanionPicker}
-        onClose={() => setShowCompanionPicker(false)}
-        selectedCompanion={selectedCompanion}
-        onSelectCompanion={setSelectedCompanion}
       />
       <EntryDetailsModal
         visible={showEntryDetails}
@@ -582,12 +563,5 @@ const styles = StyleSheet.create({
   wordCount: {
     fontSize: 11,
     fontVariant: ['tabular-nums'],
-  },
-  companionAvatar: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 18,
   },
 });
