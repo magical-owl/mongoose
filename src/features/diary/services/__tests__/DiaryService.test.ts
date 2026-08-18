@@ -189,4 +189,31 @@ describe('DiaryService', () => {
 
     expect(result.success).toBe(true);
   });
+
+  it('should restore imported entries without consuming free daily limits', async () => {
+    const importedEntries = [
+      entryForDate('123e4567-e89b-12d3-a456-426614174501', dateOffset(0), 5),
+      entryForDate('123e4567-e89b-12d3-a456-426614174502', dateOffset(1), 5),
+      entryForDate('123e4567-e89b-12d3-a456-426614174503', dateOffset(2), 5),
+      entryForDate('123e4567-e89b-12d3-a456-426614174504', dateOffset(3), 5),
+    ];
+
+    const result = await service.restoreEntries(importedEntries);
+    const entriesResult = await repo.getAll();
+    const usageResult = await planUsageRepo.getDailyUsage(getLocalDateKey(new Date()));
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toHaveLength(importedEntries.length);
+    }
+    expect(entriesResult.success).toBe(true);
+    if (entriesResult.success) {
+      expect(entriesResult.data).toHaveLength(importedEntries.length);
+    }
+    expect(usageResult.success).toBe(true);
+    if (usageResult.success) {
+      expect(usageResult.data.stickersUsed).toBe(0);
+      expect(usageResult.data.stickerLimitExhaustedAt).toBeUndefined();
+    }
+  });
 });

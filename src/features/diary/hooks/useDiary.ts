@@ -46,6 +46,14 @@ export function useDiary() {
     return result;
   };
 
+  const restoreEntries = async (entriesToRestore: readonly DiaryEntry[]) => {
+    const result = await diaryService.restoreEntries(entriesToRestore);
+    if (result.success) {
+      await fetchEntries();
+    }
+    return result;
+  };
+
   const addReflection = async (entryId: string, text: string) => {
     const result = await diaryService.addReflection(entryId, text);
     if (result.success) {
@@ -74,6 +82,7 @@ export function useDiary() {
     saveDiaryEntry: saveEntry,
     deleteEntry,
     deleteDiaryEntry: deleteEntry,
+    restoreEntries,
     addReflection,
     deleteReflection,
     refresh: fetchEntries,

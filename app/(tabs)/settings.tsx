@@ -49,7 +49,7 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useTranslation();
-  const { entries, saveDiaryEntry } = useDiary();
+  const { entries, restoreEntries } = useDiary();
   const biometricLockEnabled = useAppStore((state) => state.biometricLockEnabled);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -161,9 +161,11 @@ export default function SettingsScreen() {
         {
           text: t('settingsRestoreAction'),
           onPress: async () => {
-            const mergedEntries = new Map(entries.map((entry) => [entry.id, entry]));
-            imported.entries.forEach((entry) => mergedEntries.set(entry.id, entry));
-            for (const entry of mergedEntries.values()) await saveDiaryEntry(entry);
+            const restoreResult = await restoreEntries(imported.entries);
+            if (!restoreResult.success) {
+              Alert.alert(t('entryErrorTitle'), restoreResult.error.message);
+              return;
+            }
             if (imported.profile) {
               await saveProfile({
                 displayName: imported.profile.displayName,

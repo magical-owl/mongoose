@@ -78,6 +78,18 @@ export class DiaryService {
     return await this.repo.delete(id);
   }
 
+  public async restoreEntries(entries: readonly DiaryEntry[]): Promise<Result<DiaryEntry[]>> {
+    const restored: DiaryEntry[] = [];
+    for (const entry of entries) {
+      const saveResult = await this.repo.save(entry);
+      if (!saveResult.success) {
+        return saveResult;
+      }
+      restored.push(saveResult.data);
+    }
+    return success(restored);
+  }
+
   public async addReflection(entryId: string, text: string): Promise<Result<DiaryEntry>> {
     const trimmed = text.trim();
     if (!trimmed) {
