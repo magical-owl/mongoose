@@ -56,6 +56,8 @@ export interface AppState {
   homeViewModes: Record<HomeViewMode, boolean>;
   homeViewMode: HomeViewMode;
   appLanguage: AppLanguage;
+  premiumOnboardingPromptShown: boolean;
+  premiumPromptDismissedAt: string | null;
 
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
@@ -76,6 +78,8 @@ export interface AppState {
   setHomeViewModeEnabled: (mode: HomeViewMode, enabled: boolean) => void;
   setHomeViewMode: (mode: HomeViewMode) => void;
   setAppLanguage: (language: AppLanguage) => void;
+  markPremiumOnboardingPromptShown: (shownAt: string) => void;
+  markPremiumPromptDismissed: (dismissedAt: string) => void;
   reset: () => void;
 }
 
@@ -100,6 +104,8 @@ const initialState: Pick<
   | 'homeViewModes'
   | 'homeViewMode'
   | 'appLanguage'
+  | 'premiumOnboardingPromptShown'
+  | 'premiumPromptDismissedAt'
 > = {
   themeMode: 'dark',
   accentColor: 'blue',
@@ -120,6 +126,8 @@ const initialState: Pick<
   homeViewModes: { detailed: true, timeline: true, feed: true },
   homeViewMode: 'timeline',
   appLanguage: 'en',
+  premiumOnboardingPromptShown: false,
+  premiumPromptDismissedAt: null,
 };
 
 /**
@@ -155,6 +163,11 @@ export const useAppStore = create<AppState>()(
       })),
       setHomeViewMode: (homeViewMode: HomeViewMode) => set({ homeViewMode }),
       setAppLanguage: (appLanguage: AppLanguage) => set({ appLanguage }),
+      markPremiumOnboardingPromptShown: (shownAt: string) => set({
+        premiumOnboardingPromptShown: true,
+        premiumPromptDismissedAt: shownAt,
+      }),
+      markPremiumPromptDismissed: (dismissedAt: string) => set({ premiumPromptDismissedAt: dismissedAt }),
 
       setOnboardingStatus: (onboardingStatus: OnboardingStatus) =>
         set({
@@ -190,6 +203,8 @@ export const useAppStore = create<AppState>()(
         homeViewModes: state.homeViewModes,
         homeViewMode: state.homeViewMode,
         appLanguage: state.appLanguage,
+        premiumOnboardingPromptShown: state.premiumOnboardingPromptShown,
+        premiumPromptDismissedAt: state.premiumPromptDismissedAt,
       }),
     }
   )

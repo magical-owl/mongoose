@@ -613,7 +613,7 @@ export default function SettingsScreen() {
         </View>
         <View style={[styles.limitSummary, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
           <View style={{ flex: 1 }}>
-            <Text preset="h2" color="text" style={styles.limitResetTime}>
+            <Text preset="body" color="text" style={styles.limitSummaryText}>
               {isPro ? t('premiumStatusActive') : t('premiumStatusFree')}
             </Text>
           </View>
@@ -630,7 +630,7 @@ export default function SettingsScreen() {
         </View>
         <View style={[styles.limitSummary, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
           <View style={{ flex: 1 }}>
-            <Text preset="h2" color="text" style={styles.limitResetTime}>
+            <Text preset="body" color="text" style={styles.limitSummaryText}>
               {isPro ? t('freeTierUnlimited') : freeLimitExhaustedText}
             </Text>
           </View>
@@ -647,7 +647,7 @@ export default function SettingsScreen() {
         </View>
         <View style={[styles.limitSummary, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
           <View style={{ flex: 1 }}>
-            <Text preset="h2" color="text" style={styles.limitResetTime}>
+            <Text preset="body" color="text" style={styles.limitSummaryText}>
               {isPro ? t('freeTierUnlimited') : nextFreeTierResetText}
             </Text>
           </View>
@@ -664,7 +664,7 @@ export default function SettingsScreen() {
         </View>
         <View style={[styles.limitSummary, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
           <View style={{ flex: 1 }}>
-            <Text preset="h2" color="text" style={styles.limitResetTime}>
+            <Text preset="body" color="text" style={styles.limitSummaryText}>
               {isPro ? t('freeTierUnlimited') : timeLeftUntilResetText}
             </Text>
           </View>
@@ -674,16 +674,16 @@ export default function SettingsScreen() {
         <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>
           {t('freeTierCurrentLimitsSection')}
         </Text>
-        <View style={{ gap: 10 }}>
+        <View style={styles.limitRows}>
           <View style={[styles.limitRow, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
-            <Text preset="bodySmall" color="text">{t('freeTierEntriesLimit')}</Text>
-            <Text preset="bodySmall" color="tint" style={styles.limitValue}>
+            <Text preset="body" color="text" style={styles.limitRowLabel}>{t('freeTierEntriesLimit')}</Text>
+            <Text preset="body" color="tint" style={styles.limitRowValue}>
               {isPro ? t('freeTierUnlimited') : entryUsageText}
             </Text>
           </View>
           <View style={[styles.limitRow, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
-            <Text preset="bodySmall" color="text">{t('freeTierStickersLimit')}</Text>
-            <Text preset="bodySmall" color="tint" style={styles.limitValue}>
+            <Text preset="body" color="text" style={styles.limitRowLabel}>{t('freeTierStickersLimit')}</Text>
+            <Text preset="body" color="tint" style={styles.limitRowValue}>
               {isPro ? t('freeTierUnlimited') : stickerUsageText}
             </Text>
           </View>
@@ -926,22 +926,19 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   limitSummary: {
-    minHeight: 58,
+    minHeight: 48,
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  limitResetTime: {
-    marginTop: 0,
-    fontSize: 24,
-    fontWeight: '800',
-  },
+  limitSummaryText: { fontSize: 16, lineHeight: 22, fontWeight: '700' },
+  limitRows: { gap: 8 },
   limitRow: {
-    minHeight: 46,
+    minHeight: 48,
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
@@ -951,7 +948,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
-  limitValue: {
-    fontWeight: '800',
-  },
+  limitRowLabel: { flex: 1, fontSize: 16, lineHeight: 22, fontWeight: '600' },
+  limitRowValue: { flexShrink: 0, fontSize: 16, lineHeight: 22, fontWeight: '800' },
 });

@@ -45,7 +45,7 @@ export default function OnboardingScreen(): React.JSX.Element {
 
   const completeOnboarding = () => {
     setOnboardingStatus('completed');
-    router.replace('/(tabs)');
+    router.replace('/entry/new');
   };
 
   return (

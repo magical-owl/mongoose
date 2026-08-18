@@ -24,12 +24,15 @@ import { stripHtml } from "@shared/utils/html";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
 import { appLockService } from "@/services/AppLockService";
 import { DiaryEntryView } from "@/features/diary/components/DiaryEntryView";
+import { PaywallModal } from "@/shared/components/PaywallModal";
 import { formatDisplayDate } from "@shared/utils/dateFormat";
 import { useAppStore } from "@/stores/useAppStore";
+import { useSubscription } from "@/features/subscription/hooks/useSubscription";
+import { APP_IDENTITY } from "@/config/appIdentity";
 import type { HomeViewMode } from "@/stores/useAppStore";
 import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
-import { homeFilterAllLabel, homeFilterKindLabel, homeViewModeLabel, manualMoodLabel, useTranslation } from "@/localization/i18n";
+import { homeFilterAllLabel, homeFilterKindLabel, homeViewModeLabel, manualMoodLabel, premiumPaywallTitle, useTranslation } from "@/localization/i18n";
 
 function formatTimelineMonth(value: string): string {
   const [year, month] = value.split("-").map(Number);
@@ -43,6 +46,8 @@ type HierarchyMode = "year-month-date" | "month-date" | "date" | "none";
 const HIERARCHY_MODES: HierarchyMode[] = ["year-month-date", "month-date", "date", "none"];
 const HOME_VIEW_MODES = ["timeline", "detailed", "feed"] as const satisfies readonly HomeViewMode[];
 const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
+const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
+const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 
 function viewModeIcon(mode: HomeViewMode): "albums-outline" | "git-branch-outline" | "newspaper-outline" {
   if (mode === "timeline") return "git-branch-outline";
@@ -71,12 +76,19 @@ export default function TimelineScreen() {
   const t = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const { entries, isLoading, refresh, addReflection } = useDiary();
+  const { isPro } = useSubscription();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
+  const isOnboarded = useAppStore((state) => state.isOnboarded);
   const homeViewModes = useAppStore((state) => state.homeViewModes);
   const homeViewMode = useAppStore((state) => state.homeViewMode);
+  const premiumOnboardingPromptShown = useAppStore((state) => state.premiumOnboardingPromptShown);
+  const premiumPromptDismissedAt = useAppStore((state) => state.premiumPromptDismissedAt);
   const setHomeViewMode = useAppStore((state) => state.setHomeViewMode);
+  const markPremiumOnboardingPromptShown = useAppStore((state) => state.markPremiumOnboardingPromptShown);
+  const markPremiumPromptDismissed = useAppStore((state) => state.markPremiumPromptDismissed);
   const selectableViewModes = HOME_VIEW_MODES.filter((mode) => homeViewModes[mode]);
   const moodColor = useCallback((mood: string) => getManualMoodColor(mood as ManualMood, theme.colors), [theme.colors]);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [search, setSearch] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterTag, setFilterTag] = useState("");
@@ -105,6 +117,7 @@ export default function TimelineScreen() {
   const entryRefs = useRef(new Map<string, View>());
   const scrollOffsetY = useRef(0);
   const pendingScrollEntryId = useRef<string | null>(null);
+  const premiumPromptShownThisSession = useRef(false);
 
   const filterOptions = useMemo(
     () => ({
@@ -139,6 +152,44 @@ export default function TimelineScreen() {
       drawerProgress.removeListener(listenerId);
     };
   }, [drawerProgress]);
+
+  useEffect(() => {
+    if (!isOnboarded || isPro || showPremiumModal) return;
+
+    const now = Date.now();
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    if (!premiumOnboardingPromptShown) {
+      premiumPromptShownThisSession.current = true;
+      markPremiumOnboardingPromptShown(new Date(now).toISOString());
+      timeout = setTimeout(() => setShowPremiumModal(true), 0);
+      return () => {
+        if (timeout) clearTimeout(timeout);
+      };
+    }
+
+    const dismissedAtMs = premiumPromptDismissedAt ? new Date(premiumPromptDismissedAt).getTime() : 0;
+    const cooldownElapsed = !dismissedAtMs || Number.isNaN(dismissedAtMs) || now - dismissedAtMs >= PREMIUM_REMINDER_COOLDOWN_MS;
+    if (!premiumPromptShownThisSession.current && entries.length >= PREMIUM_REMINDER_ENTRY_THRESHOLD && cooldownElapsed) {
+      premiumPromptShownThisSession.current = true;
+      timeout = setTimeout(() => setShowPremiumModal(true), 0);
+    }
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [
+    entries.length,
+    isOnboarded,
+    isPro,
+    markPremiumOnboardingPromptShown,
+    premiumOnboardingPromptShown,
+    premiumPromptDismissedAt,
+    showPremiumModal,
+  ]);
+
+  const closePremiumModal = useCallback(() => {
+    markPremiumPromptDismissed(new Date().toISOString());
+    setShowPremiumModal(false);
+  }, [markPremiumPromptDismissed]);
 
   const closeDrawer = useCallback(() => {
     setIsDrawerOpen(false);
@@ -709,6 +760,21 @@ export default function TimelineScreen() {
           </Animated.View>
         )}
       </Animated.View>
+      <PaywallModal
+        visible={showPremiumModal}
+        onClose={closePremiumModal}
+        appName={APP_IDENTITY.codename}
+        title={premiumPaywallTitle(t)}
+        subtitle={t("premiumPaywallSubtitle")}
+        features={[
+          t("premiumPaywallFeatureEntries"),
+          t("premiumPaywallFeatureStickers"),
+          t("premiumPaywallFeatureInsights"),
+          t("premiumPaywallFeatureThemes"),
+          t("premiumPaywallFeatureOffline"),
+        ]}
+        onSuccess={closePremiumModal}
+      />
     </View>
   );
 }
