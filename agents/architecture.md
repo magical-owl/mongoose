@@ -18,6 +18,12 @@ Meadow uses **Feature-First + Clean Architecture**. Every feature is self-contai
   - No `fetch`, `axios`, or API calls — delegate to hooks → services.
 - **File naming:** `*.screen.tsx`, `*.component.tsx`, `*.ui.tsx` for atomic design system components.
 
+### Componentization Requirement
+
+Screens are composition roots, not reusable UI containers. Extract repeated visual modes and complete interaction surfaces into typed components under `src/features/<feature>/components/`. Keep navigation, hooks, service calls, repositories, and screen-level side effects in the route or screen. Components receive domain data and callbacks through props and must not call `router`, storage, APIs, or repositories directly.
+
+Before adding a new screen-specific UI pattern, check [`agents/componentization.md`](componentization.md) and prefer an existing shared or feature component. A component used by two screens must have one source of truth and a component test.
+
 ### 2. Hooks Layer (`src/features/<feature>/hooks/`)
 
 - **What it does:** Bridges services to React state. Manages component lifecycle, loading/error states, and side effects.

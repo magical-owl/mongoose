@@ -22,6 +22,8 @@ module.exports = {
     '^@database/(.*)$': '<rootDir>/src/database/$1',
     '^@utils/(.*)$': '<rootDir>/src/utils/$1',
     '^@tests/(.*)$': '<rootDir>/tests/$1',
+    // Stub image assets — Metro returns a number, Jest returns 1
+    '\\.(png|jpg|jpeg|gif|webp|svg)$': '<rootDir>/tests/__mocks__/fileMock.js',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],

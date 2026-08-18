@@ -1,368 +1,984 @@
-import { useState } from 'react';
+import { Fragment, useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
+  Animated,
+  LayoutAnimation,
+  PanResponder,
   View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
   ScrollView,
-  SafeAreaView,
-  ActivityIndicator,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { useDiary } from '@/features/diary/hooks/useDiary';
-import { COMPANION_OPTIONS } from '@/features/diary/domain/Companion';
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+  Pressable,
+  Alert,
+  UIManager,
+  findNodeHandle,
+  useWindowDimensions,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter, useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "@providers/ThemeProvider";
+import { Text } from "@shared/components/Text";
+import { useDiary } from "@/features/diary/hooks/useDiary";
+import { stripHtml } from "@shared/utils/html";
+import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
+import { appLockService } from "@/services/AppLockService";
+import { DiaryEntryView } from "@/features/diary/components/DiaryEntryView";
+import { formatDisplayDate } from "@shared/utils/dateFormat";
+import { useAppStore } from "@/stores/useAppStore";
+import type { HomeViewMode } from "@/stores/useAppStore";
+import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
+import { getManualMoodColor } from "@/features/diary/domain/moodColors";
+import { homeFilterAllLabel, homeFilterKindLabel, homeViewModeLabel, manualMoodLabel, useTranslation } from "@/localization/i18n";
+
+function formatTimelineMonth(value: string): string {
+  const [year, month] = value.split("-").map(Number);
+  if (!year || !month) return value;
+  return new Intl.DateTimeFormat(undefined, { month: "long" }).format(
+    new Date(year, month - 1, 1, 12),
+  );
+}
+
+type HierarchyMode = "year-month-date" | "month-date" | "date" | "none";
+const HIERARCHY_MODES: HierarchyMode[] = ["year-month-date", "month-date", "date", "none"];
+const HOME_VIEW_MODES = ["timeline", "detailed", "feed"] as const satisfies readonly HomeViewMode[];
+const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
+
+function viewModeIcon(mode: HomeViewMode): "albums-outline" | "git-branch-outline" | "newspaper-outline" {
+  if (mode === "timeline") return "git-branch-outline";
+  if (mode === "feed") return "newspaper-outline";
+  return "albums-outline";
+}
+
+function hierarchyModeLabel(mode: HierarchyMode): string {
+  if (mode === "month-date") return "Month / Date";
+  if (mode === "date") return "Date";
+  if (mode === "none") return "Flat list";
+  return "Year / Month / Date";
+}
+
+function capitalizeFilterLabel(value: string): string {
+  return value
+    .split(/(\s+|-)/)
+    .map((part) => /^[A-Za-z]/.test(part) ? `${part.charAt(0).toUpperCase()}${part.slice(1)}` : part)
+    .join("");
+}
 
 export default function TimelineScreen() {
   const router = useRouter();
-  const { entries, isLoading, streakStats, selectedCompanion } = useDiary();
-  const [viewMode, setViewMode] = useState<'feed' | 'calendar'>('feed');
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const t = useTranslation();
+  const { width: windowWidth } = useWindowDimensions();
+  const { entries, isLoading, refresh, addReflection } = useDiary();
+  const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
+  const homeViewModes = useAppStore((state) => state.homeViewModes);
+  const homeViewMode = useAppStore((state) => state.homeViewMode);
+  const setHomeViewMode = useAppStore((state) => state.setHomeViewMode);
+  const selectableViewModes = HOME_VIEW_MODES.filter((mode) => homeViewModes[mode]);
+  const moodColor = useCallback((mood: string) => getManualMoodColor(mood as ManualMood, theme.colors), [theme.colors]);
+  const [search, setSearch] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+  const [filterTag, setFilterTag] = useState("");
+  const [filterMood, setFilterMood] = useState("");
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
+  const [collapsedYears, setCollapsedYears] = useState<Set<string>>(new Set());
+  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
+  const [hierarchyMode, setHierarchyMode] = useState<HierarchyMode>("year-month-date");
+  const [expandedFilter, setExpandedFilter] = useState<
+    "date" | "tag" | "mood" | null
+  >(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isDrawerMounted, setIsDrawerMounted] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showHeaderOptions, setShowHeaderOptions] = useState(false);
+  const [showHierarchyMenu, setShowHierarchyMenu] = useState(false);
+  const drawerWidth = Math.min(windowWidth * 0.86, 380);
+  const drawerProgress = useRef(new Animated.Value(0)).current;
+  const drawerProgressValue = useRef(0);
+  const drawerDragStart = useRef(0);
+  const scrollRef = useRef<ScrollView | null>(null);
+  const entryLayoutY = useRef(new Map<string, number>());
+  const dateGroupLayoutY = useRef(new Map<string, number>());
+  const entryDateById = useRef(new Map<string, string>());
+  const entryRefs = useRef(new Map<string, View>());
+  const scrollOffsetY = useRef(0);
+  const pendingScrollEntryId = useRef<string | null>(null);
 
-  const activeCompanion = COMPANION_OPTIONS.find((c) => c.id === selectedCompanion) || COMPANION_OPTIONS[0]!;
+  const filterOptions = useMemo(
+    () => ({
+      date: Array.from(new Set(entries.map((entry) => entry.date)))
+        .sort()
+        .reverse(),
+      tag: Array.from(new Set(entries.flatMap((entry) => entry.tags))).sort(),
+      mood: Array.from(
+        new Set(
+          entries.flatMap((entry) =>
+            entry.manualMood
+              ? [entry.manualMood]
+              : [],
+          ),
+        ),
+      ).sort(),
+    }),
+    [entries],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
+
+  useEffect(() => {
+    const listenerId = drawerProgress.addListener(({ value }) => {
+      drawerProgressValue.current = value;
+    });
+    return () => {
+      drawerProgress.removeListener(listenerId);
+    };
+  }, [drawerProgress]);
+
+  const closeDrawer = useCallback(() => {
+    setIsDrawerOpen(false);
+  }, []);
+
+  const openDrawer = useCallback(() => {
+    setIsDrawerMounted(true);
+    setIsDrawerOpen(true);
+  }, []);
+
+  useEffect(() => {
+    Animated.timing(drawerProgress, {
+      toValue: isDrawerOpen ? 1 : 0,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished && !isDrawerOpen) {
+        setIsDrawerMounted(false);
+      }
+    });
+  }, [drawerProgress, isDrawerOpen]);
+
+  const drawerPanResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          isDrawerMounted &&
+          Math.abs(gesture.dx) > 8 &&
+          Math.abs(gesture.dx) > Math.abs(gesture.dy),
+        onPanResponderGrant: () => {
+          drawerProgress.stopAnimation((value) => {
+            drawerDragStart.current = value;
+          });
+        },
+        onPanResponderMove: (_, gesture) => {
+          const nextProgress = Math.max(
+            0,
+            Math.min(1, drawerDragStart.current + gesture.dx / drawerWidth),
+          );
+          drawerProgress.setValue(nextProgress);
+        },
+        onPanResponderRelease: (_, gesture) => {
+          const shouldOpen =
+            gesture.vx > 0.35 ||
+            (gesture.vx >= -0.35 && drawerProgressValue.current > 0.5);
+          setIsDrawerOpen(shouldOpen);
+        },
+        onPanResponderTerminate: () => {
+          setIsDrawerOpen(drawerProgressValue.current > 0.5);
+        },
+      }),
+    [drawerProgress, drawerWidth, isDrawerMounted],
+  );
+
+  const [viewModeIndex, setViewModeIndex] = useState(() => {
+    const selectedIndex = selectableViewModes.findIndex((mode) => mode === homeViewMode);
+    return selectedIndex >= 0 ? selectedIndex : 0;
+  });
+  const viewMode: HomeViewMode = selectableViewModes[viewModeIndex] ?? "detailed";
+
+  const handleAddReflection = useCallback(
+    async (entryId: string, text: string) => {
+      const result = await addReflection(entryId, text);
+      if (!result.success) {
+        Alert.alert(t("reflectionNotSavedTitle"), result.error.message);
+        return false;
+      }
+      return true;
+    },
+    [addReflection, t],
+  );
+
+  const scrollToEntry = useCallback((entryId: string) => {
+    const entryNode = entryRefs.current.get(entryId);
+    if (entryNode && scrollRef.current) {
+      const entryHandle = findNodeHandle(entryNode);
+      const scrollHandle = findNodeHandle(scrollRef.current);
+      if (entryHandle !== null && scrollHandle !== null) {
+        UIManager.measure(entryHandle, (_entryX: number, _entryY: number, _entryWidth: number, _entryHeight: number, _entryPageX: number, entryPageY: number) => {
+          UIManager.measure(scrollHandle, (_scrollX: number, _scrollY: number, _scrollWidth: number, _scrollHeight: number, _scrollPageX: number, scrollPageY: number) => {
+          const nextY = scrollOffsetY.current + entryPageY - scrollPageY - 72;
+          scrollRef.current?.scrollTo({ y: Math.max(0, nextY), animated: true });
+          pendingScrollEntryId.current = null;
+          });
+        });
+        return true;
+      }
+    }
+
+    const entryY = entryLayoutY.current.get(entryId);
+    const entryDate = entryDateById.current.get(entryId);
+    const groupY = entryDate ? dateGroupLayoutY.current.get(entryDate) : undefined;
+    if (entryY === undefined || groupY === undefined) return false;
+    scrollRef.current?.scrollTo({ y: Math.max(0, groupY + entryY - 72), animated: true });
+    pendingScrollEntryId.current = null;
+    return true;
+  }, []);
+
+  const handleEntryLayout = useCallback(
+    (entryId: string, entryDate: string, y: number) => {
+      entryDateById.current.set(entryId, entryDate);
+      entryLayoutY.current.set(entryId, y);
+      if (pendingScrollEntryId.current === entryId && viewMode === "timeline") {
+        scrollToEntry(entryId);
+      }
+    },
+    [scrollToEntry, viewMode],
+  );
+
+  const handleDateGroupLayout = useCallback(
+    (date: string, y: number) => {
+      dateGroupLayoutY.current.set(date, y);
+      const pendingId = pendingScrollEntryId.current;
+      if (pendingId && entryDateById.current.get(pendingId) === date && viewMode === "timeline") {
+        scrollToEntry(pendingId);
+      }
+    },
+    [scrollToEntry, viewMode],
+  );
+
+  const handleReflectionSummaryPress = useCallback(
+    (entryId: string) => {
+      const entry = entries.find((item) => item.id === entryId);
+      const timelineIndex = selectableViewModes.findIndex((mode) => mode === "timeline");
+      if (!entry || timelineIndex < 0) {
+        Alert.alert(t("timelineUnavailableTitle"), t("timelineUnavailableMessage"));
+        return;
+      }
+
+      pendingScrollEntryId.current = entryId;
+      setCollapsedYears((current) => {
+        const next = new Set(current);
+        next.delete(entry.date.slice(0, 4));
+        return next;
+      });
+      setCollapsedMonths((current) => {
+        const next = new Set(current);
+        next.delete(entry.date.slice(0, 7));
+        return next;
+      });
+      setCollapsedDates((current) => {
+        const next = new Set(current);
+        next.delete(entry.date);
+        return next;
+      });
+      setViewModeIndex(timelineIndex);
+      setHomeViewMode("timeline");
+      [80, 180, 320].forEach((delay) => {
+        setTimeout(() => {
+          if (pendingScrollEntryId.current === entryId) {
+            scrollToEntry(entryId);
+          }
+        }, delay);
+      });
+    },
+    [entries, scrollToEntry, selectableViewModes, setHomeViewMode, t],
+  );
+
+  const filteredEntries = useMemo(() => {
+    if (
+      !search.trim() &&
+      !filterDate &&
+      !filterTag &&
+      !filterMood &&
+      !favoritesOnly
+    )
+      return entries.filter((entry) => isDiaryEntryVisible(entry));
+    const q = search.toLowerCase();
+    return entries.filter(
+      (e) =>
+        isDiaryEntryVisible(e) &&
+        (!q ||
+          e.title.toLowerCase().includes(q) ||
+          stripHtml(e.content).toLowerCase().includes(q)) &&
+        (!filterDate || e.date.includes(filterDate)) &&
+        (!filterTag ||
+          e.tags.some((tag) =>
+            tag.toLowerCase().includes(filterTag.toLowerCase()),
+          )) &&
+        (!filterMood ||
+          (e.manualMood
+            ? e.manualMood === filterMood.toLowerCase()
+            : false)) &&
+        (!favoritesOnly || e.isFavorite),
+    );
+  }, [
+    entries,
+    search,
+    filterDate,
+    filterTag,
+    filterMood,
+    favoritesOnly,
+  ]);
+
+  const groupedEntries = useMemo(() => {
+    const groups = new Map<string, typeof filteredEntries>();
+    [...filteredEntries]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .forEach((entry) => {
+        const group = groups.get(entry.date);
+        if (group) group.push(entry);
+        else groups.set(entry.date, [entry]);
+      });
+    return Array.from(groups.entries());
+  }, [filteredEntries]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.appTitle}>Mongoose</Text>
-          <Text style={styles.subtitle}>AI Diary Companion</Text>
-        </View>
-
-        {/* View Switcher: Feed | Calendar */}
-        <View style={styles.viewSwitcher}>
-          <TouchableOpacity
-            style={[styles.switchBtn, viewMode === 'feed' && styles.switchBtnActive]}
-            onPress={() => setViewMode('feed')}
-          >
-            <Text style={[styles.switchText, viewMode === 'feed' && styles.switchTextActive]}>Feed</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.switchBtn, viewMode === 'calendar' && styles.switchBtnActive]}
-            onPress={() => setViewMode('calendar')}
-          >
-            <Text style={[styles.switchText, viewMode === 'calendar' && styles.switchTextActive]}>Calendar</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Streak & Companion Banner */}
-      <View style={styles.streakBanner}>
-        <Text style={styles.companionAvatar}>{activeCompanion.avatar}</Text>
-        <View style={styles.streakInfo}>
-          <Text style={styles.streakTitle}>{activeCompanion.name}</Text>
-          <Text style={styles.streakSubtitle}>🔥 {streakStats.currentStreak} Day Writing Streak</Text>
-        </View>
-      </View>
-
-      {/* Content Feed / Calendar */}
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#10B981" />
-        </View>
-      ) : viewMode === 'feed' ? (
-        <ScrollView contentContainerStyle={styles.feedContent}>
-          {entries.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>📝</Text>
-              <Text style={styles.emptyTitle}>No entries yet</Text>
-              <Text style={styles.emptyDesc}>Tap "+" below to write your first entry with {activeCompanion.name}!</Text>
-            </View>
-          ) : (
-            entries.map((entry) => (
-              <TouchableOpacity
-                key={entry.id}
-                style={styles.entryCard}
-                onPress={() => router.push(`/entry/${entry.id}`)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.cardDate}>{entry.date}</Text>
-                  {entry.sentiment && <Text style={styles.cardMood}>{entry.sentiment.mood}</Text>}
-                </View>
-                <Text style={styles.cardTitle}>{entry.title}</Text>
-                <Text style={styles.cardSnippet} numberOfLines={2}>
-                  {entry.content}
-                </Text>
-                {entry.stickers.length > 0 && (
-                  <Text style={styles.stickerTag}>🏷️ {entry.stickers.length} Stickers Placed</Text>
-                )}
-              </TouchableOpacity>
-            ))
-          )}
-        </ScrollView>
-      ) : (
-        <ScrollView contentContainerStyle={styles.feedContent}>
-          <View style={styles.calendarCard}>
-            <Text style={styles.calendarTitle}>📅 Calendar View</Text>
-            <Text style={styles.calendarSubtitle}>Select any day below to view or write entries:</Text>
-
-            <View style={styles.calendarGrid}>
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-                <Text key={d} style={styles.calendarHeaderCell}>{d}</Text>
-              ))}
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
-                const dayStr = `2026-08-${day < 10 ? '0' + day : day}`;
-                const hasEntry = entries.some((e) => e.date === dayStr);
-                return (
-                  <TouchableOpacity
-                    key={day}
-                    style={[styles.calendarCell, hasEntry && styles.calendarCellHasEntry]}
-                    onPress={() => {
-                      const found = entries.find((e) => e.date === dayStr);
-                      if (found) {
-                        router.push(`/entry/${found.id}`);
-                      } else {
-                        router.push('/entry/new');
-                      }
-                    }}
-                  >
-                    <Text style={[styles.calendarCellText, hasEntry && styles.calendarCellTextActive]}>
-                      {day}
-                    </Text>
-                    {hasEntry && <View style={styles.dot} />}
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      {...drawerPanResponder.panHandlers}
+    >
+      {isDrawerMounted && (
+        <Animated.View
+          pointerEvents={isDrawerOpen ? "auto" : "none"}
+          style={[
+            styles.drawer,
+            {
+              width: drawerWidth,
+              backgroundColor: theme.colors.background,
+              paddingTop: insets.top + 12,
+              paddingBottom: insets.bottom + 16,
+              transform: [
+                {
+                  translateX: drawerProgress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-drawerWidth, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <View style={styles.drawerHeader}>
+            <View />
+            <TouchableOpacity onPress={closeDrawer} style={styles.drawerClose} accessibilityRole="button" accessibilityLabel={t("homeDrawerCloseA11y")}>
+              <Ionicons name="close" size={22} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text preset="caption" color="textSecondary" style={styles.drawerSectionLabel}>{t("homeDrawerFilterEntries")}</Text>
+            {(["date", "tag", "mood"] as const).map((kind) => {
+              const value = kind === "date" ? filterDate : kind === "tag" ? filterTag : filterMood;
+              const icon = kind === "date" ? "calendar-outline" : kind === "tag" ? "pricetag-outline" : "heart-outline";
+              return (
+                <Fragment key={kind}>
+                  <TouchableOpacity onPress={() => setExpandedFilter(expandedFilter === kind ? null : kind)} style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel={`${t("homeDrawerFilterBy")} ${homeFilterKindLabel(kind, t)}`}>
+                    <Ionicons name={icon} size={20} color={value ? theme.colors.tint : theme.colors.textSecondary} />
+                    <Text preset="bodySmall" color="text" style={styles.drawerRowText}>{value ? (kind === "mood" ? manualMoodLabel(value, t) : capitalizeFilterLabel(value)) : homeFilterKindLabel(kind, t)}</Text>
+                    <Ionicons name={expandedFilter === kind ? "chevron-down" : "chevron-forward"} size={16} color={theme.colors.textSecondary} />
                   </TouchableOpacity>
-                );
-              })}
+                  {expandedFilter === kind && (
+                    <View style={[styles.inlineOptions, { borderBottomColor: theme.colors.border }]}>
+                      <TouchableOpacity onPress={() => { if (kind === "date") setFilterDate(""); if (kind === "tag") setFilterTag(""); if (kind === "mood") setFilterMood(""); setExpandedFilter(null); }} style={styles.inlineOption}>
+                        <Text preset="caption" color={!value ? "tint" : "textSecondary"}>{homeFilterAllLabel(kind, t)}</Text>
+                      </TouchableOpacity>
+                      {filterOptions[kind].map((option) => {
+                        const selected = option === value;
+                        const optionMoodColor = kind === "mood" ? moodColor(option) : theme.colors.text;
+                        return (
+                          <TouchableOpacity key={option} onPress={() => { if (kind === "date") setFilterDate(option); if (kind === "tag") setFilterTag(option); if (kind === "mood") setFilterMood(option); setExpandedFilter(null); }} style={[styles.inlineOption, selected && { backgroundColor: theme.colors.tint + "18" }]}>
+                            {kind === "mood" ? (
+                              <View style={[styles.filterMoodBadge, { backgroundColor: optionMoodColor + "18", borderColor: optionMoodColor }]}>
+                                <Text preset="caption" style={[styles.filterMoodBadgeText, { color: optionMoodColor }]}>{manualMoodLabel(option, t)}</Text>
+                              </View>
+                            ) : (
+                              <Text preset="caption" color={selected ? "tint" : "text"}>{capitalizeFilterLabel(option)}</Text>
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  )}
+                </Fragment>
+              );
+            })}
+            <TouchableOpacity onPress={() => setFavoritesOnly((value) => !value)} style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]} accessibilityRole="switch" accessibilityState={{ checked: favoritesOnly }}>
+              <Ionicons name="star-outline" size={20} color={favoritesOnly ? theme.colors.tint : theme.colors.textSecondary} />
+              <Text preset="bodySmall" color="text" style={styles.drawerRowText}>{t("homeFavoritesOnly")}</Text>
+              <Ionicons name={favoritesOnly ? "checkbox" : "square-outline"} size={20} color={favoritesOnly ? theme.colors.tint : theme.colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setFilterDate(""); setFilterTag(""); setFilterMood(""); setFavoritesOnly(false); }} style={styles.clearFilters} accessibilityRole="button">
+              <Text preset="bodySmall" color="tint">{t("homeClearAllFilters")}</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </Animated.View>
+      )}
+      <Animated.View
+        style={[
+          styles.contentPane,
+          {
+            transform: [
+              {
+                translateX: drawerProgress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, drawerWidth],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
+          <View style={styles.headerRow}>
+            <TouchableOpacity onPress={openDrawer} style={styles.menuButton} accessibilityRole="button" accessibilityLabel={t("homeDrawerOpenA11y")}>
+              <Ionicons name="menu-outline" size={26} color={theme.colors.text} />
+            </TouchableOpacity>
+
+            <View style={styles.headerControls}>
+              {showHeaderOptions && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="always"
+                  style={styles.headerOptionsSlider}
+                  contentContainerStyle={styles.headerOptionsSliderContent}
+                >
+                  {selectableViewModes.map((mode, idx) => (
+                    <TouchableOpacity
+                      key={mode}
+                      onPress={() => { setViewModeIndex(idx); setHomeViewMode(mode); }}
+                      style={[
+                        styles.headerSliderButton,
+                        viewModeIndex === idx && { backgroundColor: theme.colors.tint + "18" },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={homeViewModeLabel(mode, t)}
+                      accessibilityState={{ selected: viewModeIndex === idx }}
+                    >
+                      <Ionicons
+                        name={viewModeIcon(mode)}
+                        size={20}
+                        color={viewModeIndex === idx ? theme.colors.tint : theme.colors.text}
+                      />
+                    </TouchableOpacity>
+                  ))}
+
+                  <View style={[styles.headerSliderDivider, { backgroundColor: theme.colors.border }]} />
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                      setShowHierarchyMenu((current) => !current);
+                    }}
+                    style={[
+                      styles.headerSliderButton,
+                      showHierarchyMenu && { backgroundColor: theme.colors.tint + "18" },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Entry hierarchy: ${hierarchyModeLabel(hierarchyMode)}. Open options.`}
+                    accessibilityState={{ expanded: showHierarchyMenu }}
+                  >
+                    <Ionicons name="calendar-outline" size={20} color={showHierarchyMenu ? theme.colors.tint : theme.colors.text} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => setIsSearchOpen((current) => !current)}
+                    style={[
+                      styles.headerSliderButton,
+                      isSearchOpen && { backgroundColor: theme.colors.tint + "18" },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={isSearchOpen ? t("homeHeaderCloseSearch") : t("homeHeaderSearch")}
+                  >
+                    <Ionicons name={isSearchOpen ? "close" : "search-outline"} size={20} color={isSearchOpen ? theme.colors.tint : theme.colors.text} />
+                  </TouchableOpacity>
+                </ScrollView>
+              )}
+
+              <TouchableOpacity
+                onPress={() => {
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                  const next = !showHeaderOptions;
+                  setShowHeaderOptions(next);
+                  if (!next) setShowHierarchyMenu(false);
+                }}
+                style={[styles.headerOptionToggle, showHeaderOptions && { backgroundColor: theme.colors.tint + "18" }]}
+                accessibilityRole="button"
+                accessibilityLabel={t("homeHeaderOptions")}
+                accessibilityState={{ expanded: showHeaderOptions }}
+              >
+                <Ionicons name="options-outline" size={22} color={showHeaderOptions ? theme.colors.tint : theme.colors.text} />
+              </TouchableOpacity>
             </View>
           </View>
+
+          {showHeaderOptions && showHierarchyMenu && (
+            <View style={[styles.hierarchyInlineMenu, { borderTopColor: theme.colors.border }]}>
+              {HIERARCHY_MODES.map((mode) => (
+                <TouchableOpacity
+                  key={mode}
+                  onPress={() => { setHierarchyMode(mode); setShowHierarchyMenu(false); }}
+                  style={[styles.hierarchyMenuOption, mode === hierarchyMode && { backgroundColor: theme.colors.tint + "18" }]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: mode === hierarchyMode }}
+                >
+                  <Text preset="caption" color={mode === hierarchyMode ? "tint" : "text"} style={styles.hierarchyMenuLabel} numberOfLines={1}>{hierarchyModeLabel(mode)}</Text>
+                  {mode === hierarchyMode && <Ionicons name="checkmark" size={16} color={theme.colors.tint} style={styles.hierarchyMenuCheck} />}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {isSearchOpen && <TextInput
+            autoFocus
+            value={search}
+            onChangeText={setSearch}
+            placeholder={t("homeSearchPlaceholder")}
+            placeholderTextColor={theme.colors.textSecondary}
+            style={[
+              styles.searchInput,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+                color: theme.colors.text,
+              },
+            ]}
+          />}
+        </View>
+        {isLoading ? null : (
+        <ScrollView
+          ref={scrollRef}
+          onScroll={(event) => {
+            scrollOffsetY.current = event.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: insets.bottom + 80 },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* {onThisDay.length > 0 && (
+            <View style={[styles.memoryBanner, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <Text preset="label" color="text">On this day</Text>
+              <Text preset="caption" color="textSecondary">You have {onThisDay.length} memor{onThisDay.length === 1 ? 'y' : 'ies'} from this date in previous years.</Text>
+            </View>
+          )} */}
+
+          {/* Entries List */}
+          {filteredEntries.length === 0 ? (
+            <Text
+              style={[styles.emptyText, { color: theme.colors.textSecondary }]}
+            >
+              {search.trim() ? t("homeNoMatchingEntries") : t("homeNoEntriesYet")}
+            </Text>
+          ) : (
+            groupedEntries.map(([date, dateEntries], index) => {
+              const previousDate = groupedEntries[index - 1]?.[0];
+              const isNewYear = !previousDate || previousDate.slice(0, 4) !== date.slice(0, 4);
+              const isNewMonth = isNewYear || previousDate?.slice(0, 7) !== date.slice(0, 7);
+              const yearKey = date.slice(0, 4);
+              const monthKey = date.slice(0, 7);
+              const isYearVisible = hierarchyMode === "year-month-date";
+              const isMonthVisible = hierarchyMode === "year-month-date" || hierarchyMode === "month-date";
+              const isDateVisible = hierarchyMode !== "none";
+              const isYearCollapsed = isYearVisible && collapsedYears.has(yearKey);
+              const isMonthCollapsed = isMonthVisible && collapsedMonths.has(monthKey);
+              return (
+              <Fragment key={date}>
+                {isNewYear && isYearVisible && (
+                  <TouchableOpacity
+                    onPress={() => setCollapsedYears((current) => {
+                      const next = new Set(current);
+                      if (next.has(yearKey)) next.delete(yearKey);
+                      else next.add(yearKey);
+                      return next;
+                    })}
+                    style={styles.yearGroupRow}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${yearKey} year group`}
+                    accessibilityState={{ expanded: !isYearCollapsed }}
+                  >
+                    <Text preset="h2" style={[styles.yearHeading, { color: theme.colors.text }]}>
+                      {yearKey}
+                    </Text>
+                    <Ionicons name={isYearCollapsed ? "chevron-forward" : "chevron-down"} size={16} color={theme.colors.textSecondary} />
+                  </TouchableOpacity>
+                )}
+                {!isYearCollapsed && isMonthVisible && isNewMonth && (
+                  <TouchableOpacity
+                    onPress={() => setCollapsedMonths((current) => {
+                      const next = new Set(current);
+                      if (next.has(monthKey)) next.delete(monthKey);
+                      else next.add(monthKey);
+                      return next;
+                    })}
+                    style={[styles.monthGroupRow, !isYearVisible && styles.flatMonthGroupRow]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${formatTimelineMonth(monthKey)} month group`}
+                    accessibilityState={{ expanded: !isMonthCollapsed }}
+                  >
+                    <Text preset="label" style={[styles.monthHeading, { color: theme.colors.textSecondary }]}>
+                      {formatTimelineMonth(monthKey)}
+                    </Text>
+                    <Ionicons name={isMonthCollapsed ? "chevron-forward" : "chevron-down"} size={15} color={theme.colors.textSecondary} />
+                  </TouchableOpacity>
+                )}
+              {!isYearCollapsed && !isMonthCollapsed && <View style={[styles.dateGroup, !isDateVisible && styles.flatDateGroup]} onLayout={(event) => handleDateGroupLayout(date, event.nativeEvent.layout.y)}>
+                {isDateVisible && <TouchableOpacity
+                  onPress={() => setCollapsedDates((current) => {
+                    const next = new Set(current);
+                    if (next.has(date)) next.delete(date);
+                    else next.add(date);
+                    return next;
+                  })}
+                  style={[styles.dateHeadingRow, !isYearVisible && (hierarchyMode === "month-date" ? styles.monthDateHeadingRow : styles.flatDateHeadingRow)]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${formatDisplayDate(date, calendarDateFormat)} date group`}
+                  accessibilityState={{ expanded: !collapsedDates.has(date) }}
+                >
+                  <Text
+                    preset="label"
+                    style={[styles.dateHeading, { color: theme.colors.text }]}
+                  >
+                    {formatDisplayDate(date, calendarDateFormat)}
+                  </Text>
+                  <Ionicons
+                    name={collapsedDates.has(date) ? "chevron-forward" : "chevron-down"}
+                    size={16}
+                    color={theme.colors.textSecondary}
+                  />
+                </TouchableOpacity>}
+                {(!isDateVisible || !collapsedDates.has(date)) && dateEntries.map((entry) => {
+              return (
+                <View
+                  key={entry.id}
+                  collapsable={false}
+                  ref={(node) => {
+                    if (node) entryRefs.current.set(entry.id, node);
+                    else entryRefs.current.delete(entry.id);
+                  }}
+                  onLayout={(event) => handleEntryLayout(entry.id, entry.date, event.nativeEvent.layout.y)}
+                >
+                  <DiaryEntryView
+                    entry={entry}
+                    mode={viewMode}
+                    onPress={async () => {
+                      if (entry.isLockbox && !(await appLockService.authenticate())) return;
+                      router.push(`/entry/${entry.id}`);
+                    }}
+                    onAddReflection={viewMode === "timeline" ? handleAddReflection : undefined}
+                    onReflectionSummaryPress={viewMode === "timeline" ? undefined : handleReflectionSummaryPress}
+                  />
+                </View>
+              );
+                })}
+              </View>}
+              </Fragment>
+              );
+            })
+          )}
         </ScrollView>
       )}
-
-      {/* Floating Action Button (+ New Entry) */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push('/entry/new')}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.fabIcon}>+</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+        {isDrawerMounted && (
+          <Animated.View
+            pointerEvents={isDrawerOpen ? "auto" : "none"}
+            style={[
+              styles.drawerOverlay,
+              {
+                opacity: drawerProgress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 1],
+                }),
+              },
+            ]}
+          >
+            <Pressable style={StyleSheet.absoluteFill} onPress={closeDrawer} accessibilityLabel={t("homeDrawerCloseA11y")} />
+          </Animated.View>
+        )}
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    overflow: "hidden",
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  contentPane: {
+    flex: 1,
+  },
+  fixedHeader: {
+    zIndex: 30,
+    elevation: 30,
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
-  appTitle: {
-    color: '#F8FAFC',
-    fontSize: 24,
-    fontWeight: 'bold',
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 4,
   },
-  subtitle: {
-    color: '#10B981',
-    fontSize: 12,
-    fontWeight: '600',
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+    gap: 6,
   },
-  viewSwitcher: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
-    borderRadius: 20,
-    padding: 3,
+  menuButton: { width: 30, height: 36, alignItems: "flex-start", justifyContent: "center" },
+  headerControls: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 2 },
+  headerOptionToggle: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
   },
-  switchBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
+  headerOptionsSlider: {
+    flex: 1,
+    minWidth: 0,
   },
-  switchBtnActive: {
-    backgroundColor: '#10B981',
+  headerOptionsSliderContent: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 2,
+    paddingRight: 2,
   },
-  switchText: {
-    color: '#94A3B8',
-    fontSize: 13,
-    fontWeight: '600',
+  headerSliderButton: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
   },
-  switchTextActive: {
-    color: '#0F172A',
+  headerSliderDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 22,
+    marginHorizontal: 4,
   },
-  streakBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(30, 41, 59, 0.6)',
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-    borderRadius: 16,
-    padding: 12,
+  searchInput: {
+    height: 44,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  companionAvatar: {
-    fontSize: 32,
-    marginRight: 12,
-  },
-  streakInfo: {
-    flex: 1,
-  },
-  streakTitle: {
-    color: '#F8FAFC',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 0,
+    marginBottom: 12,
     fontSize: 16,
-    fontWeight: 'bold',
+    lineHeight: 20,
+    textAlignVertical: "center",
   },
-  streakSubtitle: {
-    color: '#10B981',
-    fontSize: 13,
-    fontWeight: '600',
+  hierarchyInlineMenu: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 8, marginBottom: 8, gap: 4 },
+  hierarchyMenuOption: {
+    minHeight: 34,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    borderRadius: 5,
   },
-  loadingContainer: {
+  hierarchyMenuLabel: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  feedContent: {
-    padding: 16,
-    paddingBottom: 80,
+  hierarchyMenuCheck: {
+    marginLeft: 16,
   },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
+  drawerOverlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: "rgba(0, 0, 0, 0.35)" },
+  drawer: { position: "absolute", top: 0, bottom: 0, left: 0, zIndex: 2, paddingHorizontal: 20, borderTopRightRadius: 22, borderBottomRightRadius: 22, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 5, height: 0 }, shadowOpacity: 0.24, shadowRadius: 18, elevation: 18 },
+  drawerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 22 },
+  drawerClose: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+  drawerSectionLabel: { fontWeight: "700", letterSpacing: 0.6, marginTop: 18, marginBottom: 8 },
+  drawerRow: { minHeight: 52, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth },
+  drawerRowText: { flex: 1, marginLeft: 12 },
+  clearFilters: { paddingVertical: 14 },
+  inlineOptions: { borderBottomWidth: StyleSheet.hairlineWidth, paddingLeft: 32, paddingBottom: 6 },
+  inlineOption: { paddingVertical: 10, paddingHorizontal: 10, borderRadius: 6 },
+  filterMoodBadge: { alignSelf: "flex-start", minHeight: 28, borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, alignItems: "center", justifyContent: "center" },
+  filterMoodBadgeText: { fontWeight: "700" },
+  memoryBanner: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    gap: 4,
   },
-  emptyIcon: {
-    fontSize: 48,
+  card: {
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 14,
     marginBottom: 12,
   },
-  emptyTitle: {
-    color: '#F8FAFC',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  emptyDesc: {
-    color: '#94A3B8',
-    fontSize: 14,
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
-  entryCard: {
-    backgroundColor: '#FDF6E3', // Vintage parchment preview
-    borderRadius: 16,
+  feedCard: {
     padding: 16,
+    marginBottom: 14,
+  },
+  feedCanvas: {
+    position: "relative",
+    minHeight: 220,
+    overflow: "visible",
+  },
+  feedTextLayer: {
+    position: "relative",
+    zIndex: 2,
+  },
+  feedSticker: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  feedStickerImage: {
+    width: 80,
+    height: 80,
+  },
+  feedStickerEmoji: {
+    fontSize: 48,
+    lineHeight: 60,
+    includeFontPadding: true,
+    textAlign: "center",
+  },
+  feedTitle: {
+    fontSize: 21,
+    lineHeight: 27,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  feedContent: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  feedMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
     marginBottom: 12,
   },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
-  cardDate: {
-    color: '#64748B',
-    fontSize: 13,
-    fontWeight: '600',
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
   },
-  cardMood: {
-    color: '#0F172A',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  cardTitle: {
-    color: '#0F172A',
+  title: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 6,
+    fontWeight: "600",
   },
-  cardSnippet: {
-    color: '#334155',
+  date: {
+    fontSize: 12,
+  },
+  content: {
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 8,
   },
-  stickerTag: {
-    color: '#0F172A',
-    fontSize: 12,
-    fontWeight: '600',
+  emptyText: {
+    marginTop: 10,
+    fontSize: 15,
   },
-  calendarCard: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+  dateGroup: {
+    marginBottom: 6,
+    marginLeft: HIERARCHY_INDENT.year,
   },
-  calendarTitle: {
-    color: '#F8FAFC',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
+  flatDateGroup: {
+    marginLeft: HIERARCHY_INDENT.year,
   },
-  calendarSubtitle: {
-    color: '#94A3B8',
-    fontSize: 13,
-    marginBottom: 16,
+  yearGroupRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+    marginBottom: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 9,
   },
-  calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  yearHeading: {
+    margin: 0,
+    fontWeight: "700",
   },
-  calendarHeaderCell: {
-    width: '13%',
-    textAlign: 'center',
-    color: '#94A3B8',
-    fontWeight: 'bold',
-    marginBottom: 10,
+  monthGroupRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 0,
+    marginBottom: 3,
+    marginLeft: 0,
+    paddingLeft: HIERARCHY_INDENT.month,
+    paddingVertical: 7,
   },
-  calendarCell: {
-    width: '13%',
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+  flatMonthGroupRow: {
+    paddingLeft: HIERARCHY_INDENT.year,
   },
-  calendarCellHasEntry: {
-    backgroundColor: 'rgba(16, 185, 129, 0.25)',
-    borderWidth: 1,
-    borderColor: '#10B981',
+  monthHeading: {
+    margin: 0,
+    fontSize: 14,
+    fontWeight: "700",
   },
-  calendarCellText: {
-    color: '#94A3B8',
-    fontSize: 13,
-    fontWeight: '600',
+  dateHeadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 5,
+    paddingLeft: HIERARCHY_INDENT.date,
   },
-  calendarCellTextActive: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+  monthDateHeadingRow: {
+    paddingLeft: HIERARCHY_INDENT.month,
   },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#10B981',
-    marginTop: 2,
+  flatDateHeadingRow: {
+    paddingLeft: HIERARCHY_INDENT.year,
   },
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#10B981',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 5,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+  dateHeading: {
+    margin: 0,
+    fontSize: 15,
+    fontWeight: "700",
   },
-  fabIcon: {
-    color: '#0F172A',
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginTop: -2,
+  timelineEntry: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    minHeight: 76,
+    marginBottom: 12,
+  },
+  timelineRail: {
+    width: 2,
+    marginHorizontal: 10,
+    position: "relative",
+  },
+  timelineDot: {
+    position: "absolute",
+    top: 10,
+    left: -4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  timelineBody: {
+    flex: 1,
+    paddingVertical: 4,
+    paddingRight: 10,
+  },
+  timelineTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    marginBottom: 5,
+  },
+  timelineContent: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 5,
   },
 });

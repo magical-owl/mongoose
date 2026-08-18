@@ -2,13 +2,13 @@
 
 ## Overview
 
-This document outlines the requirements, guidelines, and processes for submitting Meadow to the Apple App Store. Follow this guide to ensure a smooth review and approval process.
+This document outlines the requirements, guidelines, and processes for submitting the app currently codenamed Mongoose to the Apple App Store. The final public app name, support URL, marketing URL, privacy URL, screenshots, and metadata must be finalized before submission.
 
 ---
 
 ## 1. App Store Review Guidelines
 
-Apple enforces a strict set of guidelines. Key areas relevant to Meadow:
+Apple enforces a strict set of guidelines. Key areas relevant to this offline diary app:
 
 ### 1.1 Safety
 
@@ -41,11 +41,11 @@ Ensure the following are configured in `app.json` / `eas.json` and the native Xc
 
 | Capability                | Entitlement                    | Purpose                          |
 |---------------------------|--------------------------------|----------------------------------|
-| Push Notifications        | com.apple.developer.push       | Send alerts to users             |
-| Sign in with Apple        | com.apple.developer.applesignin| Mandatory for social login apps  |
-| In-App Purchase           | com.apple.developer.inapppay   | Subscriptions / purchases        |
-| iCloud                    | com.apple.developer.icloud     | Cloud sync (if applicable)       |
-| Associated Domains        | applinks:yourdomain.com        | Universal links / deep linking   |
+| In-App Purchase           | com.apple.developer.inapppay   | Required before enabling production premium purchase |
+| Push Notifications        | com.apple.developer.push       | Only if reminders/alerts are shipped |
+| Sign in with Apple        | com.apple.developer.applesignin| Only if social login is added |
+| iCloud                    | com.apple.developer.icloud     | Only if cloud sync is added |
+| Associated Domains        | applinks:yourdomain.com        | Only if universal links are added |
 
 ---
 
@@ -249,13 +249,13 @@ Complete the following fields in App Store Connect before submission:
 
 | Field                      | Requirement                                                | Example                                      |
 |----------------------------|------------------------------------------------------------|----------------------------------------------|
-| App Name                   | Max 30 characters                                          | Meadow                                       |
-| Subtitle                   | Max 30 characters                                          | Your AI-Powered Journal                      |
-| Privacy Policy URL         | Required, valid HTTPS URL                                  | https://meadow.app/privacy                   |
-| Support URL                | Required, valid HTTPS URL                                  | https://meadow.app/support                   |
-| Marketing URL              | Optional                                                   | https://meadow.app                           |
-| Description                | Max 4,000 characters; first 3 lines most visible           | "Meadow is a private journaling app that..." |
-| Keywords                   | Max 100 characters, comma-separated                        | journal, diary, notes, AI, writing           |
+| App Name                   | Max 30 characters                                          | Final release name required; Mongoose is codename |
+| Subtitle                   | Max 30 characters                                          | Private offline diary                        |
+| Privacy Policy URL         | Required, valid HTTPS URL                                  | Public release URL required                  |
+| Support URL                | Required, valid HTTPS URL                                  | Public release URL required                  |
+| Marketing URL              | Optional                                                   | Public release URL required if used          |
+| Description                | Max 4,000 characters; first 3 lines most visible           | "A private offline diary for..."             |
+| Keywords                   | Max 100 characters, comma-separated                        | journal, diary, notes, mood, reflection      |
 | Apple Advertising          | Optional — opt in or out on App Store Connect              | Opt in (default)                             |
 | App Category               | Select primary and secondary categories                    | Lifestyle, Productivity                      |
 | Age Rating                 | Select appropriate content descriptors                     | 4+ (if no mature content)                    |

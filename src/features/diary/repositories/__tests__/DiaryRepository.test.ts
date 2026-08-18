@@ -1,8 +1,26 @@
 import { DiaryRepository } from '../DiaryRepository';
 import { DiaryEntry } from '../../domain/DiaryEntry';
+import type { ISecureStorageDataSource } from '@/database/SecureStorageDataSource';
+
+class MockSecureStorage implements ISecureStorageDataSource {
+  private store = new Map<string, string>();
+
+  public async getItem(key: string): Promise<string | null> {
+    return this.store.get(key) ?? null;
+  }
+
+  public async setItem(key: string, value: string): Promise<void> {
+    this.store.set(key, value);
+  }
+
+  public async removeItem(key: string): Promise<void> {
+    this.store.delete(key);
+  }
+}
 
 describe('DiaryRepository', () => {
   let repository: DiaryRepository;
+  let mockStorage: MockSecureStorage;
 
   const mockEntry: DiaryEntry = {
     id: '123e4567-e89b-12d3-a456-426614174000',
@@ -20,6 +38,7 @@ describe('DiaryRepository', () => {
         scale: 1.2,
         rotation: 15,
         zIndex: 1,
+        behindText: false,
       },
     ],
     companion: 'cat',
@@ -27,10 +46,17 @@ describe('DiaryRepository', () => {
     tags: ['test', 'gratitude'],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    manualMoodWeather: 'calm',
+    writingMode: 'free-write',
+    sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' },
+    isLockbox: false,
+    collectionIds: [],
+    reflections: [],
   };
 
   beforeEach(() => {
-    repository = new DiaryRepository();
+    mockStorage = new MockSecureStorage();
+    repository = new DiaryRepository(mockStorage);
   });
 
   it('should save and retrieve a diary entry with sticker canvas positions', async () => {
@@ -47,6 +73,20 @@ describe('DiaryRepository', () => {
     }
   });
 
+  it('should persist diary entries across repository instances (simulating app restart)', async () => {
+    await repository.save(mockEntry);
+
+    // Create a new instance pointing to the same encrypted storage
+    const newRepoInstance = new DiaryRepository(mockStorage);
+    const getAllResult = await newRepoInstance.getAll();
+    expect(getAllResult.success).toBe(true);
+    if (getAllResult.success) {
+      expect(getAllResult.data.length).toBe(1);
+      expect(getAllResult.data[0]?.id).toBe(mockEntry.id);
+      expect(getAllResult.data[0]?.title).toBe('Test Entry');
+    }
+  });
+
   it('should retrieve entries by date', async () => {
     await repository.save(mockEntry);
     const dateResult = await repository.getByDate('2026-08-13');
@@ -56,7 +96,7 @@ describe('DiaryRepository', () => {
     }
   });
 
-  it('should delete a diary entry', async () => {
+  it('should delete a diary entry and persist deletion', async () => {
     await repository.save(mockEntry);
     const deleteResult = await repository.delete(mockEntry.id);
     expect(deleteResult.success).toBe(true);
@@ -65,6 +105,14 @@ describe('DiaryRepository', () => {
     expect(getResult.success).toBe(true);
     if (getResult.success) {
       expect(getResult.data).toBeNull();
+    }
+
+    // Verify deletion persisted across new instance
+    const newRepoInstance = new DiaryRepository(mockStorage);
+    const getAllResult = await newRepoInstance.getAll();
+    expect(getAllResult.success).toBe(true);
+    if (getAllResult.success) {
+      expect(getAllResult.data.length).toBe(0);
     }
   });
 });

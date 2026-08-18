@@ -1,6 +1,7 @@
 # AI Agent Feature Development Instructions
 
 > **See also:** `docs/CreatingAnApp.md` for the complete human-readable guide with code examples for every layer.
+> **Localization:** Follow `agents/localization.md` whenever adding a feature, renaming a feature, or changing user-facing text.
 
 ## Overview
 
@@ -315,6 +316,10 @@ Create screens and components in `src/features/<feature>/screens/` and `src/feat
 5. Use theme tokens for all styling — no hardcoded colors, spacing, or fonts.
 6. Add accessibility attributes to all interactive elements.
 7. Add `testID` attributes for test targeting.
+
+### Componentization Pass
+
+After the first working screen, inspect the JSX for repeated cards, filters, editors, date groups, charts, and view modes. Extract a component when it is reused, has a complete interaction boundary, or is a likely template primitive. The screen must keep route handling, hooks, service calls, and side effects; extracted components should accept typed data and callbacks only. See [`agents/componentization.md`](componentization.md) for the extraction checklist and current Meadow map.
 
 ### Example Screen
 

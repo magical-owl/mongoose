@@ -17,6 +17,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';
+import { useTranslation } from '@/localization/i18n';
 
 export interface TextInputProps {
   readonly label?: string;
@@ -54,6 +55,7 @@ export function TextInput({
   testID,
 }: TextInputProps): React.JSX.Element {
   const theme = useTheme();
+  const t = useTranslation();
   const [focused, setFocused] = useState(false);
 
   const handleClear = useCallback(() => {
@@ -108,7 +110,7 @@ export function TextInput({
             flex: 1,
             color: disabled ? theme.colors.disabledText : theme.colors.text,
             fontSize: theme.fontSizes.base,
-            fontFamily: 'System',
+            fontFamily: theme.fontFamily,
             paddingVertical: theme.spacing.sm,
           }}
           value={value}
@@ -130,7 +132,7 @@ export function TextInput({
           <TouchableOpacity
             onPress={handleClear}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityLabel="Clear input"
+            accessibilityLabel={t('inputClearA11y')}
             accessibilityRole="button"
           >
             <Ionicons

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
+import { useTranslation } from '@/localization/i18n';
 
 export interface SearchBarProps {
   readonly value: string;
@@ -39,6 +40,7 @@ export function SearchBar({
   testID,
 }: SearchBarProps): React.JSX.Element {
   const theme = useTheme();
+  const t = useTranslation();
   const inputRef = useRef<TextInput>(null);
 
   const handleClear = useCallback(() => {
@@ -94,7 +96,7 @@ export function SearchBar({
         <TouchableOpacity
           onPress={handleClear}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityLabel="Clear search"
+          accessibilityLabel={t('searchClearA11y')}
           accessibilityRole="button"
         >
           <Ionicons

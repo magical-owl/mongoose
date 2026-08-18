@@ -13,12 +13,14 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  ScrollView,
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';
+import { useTranslation } from '@/localization/i18n';
 
 export interface ModalProps {
   readonly visible: boolean;
@@ -26,6 +28,8 @@ export interface ModalProps {
   readonly title?: string;
   readonly children: React.ReactNode;
   readonly accessibilityLabel?: string;
+  /** Disable the body ScrollView when children provide their own virtualized list. */
+  readonly scrollable?: boolean;
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -38,8 +42,10 @@ export function Modal({
   title,
   children,
   accessibilityLabel,
+  scrollable = true,
 }: ModalProps): React.JSX.Element | null {
   const theme = useTheme();
+  const t = useTranslation();
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(PANEL_HEIGHT)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -80,7 +86,7 @@ export function Modal({
   return (
     <RNModal transparent visible={visible} animationType="none" onRequestClose={onDismiss}>
       <View style={StyleSheet.absoluteFill}>
-        <TouchableWithoutFeedback onPress={onDismiss} accessibilityLabel="Close modal">
+        <TouchableWithoutFeedback onPress={onDismiss} accessibilityLabel={t('modalCloseBackdropA11y')}>
           <Animated.View style={{ flex: 1, backgroundColor: theme.colors.overlay, opacity: backdropOpacity }} />
         </TouchableWithoutFeedback>
 
@@ -105,17 +111,28 @@ export function Modal({
               <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: theme.colors.border }} />
             </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.md }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.md }}>
               {title && <Text preset="h3" style={{ flex: 1 }}>{title}</Text>}
-              <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Close" accessibilityRole="button">
+              <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel={t('modalCloseA11y')} accessibilityRole="button">
                 <Ionicons name="close" size={24} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
           </View>
 
-          <View style={{ paddingHorizontal: theme.spacing.lg }}>
-            {children}
-          </View>
+          {scrollable ? (
+            <ScrollView
+              style={{ flexShrink: 1 }}
+              contentContainerStyle={{ paddingHorizontal: theme.spacing.lg }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {children}
+            </ScrollView>
+          ) : (
+            <View style={{ flexShrink: 1, paddingHorizontal: theme.spacing.lg }}>
+              {children}
+            </View>
+          )}
         </Animated.View>
       </View>
     </RNModal>

@@ -4,8 +4,8 @@
  * A themed segmented control for switching between options.
  */
 
-import React, { useRef, useEffect } from 'react';
-import { Animated, TouchableOpacity, View } from 'react-native';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { Animated, TouchableOpacity, View, type LayoutChangeEvent } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';
 
@@ -26,6 +26,11 @@ export function SegmentedControl({
 }: SegmentedControlProps): React.JSX.Element {
   const theme = useTheme();
   const slideAnim = useRef(new Animated.Value(selectedIndex)).current;
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  const handleLayout = useCallback((e: LayoutChangeEvent) => {
+    setContainerWidth(e.nativeEvent.layout.width);
+  }, []);
 
   useEffect(() => {
     Animated.spring(slideAnim, {
@@ -36,35 +41,45 @@ export function SegmentedControl({
     }).start();
   }, [selectedIndex, slideAnim]);
 
+  // Segment width in pixels = container minus 2× padding, divided by count
+  const padding = theme.spacing.xs;
+  const segmentWidth = containerWidth > 0
+    ? (containerWidth - padding * 2) / segments.length
+    : 0;
+
   const translateX = slideAnim.interpolate({
     inputRange: segments.map((_, i) => i),
-    outputRange: segments.map((_, i) => i * (280 / segments.length)),
+    outputRange: segments.map((_, i) => i * segmentWidth),
   });
 
   return (
     <View
+      onLayout={handleLayout}
       style={{
         flexDirection: 'row',
         backgroundColor: theme.colors.surface,
         borderRadius: theme.borderRadius.md,
-        padding: theme.spacing.xs,
+        padding,
         opacity: disabled ? 0.5 : 1,
       }}
       accessibilityRole="tablist"
       accessibilityLabel={accessibilityLabel ?? 'Segmented control'}
     >
-      <Animated.View
-        style={{
-          position: 'absolute',
-          top: theme.spacing.xs,
-          left: theme.spacing.xs,
-          height: '100%',
-          width: `${100 / segments.length}%`,
-          backgroundColor: theme.colors.tint,
-          borderRadius: theme.borderRadius.sm,
-          transform: [{ translateX: translateX ?? 0 }],
-        }}
-      />
+      {/* Only render the indicator once we have a real measurement */}
+      {containerWidth > 0 && (
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: padding,
+            left: padding,
+            height: '100%',
+            width: segmentWidth,
+            backgroundColor: theme.colors.tint,
+            borderRadius: theme.borderRadius.sm,
+            transform: [{ translateX }],
+          }}
+        />
+      )}
       {segments.map((segment, index) => {
         const isSelected = index === selectedIndex;
         return (

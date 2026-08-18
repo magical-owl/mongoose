@@ -1,12 +1,19 @@
 import type { Result } from '@/shared/types/architecture';
-import { DiaryEntry } from '../domain/DiaryEntry';
-import { Sentiment } from '../domain/Sentiment';
-import { CompanionType, COMPANION_OPTIONS } from '../domain/Companion';
+import { failure, success } from '@/shared/utils/result';
+import { generateUUID } from '@/shared/utils/uuid';
+import { FREE_PLAN_LIMITS, countAddedStickers, getLocalDateKey, validateDiaryEntryPlanLimits } from '@/features/subscription/services/PlanLimitService';
+import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
+import { DiaryEntry, DiaryReflection } from '../domain/DiaryEntry';
 import { IDiaryRepository } from '../repositories/IDiaryRepository';
 import { diaryRepository } from '../repositories/DiaryRepository';
+import { IPlanUsageRepository } from '@/features/subscription/repositories/IPlanUsageRepository';
+import { planUsageRepository } from '@/features/subscription/repositories/PlanUsageRepository';
 
 export class DiaryService {
-  constructor(private repo: IDiaryRepository = diaryRepository) {}
+  constructor(
+    private repo: IDiaryRepository = diaryRepository,
+    private planUsageRepo: IPlanUsageRepository = planUsageRepository
+  ) {}
 
   public async getEntries(): Promise<Result<DiaryEntry[]>> {
     return await this.repo.getAll();
@@ -17,40 +24,126 @@ export class DiaryService {
   }
 
   public async saveEntry(entry: DiaryEntry): Promise<Result<DiaryEntry>> {
-    // Generate AI sentiment analysis if not present
-    if (!entry.sentiment) {
-      entry.sentiment = this.analyzeSentiment(entry.content, entry.companion);
+    const isPro = useSubscriptionStore.getState().isPro;
+    const deviceDateKey = getLocalDateKey(new Date());
+
+    const entriesResult = await this.repo.getAll();
+    if (!entriesResult.success) {
+      return entriesResult;
     }
-    return await this.repo.save(entry);
+
+    const previousEntryResult = await this.repo.getById(entry.id);
+    if (!previousEntryResult.success) {
+      return previousEntryResult;
+    }
+
+    const dailyUsageResult = await this.planUsageRepo.getDailyUsage(deviceDateKey);
+    if (!dailyUsageResult.success) {
+      return dailyUsageResult;
+    }
+
+    const limitResult = validateDiaryEntryPlanLimits({
+      isPro,
+      existingEntries: entriesResult.data,
+      nextEntry: entry,
+      previousEntry: previousEntryResult.data,
+      deviceDateKey,
+      dailyUsage: dailyUsageResult.data,
+    });
+
+    if (!limitResult.success) {
+      return limitResult;
+    }
+
+    const saveResult = await this.repo.save(entry);
+    if (!saveResult.success) {
+      return saveResult;
+    }
+
+    const addedStickerCount = countAddedStickers(saveResult.data, previousEntryResult.data);
+    if (!isPro && addedStickerCount > 0) {
+      const usageResult = await this.planUsageRepo.recordStickerUsage(deviceDateKey, addedStickerCount, {
+        limit: FREE_PLAN_LIMITS.stickersPerDay,
+        occurredAt: saveResult.data.updatedAt,
+      });
+      if (!usageResult.success) {
+        return usageResult;
+      }
+    }
+
+    return saveResult;
   }
 
   public async deleteEntry(id: string): Promise<Result<boolean>> {
     return await this.repo.delete(id);
   }
 
-  /**
-   * Generates AI Companion Sentiment Analysis with Zero Data Retention (ZDR).
-   */
-  public analyzeSentiment(content: string, companionType: CompanionType): Sentiment {
-    const companion = COMPANION_OPTIONS.find((c) => c.id === companionType) || COMPANION_OPTIONS[0]!;
+  public async restoreEntries(entries: readonly DiaryEntry[]): Promise<Result<DiaryEntry[]>> {
+    const restored: DiaryEntry[] = [];
+    for (const entry of entries) {
+      const saveResult = await this.repo.save(entry);
+      if (!saveResult.success) {
+        return saveResult;
+      }
+      restored.push(saveResult.data);
+    }
+    return success(restored);
+  }
 
-    // Derived sentiment analysis simulation
-    const isPositive = /happy|great|wonderful|good|love|awesome|excited/i.test(content);
-    const isStressed = /stress|sad|tired|busy|overwhelmed|anxious/i.test(content);
+  public async addReflection(entryId: string, text: string): Promise<Result<DiaryEntry>> {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return failure({
+        code: 'VALIDATION_ERROR',
+        message: 'Reflection cannot be empty',
+      });
+    }
 
-    const mood = isPositive ? 'Joyful 🌟' : isStressed ? 'Reflective 🌿' : 'Calm ☕';
+    const entryResult = await this.repo.getById(entryId);
+    if (!entryResult.success) return entryResult;
+    if (!entryResult.data) {
+      return failure({
+        code: 'NOT_FOUND',
+        message: 'Diary entry not found',
+      });
+    }
 
-    return {
-      mood,
-      summary: `Reflected on your day with focus on key moments.`,
-      emotional_analysis: isPositive
-        ? 'You expressed optimism and joy in your writing.'
-        : isStressed
-        ? 'You shared some weight today. Taking time to write helps release tension.'
-        : 'Your mood is balanced and steady.',
-      supportive_message: `${companion.name} says: "${companion.greeting}"`,
-      suggestion: 'Take 5 deep breaths and enjoy a quiet glass of water.',
+    const now = new Date().toISOString();
+    const reflection: DiaryReflection = {
+      id: generateUUID(),
+      text: trimmed,
+      createdAt: now,
+      updatedAt: now,
     };
+    const updated: DiaryEntry = {
+      ...entryResult.data,
+      reflections: [...entryResult.data.reflections, reflection],
+      updatedAt: now,
+    };
+    return await this.repo.save(updated);
+  }
+
+  public async deleteReflection(entryId: string, reflectionId: string): Promise<Result<DiaryEntry>> {
+    const entryResult = await this.repo.getById(entryId);
+    if (!entryResult.success) return entryResult;
+    if (!entryResult.data) {
+      return failure({
+        code: 'NOT_FOUND',
+        message: 'Diary entry not found',
+      });
+    }
+
+    const nextReflections = entryResult.data.reflections.filter((reflection) => reflection.id !== reflectionId);
+    if (nextReflections.length === entryResult.data.reflections.length) {
+      return success(entryResult.data);
+    }
+
+    const updated: DiaryEntry = {
+      ...entryResult.data,
+      reflections: nextReflections,
+      updatedAt: new Date().toISOString(),
+    };
+    return await this.repo.save(updated);
   }
 
   /**

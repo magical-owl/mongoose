@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { CustomerEntitlement, SubscriptionPackage, SubscriptionTier } from '../features/subscription/domain/Subscription';
+import { APP_IDENTITY } from '@/config/appIdentity';
 
 interface SubscriptionStoreState {
   isPro: boolean;
@@ -17,36 +18,17 @@ interface SubscriptionStoreState {
   reset: () => void;
 }
 
-// Default fallback packages if offline or testing
+// Default development package. Production billing can replace this catalog.
 export const DEFAULT_SUBSCRIPTION_PACKAGES: SubscriptionPackage[] = [
   {
-    id: 'pro_monthly',
-    productId: 'meadow_pro_monthly',
-    tier: 'pro_monthly',
-    title: 'Pro Monthly',
-    priceString: '$4.99 / month',
-    priceNumber: 4.99,
-    period: 'month',
-  },
-  {
-    id: 'pro_yearly',
-    productId: 'meadow_pro_yearly',
-    tier: 'pro_yearly',
-    title: 'Pro Annual',
-    priceString: '$29.99 / year',
-    priceNumber: 29.99,
-    period: 'year',
-    badge: 'BEST VALUE • SAVE 50%',
-  },
-  {
     id: 'pro_lifetime',
-    productId: 'meadow_pro_lifetime',
+    productId: APP_IDENTITY.premiumLifetimeProductId,
     tier: 'pro_lifetime',
-    title: 'Pro Lifetime',
-    priceString: '$79.99 once',
-    priceNumber: 79.99,
+    title: APP_IDENTITY.premiumName,
+    priceString: '$9.99 once',
+    priceNumber: 9.99,
     period: 'lifetime',
-    badge: 'PAY ONCE • OWN FOREVER',
+    badge: 'ONE-TIME PAYMENT',
   },
 ];
 

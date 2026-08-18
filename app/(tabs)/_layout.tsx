@@ -1,9 +1,13 @@
-import { Tabs } from 'expo-router';
+import { View } from 'react-native';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/providers/ThemeProvider';
+import { useTranslation } from '@/localization/i18n';
 
 export default function TabLayout() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const router = useRouter();
+  const t = useTranslation();
 
   return (
     <Tabs
@@ -13,39 +17,97 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: colors.background,
           borderTopColor: colors.border,
+          height: 60,
+          paddingBottom: 6,
         },
-        headerStyle: {
-          backgroundColor: colors.background,
-        },
-        headerTintColor: colors.text,
         headerShown: false,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabsHome'),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+            <Ionicons name="journal-outline" size={size} color={color} />
           ),
         }}
       />
+
       <Tabs.Screen
-        name="profile"
+        name="calendar"
         options={{
-          title: 'Profile',
+          title: t('tabsCalendar'),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+            <Ionicons name="calendar-outline" size={size} color={color} />
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: '',
+          tabBarIcon: () => (
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: colors.tint,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 8,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 3 },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 5,
+              }}
+            >
+              <Ionicons name="add" size={28} color={isDark ? colors.background : colors.card} />
+            </View>
+          ),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.push('/entry/new');
+          },
+        }}
+      />
+
+      <Tabs.Screen
+        name="insights"
+        options={{
+          title: t('tabsInsights'),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="stats-chart-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="archive"
+        options={{
+          // Shelved until the archive information architecture is planned.
+          href: null,
+        }}
+      />
+
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: t('tabsSettings'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" size={size} color={color} />
           ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="profile"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

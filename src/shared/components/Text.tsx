@@ -12,6 +12,7 @@ import {
   type TextProps as RNTextProps,
   type TextStyle,
   type StyleProp,
+  StyleSheet,
 } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 
@@ -107,8 +108,12 @@ export function Text({
       return { color: resolvedColor };
     }
 
+    const flattenedStyle = StyleSheet.flatten(style) ?? {};
     const base: TextStyle = {
       ...typographyPreset,
+      fontFamily: flattenedStyle.fontFamily ?? theme.fontFamily,
+      ...(typeof flattenedStyle.fontSize === 'number' ? { fontSize: flattenedStyle.fontSize } : {}),
+      ...(typeof flattenedStyle.lineHeight === 'number' ? { lineHeight: flattenedStyle.lineHeight } : {}),
       color: resolvedColor,
     };
 
@@ -121,7 +126,16 @@ export function Text({
     }
 
     return base;
-  }, [theme, preset, resolvedColor, dynamicType]);
+  }, [theme, preset, resolvedColor, dynamicType, style]);
+
+  const scaledStyle = useMemo(() => {
+    const flattenedStyle = StyleSheet.flatten(style) ?? {};
+    return {
+      ...flattenedStyle,
+      ...(typeof flattenedStyle.fontSize === 'number' ? { fontSize: flattenedStyle.fontSize * getScale(theme.fontSizes.base) } : {}),
+      ...(typeof flattenedStyle.lineHeight === 'number' ? { lineHeight: flattenedStyle.lineHeight * getScale(theme.fontSizes.base) } : {}),
+    };
+  }, [style, theme.fontSizes.base]);
 
   const defaultAccessibilityLabel =
     accessibilityLabel ??
@@ -136,10 +150,14 @@ export function Text({
           : 'text'
       }
       numberOfLines={numberOfLines}
-      style={[textStyle, style]}
+      style={[textStyle, scaledStyle]}
       {...rest}
     >
       {children}
     </RNText>
   );
+}
+
+function getScale(scaledBaseFontSize: number): number {
+  return scaledBaseFontSize / 16;
 }

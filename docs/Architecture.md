@@ -29,6 +29,18 @@ The Presentation layer is the UI layer. It contains React Native screens, compon
 - Presentation SHOULD only import from Hooks and shared types/components
 - Components SHOULD be stateless where possible; delegate state management to hooks
 
+#### Reusable Component Boundaries
+
+Screens are route-level composition roots. Reusable visual modes and interaction surfaces belong in components, not in `app/` route files. A component should receive typed data and callbacks, use theme tokens, and expose accessibility behavior. It should not read storage, call services or repositories, own navigation, or contain feature orchestration.
+
+Place components according to reuse scope:
+
+- `src/shared/components/` for domain-neutral UI that can move between apps.
+- `src/features/<feature>/components/` for reusable UI that understands one feature's domain.
+- `app/` only for route composition and screen-specific wiring.
+
+See [`agents/componentization.md`](../agents/componentization.md) for extraction criteria, the current extraction map, and the checklist used when extending the template.
+
 ### 2. Hooks Layer
 
 **Directory:** `src/hooks/`, `src/shared/hooks/`

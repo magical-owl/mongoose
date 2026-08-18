@@ -2,20 +2,37 @@ import { success, failure } from '@shared/utils/result';
 import type { Result } from '@shared/types/architecture';
 import { CustomerEntitlement, SubscriptionPackage } from '../domain/Subscription';
 import { useSubscriptionStore, DEFAULT_SUBSCRIPTION_PACKAGES } from '@stores/useSubscriptionStore';
+import type { ISubscriptionPaymentGateway } from './ISubscriptionPaymentGateway';
+import { developmentSubscriptionPaymentGateway } from './DevelopmentSubscriptionPaymentGateway';
+import type { ISubscriptionEntitlementRepository } from '../repositories/ISubscriptionEntitlementRepository';
+import { subscriptionEntitlementRepository } from '../repositories/SubscriptionEntitlementRepository';
+import { config } from '@/config/ConfigService';
+import { unavailableSubscriptionPaymentGateway } from './UnavailableSubscriptionPaymentGateway';
+
+export function getDefaultSubscriptionPaymentGateway(): ISubscriptionPaymentGateway {
+  return config.isDev ? developmentSubscriptionPaymentGateway : unavailableSubscriptionPaymentGateway;
+}
 
 export class SubscriptionService {
+  public constructor(
+    private readonly paymentGateway: ISubscriptionPaymentGateway = getDefaultSubscriptionPaymentGateway(),
+    private readonly entitlementRepository: ISubscriptionEntitlementRepository = subscriptionEntitlementRepository
+  ) {}
+
   /**
    * Initialize subscription service and load current active entitlement status.
    */
   public async initialize(): Promise<Result<CustomerEntitlement>> {
     try {
-      // In production, sync with StoreKit / RevenueCat SDK here
-      const currentEntitlement = useSubscriptionStore.getState();
-      const entitlement: CustomerEntitlement = {
-        isPro: currentEntitlement.isPro,
-        activeTier: currentEntitlement.activeTier,
-        expirationDate: currentEntitlement.expirationDate,
-        willRenew: currentEntitlement.activeTier !== 'pro_lifetime',
+      const storedEntitlementResult = await this.entitlementRepository.get();
+      if (!storedEntitlementResult.success) {
+        return storedEntitlementResult;
+      }
+
+      const entitlement: CustomerEntitlement = storedEntitlementResult.data ?? {
+        isPro: false,
+        activeTier: 'free',
+        willRenew: false,
       };
 
       useSubscriptionStore.getState().setEntitlement(entitlement);
@@ -43,68 +60,72 @@ export class SubscriptionService {
 
   /**
    * Purchase a subscription package (Monthly, Yearly, or Lifetime).
+   * Development builds use a local gateway. Production can replace the gateway
+   * with StoreKit / Google Play / RevenueCat without changing callers.
    */
   public async purchasePackage(pkg: SubscriptionPackage): Promise<Result<CustomerEntitlement>> {
-    try {
-      useSubscriptionStore.getState().setLoading(true);
-
-      // Simulating native purchase transaction / RevenueCat purchase
-      const newEntitlement: CustomerEntitlement = {
-        isPro: true,
-        activeTier: pkg.tier,
-        expirationDate: pkg.period === 'lifetime' ? undefined : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        originalPurchaseDate: new Date().toISOString(),
-        willRenew: pkg.period !== 'lifetime',
-      };
-
-      useSubscriptionStore.getState().setEntitlement(newEntitlement);
-      useSubscriptionStore.getState().setLoading(false);
-
-      return success(newEntitlement);
-    } catch (error) {
-      useSubscriptionStore.getState().setLoading(false);
-      const message = error instanceof Error ? error.message : 'Purchase transaction failed';
-      return failure({
-        code: 'PURCHASE_FAILED',
-        message,
-      });
+    const purchaseResult = await this.paymentGateway.purchasePackage(pkg);
+    if (!purchaseResult.success) {
+      return purchaseResult;
     }
+
+    const saveResult = await this.entitlementRepository.save(purchaseResult.data);
+    if (!saveResult.success) {
+      return saveResult;
+    }
+
+    useSubscriptionStore.getState().setEntitlement(saveResult.data);
+    return success(saveResult.data);
   }
 
   /**
    * Restore Purchases (Mandatory for Apple Guideline 3.1.1 Compliance).
    * Restores active App Store purchases for users reinstalling or switching devices.
+   * In development, falls back to the locally saved entitlement.
    */
   public async restorePurchases(): Promise<Result<CustomerEntitlement>> {
-    try {
-      useSubscriptionStore.getState().setLoading(true);
+    const gatewayResult = await this.paymentGateway.restorePurchases();
+    if (!gatewayResult.success) {
+      return gatewayResult;
+    }
 
-      // In production, calls Native StoreKit / RevenueCat.restorePurchases()
-      const restoredEntitlement: CustomerEntitlement = useSubscriptionStore.getState().isPro
-        ? {
-            isPro: true,
-            activeTier: useSubscriptionStore.getState().activeTier,
-            expirationDate: useSubscriptionStore.getState().expirationDate,
-            willRenew: true,
-          }
-        : {
-            isPro: false,
-            activeTier: 'free',
-            willRenew: false,
-          };
+    const entitlementResult = gatewayResult.data
+      ? success(gatewayResult.data)
+      : await this.entitlementRepository.get();
 
-      useSubscriptionStore.getState().setEntitlement(restoredEntitlement);
-      useSubscriptionStore.getState().setLoading(false);
+    if (!entitlementResult.success) {
+      return entitlementResult;
+    }
 
-      return success(restoredEntitlement);
-    } catch (error) {
-      useSubscriptionStore.getState().setLoading(false);
-      const message = error instanceof Error ? error.message : 'Restore purchases failed';
+    if (!entitlementResult.data) {
       return failure({
-        code: 'RESTORE_FAILED',
-        message,
+        code: 'NO_PURCHASES_TO_RESTORE',
+        message: 'No active premium purchase was found to restore.',
       });
     }
+
+    useSubscriptionStore.getState().setEntitlement(entitlementResult.data);
+    return success(entitlementResult.data);
+  }
+
+  /**
+   * Development helper for testing free-tier limits without deleting diary data.
+   * Production billing should not expose this path.
+   */
+  public async revertToFree(): Promise<Result<CustomerEntitlement>> {
+    const clearResult = await this.entitlementRepository.clear();
+    if (!clearResult.success) {
+      return clearResult;
+    }
+
+    const entitlement: CustomerEntitlement = {
+      isPro: false,
+      activeTier: 'free',
+      willRenew: false,
+    };
+
+    useSubscriptionStore.getState().setEntitlement(entitlement);
+    return success(entitlement);
   }
 }
 

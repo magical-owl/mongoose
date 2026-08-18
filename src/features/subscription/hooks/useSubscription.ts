@@ -1,3 +1,4 @@
+import { useCallback, useEffect } from 'react';
 import { useSubscriptionStore } from '../../../stores/useSubscriptionStore';
 import { subscriptionService } from '../services/SubscriptionService';
 import { SubscriptionPackage } from '../domain/Subscription';
@@ -9,14 +10,45 @@ export function useSubscription() {
   const packages = useSubscriptionStore((state) => state.packages);
   const isLoading = useSubscriptionStore((state) => state.isLoading);
   const error = useSubscriptionStore((state) => state.error);
+  const setLoading = useSubscriptionStore((state) => state.setLoading);
+  const setError = useSubscriptionStore((state) => state.setError);
 
-  const purchasePackage = async (pkg: SubscriptionPackage) => {
-    return await subscriptionService.purchasePackage(pkg);
-  };
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+    void subscriptionService.initialize().then((result) => {
+      if (!isMounted) return;
+      setError(result.success ? null : result.error.message);
+      setLoading(false);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [setError, setLoading]);
 
-  const restorePurchases = async () => {
-    return await subscriptionService.restorePurchases();
-  };
+  const purchasePackage = useCallback(async (pkg: SubscriptionPackage) => {
+    setLoading(true);
+    const result = await subscriptionService.purchasePackage(pkg);
+    setError(result.success ? null : result.error.message);
+    setLoading(false);
+    return result;
+  }, [setError, setLoading]);
+
+  const restorePurchases = useCallback(async () => {
+    setLoading(true);
+    const result = await subscriptionService.restorePurchases();
+    setError(result.success ? null : result.error.message);
+    setLoading(false);
+    return result;
+  }, [setError, setLoading]);
+
+  const revertToFree = useCallback(async () => {
+    setLoading(true);
+    const result = await subscriptionService.revertToFree();
+    setError(result.success ? null : result.error.message);
+    setLoading(false);
+    return result;
+  }, [setError, setLoading]);
 
   return {
     isPro,
@@ -27,5 +59,6 @@ export function useSubscription() {
     error,
     purchasePackage,
     restorePurchases,
+    revertToFree,
   };
 }
