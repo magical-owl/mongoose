@@ -51,7 +51,7 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useTranslation();
-  const { entries, restoreEntries } = useDiary();
+  const { entries, restoreEntries, refresh } = useDiary();
   const biometricLockEnabled = useAppStore((state) => state.biometricLockEnabled);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -123,19 +123,27 @@ export default function SettingsScreen() {
     return () => clearInterval(timer);
   }, [isPro, showFreeTierModal]);
 
+  const loadDailyUsage = useCallback(async () => {
+    const result = await planUsageRepository.getDailyUsage(deviceDateKey);
+    if (result.success) {
+      setStickersUsedToday(result.data.stickersUsed);
+      setStickerLimitExhaustedAt(result.data.stickerLimitExhaustedAt);
+    }
+  }, [deviceDateKey, setStickerLimitExhaustedAt, setStickersUsedToday]);
+
   useFocusEffect(
     useCallback(() => {
       let isMounted = true;
+      void refresh();
       void planUsageRepository.getDailyUsage(deviceDateKey).then((result) => {
-        if (isMounted && result.success) {
-          setStickersUsedToday(result.data.stickersUsed);
-          setStickerLimitExhaustedAt(result.data.stickerLimitExhaustedAt);
-        }
+        if (!isMounted || !result.success) return;
+        setStickersUsedToday(result.data.stickersUsed);
+        setStickerLimitExhaustedAt(result.data.stickerLimitExhaustedAt);
       });
       return () => {
         isMounted = false;
       };
-    }, [deviceDateKey, setStickerLimitExhaustedAt, setStickersUsedToday])
+    }, [deviceDateKey, refresh, setStickerLimitExhaustedAt, setStickersUsedToday])
   );
 
   const handleExportData = async () => {
@@ -251,6 +259,8 @@ export default function SettingsScreen() {
       icon: 'hourglass-outline' as IconProps['name'],
       onPress: () => {
         setNowMs(Date.now());
+        void refresh();
+        void loadDailyUsage();
         setShowFreeTierModal(true);
       },
     },
@@ -372,7 +382,7 @@ export default function SettingsScreen() {
           <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
             {t('settingsThemeModeSection')}
           </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
             {(['light', 'dark', 'system'] as const).map((m) => {
               const active = theme.mode === m;
               return (
@@ -380,8 +390,9 @@ export default function SettingsScreen() {
                   key={m}
                   onPress={() => theme.setThemeMode(m)}
                   style={{
-                    flex: 1,
+                    width: 118,
                     paddingVertical: 12,
+                    paddingHorizontal: 10,
                     borderRadius: 10,
                     borderWidth: active ? 2 : 1,
                     borderColor: active ? theme.colors.tint : theme.colors.border,
@@ -402,14 +413,14 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </ScrollView>
         </View>
 
         <View style={{ paddingTop: 20 }}>
           <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
             {t('settingsColorThemeSection')}
           </Text>
-          <View style={styles.themeOptions}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
             {(Object.keys(colorThemes) as ColorTheme[]).map((colorThemeKey) => {
               const active = theme.colorTheme === colorThemeKey;
               return (
@@ -435,7 +446,7 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </ScrollView>
           <Text preset="caption" color="textSecondary" style={{ marginTop: 8 }}>
             {t('settingsColorThemeHint')}
           </Text>
@@ -445,7 +456,7 @@ export default function SettingsScreen() {
           <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
             {t('settingsAccentColorSection')}
           </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
             {(['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet', 'teal', 'coral', 'rose', 'plum', 'mint', 'slate'] as AccentColor[]).map((color) => {
               const active = theme.accentColor === color;
               return (
@@ -458,7 +469,7 @@ export default function SettingsScreen() {
                 />
               );
             })}
-          </View>
+          </ScrollView>
           <Text preset="caption" color="textSecondary" style={{ marginTop: 8 }}>
             {t('settingsAccentColorHint')}
           </Text>
@@ -472,7 +483,7 @@ export default function SettingsScreen() {
         accessibilityLabel={t('settingsDisplayA11y')}
       >
         <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsCalendarDateFormatSection')}</Text>
-        <View style={styles.displayOptions}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
           {([
             ['month-day-year', 'Aug 16, 2026'],
             ['day-month-year', '16 Aug 2026'],
@@ -488,10 +499,10 @@ export default function SettingsScreen() {
               <Text preset="bodySmall" color={calendarDateFormat === value ? 'tint' : 'text'}>{label}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsWeekStartsOnSection')}</Text>
-        <View style={styles.displayOptions}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
           {([[0, t('settingsWeekStartsSunday')], [1, t('settingsWeekStartsMonday')]] as const).map(([value, label]) => (
             <TouchableOpacity
               key={value}
@@ -503,10 +514,10 @@ export default function SettingsScreen() {
               <Text preset="bodySmall" color={calendarFirstDay === value ? 'tint' : 'text'}>{label}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsTimeFormatSection')}</Text>
-        <View style={styles.displayOptions}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
           {([['24-hour', '24-hour'], ['12-hour', '12-hour (AM/PM)']] as const satisfies (readonly [TimeFormat, string])[]).map(([value, label]) => (
             <TouchableOpacity
               key={value}
@@ -518,10 +529,10 @@ export default function SettingsScreen() {
               <Text preset="bodySmall" color={timeFormat === value ? 'tint' : 'text'}>{label}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsGlobalFontSizeSection')}</Text>
-        <View style={styles.displayOptions}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
           {([['small', t('settingsFontSmall')], ['default', t('settingsFontDefault')], ['large', t('settingsFontLarge')]] as const satisfies (readonly [FontScale, string])[]).map(([value, label]) => (
             <TouchableOpacity
               key={value}
@@ -533,11 +544,11 @@ export default function SettingsScreen() {
               <Text preset="bodySmall" color={fontScale === value ? 'tint' : 'text'}>{label}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
         <Text preset="caption" color="textSecondary" style={styles.displayHint}>{t('settingsGlobalFontSizeHint')}</Text>
 
         <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsFontStyleSection')}</Text>
-        <View style={styles.displayOptions}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
           {([['system', t('settingsFontSystem')], ['serif', t('settingsFontSerif')], ['monospace', t('settingsFontMonospace')]] as const satisfies (readonly [FontFamily, string])[]).map(([value, label]) => (
             <TouchableOpacity
               key={value}
@@ -549,7 +560,7 @@ export default function SettingsScreen() {
               <Text preset="bodySmall" color={fontFamily === value ? 'tint' : 'text'} style={{ fontFamily: value === 'serif' ? 'serif' : value === 'monospace' ? 'monospace' : undefined }}>{label}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
         <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsHomeViewsSection')}</Text>
         <View>
           {(['timeline', 'detailed', 'feed'] as const satisfies readonly HomeViewMode[]).map((value) => (
@@ -582,7 +593,7 @@ export default function SettingsScreen() {
         accessibilityLabel={t('settingsLanguageTitle')}
       >
         <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('displayLanguageSection')}</Text>
-        <View style={styles.displayOptions}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
           {APP_LANGUAGES.map(({ value, nativeLabel }) => (
             <TouchableOpacity
               key={value}
@@ -594,7 +605,7 @@ export default function SettingsScreen() {
               <Text preset="bodySmall" color={appLanguage === value ? 'tint' : 'text'}>{nativeLabel}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
         <Text preset="caption" color="textSecondary" style={styles.displayHint}>{t('displayLanguageHint')}</Text>
       </Modal>
 
@@ -859,29 +870,29 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
   },
-  themeOptions: {
+  settingsSelectorSlider: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
+    paddingRight: 20,
   },
   themeOption: {
-    width: '48%',
-    minHeight: 48,
+    alignSelf: 'flex-start',
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
   },
   themePreview: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
-    marginRight: 10,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    marginRight: 8,
   },
   themeOptionLabel: {
-    flex: 1,
     fontWeight: '600',
+    marginRight: 8,
   },
   arrow: {
     fontSize: 20,
@@ -909,8 +920,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   displaySectionLabel: { fontWeight: '700', marginTop: 12, marginBottom: 8 },
-  displayOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  displayOption: { flexGrow: 1, minWidth: '30%', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingVertical: 11, paddingHorizontal: 10 },
+  displayOption: {
+    alignSelf: 'flex-start',
+    minWidth: 96,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+  },
   displayHint: { marginTop: 16, lineHeight: 18 },
   displayToggleRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 4 },
   limitSectionHeader: {

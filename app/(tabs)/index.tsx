@@ -497,6 +497,40 @@ export default function TimelineScreen() {
               <Ionicons name="menu-outline" size={26} color={theme.colors.text} />
             </TouchableOpacity>
 
+            <View style={[styles.viewModePill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              {selectableViewModes.map((mode, idx) => {
+                const selected = viewModeIndex === idx;
+                return (
+                  <TouchableOpacity
+                    key={mode}
+                    onPress={() => { setViewModeIndex(idx); setHomeViewMode(mode); }}
+                    style={[styles.viewModeButton, selected && { backgroundColor: theme.colors.tint }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={homeViewModeLabel(mode, t)}
+                    accessibilityState={{ selected }}
+                  >
+                    <Ionicons
+                      name={viewModeIcon(mode)}
+                      size={15}
+                      color={selected ? (theme.isDark ? theme.colors.background : theme.colors.card) : theme.colors.textSecondary}
+                    />
+                    <Text
+                      preset="caption"
+                      style={[
+                        styles.viewModeButtonText,
+                        { color: selected ? (theme.isDark ? theme.colors.background : theme.colors.card) : theme.colors.textSecondary },
+                      ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.72}
+                    >
+                      {homeViewModeLabel(mode, t)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
             <View style={styles.headerControls}>
               {showHeaderOptions && (
                 <ScrollView
@@ -506,28 +540,6 @@ export default function TimelineScreen() {
                   style={styles.headerOptionsSlider}
                   contentContainerStyle={styles.headerOptionsSliderContent}
                 >
-                  {selectableViewModes.map((mode, idx) => (
-                    <TouchableOpacity
-                      key={mode}
-                      onPress={() => { setViewModeIndex(idx); setHomeViewMode(mode); }}
-                      style={[
-                        styles.headerSliderButton,
-                        viewModeIndex === idx && { backgroundColor: theme.colors.tint + "18" },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel={homeViewModeLabel(mode, t)}
-                      accessibilityState={{ selected: viewModeIndex === idx }}
-                    >
-                      <Ionicons
-                        name={viewModeIcon(mode)}
-                        size={20}
-                        color={viewModeIndex === idx ? theme.colors.tint : theme.colors.text}
-                      />
-                    </TouchableOpacity>
-                  ))}
-
-                  <View style={[styles.headerSliderDivider, { backgroundColor: theme.colors.border }]} />
-
                   <TouchableOpacity
                     onPress={() => {
                       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -801,10 +813,35 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
-    gap: 6,
+    gap: 8,
   },
   menuButton: { width: 30, height: 36, alignItems: "flex-start", justifyContent: "center" },
-  headerControls: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 2 },
+  viewModePill: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 36,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 2,
+  },
+  viewModeButton: {
+    flex: 1,
+    minWidth: 0,
+    height: 30,
+    borderRadius: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: 5,
+  },
+  viewModeButtonText: {
+    flexShrink: 1,
+    fontWeight: "800",
+  },
+  headerControls: { flexShrink: 0, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 2 },
   headerOptionToggle: {
     width: 38,
     height: 38,
@@ -813,11 +850,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   headerOptionsSlider: {
-    flex: 1,
-    minWidth: 0,
+    flexGrow: 0,
+    flexShrink: 0,
   },
   headerOptionsSliderContent: {
-    flexGrow: 1,
     alignItems: "center",
     justifyContent: "flex-end",
     gap: 2,
@@ -829,11 +865,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 8,
-  },
-  headerSliderDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 22,
-    marginHorizontal: 4,
   },
   searchInput: {
     height: 44,
