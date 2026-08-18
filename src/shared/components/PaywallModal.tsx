@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { useSubscription } from '../../features/subscription/hooks/useSubscription';
 import { SubscriptionPackage } from '../../features/subscription/domain/Subscription';
+import { useTranslation } from '@/localization/i18n';
+import { config } from '@/config/ConfigService';
 
 export interface PaywallModalProps {
   visible: boolean;
@@ -23,36 +25,37 @@ export interface PaywallModalProps {
   onSuccess?: () => void;
 }
 
-const GENERIC_PRO_FEATURES = [
-  '✨ Unlimited Access to All Premium Features',
-  '🤖 Advanced AI Assistance & Insights',
-  '🔒 Enhanced Security & Biometric Protection',
-  '☁️ Encrypted Sync & Cloud Backup',
-  '⚡ Ad-Free Experience & Priority Support',
-];
-
 export const PaywallModal: React.FC<PaywallModalProps> = ({
   visible,
   onClose,
   appName = 'App',
   title,
-  subtitle = 'Get unlimited access to all premium features',
-  features = GENERIC_PRO_FEATURES,
+  subtitle,
+  features,
   onSuccess,
 }) => {
-  const displayTitle = title || `Unlock ${appName} Pro`;
-  const { packages, isLoading, purchasePackage, restorePurchases } = useSubscription();
+  const t = useTranslation();
+  const displayTitle = title || `${t('premiumPaywallUnlockPrefix')} ${appName} Premium`;
+  const displaySubtitle = subtitle || t('premiumPaywallSubtitle');
+  const displayFeatures = features ?? [
+    t('premiumPaywallFeatureEntries'),
+    t('premiumPaywallFeatureStickers'),
+    t('premiumPaywallFeatureInsights'),
+    t('premiumPaywallFeatureThemes'),
+    t('premiumPaywallFeatureOffline'),
+  ];
+  const { isPro, packages, isLoading, purchasePackage, restorePurchases, revertToFree } = useSubscription();
   const [selectedPkg, setSelectedPkg] = useState<SubscriptionPackage | null>(
-    packages[1] || packages[0] || null // Default to Annual / Best Value
+    packages[0] || null
   );
 
   const handlePurchase = async () => {
     if (!selectedPkg) return;
     const result = await purchasePackage(selectedPkg);
     if (result.success) {
-      Alert.alert('🎉 Welcome to Pro!', 'Your subscription is now active.', [
+      Alert.alert(t('premiumPurchaseSuccessTitle'), t('premiumPurchaseSuccessMessage'), [
         {
-          text: 'OK',
+          text: t('commonOk'),
           onPress: () => {
             onSuccess?.();
             onClose();
@@ -60,7 +63,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
         },
       ]);
     } else {
-      Alert.alert('Purchase Failed', result.error.message);
+      Alert.alert(t('premiumPurchaseFailedTitle'), result.error.message);
     }
   };
 
@@ -68,9 +71,9 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
     const result = await restorePurchases();
     if (result.success) {
       if (result.data.isPro) {
-        Alert.alert('Purchases Restored', 'Your Pro subscription has been restored.', [
+        Alert.alert(t('premiumRestoreSuccessTitle'), t('premiumRestoreSuccessMessage'), [
           {
-            text: 'OK',
+            text: t('commonOk'),
             onPress: () => {
               onSuccess?.();
               onClose();
@@ -78,10 +81,20 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           },
         ]);
       } else {
-        Alert.alert('No Purchases Found', 'No active subscription was found for this Apple ID.');
+        Alert.alert(t('premiumNoPurchasesTitle'), t('premiumNoPurchasesMessage'));
       }
     } else {
-      Alert.alert('Restore Failed', result.error.message);
+      Alert.alert(t('premiumRestoreFailedTitle'), result.error.message);
+    }
+  };
+
+  const handleRevertToFree = async () => {
+    const result = await revertToFree();
+    if (result.success) {
+      Alert.alert(t('premiumRevertSuccessTitle'), t('premiumRevertSuccessMessage'));
+      onClose();
+    } else {
+      Alert.alert(t('premiumRevertFailedTitle'), result.error.message);
     }
   };
 
@@ -94,14 +107,14 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>
-            <Text style={styles.badge}>PRO UNLOCK</Text>
+            <Text style={styles.badge}>{t('premiumPaywallBadge')}</Text>
             <Text style={styles.title}>{displayTitle}</Text>
-            <Text style={styles.subtitle}>{subtitle}</Text>
+            <Text style={styles.subtitle}>{displaySubtitle}</Text>
           </View>
 
           {/* Features List */}
           <View style={styles.featuresContainer}>
-            {features.map((item, index) => (
+            {displayFeatures.map((item, index) => (
               <View key={index} style={styles.featureRow}>
                 <Text style={styles.featureText}>{item}</Text>
               </View>
@@ -144,20 +157,25 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
               <ActivityIndicator color="#0F172A" />
             ) : (
               <Text style={styles.ctaButtonText}>
-                {selectedPkg?.period === 'lifetime' ? 'Unlock Lifetime Access' : 'Start Pro Subscription'}
+                {t('premiumLifetimeCta')}
               </Text>
             )}
           </TouchableOpacity>
 
           {/* Restore Purchases Button (Mandatory App Store Guideline 3.1.1) */}
           <TouchableOpacity style={styles.restoreButton} onPress={handleRestore} disabled={isLoading}>
-            <Text style={styles.restoreText}>Restore Purchases</Text>
+            <Text style={styles.restoreText}>{t('premiumRestoreButton')}</Text>
           </TouchableOpacity>
+
+          {isPro && config.isDev ? (
+            <TouchableOpacity style={styles.revertButton} onPress={handleRevertToFree} disabled={isLoading}>
+              <Text style={styles.revertText}>{t('premiumRevertToFreeButton')}</Text>
+            </TouchableOpacity>
+          ) : null}
 
           {/* Legal Footer */}
           <Text style={styles.legalFooter}>
-            Subscriptions auto-renew unless canceled at least 24 hours before the end of the current period.
-            Manage subscriptions in Apple ID Settings.
+            {t('premiumLegalFooter')}
           </Text>
         </ScrollView>
       </SafeAreaView>
@@ -289,6 +307,15 @@ const styles = StyleSheet.create({
   },
   restoreText: {
     color: '#94A3B8',
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
+  revertButton: {
+    paddingVertical: 8,
+    marginBottom: 20,
+  },
+  revertText: {
+    color: '#FCA5A5',
     fontSize: 14,
     textDecorationLine: 'underline',
   },

@@ -10,11 +10,12 @@
  *   npx expo run:ios
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ThemeProvider } from './ThemeProvider';
 import { QueryProvider } from './QueryProvider';
 import { NetworkProvider } from './NetworkProvider';
 import { assertValidConfig } from '@/config/ConfigService';
+import { subscriptionService } from '@/features/subscription/services/SubscriptionService';
 
 /**
  * App providers composition.
@@ -28,6 +29,10 @@ export function AppProviders({
 }): React.JSX.Element {
   assertValidConfig();
 
+  useEffect(() => {
+    void subscriptionService.initialize();
+  }, []);
+
   return (
     <ThemeProvider>
       <NetworkProvider>
@@ -38,4 +43,3 @@ export function AppProviders({
     </ThemeProvider>
   );
 }
-

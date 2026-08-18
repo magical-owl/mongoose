@@ -1,12 +1,19 @@
 import type { Result } from '@/shared/types/architecture';
 import { failure, success } from '@/shared/utils/result';
 import { generateUUID } from '@/shared/utils/uuid';
+import { FREE_PLAN_LIMITS, countAddedStickers, getLocalDateKey, validateDiaryEntryPlanLimits } from '@/features/subscription/services/PlanLimitService';
+import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
 import { DiaryEntry, DiaryReflection } from '../domain/DiaryEntry';
 import { IDiaryRepository } from '../repositories/IDiaryRepository';
 import { diaryRepository } from '../repositories/DiaryRepository';
+import { IPlanUsageRepository } from '@/features/subscription/repositories/IPlanUsageRepository';
+import { planUsageRepository } from '@/features/subscription/repositories/PlanUsageRepository';
 
 export class DiaryService {
-  constructor(private repo: IDiaryRepository = diaryRepository) {}
+  constructor(
+    private repo: IDiaryRepository = diaryRepository,
+    private planUsageRepo: IPlanUsageRepository = planUsageRepository
+  ) {}
 
   public async getEntries(): Promise<Result<DiaryEntry[]>> {
     return await this.repo.getAll();
@@ -17,7 +24,54 @@ export class DiaryService {
   }
 
   public async saveEntry(entry: DiaryEntry): Promise<Result<DiaryEntry>> {
-    return await this.repo.save(entry);
+    const isPro = useSubscriptionStore.getState().isPro;
+    const deviceDateKey = getLocalDateKey(new Date());
+
+    const entriesResult = await this.repo.getAll();
+    if (!entriesResult.success) {
+      return entriesResult;
+    }
+
+    const previousEntryResult = await this.repo.getById(entry.id);
+    if (!previousEntryResult.success) {
+      return previousEntryResult;
+    }
+
+    const dailyUsageResult = await this.planUsageRepo.getDailyUsage(deviceDateKey);
+    if (!dailyUsageResult.success) {
+      return dailyUsageResult;
+    }
+
+    const limitResult = validateDiaryEntryPlanLimits({
+      isPro,
+      existingEntries: entriesResult.data,
+      nextEntry: entry,
+      previousEntry: previousEntryResult.data,
+      deviceDateKey,
+      dailyUsage: dailyUsageResult.data,
+    });
+
+    if (!limitResult.success) {
+      return limitResult;
+    }
+
+    const saveResult = await this.repo.save(entry);
+    if (!saveResult.success) {
+      return saveResult;
+    }
+
+    const addedStickerCount = countAddedStickers(saveResult.data, previousEntryResult.data);
+    if (!isPro && addedStickerCount > 0) {
+      const usageResult = await this.planUsageRepo.recordStickerUsage(deviceDateKey, addedStickerCount, {
+        limit: FREE_PLAN_LIMITS.stickersPerDay,
+        occurredAt: saveResult.data.updatedAt,
+      });
+      if (!usageResult.success) {
+        return usageResult;
+      }
+    }
+
+    return saveResult;
   }
 
   public async deleteEntry(id: string): Promise<Result<boolean>> {

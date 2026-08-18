@@ -1,6 +1,6 @@
 import { MmkvDatabaseService } from '@/database/DatabaseService';
 import type { ISecureStorageDataSource } from '@/database/SecureStorageDataSource';
-import { secureStorageKeys } from '@/constants/secureStorageKeys';
+import { managedSecureStorageKeys } from '@/constants/secureStorageKeys';
 import { LocalDataService } from '../LocalDataService';
 import { logger } from '../LoggingService';
 
@@ -24,12 +24,6 @@ describe('LocalDataService', () => {
     await service.clearManagedData();
 
     expect(database.getAll('profiles')).toEqual([]);
-    expect(removedKeys).toEqual([
-      secureStorageKeys.currentProfile,
-      secureStorageKeys.diaryEntries,
-      secureStorageKeys.diaryDraft,
-      secureStorageKeys.backupEncryptionKey,
-      secureStorageKeys.journalExtras,
-    ]);
+    expect(removedKeys).toEqual(managedSecureStorageKeys);
   });
 });

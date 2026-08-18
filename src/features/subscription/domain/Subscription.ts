@@ -7,8 +7,8 @@ export const SubscriptionPackageSchema = z.object({
   id: z.string(),                // e.g. "zenjournal_pro_monthly", "zenjournal_pro_yearly", "zenjournal_pro_lifetime"
   productId: z.string(),         // StoreKit / Google Play product ID
   tier: SubscriptionTierSchema,
-  title: z.string(),            // e.g. "Pro Monthly", "Pro Yearly", "Pro Lifetime"
-  priceString: z.string(),       // e.g. "$4.99/mo", "$29.99/yr", "$79.99"
+  title: z.string(),            // e.g. APP_IDENTITY.premiumName
+  priceString: z.string(),       // e.g. "$9.99 once"
   priceNumber: z.number(),
   period: z.enum(['month', 'year', 'lifetime']),
   badge: z.string().optional(),  // e.g. "BEST VALUE - SAVE 50%", "ONE-TIME PAYMENT"

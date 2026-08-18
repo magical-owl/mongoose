@@ -109,7 +109,7 @@ export function Modal({
               <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: theme.colors.border }} />
             </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.md }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.md }}>
               {title && <Text preset="h3" style={{ flex: 1 }}>{title}</Text>}
               <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Close" accessibilityRole="button">
                 <Ionicons name="close" size={24} color={theme.colors.text} />

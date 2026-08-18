@@ -1,11 +1,36 @@
 import { SubscriptionService } from '../SubscriptionService';
+import { UnavailableSubscriptionPaymentGateway } from '../UnavailableSubscriptionPaymentGateway';
 import { useSubscriptionStore, DEFAULT_SUBSCRIPTION_PACKAGES } from '@stores/useSubscriptionStore';
+import type { ISubscriptionEntitlementRepository } from '../../repositories/ISubscriptionEntitlementRepository';
+import type { CustomerEntitlement } from '../../domain/Subscription';
+import { success } from '@/shared/utils/result';
+import { APP_IDENTITY } from '@/config/appIdentity';
+
+class MemoryEntitlementRepository implements ISubscriptionEntitlementRepository {
+  private entitlement: CustomerEntitlement | null = null;
+
+  public async get() {
+    return success(this.entitlement);
+  }
+
+  public async save(entitlement: CustomerEntitlement) {
+    this.entitlement = entitlement;
+    return success(entitlement);
+  }
+
+  public async clear() {
+    this.entitlement = null;
+    return success(undefined);
+  }
+}
 
 describe('SubscriptionService', () => {
   let service: SubscriptionService;
+  let entitlementRepository: MemoryEntitlementRepository;
 
   beforeEach(() => {
-    service = new SubscriptionService();
+    entitlementRepository = new MemoryEntitlementRepository();
+    service = new SubscriptionService(undefined, entitlementRepository);
     useSubscriptionStore.getState().reset();
   });
 
@@ -22,33 +47,103 @@ describe('SubscriptionService', () => {
     const result = await service.getPackages();
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.length).toBeGreaterThan(0);
-      expect(result.data[0]?.tier).toBe('pro_monthly');
-      expect(result.data[1]?.tier).toBe('pro_yearly');
-      expect(result.data[2]?.tier).toBe('pro_lifetime');
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]?.tier).toBe('pro_lifetime');
+      expect(result.data[0]?.title).toBe(APP_IDENTITY.premiumName);
+      expect(result.data[0]?.priceString).toBe('$9.99 once');
+      expect(result.data[0]?.priceNumber).toBe(9.99);
     }
   });
 
-  it('does not grant Pro before native billing is configured', async () => {
-    const monthlyPkg = DEFAULT_SUBSCRIPTION_PACKAGES[0]!;
-    const result = await service.purchasePackage(monthlyPkg);
+  it('grants development Premium for the one-time purchase', async () => {
+    const premiumPkg = DEFAULT_SUBSCRIPTION_PACKAGES[0]!;
+    const result = await service.purchasePackage(premiumPkg);
 
-    expect(result.success).toBe(false);
-    if (!result.success) expect(result.error.code).toBe('PURCHASE_NOT_CONFIGURED');
-    expect(useSubscriptionStore.getState().isPro).toBe(false);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.isPro).toBe(true);
+      expect(result.data.activeTier).toBe('pro_lifetime');
+      expect(result.data.expirationDate).toBeUndefined();
+    }
+    expect(useSubscriptionStore.getState().isPro).toBe(true);
   });
 
-  it('does not grant lifetime Pro before native billing is configured', async () => {
-    const lifetimePkg = DEFAULT_SUBSCRIPTION_PACKAGES[2]!;
+  it('grants development lifetime Premium without an expiration date', async () => {
+    const lifetimePkg = DEFAULT_SUBSCRIPTION_PACKAGES[0]!;
     const result = await service.purchasePackage(lifetimePkg);
 
-    expect(result.success).toBe(false);
-    if (!result.success) expect(result.error.code).toBe('PURCHASE_NOT_CONFIGURED');
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.isPro).toBe(true);
+      expect(result.data.activeTier).toBe('pro_lifetime');
+      expect(result.data.expirationDate).toBeUndefined();
+      expect(result.data.willRenew).toBe(false);
+    }
   });
 
-  it('does not claim to restore purchases before native billing is configured', async () => {
+  it('restores locally saved development purchases', async () => {
+    const premiumPkg = DEFAULT_SUBSCRIPTION_PACKAGES[0]!;
+    const purchaseResult = await service.purchasePackage(premiumPkg);
+    expect(purchaseResult.success).toBe(true);
+    useSubscriptionStore.getState().reset();
+
     const restoreResult = await service.restorePurchases();
+
+    expect(restoreResult.success).toBe(true);
+    if (restoreResult.success) {
+      expect(restoreResult.data.activeTier).toBe('pro_lifetime');
+    }
+    expect(useSubscriptionStore.getState().isPro).toBe(true);
+  });
+
+  it('reverts a development premium purchase back to the free tier', async () => {
+    const premiumPkg = DEFAULT_SUBSCRIPTION_PACKAGES[0]!;
+    const purchaseResult = await service.purchasePackage(premiumPkg);
+    expect(purchaseResult.success).toBe(true);
+
+    const revertResult = await service.revertToFree();
+
+    expect(revertResult.success).toBe(true);
+    if (revertResult.success) {
+      expect(revertResult.data.isPro).toBe(false);
+      expect(revertResult.data.activeTier).toBe('free');
+      expect(revertResult.data.willRenew).toBe(false);
+    }
+    expect(useSubscriptionStore.getState().isPro).toBe(false);
+    expect(useSubscriptionStore.getState().activeTier).toBe('free');
+    const storedEntitlementResult = await entitlementRepository.get();
+    expect(storedEntitlementResult.success).toBe(true);
+    if (storedEntitlementResult.success) {
+      expect(storedEntitlementResult.data).toBeNull();
+    }
+    expect((await service.restorePurchases()).success).toBe(false);
+  });
+
+  it('returns a restore error when no development purchase exists', async () => {
+    const restoreResult = await service.restorePurchases();
+
     expect(restoreResult.success).toBe(false);
-    if (!restoreResult.success) expect(restoreResult.error.code).toBe('RESTORE_NOT_CONFIGURED');
+    if (!restoreResult.success) expect(restoreResult.error.code).toBe('NO_PURCHASES_TO_RESTORE');
+  });
+
+  it('fails closed when native billing is not configured', async () => {
+    const unavailableService = new SubscriptionService(
+      new UnavailableSubscriptionPaymentGateway(),
+      entitlementRepository
+    );
+    const premiumPkg = DEFAULT_SUBSCRIPTION_PACKAGES[0]!;
+
+    const purchaseResult = await unavailableService.purchasePackage(premiumPkg);
+    const restoreResult = await unavailableService.restorePurchases();
+
+    expect(purchaseResult.success).toBe(false);
+    if (!purchaseResult.success) {
+      expect(purchaseResult.error.code).toBe('PURCHASE_NOT_CONFIGURED');
+    }
+    expect(restoreResult.success).toBe(false);
+    if (!restoreResult.success) {
+      expect(restoreResult.error.code).toBe('NO_PURCHASES_TO_RESTORE');
+    }
+    expect(useSubscriptionStore.getState().isPro).toBe(false);
   });
 });

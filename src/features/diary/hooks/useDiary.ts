@@ -24,7 +24,10 @@ export function useDiary() {
   }, []);
 
   useEffect(() => {
-    fetchEntries();
+    const timer = setTimeout(() => {
+      void fetchEntries();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchEntries]);
 
   const saveEntry = async (entry: DiaryEntry) => {

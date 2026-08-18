@@ -29,10 +29,13 @@ export interface StickerItem {
   readonly source?: number;
 }
 
+export type StickerAccessTier = 'free' | 'premium';
+
 export interface StickerCategory {
   readonly id: string;
   readonly name: string;
   readonly icon: string; // always an emoji, used for the category tab
+  readonly accessTier: StickerAccessTier;
   readonly stickers: StickerItem[];
 }
 
@@ -46,6 +49,7 @@ export const STICKER_PACKS: StickerCategory[] = [
     id: 'animals',
     name: 'Animals',
     icon: '🐱',
+    accessTier: 'free',
     stickers: [
       { id: 'cat-boba',     name: 'Cat',       icon: '🐱' },
       { id: 'dog-happy',    name: 'Dog',        icon: '🐶' },
@@ -62,6 +66,7 @@ export const STICKER_PACKS: StickerCategory[] = [
     id: 'everyday',
     name: 'Vibes',
     icon: '✨',
+    accessTier: 'free',
     stickers: [
       { id: 'happy-star',   name: 'Star',       icon: '⭐' },
       { id: 'coffee-cup',   name: 'Coffee',     icon: '☕' },
@@ -80,6 +85,7 @@ export const STICKER_PACKS: StickerCategory[] = [
     id: 'celebration',
     name: 'Celebrate',
     icon: '🎉',
+    accessTier: 'free',
     stickers: [
       { id: 'cake-birthday', name: 'Cake',      icon: '🎂' },
       { id: 'party-popper',  name: 'Party',     icon: '🎉' },
@@ -93,6 +99,7 @@ export const STICKER_PACKS: StickerCategory[] = [
     id: 'nature',
     name: 'Nature',
     icon: '🌿',
+    accessTier: 'free',
     stickers: [
       { id: 'flower-sakura', name: 'Blossom',  icon: '🌸' },
       { id: 'leaf-maple',    name: 'Maple',    icon: '🍁' },
@@ -109,6 +116,7 @@ export const STICKER_PACKS: StickerCategory[] = [
     id: 'mood',
     name: 'Mood',
     icon: '😊',
+    accessTier: 'free',
     stickers: [
       { id: 'happy-face',  name: 'Happy',     icon: '😊' },
       { id: 'love-face',   name: 'In Love',   icon: '😍' },
@@ -125,8 +133,9 @@ export const STICKER_PACKS: StickerCategory[] = [
   // ── PNG image packs ───────────────────────────────────────────────────────
   {
     id: 'cats-img',
-    name: 'Cats 🖼',
+    name: 'Cats',
     icon: '🐱',
+    accessTier: 'premium',
     stickers: [
       { id: 'catburnese1', name: 'Burnese 1', source: STICKER_IMAGES.catburnese1 },
       { id: 'catburnese2', name: 'Burnese 2', source: STICKER_IMAGES.catburnese2 },
@@ -144,8 +153,9 @@ export const STICKER_PACKS: StickerCategory[] = [
   },
   {
     id: 'cute-img',
-    name: 'Cute 🖼',
+    name: 'Cute',
     icon: '🌈',
+    accessTier: 'premium',
     stickers: [
       { id: 'cute_cloud',     name: 'Cloud',     source: STICKER_IMAGES.cute_cloud },
       { id: 'cute_heart1',    name: 'Heart 1',   source: STICKER_IMAGES.cute_heart1 },
@@ -162,8 +172,9 @@ export const STICKER_PACKS: StickerCategory[] = [
   },
   {
     id: 'food-img',
-    name: 'Food 🖼',
+    name: 'Food',
     icon: '🍰',
+    accessTier: 'premium',
     stickers: [
       { id: 'food_cupcake1',  name: 'Cupcake 1',  source: STICKER_IMAGES.food_cupcake1 },
       { id: 'food_cupcake2',  name: 'Cupcake 2',  source: STICKER_IMAGES.food_cupcake2 },
@@ -182,8 +193,9 @@ export const STICKER_PACKS: StickerCategory[] = [
   },
   {
     id: 'bears-img',
-    name: 'Bears 🖼',
+    name: 'Bears',
     icon: '🐻',
+    accessTier: 'premium',
     stickers: [
       { id: 'bear1', name: 'Bear 1', source: STICKER_IMAGES.bear1 },
       { id: 'bear2', name: 'Bear 2', source: STICKER_IMAGES.bear2 },
@@ -195,8 +207,9 @@ export const STICKER_PACKS: StickerCategory[] = [
   },
   {
     id: 'emotions-img',
-    name: 'Emotions 🖼',
+    name: 'Emotions',
     icon: '😄',
+    accessTier: 'premium',
     stickers: [
       { id: 'emotion1', name: 'Emotion 1', source: STICKER_IMAGES.emotion1 },
       { id: 'emotion2', name: 'Emotion 2', source: STICKER_IMAGES.emotion2 },
@@ -211,8 +224,9 @@ export const STICKER_PACKS: StickerCategory[] = [
   },
   {
     id: 'gamer-img',
-    name: 'Gamer 🖼',
+    name: 'Gamer',
     icon: '🎮',
+    accessTier: 'premium',
     stickers: [
       { id: 'gamer1', name: 'Gamer 1', source: STICKER_IMAGES.gamer1 },
       { id: 'gamer2', name: 'Gamer 2', source: STICKER_IMAGES.gamer2 },
@@ -227,8 +241,9 @@ export const STICKER_PACKS: StickerCategory[] = [
   },
   {
     id: 'pets-img',
-    name: 'Pets 🖼',
+    name: 'Pets',
     icon: '🐾',
+    accessTier: 'premium',
     stickers: [
       { id: 'pet1', name: 'Pet 1', source: STICKER_IMAGES.pet1 },
       { id: 'pet2', name: 'Pet 2', source: STICKER_IMAGES.pet2 },
@@ -240,8 +255,9 @@ export const STICKER_PACKS: StickerCategory[] = [
   },
   {
     id: 'cars-img',
-    name: 'Cars 🖼',
+    name: 'Cars',
     icon: '🚗',
+    accessTier: 'premium',
     stickers: [
       { id: 'car1', name: 'Car 1', source: STICKER_IMAGES.car1 },
       { id: 'car2', name: 'Car 2', source: STICKER_IMAGES.car2 },
@@ -251,6 +267,10 @@ export const STICKER_PACKS: StickerCategory[] = [
     ],
   },
 ];
+
+export function getStickerPacksByAccessTier(accessTier: StickerAccessTier): StickerCategory[] {
+  return STICKER_PACKS.filter((pack) => pack.accessTier === accessTier);
+}
 
 /**
  * Lookup a StickerItem by its stickerId across all packs.

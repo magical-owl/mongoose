@@ -17,3 +17,11 @@ export function formatDisplayMonthDayTime(value: string, format: TimeFormat): st
   const timeText = formatDisplayTime(value, format);
   return timeText ? `${dateText}, ${timeText}` : dateText;
 }
+
+export function formatDisplayMonthDayYearTime(value: string, format: TimeFormat): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const dateText = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  const timeText = formatDisplayTime(value, format);
+  return timeText ? `${dateText}, ${timeText}` : dateText;
+}

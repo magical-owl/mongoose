@@ -40,7 +40,10 @@ import { diaryDraftService } from '@/features/diary/services/DiaryDraftService';
 import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
 import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
-import { useTranslation } from '@/localization/i18n';
+import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
+import { PaywallModal } from '@/shared/components/PaywallModal';
+import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimitService';
+import { APP_IDENTITY } from '@/config/appIdentity';
 
 // Word count helper (strips markdown syntax)
 function countWords(text: string): number {
@@ -98,6 +101,7 @@ export default function CreateEntryScreen() {
   const [expiresAt, setExpiresAt] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
   const [showEntryDetails, setShowEntryDetails] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
@@ -238,6 +242,8 @@ export default function CreateEntryScreen() {
       await diaryDraftService.clear();
       setSelectedCalendarDate(null);
       navigateBack();
+    } else if (isPlanLimitErrorCode(result.error.code)) {
+      setShowPremiumModal(true);
     } else {
       Alert.alert(t('entryErrorTitle'), result.error.message);
     }
@@ -452,6 +458,7 @@ export default function CreateEntryScreen() {
         visible={showStickerPicker}
         onClose={() => setShowStickerPicker(false)}
         onSelectSticker={handleAddSticker}
+        onRequestPremium={() => setShowPremiumModal(true)}
       />
       <TemplatePickerModal
         visible={showTemplatePicker}
@@ -471,6 +478,20 @@ export default function CreateEntryScreen() {
           if (next.timeCapsuleUnlockAt !== undefined) setTimeCapsuleUnlockAt(next.timeCapsuleUnlockAt);
           if (next.expiresAt !== undefined) setExpiresAt(next.expiresAt);
         }}
+      />
+      <PaywallModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        appName={APP_IDENTITY.codename}
+        title={premiumPaywallTitle(t)}
+        subtitle={t('premiumPaywallSubtitle')}
+        features={[
+          t('premiumPaywallFeatureEntries'),
+          t('premiumPaywallFeatureStickers'),
+          t('premiumPaywallFeatureInsights'),
+          t('premiumPaywallFeatureThemes'),
+          t('premiumPaywallFeatureOffline'),
+        ]}
       />
     </View>
   );

@@ -64,7 +64,7 @@ function createMemoryMMKV(): MMKV {
 export function createSafeMMKV(config: { id: string; encryptionKey?: string }): MMKV {
   try {
     // Dynamic require so Metro doesn't fail to bundle in unsupported envs
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { createMMKV } = require('react-native-mmkv') as typeof import('react-native-mmkv');
     const instance = createMMKV(config);
     // Eagerly verify native side is present (getString is a native call)

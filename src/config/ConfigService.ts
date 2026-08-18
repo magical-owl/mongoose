@@ -6,6 +6,7 @@
  */
 
 import Constants from 'expo-constants';
+import { APP_IDENTITY } from './appIdentity';
 
 export type AppEnvironment = 'development' | 'staging' | 'production';
 
@@ -58,7 +59,7 @@ export function createConfig(raw: RawAppConfig): AppConfig {
   const env = getEnvironment(raw.appEnv);
   return {
     env,
-    appName: raw.appName?.trim() || 'Meadow',
+    appName: raw.appName?.trim() || APP_IDENTITY.codename,
     apiBaseUrl: normalizeUrl(raw.apiBaseUrl),
     apiTimeout: parseTimeout(raw.apiTimeout),
     isDev: env === 'development',

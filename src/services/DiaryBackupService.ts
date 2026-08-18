@@ -6,6 +6,7 @@ import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import type { Profile } from '@/features/profile/domain/Profile';
 import { JournalExtrasSchema, type JournalExtras } from '@/features/journal/domain/JournalExtras';
 import { CURRENT_DIARY_SCHEMA_VERSION, migrateDiaryStorage } from '@/features/diary/domain/DiaryMigrations';
+import { APP_IDENTITY } from '@/config/appIdentity';
 
 export interface BackupPayload {
   readonly version: number;
@@ -18,7 +19,7 @@ export interface BackupPayload {
 export class DiaryBackupService {
   public async exportJson(entries: DiaryEntry[], profile?: Profile | null, journalExtras?: JournalExtras): Promise<string> {
     const payload = this.createPayload(entries, profile, journalExtras);
-    const file = new File(Paths.cache, `mongoose-diary-${Date.now()}.json`);
+    const file = new File(Paths.cache, `${APP_IDENTITY.exportFilePrefix}-diary-${Date.now()}.json`);
     file.create({ overwrite: true });
     file.write(JSON.stringify(payload, null, 2));
     if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(file.uri, { mimeType: 'application/json' });
@@ -32,7 +33,7 @@ export class DiaryBackupService {
     const key = await this.getKey(password, salt);
     const plaintext = toBase64(JSON.stringify(payload));
     const sealed = await aesEncryptAsync(plaintext, key);
-    const file = new File(Paths.cache, `mongoose-diary-${Date.now()}.mbackup`);
+    const file = new File(Paths.cache, `${APP_IDENTITY.exportFilePrefix}-diary-${Date.now()}.mbackup`);
     file.create({ overwrite: true });
     file.write(JSON.stringify({ algorithm: 'AES-256-GCM', keyDerivation: 'SHA-256(password + salt)', salt, ciphertext: await sealed.combined('base64') }));
     if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(file.uri, { mimeType: 'application/octet-stream' });

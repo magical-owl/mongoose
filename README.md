@@ -1,166 +1,107 @@
-# Meadow — Expo Enterprise Starter Platform
+# Mongoose
 
-Meadow is a production-grade Expo application platform built with **Feature-First + Clean Architecture** (Expo SDK 57, React 19, TypeScript 6). It serves as a reusable foundation and starter template for privacy-sensitive, data-heavy, and AI-assisted mobile applications (Diary, Journal, Finance, Habit Tracker, AI Companion, Notes, etc.).
+Mongoose is the current app codename for an offline-first private diary app for writing, reflecting, and reviewing personal memories on-device. It focuses on core journaling workflows: diary entries, moods, stickers, reflections, calendar review, and personal insights.
 
----
+The app is built with Expo, React Native, and TypeScript. It is designed for private local use first, with biometric protection, encrypted backups, and no account requirement for the main diary experience.
 
-## 🚀 Starter Protocol: How to Build a New App with Meadow
+## Features
 
-Meadow is designed to be cloned or copied when initializing a new application:
+- Create and edit diary entries with rich text.
+- Track mood and day-feeling context for each entry.
+- Add free and premium sticker packs to entries.
+- Add reflections after writing.
+- Browse entries through timeline, card, feed, and calendar views.
+- Review insights for entries, words, stickers, writing rhythm, moods, and most-used stickers.
+- Protect the app with device biometrics.
+- Export data as JSON or encrypted backup files.
+- Use the diary offline-first.
 
-### Option A: Use as GitHub Template
-1. Click **Use this template** on GitHub ➔ **Create a new repository**.
-2. Clone your new app repository locally:
-   ```bash
-   git clone https://github.com/your-username/my-new-app.git
-   cd my-new-app
-   npm install
-   ```
+## Product Status
 
-### Option B: Local Directory Copy
-```bash
-# 1. Copy meadow to your new app directory
-cp -r meadow my-new-app
-cd my-new-app
+Mongoose is in active pre-release development.
 
-# 2. Reset git repository history
-rm -rf .git && git init
-npm install
-```
+The app name is centralized in [`src/config/appIdentity.ts`](src/config/appIdentity.ts) so the codename can be changed later for TestFlight or release without searching through screens and services.
 
----
+Core offline diary features are implemented. Release work still includes production in-app purchase integration, final App Store / Google Play metadata, privacy-policy hosting, and final policy review.
 
-## 📋 New App Execution Blueprint
+Premium infrastructure is present behind a payment gateway abstraction. Development builds can exercise local Premium behavior, while production builds fail closed until native App Store and Google Play billing is wired.
 
-Follow the step-by-step sequence in [`agents/new-app.md`](agents/new-app.md) when developing your new application:
+## Tech Stack
 
-1. **Configure Identity**: Run `npm run init-app -- --name "MyAppName" --slug "myapp" --bundle "com.mycompany.myapp"` to automatically configure `app.json` and `package.json`.
-2. **Customize Theme ([`src/theme/`](src/theme/))**: Set brand palette in `colors.ts` and typography scale in `typography.ts`.
-3. **Build Feature Modules ([`src/features/`](src/features/))**:
-   - **Domain**: Data models & Zod schemas.
-   - **Repositories**: Encrypted storage handlers (AES-256 in SecureStore / MMKV).
-   - **Services**: Business rules & Zero Data Retention AI calls.
-   - **Hooks & Presentation**: React Query hooks & screens in `app/(tabs)/`.
-4. **Enforce Security & Compliance**: Enable biometric app lock (`expo-local-authentication`), in-app account deletion (Guideline 5.1.1), and AI transparency tags (EU AI Act & Guideline 2.5.18).
-5. **Run Verification**: `npm run typecheck && npm run lint && npm test && npm run doctor`.
-
----
-
-## 🛡️ Security & Compliance Infrastructure
-
-Meadow comes pre-configured with security and privacy guardrails for sensitive applications:
-
-| Protection Domain | Implementation & Guardrail | Reference |
-| :--- | :--- | :--- |
-| **Encryption at Rest** | AES-256 local database encryption using keys stored in `expo-secure-store` (Keychain / Keystore). | [`COMPLIANCE/PRIVACY.md`](COMPLIANCE/PRIVACY.md) |
-| **Biometric Security** | Inactivity auto-lock and Face ID / Touch ID authentication (`expo-local-authentication`). | [`agents/security.md`](agents/security.md) |
-| **Zero PII Leakage** | Strict log sanitization preventing entry text, prompt data, or PII in logs or crash tools. | [`AGENTS.md`](AGENTS.md#L73-L75) |
-| **AI Data Privacy** | Zero Data Retention (ZDR) configuration preventing user content from training AI models. | [`COMPLIANCE/AI_COMPLIANCE.md`](COMPLIANCE/AI_COMPLIANCE.md) |
-| **User Rights** | Functional in-app "Delete Account" / "Clear Data" (GDPR Art. 17) & JSON Data Export (GDPR Art. 20). | [`COMPLIANCE/GDPR.md`](COMPLIANCE/GDPR.md) |
-| **Monetization & IAP** | Native StoreKit In-App Purchases with mandatory "Restore Purchases" button on paywalls. | [`agents/release.md`](agents/release.md#L38-L42) |
-| **Legal & IP Safeguards** | Trademark clearance checks, commercial-use asset licensing (Google Fonts, `@expo/vector-icons`), and live Privacy Policy/EULA hosting templates. | [`AGENTS.md`](AGENTS.md#L91-L97) |
-
----
-
-## 🏛️ Architecture & Layering Rules
-
-```
-Presentation (app/) ➔ Hooks ➔ Services ➔ Repositories ➔ Storage / API / AI
-```
-
-- **No Business Logic in UI**: Screens & components render presentation state only.
-- **No Direct Storage/API in Screens**: Screens consume custom hooks; services own business logic; repositories own persistence.
-- **Layer Isolation**: Shared modules (`@shared/`) remain generic; features do not create circular cross-imports.
-
----
-
-## 🛠️ Tech Stack
-
-| Category | Technology |
+| Area | Technology |
 |---|---|
-| **Framework** | Expo SDK 57 |
-| **Routing** | Expo Router (file-based) |
-| **UI Library** | React 19 + React Native 0.86 |
-| **Language** | TypeScript 6 (strict mode) |
-| **State (Client)** | Zustand 5 |
-| **State (Server)** | TanStack Query 5 |
-| **Forms & Validation** | React Hook Form + Zod |
-| **Networking** | Axios HTTP Client |
-| **Secure Keys** | Expo Secure Store (iOS Keychain / Android Keystore) |
-| **Local Storage** | MMKV (AES-256 encrypted) |
-| **Animations & Gestures** | React Native Reanimated 3 + Gesture Handler |
-| **Testing** | Jest + React Native Testing Library |
-| **CI/CD & Builds** | GitHub Actions + EAS Build |
+| Framework | Expo SDK 57 |
+| Navigation | Expo Router |
+| UI | React 19, React Native 0.86 |
+| Language | TypeScript 6 |
+| State | Zustand |
+| Validation | Zod |
+| Secure storage | Expo Secure Store |
+| Local storage | MMKV |
+| Biometrics | Expo Local Authentication |
+| Backups | Expo File System, Sharing, Document Picker, Crypto |
+| Testing | Jest |
 
----
+## Project Structure
 
-## 💻 Developer Quick Start & Scripts
+```text
+app/                      Expo Router screens
+src/features/diary/       Diary domain, services, repositories, and UI
+src/features/subscription Free/Premium plan infrastructure
+src/features/profile/     Local profile data
+src/features/journal/     Journal extras and archive data
+src/shared/               Reusable components and utilities
+src/services/             Backup, app lock, deletion, logging, and other services
+src/stores/               Zustand stores
+src/theme/                Theme tokens and color themes
+COMPLIANCE/               Privacy, app store, and data protection documents
+docs/                     Architecture and release documentation
+```
+
+## Development
+
+Install dependencies:
 
 ```bash
-# Install dependencies
 npm install
-
-# Start local dev server
-npm run web           # Web dev server
-npm run ios           # iOS simulator
-npm run android       # Android emulator
-
-# Code Quality & Testing
-npm run typecheck     # TypeScript strict check
-npm run lint          # ESLint code style audit
-npm test              # Jest test suite (unit & integration)
-npm run doctor        # Expo SDK health check
-
-# Cloud Builds
-npm run eas:build     # Build binary via EAS
 ```
 
----
+Start the app:
 
-## 📂 Directory Structure
-
-```
-meadow/
-├── app/              # Expo Router (file-based navigation)
-├── src/
-│   ├── features/     # Feature-First modules (domain, repositories, services, hooks)
-│   ├── shared/       # Reusable components, hooks, utilities
-│   ├── services/     # Cross-cutting business services
-│   ├── repositories/ # Abstracted data access layer
-│   ├── api/          # HTTP data sources
-│   ├── ai/           # AI proxy & provider abstractions
-│   ├── stores/       # Zustand client stores
-│   ├── hooks/        # Shared React hooks
-│   ├── providers/    # React Context providers
-│   ├── theme/        # Design system tokens (colors, spacing, typography)
-│   ├── config/       # Environment & feature flag config
-│   ├── constants/    # Global constants & prompts
-│   ├── database/     # Database schemas & migrations
-│   └── utils/        # Utility helpers
-├── docs/             # Technical architecture documentation
-├── agents/           # AI Agent blueprints & starter guides (new-app.md, security.md, release.md)
-├── COMPLIANCE/       # Privacy, GDPR, Apple App Store & legal frameworks
-└── tests/            # Test setups & mocks
+```bash
+npm start
 ```
 
----
+Run checks:
 
-## 📖 Documentation & Guidelines
+```bash
+npm run lint
+npm run typecheck
+npm test -- --runInBand
+npm run doctor
+```
 
-- **New App Starter Guide**: [`agents/new-app.md`](agents/new-app.md)
-- **Figma Workflow & Screen Specification**: [`docs/FigmaWorkflow.md`](docs/FigmaWorkflow.md)
-- **Componentization & Reuse Rules**: [`agents/componentization.md`](agents/componentization.md)
-- **ZenJournal Technical Blueprint**: [`docs/ZenJournalBlueprint.md`](docs/ZenJournalBlueprint.md)
-- **AI Agent Rules & Compliance**: [`AGENTS.md`](AGENTS.md)
-- **Security Guide**: [`docs/Security.md`](docs/Security.md)
-- **App Store & Google Play Release**: [`agents/release.md`](agents/release.md)
-- **Production Readiness Gate**: [`docs/ProductionReadiness.md`](docs/ProductionReadiness.md)
-- **Privacy & GDPR Framework**: [`COMPLIANCE/PRIVACY.md`](COMPLIANCE/PRIVACY.md)
-- **Subscription Architecture**: [`src/features/subscription/`](src/features/subscription/) & [`src/shared/components/PaywallModal.tsx`](src/shared/components/PaywallModal.tsx)
+Build with EAS:
 
+```bash
+npm run eas:build
+```
 
----
+## Release Checklist
 
-## 📄 License
+Before App Store / Google Play submission:
+
+- Integrate real native in-app purchases for Mongoose Premium.
+- Confirm final product IDs in App Store Connect and Google Play Console.
+- Remove or justify unused native permission strings.
+- Finalize public Privacy Policy and Support URLs.
+- Verify privacy manifest and data safety disclosures.
+- Run `npm run lint`, `npm run typecheck`, `npm test -- --runInBand`, and `npm run doctor`.
+
+## Privacy Notes
+
+Mongoose is designed around local-first diary storage. Diary entries, profile data, backup metadata, and plan state are stored on-device. Remote AI functionality is disabled unless explicitly configured and consented to.
+
+## License
 
 See [LICENSE](LICENSE).

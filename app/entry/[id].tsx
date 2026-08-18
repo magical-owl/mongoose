@@ -50,7 +50,10 @@ import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { formatDisplayMonthDayTime } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
-import { manualMoodLabel, useTranslation } from '@/localization/i18n';
+import { manualMoodLabel, premiumPaywallTitle, useTranslation } from '@/localization/i18n';
+import { PaywallModal } from '@/shared/components/PaywallModal';
+import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimitService';
+import { APP_IDENTITY } from '@/config/appIdentity';
 
 function countWords(text: string): number {
   const clean = text.replace(/[*#`>•\-_]/g, '').trim();
@@ -109,6 +112,7 @@ export default function EntryDetailScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [reflectionText, setReflectionText] = useState('');
   const [isSavingReflection, setIsSavingReflection] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = editContent
@@ -129,7 +133,8 @@ export default function EntryDetailScreen() {
   }, []);
 
   useEffect(() => {
-    if (id) {
+    const timer = setTimeout(() => {
+      if (!id) return;
       const found = entries.find((e) => e.id === id);
       if (found) {
         setEntry(found);
@@ -141,7 +146,8 @@ export default function EntryDetailScreen() {
         setEditFavorite(found.isFavorite);
         setEditMood(found.manualMood ?? 'neutral'); setEditMoodWeather(found.manualMoodWeather); setEditWritingMode(found.writingMode); setEditLocation(found.sensory.locationLabel); setEditSounds(found.sensory.sounds); setEditSmells(found.sensory.smells); setEditEnergy(String(found.sensory.energyLevel)); setEditBody(found.sensory.bodyState); setEditLockbox(found.isLockbox); setEditUnlockAt(found.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(found.expiresAt ?? '');
       }
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [id, entries]);
 
   const navigateBack = useCallback(() => {
@@ -199,6 +205,7 @@ export default function EntryDetailScreen() {
     const result = await saveDiaryEntry(updated);
     setIsSaving(false);
     if (result.success) { setEntry(updated); setIsEditing(false); }
+    else if (isPlanLimitErrorCode(result.error.code)) setShowPremiumModal(true);
     else Alert.alert(t('entrySaveFailedTitle'), result.error.message);
   };
 
@@ -570,11 +577,26 @@ export default function EntryDetailScreen() {
         visible={showStickerPicker}
         onClose={() => setShowStickerPicker(false)}
         onSelectSticker={handleAddSticker}
+        onRequestPremium={() => setShowPremiumModal(true)}
       />
       <TemplatePickerModal
         visible={showTemplatePicker}
         onClose={() => setShowTemplatePicker(false)}
         onSelectTemplate={handleSelectTemplate}
+      />
+      <PaywallModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        appName={APP_IDENTITY.codename}
+        title={premiumPaywallTitle(t)}
+        subtitle={t('premiumPaywallSubtitle')}
+        features={[
+          t('premiumPaywallFeatureEntries'),
+          t('premiumPaywallFeatureStickers'),
+          t('premiumPaywallFeatureInsights'),
+          t('premiumPaywallFeatureThemes'),
+          t('premiumPaywallFeatureOffline'),
+        ]}
       />
       <Modal
         visible={showReflections}

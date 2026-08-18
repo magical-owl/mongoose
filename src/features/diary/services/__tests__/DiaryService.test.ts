@@ -1,10 +1,31 @@
 import { DiaryService } from '../DiaryService';
 import { DiaryRepository } from '../../repositories/DiaryRepository';
 import { DiaryEntry } from '../../domain/DiaryEntry';
+import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
+import { PlanUsageRepository } from '@/features/subscription/repositories/PlanUsageRepository';
+import type { ISecureStorageDataSource } from '@/database/SecureStorageDataSource';
+import { getLocalDateKey } from '@/features/subscription/services/PlanLimitService';
+
+class MemorySecureStorage implements ISecureStorageDataSource {
+  private readonly items = new Map<string, string>();
+
+  public async getItem(key: string): Promise<string | null> {
+    return this.items.get(key) ?? null;
+  }
+
+  public async setItem(key: string, value: string): Promise<void> {
+    this.items.set(key, value);
+  }
+
+  public async removeItem(key: string): Promise<void> {
+    this.items.delete(key);
+  }
+}
 
 describe('DiaryService', () => {
   let service: DiaryService;
   let repo: DiaryRepository;
+  let planUsageRepo: PlanUsageRepository;
 
   const dateOffset = (days: number): string => {
     return new Date(Date.now() - days * 86400000).toISOString().split('T')[0]!;
@@ -30,9 +51,31 @@ describe('DiaryService', () => {
     reflections: [],
   };
 
-  beforeEach(() => {
-    repo = new DiaryRepository();
-    service = new DiaryService(repo);
+  const entryForDate = (id: string, date: string, stickers = 0): DiaryEntry => ({
+    ...mockEntry,
+    id,
+    date,
+    stickers: Array.from({ length: stickers }, (_, index) => ({
+      id: `123e4567-e89b-12d3-a456-4266141741${String(index).padStart(2, '0')}`,
+      stickerId: `sticker-${index}`,
+      category: 'everyday',
+      x: 0,
+      y: 0,
+      scale: 1,
+      rotation: 0,
+      zIndex: index + 1,
+      behindText: false,
+    })),
+  });
+
+  beforeEach(async () => {
+    useSubscriptionStore.getState().reset();
+    const storage = new MemorySecureStorage();
+    repo = new DiaryRepository(storage);
+    planUsageRepo = new PlanUsageRepository(storage);
+    await repo.clearAll();
+    await planUsageRepo.clearAll();
+    service = new DiaryService(repo, planUsageRepo);
   });
 
   it('should save an entry without generating automated mood data', async () => {
@@ -71,5 +114,79 @@ describe('DiaryService', () => {
     if (deleteResult.success) {
       expect(deleteResult.data.reflections).toHaveLength(0);
     }
+  });
+
+  it('should limit free users to three entries per device day', async () => {
+    await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174101', dateOffset(0)));
+    await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174102', dateOffset(1)));
+    await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174103', dateOffset(2)));
+
+    const result = await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174104', dateOffset(3)));
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe('FREE_ENTRY_DAILY_LIMIT_REACHED');
+    }
+  });
+
+  it('should limit free users to nine sticker additions per device day', async () => {
+    await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174201', dateOffset(0), 5));
+    await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174202', dateOffset(1), 4));
+
+    const result = await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174203', dateOffset(2), 1));
+    const usageResult = await planUsageRepo.getDailyUsage(getLocalDateKey(new Date()));
+
+    expect(result.success).toBe(false);
+    expect(usageResult.success).toBe(true);
+    if (usageResult.success) {
+      expect(usageResult.data.stickerLimitExhaustedAt).toBeDefined();
+    }
+    if (!result.success) {
+      expect(result.error.code).toBe('FREE_STICKER_DAILY_LIMIT_REACHED');
+    }
+  });
+
+  it('should count stickers added while editing toward the device day limit', async () => {
+    const entry = entryForDate('123e4567-e89b-12d3-a456-426614174401', dateOffset(5), 9);
+    await service.saveEntry(entry);
+
+    const result = await service.saveEntry({
+      ...entry,
+      stickers: [
+        ...entry.stickers,
+        {
+          id: '123e4567-e89b-12d3-a456-426614174499',
+          stickerId: 'extra-sticker',
+          category: 'everyday',
+          x: 0,
+          y: 0,
+          scale: 1,
+          rotation: 0,
+          zIndex: 9,
+          behindText: false,
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe('FREE_STICKER_DAILY_LIMIT_REACHED');
+    }
+  });
+
+  it('should allow pro users to exceed free daily limits', async () => {
+    useSubscriptionStore.getState().setEntitlement({
+      isPro: true,
+      activeTier: 'pro_monthly',
+      willRenew: true,
+    });
+    const date = dateOffset(0);
+    await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174301', date, 3));
+    await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174302', date));
+    await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174303', date));
+
+    const result = await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174304', date, 2));
+
+    expect(result.success).toBe(true);
   });
 });

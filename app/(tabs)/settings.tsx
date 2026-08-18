@@ -7,7 +7,7 @@
  * - Modals for Appearance and Data Export
  */
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -17,11 +17,13 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { Icon, type IconProps } from '@shared/components/Icon';
 import { Modal } from '@shared/components/Modal';
+import { PaywallModal } from '@/shared/components/PaywallModal';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { useAppStore, type CalendarDateFormat, type FontFamily, type FontScale, type HomeViewMode, type TimeFormat } from '@/stores/useAppStore';
@@ -31,7 +33,13 @@ import { diaryBackupService } from '@/services/DiaryBackupService';
 import { useJournalExtras } from '@/features/journal/hooks/useJournalExtras';
 import { accentColors, type AccentColor } from '@/theme/accents';
 import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
-import { APP_LANGUAGES, homeViewModeLabel, useTranslation } from '@/localization/i18n';
+import { APP_LANGUAGES, homeViewModeLabel, premiumPaywallTitle, useTranslation } from '@/localization/i18n';
+import { APP_IDENTITY } from '@/config/appIdentity';
+import { FREE_PLAN_LIMITS, getLocalDateKey, getNextLocalPlanResetDate } from '@/features/subscription/services/PlanLimitService';
+import { formatDisplayMonthDayYearTime, formatDisplayTime } from '@/shared/utils/timeFormat';
+import { formatDisplayDate } from '@/shared/utils/dateFormat';
+import { planUsageRepository } from '@/features/subscription/repositories/PlanUsageRepository';
+import { useSubscription } from '@/features/subscription/hooks/useSubscription';
 
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -46,6 +54,10 @@ export default function SettingsScreen() {
   const fontFamily = useAppStore((state) => state.fontFamily);
   const homeViewModes = useAppStore((state) => state.homeViewModes);
   const appLanguage = useAppStore((state) => state.appLanguage);
+  const {
+    isPro,
+    activeTier,
+  } = useSubscription();
   const setCalendarDateFormat = useAppStore((state) => state.setCalendarDateFormat);
   const setTimeFormat = useAppStore((state) => state.setTimeFormat);
   const setCalendarFirstDay = useAppStore((state) => state.setCalendarFirstDay);
@@ -56,6 +68,15 @@ export default function SettingsScreen() {
   const { profile, saveProfile } = useProfileForm();
   const { state: journalExtras, replace: replaceJournalExtras } = useJournalExtras();
   const activeLanguage = APP_LANGUAGES.find((language) => language.value === appLanguage) ?? APP_LANGUAGES[0]!;
+  const deviceDateKey = getLocalDateKey(new Date());
+  const nextFreeTierResetDate = getNextLocalPlanResetDate();
+  const nextFreeTierResetDateKey = getLocalDateKey(nextFreeTierResetDate);
+  const nextFreeTierResetText = `${formatDisplayDate(nextFreeTierResetDateKey, calendarDateFormat)}, ${formatDisplayTime(nextFreeTierResetDate.toISOString(), timeFormat)}`;
+  const entriesCreatedToday = entries
+    .filter((entry) => getLocalDateKey(new Date(entry.createdAt)) === deviceDateKey)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const createdTodayCount = entriesCreatedToday.length;
+  const entryUsageText = `${Math.min(createdTodayCount, FREE_PLAN_LIMITS.entriesPerDay)}/${FREE_PLAN_LIMITS.entriesPerDay}`;
 
   // Modals
   const [showAppearanceModal, setShowAppearanceModal] = useState(false);
@@ -63,7 +84,51 @@ export default function SettingsScreen() {
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showDisplayModal, setShowDisplayModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showFreeTierModal, setShowFreeTierModal] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [backupPassword, setBackupPassword] = useState('');
+  const [stickersUsedToday, setStickersUsedToday] = useState(0);
+  const [stickerLimitExhaustedAt, setStickerLimitExhaustedAt] = useState<string | undefined>(undefined);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const stickerUsageText = `${Math.min(stickersUsedToday, FREE_PLAN_LIMITS.stickersPerDay)}/${FREE_PLAN_LIMITS.stickersPerDay}`;
+  const entryLimitExhaustedAt = entriesCreatedToday[FREE_PLAN_LIMITS.entriesPerDay - 1]?.createdAt;
+  const exhaustedAtCandidates = [entryLimitExhaustedAt, stickerLimitExhaustedAt]
+    .filter((value): value is string => Boolean(value))
+    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+  const limitExhaustedAt = exhaustedAtCandidates[0];
+  const freeLimitExhausted = !isPro && (
+    createdTodayCount >= FREE_PLAN_LIMITS.entriesPerDay
+    || stickersUsedToday >= FREE_PLAN_LIMITS.stickersPerDay
+  );
+  const freeLimitExhaustedText = freeLimitExhausted
+    ? formatDisplayMonthDayYearTime(limitExhaustedAt ?? new Date().toISOString(), timeFormat)
+    : t('freeTierNotExhausted');
+  const timeLeftUntilResetMs = Math.max(0, nextFreeTierResetDate.getTime() - nowMs);
+  const timeLeftHours = Math.floor(timeLeftUntilResetMs / 3_600_000);
+  const timeLeftMinutes = Math.floor((timeLeftUntilResetMs % 3_600_000) / 60_000);
+  const timeLeftSeconds = Math.floor((timeLeftUntilResetMs % 60_000) / 1000);
+  const timeLeftUntilResetText = `${String(timeLeftHours).padStart(2, '0')}:${String(timeLeftMinutes).padStart(2, '0')}:${String(timeLeftSeconds).padStart(2, '0')}`;
+
+  useEffect(() => {
+    if (!showFreeTierModal || isPro) return undefined;
+    const timer = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [isPro, showFreeTierModal]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
+      void planUsageRepository.getDailyUsage(deviceDateKey).then((result) => {
+        if (isMounted && result.success) {
+          setStickersUsedToday(result.data.stickersUsed);
+          setStickerLimitExhaustedAt(result.data.stickerLimitExhaustedAt);
+        }
+      });
+      return () => {
+        isMounted = false;
+      };
+    }, [deviceDateKey, setStickerLimitExhaustedAt, setStickersUsedToday])
+  );
 
   const handleExportData = async () => {
     try {
@@ -160,6 +225,25 @@ export default function SettingsScreen() {
       subtitle: `${t('settingsLanguageSubtitle')}: ${activeLanguage.nativeLabel}`,
       icon: 'language-outline' as IconProps['name'],
       onPress: () => setShowLanguageModal(true),
+    },
+    {
+      id: 'free-tier',
+      title: t('settingsFreeTierTitle'),
+      subtitle: isPro
+        ? t('settingsFreeTierProSubtitle')
+        : `${t('settingsFreeTierSubtitle')} ${nextFreeTierResetText}`,
+      icon: 'hourglass-outline' as IconProps['name'],
+      onPress: () => {
+        setNowMs(Date.now());
+        setShowFreeTierModal(true);
+      },
+    },
+    {
+      id: 'premium',
+      title: t('settingsPremiumTitle'),
+      subtitle: isPro ? `${t('settingsPremiumActiveSubtitle')}: ${activeTier}` : t('settingsPremiumSubtitle'),
+      icon: 'sparkles-outline' as IconProps['name'],
+      onPress: () => setShowPremiumModal(true),
     },
     {
       id: 'security',
@@ -492,6 +576,116 @@ export default function SettingsScreen() {
       </Modal>
 
       <Modal
+        visible={showFreeTierModal}
+        onDismiss={() => setShowFreeTierModal(false)}
+        accessibilityLabel={t('settingsFreeTierTitle')}
+      >
+        <View style={styles.limitSectionHeader}>
+          <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>
+            {t('premiumStatusLabel')}
+          </Text>
+          <Text preset="caption" color="textSecondary" style={styles.limitSectionDescriptor}>
+            {t('premiumStatusDescriptor')}
+          </Text>
+        </View>
+        <View style={[styles.limitSummary, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+          <View style={{ flex: 1 }}>
+            <Text preset="h2" color="text" style={styles.limitResetTime}>
+              {isPro ? t('premiumStatusActive') : t('premiumStatusFree')}
+            </Text>
+          </View>
+          <Icon name={isPro ? 'sparkles-outline' : 'hourglass-outline'} size={24} color="tint" />
+        </View>
+
+        <View style={styles.limitSectionHeader}>
+          <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>
+            {t('freeTierExhaustedSection')}
+          </Text>
+          <Text preset="caption" color="textSecondary" style={styles.limitSectionDescriptor}>
+            {t('freeTierExhaustedDate')}
+          </Text>
+        </View>
+        <View style={[styles.limitSummary, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+          <View style={{ flex: 1 }}>
+            <Text preset="h2" color="text" style={styles.limitResetTime}>
+              {isPro ? t('freeTierUnlimited') : freeLimitExhaustedText}
+            </Text>
+          </View>
+          <Icon name={isPro ? 'infinite-outline' : freeLimitExhausted ? 'alert-circle-outline' : 'checkmark-circle-outline'} size={24} color="tint" />
+        </View>
+
+        <View style={styles.limitSectionHeader}>
+          <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>
+            {t('freeTierResetSection')}
+          </Text>
+          <Text preset="caption" color="textSecondary" style={styles.limitSectionDescriptor}>
+            {t('freeTierNextResetDateTime')}
+          </Text>
+        </View>
+        <View style={[styles.limitSummary, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+          <View style={{ flex: 1 }}>
+            <Text preset="h2" color="text" style={styles.limitResetTime}>
+              {isPro ? t('freeTierUnlimited') : nextFreeTierResetText}
+            </Text>
+          </View>
+          <Icon name={isPro ? 'infinite-outline' : 'time-outline'} size={24} color="tint" />
+        </View>
+
+        <View style={styles.limitSectionHeader}>
+          <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>
+            {t('freeTierTimeLeftSection')}
+          </Text>
+          <Text preset="caption" color="textSecondary" style={styles.limitSectionDescriptor}>
+            {t('freeTierTimeLeftDescriptor')}
+          </Text>
+        </View>
+        <View style={[styles.limitSummary, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+          <View style={{ flex: 1 }}>
+            <Text preset="h2" color="text" style={styles.limitResetTime}>
+              {isPro ? t('freeTierUnlimited') : timeLeftUntilResetText}
+            </Text>
+          </View>
+          <Icon name={isPro ? 'infinite-outline' : 'timer-outline'} size={24} color="tint" />
+        </View>
+
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>
+          {t('freeTierCurrentLimitsSection')}
+        </Text>
+        <View style={{ gap: 10 }}>
+          <View style={[styles.limitRow, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+            <Text preset="bodySmall" color="text">{t('freeTierEntriesLimit')}</Text>
+            <Text preset="bodySmall" color="tint" style={styles.limitValue}>
+              {isPro ? t('freeTierUnlimited') : entryUsageText}
+            </Text>
+          </View>
+          <View style={[styles.limitRow, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+            <Text preset="bodySmall" color="text">{t('freeTierStickersLimit')}</Text>
+            <Text preset="bodySmall" color="tint" style={styles.limitValue}>
+              {isPro ? t('freeTierUnlimited') : stickerUsageText}
+            </Text>
+          </View>
+        </View>
+        <Text preset="caption" color="textSecondary" style={styles.displayHint}>
+          {t('freeTierResetHint')}
+        </Text>
+      </Modal>
+
+      <PaywallModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        appName={APP_IDENTITY.codename}
+        title={premiumPaywallTitle(t)}
+        subtitle={t('premiumPaywallSubtitle')}
+        features={[
+          t('premiumPaywallFeatureEntries'),
+          t('premiumPaywallFeatureStickers'),
+          t('premiumPaywallFeatureInsights'),
+          t('premiumPaywallFeatureThemes'),
+          t('premiumPaywallFeatureOffline'),
+        ]}
+      />
+
+      <Modal
         visible={showSecurityModal}
         onDismiss={() => setShowSecurityModal(false)}
         title="Security & Privacy"
@@ -672,4 +866,45 @@ const styles = StyleSheet.create({
   displayOption: { flexGrow: 1, minWidth: '30%', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingVertical: 11, paddingHorizontal: 10 },
   displayHint: { marginTop: 16, lineHeight: 18 },
   displayToggleRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 4 },
+  limitSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  limitSectionDescriptor: {
+    flexShrink: 1,
+    marginTop: 12,
+    marginBottom: 8,
+    textAlign: 'right',
+  },
+  limitSummary: {
+    minHeight: 58,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  limitResetTime: {
+    marginTop: 0,
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  limitRow: {
+    minHeight: 46,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  limitValue: {
+    fontWeight: '800',
+  },
 });

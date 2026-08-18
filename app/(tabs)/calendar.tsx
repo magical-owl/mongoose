@@ -174,9 +174,16 @@ export default function CalendarScreen() {
               </TouchableOpacity>
             </View>
             <View style={styles.monthSummary}>
-              <Text preset="caption" color="textSecondary">{monthEntries.length} {monthEntries.length === 1 ? 'entry' : 'entries'}</Text>
-              <Text preset="caption" color="textSecondary">{monthWritingDays} writing {monthWritingDays === 1 ? 'day' : 'days'}</Text>
-              <Text preset="caption" color="textSecondary">{monthFavorites} {monthFavorites === 1 ? 'favorite' : 'favorites'}</Text>
+              {[
+                [monthEntries.length, t('calendarSummaryEntries')],
+                [monthWritingDays, t('calendarSummaryWritingDays')],
+                [monthFavorites, t('calendarSummaryFavorites')],
+              ].map(([value, label]) => (
+                <View key={label} style={styles.monthSummaryItem}>
+                  <Text preset="label" color="text" style={styles.monthSummaryValue}>{value}</Text>
+                  <Text preset="caption" color="textSecondary" style={styles.monthSummaryLabel}>{label}</Text>
+                </View>
+              ))}
             </View>
 
             {/* Weekday Row */}
@@ -334,14 +341,14 @@ const styles = StyleSheet.create({
   calendarCard: {
     borderWidth: 1,
     borderRadius: 14,
-    padding: 16,
+    padding: 10,
     marginBottom: 15,
   },
   monthHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    marginBottom: 10,
   },
   monthNavBtn: {
     width: 36,
@@ -361,7 +368,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   monthTitleButton: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  monthSummary: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 10, marginBottom: 14 },
+  monthSummary: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8, marginBottom: 10, gap: 6 },
+  monthSummaryItem: { flex: 1, alignItems: 'center', minWidth: 0 },
+  monthSummaryValue: { fontSize: 16, fontWeight: '800', lineHeight: 19 },
+  monthSummaryLabel: { marginTop: 1, textAlign: 'center', fontSize: 11, lineHeight: 13 },
   gridRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -369,7 +379,7 @@ const styles = StyleSheet.create({
   gridCellHeader: {
     width: '14.28%',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
     fontWeight: '600',
     fontSize: 13,
   },
@@ -378,7 +388,7 @@ const styles = StyleSheet.create({
     height: 42,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
     borderRadius: 8,
   },
   dayText: {

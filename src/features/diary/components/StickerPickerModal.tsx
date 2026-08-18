@@ -26,9 +26,16 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { Modal } from '@shared/components/Modal';
 import { Text } from '@shared/components/Text';
+import { SegmentedControl } from '@shared/components/SegmentedControl';
 import { useTheme } from '@providers/ThemeProvider';
-import { STICKER_PACKS, StickerItem } from '../domain/Sticker';
+import {
+  getStickerPacksByAccessTier,
+  STICKER_PACKS,
+  type StickerAccessTier,
+  type StickerItem,
+} from '../domain/Sticker';
 import { useTranslation } from '@/localization/i18n';
+import { useSubscription } from '@/features/subscription/hooks/useSubscription';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // 4 columns with 8px gap each side + outer padding
@@ -38,17 +45,22 @@ interface StickerPickerModalProps {
   readonly visible: boolean;
   readonly onClose: () => void;
   readonly onSelectSticker: (stickerId: string, category: string) => void;
+  readonly onRequestPremium?: () => void;
 }
 
-type SearchResult = { item: StickerItem; packId: string };
+type SearchResult = { item: StickerItem; packId: string; accessTier: StickerAccessTier };
 
-export function StickerPickerModal({ visible, onClose, onSelectSticker }: StickerPickerModalProps) {
+export function StickerPickerModal({ visible, onClose, onSelectSticker, onRequestPremium }: StickerPickerModalProps) {
   const theme = useTheme();
   const t = useTranslation();
+  const { isPro } = useSubscription();
+  const [activeAccessTier, setActiveAccessTier] = useState<StickerAccessTier>('free');
   const [activePackId, setActivePackId] = useState(STICKER_PACKS[0]?.id ?? '');
   const [search, setSearch] = useState('');
+  const accessTiers: StickerAccessTier[] = ['free', 'premium'];
 
-  const activePack = STICKER_PACKS.find((p) => p.id === activePackId) ?? STICKER_PACKS[0]!;
+  const activeStickerPacks = useMemo(() => getStickerPacksByAccessTier(activeAccessTier), [activeAccessTier]);
+  const activePack = activeStickerPacks.find((p) => p.id === activePackId) ?? activeStickerPacks[0] ?? STICKER_PACKS[0]!;
 
   // Search across all packs
   const searchResults: SearchResult[] = useMemo(() => {
@@ -61,7 +73,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
           item.name.toLowerCase().includes(q) ||
           pack.name.toLowerCase().includes(q)
         ) {
-          results.push({ item, packId: pack.id });
+          results.push({ item, packId: pack.id, accessTier: pack.accessTier });
         }
       }
     }
@@ -70,28 +82,47 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
 
   const isSearching = search.trim().length > 0;
 
-  const renderSticker = ({ item, packId }: SearchResult) => (
-    <TouchableOpacity
-      style={styles.cell}
-      onPress={() => {
-        onSelectSticker(item.id, packId);
-        onClose();
-      }}
-      activeOpacity={0.65}
-      accessibilityLabel={`${t('stickerAddA11y')}: ${item.name}`}
-      accessibilityRole="button"
-    >
-      {item.source != null ? (
-        <Image source={item.source} style={styles.cellImage} resizeMode="contain" />
-      ) : (
-        <RNText style={styles.cellEmoji}>{item.icon}</RNText>
-      )}
-    </TouchableOpacity>
-  );
+  const handleAccessTierChange = (accessTier: StickerAccessTier) => {
+    setActiveAccessTier(accessTier);
+    setActivePackId(getStickerPacksByAccessTier(accessTier)[0]?.id ?? '');
+  };
+
+  const renderSticker = ({ item, packId, accessTier }: SearchResult) => {
+    const isLocked = accessTier === 'premium' && !isPro;
+
+    return (
+      <TouchableOpacity
+        style={[styles.cell, isLocked && styles.lockedCell]}
+        onPress={() => {
+          if (isLocked) {
+            onClose();
+            setTimeout(() => onRequestPremium?.(), 250);
+            return;
+          }
+          onSelectSticker(item.id, packId);
+          onClose();
+        }}
+        activeOpacity={0.65}
+        accessibilityLabel={`${isLocked ? t('stickerPremiumLockedA11y') : t('stickerAddA11y')}: ${item.name}`}
+        accessibilityRole="button"
+      >
+        {item.source != null ? (
+          <Image source={item.source} style={styles.cellImage} resizeMode="contain" />
+        ) : (
+          <RNText style={styles.cellEmoji}>{item.icon}</RNText>
+        )}
+        {isLocked ? (
+          <View style={[styles.lockBadge, { backgroundColor: theme.colors.background }]}>
+            <MaterialCommunityIcons name="lock" size={13} color={theme.colors.tint} />
+          </View>
+        ) : null}
+      </TouchableOpacity>
+    );
+  };
 
   const flatData: SearchResult[] = isSearching
     ? searchResults
-    : activePack.stickers.map((item) => ({ item, packId: activePack.id }));
+    : activePack.stickers.map((item) => ({ item, packId: activePack.id, accessTier: activePack.accessTier }));
 
   return (
     <Modal visible={visible} onDismiss={onClose} title={t('stickerChooseTitle')} accessibilityLabel={t('stickerPickerA11y')} scrollable={false}>
@@ -116,6 +147,17 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
         </View>
       </View>
 
+      {!isSearching && (
+        <View style={styles.accessTabs}>
+          <SegmentedControl
+            segments={[t('stickerFreeGroup'), t('stickerPremiumGroup')]}
+            selectedIndex={accessTiers.indexOf(activeAccessTier)}
+            onSelect={(index) => handleAccessTierChange(accessTiers[index] ?? 'free')}
+            accessibilityLabel={t('stickerAccessGroupA11y')}
+          />
+        </View>
+      )}
+
       {/* Category tabs — hidden during search */}
       {!isSearching && (
         <ScrollView
@@ -123,15 +165,16 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={[styles.tabs, { borderBottomColor: theme.colors.border }]}
         >
-          {STICKER_PACKS.map((pack) => {
-            const active = pack.id === activePackId;
+          {activeStickerPacks.map((pack) => {
+            const active = pack.id === activePack.id;
             return (
               <TouchableOpacity
                 key={pack.id}
                 style={[
                   styles.tab,
                   {
-                    borderBottomColor: active ? theme.colors.tint : 'transparent',
+                    borderColor: active ? theme.colors.tint : theme.colors.border,
+                    backgroundColor: active ? theme.colors.tint + '18' : theme.colors.surface,
                   },
                 ]}
                 onPress={() => setActivePackId(pack.id)}
@@ -139,9 +182,9 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker }: Sticke
               >
                 <Text
                   preset="caption"
-                  style={{ color: active ? theme.colors.tint : theme.colors.textSecondary, fontWeight: '600' }}
+                  style={{ color: active ? theme.colors.tint : theme.colors.text, fontWeight: '600' }}
                 >
-                  {pack.icon} {pack.name}
+                  {pack.name}
                 </Text>
               </TouchableOpacity>
             );
@@ -194,17 +237,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  accessTabs: {
+    marginBottom: 10,
+  },
   tabs: {
     flexDirection: 'row',
-    gap: 6,
-    paddingBottom: 2,
+    gap: 8,
+    paddingBottom: 10,
     paddingHorizontal: 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   tab: {
-    paddingHorizontal: 10,
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderBottomWidth: 2,
   },
   grid: {
     paddingTop: 4,
@@ -216,6 +265,19 @@ const styles = StyleSheet.create({
     height: CELL,
     margin: 3,
     borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockedCell: {
+    opacity: 0.58,
+  },
+  lockBadge: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
