@@ -17,7 +17,7 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
@@ -40,12 +40,14 @@ import { formatDisplayMonthDayYearTime, formatDisplayTime } from '@/shared/utils
 import { formatDisplayDate } from '@/shared/utils/dateFormat';
 import { planUsageRepository } from '@/features/subscription/repositories/PlanUsageRepository';
 import { useSubscription } from '@/features/subscription/hooks/useSubscription';
+import { config } from '@/config/ConfigService';
 
 function withCount(value: string, count: number): string {
   return value.replace('{count}', String(count));
 }
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useTranslation();
@@ -69,6 +71,7 @@ export default function SettingsScreen() {
   const setFontFamily = useAppStore((state) => state.setFontFamily);
   const setHomeViewModeEnabled = useAppStore((state) => state.setHomeViewModeEnabled);
   const setAppLanguage = useAppStore((state) => state.setAppLanguage);
+  const setOnboardingStatus = useAppStore((state) => state.setOnboardingStatus);
   const { profile, saveProfile } = useProfileForm();
   const { state: journalExtras, replace: replaceJournalExtras } = useJournalExtras();
   const activeLanguage = APP_LANGUAGES.find((language) => language.value === appLanguage) ?? APP_LANGUAGES[0]!;
@@ -90,6 +93,7 @@ export default function SettingsScreen() {
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showFreeTierModal, setShowFreeTierModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showDeveloperModal, setShowDeveloperModal] = useState(false);
   const [backupPassword, setBackupPassword] = useState('');
   const [stickersUsedToday, setStickersUsedToday] = useState(0);
   const [stickerLimitExhaustedAt, setStickerLimitExhaustedAt] = useState<string | undefined>(undefined);
@@ -210,6 +214,12 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleShowOnboarding = () => {
+    setShowDeveloperModal(false);
+    setOnboardingStatus('not_started');
+    router.replace('/onboarding');
+  };
+
   const settingsOptions = [
     {
       id: 'appearance',
@@ -273,6 +283,13 @@ export default function SettingsScreen() {
       onPress: handleResetApp,
       isDestructive: true,
     },
+    ...(config.isDev ? [{
+      id: 'developer',
+      title: t('settingsDeveloperTitle'),
+      subtitle: t('settingsDeveloperSubtitle'),
+      icon: 'code-slash-outline' as IconProps['name'],
+      onPress: () => setShowDeveloperModal(true),
+    }] : []),
   ];
 
   return (
@@ -761,6 +778,30 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
       </Modal>
+
+      {config.isDev ? (
+        <Modal
+          visible={showDeveloperModal}
+          onDismiss={() => setShowDeveloperModal(false)}
+          title={t('settingsDeveloperTitle')}
+          accessibilityLabel={t('settingsDeveloperTitle')}
+        >
+          <View style={{ gap: 12, paddingVertical: 8 }}>
+            <TouchableOpacity
+              style={[styles.modalRowBtn, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+              onPress={handleShowOnboarding}
+              accessibilityRole="button"
+              accessibilityLabel={t('settingsDevOnboardingTitle')}
+            >
+              <Icon name="play-circle-outline" size={24} color="textSecondary" style={{ marginRight: 12 }} />
+              <View style={{ flex: 1 }}>
+                <Text preset="label" color="text">{t('settingsDevOnboardingTitle')}</Text>
+                <Text preset="caption" color="textSecondary">{t('settingsDevOnboardingSubtitle')}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      ) : null}
 
     </View>
   );
