@@ -48,6 +48,7 @@ import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal
 import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
+import { formatDisplayMonthDayTime } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import { manualMoodLabel, useTranslation } from '@/localization/i18n';
@@ -79,6 +80,7 @@ export default function EntryDetailScreen() {
   const t = useTranslation();
   const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection } = useDiary();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
+  const timeFormat = useAppStore((state) => state.timeFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
 
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
@@ -608,7 +610,7 @@ export default function EntryDetailScreen() {
               <View key={reflection.id} style={styles.reflectionItem}>
                 <View style={styles.reflectionHeader}>
                   <Text preset="caption" color="textTertiary">
-                    {new Date(reflection.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    {formatDisplayMonthDayTime(reflection.createdAt, timeFormat)}
                   </Text>
                   <TouchableOpacity onPress={() => handleDeleteReflection(reflection.id)} accessibilityRole="button" accessibilityLabel={t('reflectionDeleteA11y')}>
                     <Text preset="caption" color="textSecondary">{t('entryDelete')}</Text>
@@ -723,17 +725,17 @@ const styles = StyleSheet.create({
   reflectionsScroll: { maxHeight: 440 },
   reflectionsScrollContent: { paddingBottom: 12 },
   reflectionsEmpty: { marginBottom: 12 },
-  reflectionsList: { gap: 8, marginBottom: 12 },
+  reflectionsList: { gap: 6, marginTop: 4, marginBottom: 12 },
   reflectionItem: {
-    paddingVertical: 3,
+    paddingVertical: 1,
   },
   reflectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 2,
   },
-  reflectionText: { lineHeight: 20, marginTop: 4 },
+  reflectionText: { lineHeight: 20, marginTop: 2 },
   reflectionInputBox: {
     minHeight: 38,
     flexDirection: 'row',
@@ -768,14 +770,13 @@ const styles = StyleSheet.create({
   },
   viewFooterLabel: { fontWeight: '700' },
   reflectionCountBadge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 6,
   },
-  reflectionCountText: { color: '#fff', fontWeight: '700' },
+  reflectionCountText: { color: '#fff', fontSize: 11, lineHeight: 22, fontWeight: '700', textAlign: 'center', includeFontPadding: false },
   floatingBar: {
     position: 'absolute',
     left: 0,

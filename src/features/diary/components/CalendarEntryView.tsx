@@ -8,6 +8,7 @@ import { diaryEntryListTitle } from './diaryEntryTypography';
 import { formatDisplayTime } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
+import { manualMoodLabel, useTranslation } from '@/localization/i18n';
 
 interface CalendarEntryViewProps {
   readonly entry: DiaryEntry;
@@ -15,12 +16,9 @@ interface CalendarEntryViewProps {
   readonly onPress: () => void | Promise<void>;
 }
 
-function moodLabel(mood: string): string {
-  return mood.charAt(0).toUpperCase() + mood.slice(1);
-}
-
 export function CalendarEntryView({ entry, position, onPress }: CalendarEntryViewProps): React.JSX.Element {
   const theme = useTheme();
+  const t = useTranslation();
   const timeFormat = useAppStore((state) => state.timeFormat);
   const entryTime = formatDisplayTime(entry.createdAt, timeFormat);
   const moodColor = getManualMoodColor(entry.manualMood, theme.colors);
@@ -45,7 +43,7 @@ export function CalendarEntryView({ entry, position, onPress }: CalendarEntryVie
           {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.entryTime}>{entryTime}</Text> : null}
           {entry.manualMood ? (
             <View style={[styles.moodBadge, { backgroundColor: moodColor + '18', borderColor: moodColor }]}>
-              <Text preset="caption" numberOfLines={1} style={[styles.moodBadgeText, { color: moodColor }]}>{moodLabel(entry.manualMood)}</Text>
+              <Text preset="caption" numberOfLines={1} style={[styles.moodBadgeText, { color: moodColor }]}>{manualMoodLabel(entry.manualMood, t)}</Text>
             </View>
           ) : null}
           <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />

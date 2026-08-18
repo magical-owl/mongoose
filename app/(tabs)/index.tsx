@@ -29,7 +29,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import type { HomeViewMode } from "@/stores/useAppStore";
 import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
-import { homeViewModeLabel, useTranslation } from "@/localization/i18n";
+import { homeFilterAllLabel, homeFilterKindLabel, homeViewModeLabel, manualMoodLabel, useTranslation } from "@/localization/i18n";
 
 function formatTimelineMonth(value: string): string {
   const [year, month] = value.split("-").map(Number);
@@ -380,26 +380,26 @@ export default function TimelineScreen() {
         >
           <View style={styles.drawerHeader}>
             <View />
-            <TouchableOpacity onPress={closeDrawer} style={styles.drawerClose} accessibilityRole="button" accessibilityLabel="Close diary menu">
+            <TouchableOpacity onPress={closeDrawer} style={styles.drawerClose} accessibilityRole="button" accessibilityLabel={t("homeDrawerCloseA11y")}>
               <Ionicons name="close" size={22} color={theme.colors.text} />
             </TouchableOpacity>
           </View>
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text preset="caption" color="textSecondary" style={styles.drawerSectionLabel}>FILTER ENTRIES</Text>
+            <Text preset="caption" color="textSecondary" style={styles.drawerSectionLabel}>{t("homeDrawerFilterEntries")}</Text>
             {(["date", "tag", "mood", "companion"] as const).map((kind) => {
               const value = kind === "date" ? filterDate : kind === "tag" ? filterTag : kind === "mood" ? filterMood : filterCompanion;
               const icon = kind === "date" ? "calendar-outline" : kind === "tag" ? "pricetag-outline" : kind === "mood" ? "heart-outline" : "people-outline";
               return (
                 <Fragment key={kind}>
-                  <TouchableOpacity onPress={() => setExpandedFilter(expandedFilter === kind ? null : kind)} style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel={`Filter by ${kind}`}>
+                  <TouchableOpacity onPress={() => setExpandedFilter(expandedFilter === kind ? null : kind)} style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel={`${t("homeDrawerFilterBy")} ${homeFilterKindLabel(kind, t)}`}>
                     <Ionicons name={icon} size={20} color={value ? theme.colors.tint : theme.colors.textSecondary} />
-                    <Text preset="bodySmall" color="text" style={styles.drawerRowText}>{value ? capitalizeFilterLabel(value) : capitalizeFilterLabel(kind)}</Text>
+                    <Text preset="bodySmall" color="text" style={styles.drawerRowText}>{value ? (kind === "mood" ? manualMoodLabel(value, t) : capitalizeFilterLabel(value)) : homeFilterKindLabel(kind, t)}</Text>
                     <Ionicons name={expandedFilter === kind ? "chevron-down" : "chevron-forward"} size={16} color={theme.colors.textSecondary} />
                   </TouchableOpacity>
                   {expandedFilter === kind && (
                     <View style={[styles.inlineOptions, { borderBottomColor: theme.colors.border }]}>
                       <TouchableOpacity onPress={() => { if (kind === "date") setFilterDate(""); if (kind === "tag") setFilterTag(""); if (kind === "mood") setFilterMood(""); if (kind === "companion") setFilterCompanion(""); setExpandedFilter(null); }} style={styles.inlineOption}>
-                        <Text preset="caption" color={!value ? "tint" : "textSecondary"}>All {capitalizeFilterLabel(kind)}s</Text>
+                        <Text preset="caption" color={!value ? "tint" : "textSecondary"}>{homeFilterAllLabel(kind, t)}</Text>
                       </TouchableOpacity>
                       {filterOptions[kind].map((option) => {
                         const selected = option === value;
@@ -408,7 +408,7 @@ export default function TimelineScreen() {
                           <TouchableOpacity key={option} onPress={() => { if (kind === "date") setFilterDate(option); if (kind === "tag") setFilterTag(option); if (kind === "mood") setFilterMood(option); if (kind === "companion") setFilterCompanion(option); setExpandedFilter(null); }} style={[styles.inlineOption, selected && { backgroundColor: theme.colors.tint + "18" }]}>
                             {kind === "mood" ? (
                               <View style={[styles.filterMoodBadge, { backgroundColor: optionMoodColor + "18", borderColor: optionMoodColor }]}>
-                                <Text preset="caption" style={[styles.filterMoodBadgeText, { color: optionMoodColor }]}>{capitalizeFilterLabel(option)}</Text>
+                                <Text preset="caption" style={[styles.filterMoodBadgeText, { color: optionMoodColor }]}>{manualMoodLabel(option, t)}</Text>
                               </View>
                             ) : (
                               <Text preset="caption" color={selected ? "tint" : "text"}>{capitalizeFilterLabel(option)}</Text>
@@ -423,11 +423,11 @@ export default function TimelineScreen() {
             })}
             <TouchableOpacity onPress={() => setFavoritesOnly((value) => !value)} style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]} accessibilityRole="switch" accessibilityState={{ checked: favoritesOnly }}>
               <Ionicons name="star-outline" size={20} color={favoritesOnly ? theme.colors.tint : theme.colors.textSecondary} />
-              <Text preset="bodySmall" color="text" style={styles.drawerRowText}>Favorites only</Text>
+              <Text preset="bodySmall" color="text" style={styles.drawerRowText}>{t("homeFavoritesOnly")}</Text>
               <Ionicons name={favoritesOnly ? "checkbox" : "square-outline"} size={20} color={favoritesOnly ? theme.colors.tint : theme.colors.textSecondary} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => { setFilterDate(""); setFilterTag(""); setFilterMood(""); setFilterCompanion(""); setFavoritesOnly(false); }} style={styles.clearFilters} accessibilityRole="button">
-              <Text preset="bodySmall" color="tint">Clear all filters</Text>
+              <Text preset="bodySmall" color="tint">{t("homeClearAllFilters")}</Text>
             </TouchableOpacity>
           </ScrollView>
         </Animated.View>
@@ -449,7 +449,7 @@ export default function TimelineScreen() {
       >
         <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
           <View style={styles.headerRow}>
-            <TouchableOpacity onPress={openDrawer} style={styles.menuButton} accessibilityRole="button" accessibilityLabel="Open diary menu">
+            <TouchableOpacity onPress={openDrawer} style={styles.menuButton} accessibilityRole="button" accessibilityLabel={t("homeDrawerOpenA11y")}>
               <Ionicons name="menu-outline" size={26} color={theme.colors.text} />
             </TouchableOpacity>
 
@@ -712,7 +712,7 @@ export default function TimelineScreen() {
               },
             ]}
           >
-            <Pressable style={StyleSheet.absoluteFill} onPress={closeDrawer} accessibilityLabel="Close diary menu" />
+            <Pressable style={StyleSheet.absoluteFill} onPress={closeDrawer} accessibilityLabel={t("homeDrawerCloseA11y")} />
           </Animated.View>
         )}
       </Animated.View>

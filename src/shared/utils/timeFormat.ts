@@ -9,3 +9,11 @@ export function formatDisplayTime(value: string, format: TimeFormat): string {
     hour12: format === '12-hour',
   });
 }
+
+export function formatDisplayMonthDayTime(value: string, format: TimeFormat): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const dateText = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const timeText = formatDisplayTime(value, format);
+  return timeText ? `${dateText}, ${timeText}` : dateText;
+}

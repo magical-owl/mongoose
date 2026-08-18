@@ -8,10 +8,10 @@ import { stripHtml } from '@shared/utils/html';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { findStickerItem, type PlacedSticker } from '@/features/diary/domain/Sticker';
 import { diaryEntryListTitle } from './diaryEntryTypography';
-import { formatDisplayTime } from '@shared/utils/timeFormat';
+import { formatDisplayMonthDayTime, formatDisplayTime } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
-import { reflectionCountLabel, useTranslation } from '@/localization/i18n';
+import { manualMoodLabel, reflectionCountLabel, useTranslation } from '@/localization/i18n';
 
 export type DiaryEntryViewMode = 'detailed' | 'timeline' | 'feed';
 
@@ -61,10 +61,6 @@ function formatCardDay(value: string): { weekday: string; day: string } {
   };
 }
 
-function moodLabel(mood: string): string {
-  return mood.charAt(0).toUpperCase() + mood.slice(1);
-}
-
 export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflectionSummaryPress }: DiaryEntryViewProps): React.JSX.Element {
   const theme = useTheme();
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -112,7 +108,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
               {hasMood && entry.manualMood ? (
                 <View style={[styles.feedMoodBadge, { backgroundColor: moodTone + '18', borderColor: moodTone }]}>
                   <Text preset="caption" style={[styles.feedMoodBadgeText, { color: moodTone }]} numberOfLines={1}>
-                    {moodLabel(entry.manualMood)}
+                    {manualMoodLabel(entry.manualMood, t)}
                   </Text>
                 </View>
               ) : null}
@@ -149,7 +145,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
               <View style={styles.timelineActions}>
                 {hasMood && entry.manualMood ? (
                   <View style={[styles.compactMoodBadge, { backgroundColor: moodTone + '18', borderColor: moodTone }]}>
-                    <Text preset="caption" style={[styles.compactMoodBadgeText, { color: moodTone }]} numberOfLines={1}>{moodLabel(entry.manualMood)}</Text>
+                    <Text preset="caption" style={[styles.compactMoodBadgeText, { color: moodTone }]} numberOfLines={1}>{manualMoodLabel(entry.manualMood, t)}</Text>
                   </View>
                 ) : null}
                 <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
@@ -167,7 +163,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
               {entry.reflections.map((reflection) => (
                 <View key={reflection.id} style={styles.timelineReflectionItem}>
                   <Text preset="caption" color="textTertiary" numberOfLines={1}>
-                    {new Date(reflection.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    {formatDisplayMonthDayTime(reflection.createdAt, timeFormat)}
                   </Text>
                   <Text preset="bodySmall" color="text" style={styles.timelineReflectionText}>{reflection.text}</Text>
                 </View>
@@ -231,7 +227,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
           {cardTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.cardTime}>{cardTime}</Text> : null}
           {hasMood && entry.manualMood ? (
             <View style={[styles.compactMoodBadge, { backgroundColor: moodTone + '18', borderColor: moodTone }]}>
-              <Text preset="caption" style={[styles.compactMoodBadgeText, { color: moodTone }]} numberOfLines={1}>{moodLabel(entry.manualMood)}</Text>
+              <Text preset="caption" style={[styles.compactMoodBadgeText, { color: moodTone }]} numberOfLines={1}>{manualMoodLabel(entry.manualMood, t)}</Text>
             </View>
           ) : null}
           <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
