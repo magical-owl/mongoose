@@ -49,12 +49,6 @@ const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
 const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
 const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 
-function viewModeIcon(mode: HomeViewMode): "albums-outline" | "git-branch-outline" | "newspaper-outline" {
-  if (mode === "timeline") return "git-branch-outline";
-  if (mode === "feed") return "newspaper-outline";
-  return "albums-outline";
-}
-
 function hierarchyModeLabel(mode: HierarchyMode): string {
   if (mode === "month-date") return "Month / Date";
   if (mode === "date") return "Date";
@@ -497,40 +491,6 @@ export default function TimelineScreen() {
               <Ionicons name="menu-outline" size={26} color={theme.colors.text} />
             </TouchableOpacity>
 
-            <View style={[styles.viewModePill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-              {selectableViewModes.map((mode, idx) => {
-                const selected = viewModeIndex === idx;
-                return (
-                  <TouchableOpacity
-                    key={mode}
-                    onPress={() => { setViewModeIndex(idx); setHomeViewMode(mode); }}
-                    style={[styles.viewModeButton, selected && { backgroundColor: theme.colors.tint }]}
-                    accessibilityRole="button"
-                    accessibilityLabel={homeViewModeLabel(mode, t)}
-                    accessibilityState={{ selected }}
-                  >
-                    <Ionicons
-                      name={viewModeIcon(mode)}
-                      size={15}
-                      color={selected ? (theme.isDark ? theme.colors.background : theme.colors.card) : theme.colors.textSecondary}
-                    />
-                    <Text
-                      preset="caption"
-                      style={[
-                        styles.viewModeButtonText,
-                        { color: selected ? (theme.isDark ? theme.colors.background : theme.colors.card) : theme.colors.textSecondary },
-                      ]}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.72}
-                    >
-                      {homeViewModeLabel(mode, t)}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
             <View style={styles.headerControls}>
               {showHeaderOptions && (
                 <ScrollView
@@ -582,9 +542,36 @@ export default function TimelineScreen() {
                 accessibilityLabel={t("homeHeaderOptions")}
                 accessibilityState={{ expanded: showHeaderOptions }}
               >
-                <Ionicons name="options-outline" size={22} color={showHeaderOptions ? theme.colors.tint : theme.colors.text} />
+              <Ionicons name="options-outline" size={22} color={showHeaderOptions ? theme.colors.tint : theme.colors.text} />
               </TouchableOpacity>
             </View>
+          </View>
+
+          <View style={[styles.viewModePill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            {selectableViewModes.map((mode, idx) => {
+              const selected = viewModeIndex === idx;
+              return (
+                <TouchableOpacity
+                  key={mode}
+                  onPress={() => { setViewModeIndex(idx); setHomeViewMode(mode); }}
+                  style={[styles.viewModeButton, selected && { backgroundColor: theme.colors.tint }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={homeViewModeLabel(mode, t)}
+                  accessibilityState={{ selected }}
+                >
+                  <Text
+                    preset="caption"
+                    style={[
+                      styles.viewModeButtonText,
+                      { color: selected ? "#fff" : theme.colors.textSecondary },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {homeViewModeLabel(mode, t)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {showHeaderOptions && showHierarchyMenu && (
@@ -812,34 +799,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 10,
     gap: 8,
   },
   menuButton: { width: 30, height: 36, alignItems: "flex-start", justifyContent: "center" },
   viewModePill: {
-    flex: 1,
-    minWidth: 0,
-    minHeight: 36,
+    alignSelf: "center",
     flexDirection: "row",
-    alignItems: "center",
     borderWidth: 1,
     borderRadius: 18,
     padding: 2,
+    marginBottom: 14,
   },
   viewModeButton: {
-    flex: 1,
-    minWidth: 0,
+    minWidth: 68,
     height: 30,
-    borderRadius: 15,
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    paddingHorizontal: 5,
+    borderRadius: 15,
+    paddingHorizontal: 12,
   },
   viewModeButtonText: {
-    flexShrink: 1,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   headerControls: { flexShrink: 0, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 2 },
   headerOptionToggle: {
@@ -999,10 +980,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 8,
+    marginTop: 2,
     marginBottom: 0,
     paddingHorizontal: 0,
-    paddingVertical: 9,
+    paddingVertical: 6,
   },
   yearHeading: {
     margin: 0,

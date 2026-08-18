@@ -26,14 +26,14 @@ import { Modal } from '@shared/components/Modal';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
-import { useAppStore, type CalendarDateFormat, type FontFamily, type FontScale, type HomeViewMode, type TimeFormat } from '@/stores/useAppStore';
+import { useAppStore, type CalendarDateFormat, type FontFamily, type FontScale, type TimeFormat } from '@/stores/useAppStore';
 import { appLockService } from '@/services/AppLockService';
 import { dataDeletionService } from '@/services/DataDeletionService';
 import { diaryBackupService } from '@/services/DiaryBackupService';
 import { useJournalExtras } from '@/features/journal/hooks/useJournalExtras';
 import { accentColors, type AccentColor } from '@/theme/accents';
 import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
-import { APP_LANGUAGES, homeViewModeLabel, premiumPaywallTitle, useTranslation } from '@/localization/i18n';
+import { APP_LANGUAGES, premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { FREE_PLAN_LIMITS, getLocalDateKey, getNextLocalPlanResetDate } from '@/features/subscription/services/PlanLimitService';
 import { formatDisplayMonthDayYearTime, formatDisplayTime } from '@/shared/utils/timeFormat';
@@ -58,7 +58,6 @@ export default function SettingsScreen() {
   const calendarFirstDay = useAppStore((state) => state.calendarFirstDay);
   const fontScale = useAppStore((state) => state.fontScale);
   const fontFamily = useAppStore((state) => state.fontFamily);
-  const homeViewModes = useAppStore((state) => state.homeViewModes);
   const appLanguage = useAppStore((state) => state.appLanguage);
   const {
     isPro,
@@ -69,7 +68,6 @@ export default function SettingsScreen() {
   const setCalendarFirstDay = useAppStore((state) => state.setCalendarFirstDay);
   const setFontScale = useAppStore((state) => state.setFontScale);
   const setFontFamily = useAppStore((state) => state.setFontFamily);
-  const setHomeViewModeEnabled = useAppStore((state) => state.setHomeViewModeEnabled);
   const setAppLanguage = useAppStore((state) => state.setAppLanguage);
   const setOnboardingStatus = useAppStore((state) => state.setOnboardingStatus);
   const { profile, saveProfile } = useProfileForm();
@@ -561,29 +559,6 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsHomeViewsSection')}</Text>
-        <View>
-          {(['timeline', 'detailed', 'feed'] as const satisfies readonly HomeViewMode[]).map((value) => (
-            <View
-              key={value}
-              style={[styles.displayToggleRow, { borderBottomColor: theme.colors.border }]}
-            >
-              <Text preset="bodySmall" color="text">{homeViewModeLabel(value, t)}</Text>
-              <Switch
-                value={homeViewModes[value]}
-                onValueChange={(enabled) => {
-                  const enabledCount = (['timeline', 'detailed', 'feed'] as const).filter((view) => homeViewModes[view]).length;
-                  if (!enabled && enabledCount === 1) return;
-                  setHomeViewModeEnabled(value, enabled);
-                }}
-                trackColor={{ false: theme.colors.border, true: theme.colors.tint }}
-                thumbColor="#fff"
-                accessibilityLabel={`${homeViewModeLabel(value, t)} ${t('settingsHomeViewToggleA11ySuffix')}`}
-              />
-            </View>
-          ))}
-        </View>
-        <Text preset="caption" color="textSecondary" style={styles.displayHint}>{t('settingsHomeViewsHint')}</Text>
       </Modal>
 
       <Modal
@@ -930,7 +905,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   displayHint: { marginTop: 16, lineHeight: 18 },
-  displayToggleRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 4 },
   limitSectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',

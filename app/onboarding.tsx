@@ -363,12 +363,6 @@ export default function OnboardingScreen(): React.JSX.Element {
               ))}
             </View>
 
-            <View style={[styles.offlineNote, { borderColor: `${theme.colors.success}40`, backgroundColor: `${theme.colors.success}12` }]}>
-              <Ionicons name="lock-closed-outline" size={18} color={theme.colors.success} />
-              <Text preset="bodySmall" style={[styles.offlineNoteText, { color: theme.colors.success }]}>
-                {t('onboardingOfflineNote')}
-              </Text>
-            </View>
           </View>
         )}
       </ScrollView>
@@ -625,20 +619,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   readyBody: { lineHeight: 21 },
-  offlineNote: {
-    minHeight: 58,
-    borderWidth: 1,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    gap: 12,
-    marginTop: 28,
-  },
-  offlineNoteText: {
-    flex: 1,
-    fontWeight: '700',
-  },
   footer: {
     position: 'absolute',
     left: 0,

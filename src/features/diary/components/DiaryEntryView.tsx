@@ -69,6 +69,8 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
   const [isAddingReflection, setIsAddingReflection] = useState(false);
   const hasMood = Boolean(entry.manualMood);
   const moodTone = getManualMoodColor(entry.manualMood, theme.colors);
+  const showReflectionSummaryAction = mode !== 'timeline' && Boolean(onReflectionSummaryPress);
+  const reflectionSummaryLabel = entry.reflections.length > 0 ? reflectionCountLabel(entry.reflections.length, t) : t('reflectOnThis');
 
   const handleAddTimelineReflection = async () => {
     const trimmed = reflectionText.trim();
@@ -113,14 +115,14 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
                 </View>
               ) : null}
               {entry.tags.map((tag) => <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>)}
-              {entry.reflections.length > 0 ? (
+              {showReflectionSummaryAction ? (
                 <Text
                   preset="caption"
                   color="tint"
                   style={styles.reflectionSummary}
                   onPress={() => onReflectionSummaryPress?.(entry.id)}
                 >
-                  {reflectionCountLabel(entry.reflections.length, t)}
+                  {reflectionSummaryLabel}
                 </Text>
               ) : null}
             </View>
@@ -233,30 +235,22 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
           <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
         </View>
         <Text style={[styles.content, { color: theme.colors.textSecondary }]} numberOfLines={3}>{stripHtml(entry.content)}</Text>
-        {entry.tags.length > 0 ? (
+        {entry.tags.length > 0 || showReflectionSummaryAction ? (
           <View style={styles.cardFooter}>
-            <Text preset="caption" color="textSecondary" numberOfLines={1}>#{entry.tags.join(' #')}</Text>
-            {entry.reflections.length > 0 ? (
+            {entry.tags.length > 0 ? (
+              <Text preset="caption" color="textSecondary" numberOfLines={1}>#{entry.tags.join(' #')}</Text>
+            ) : null}
+            {showReflectionSummaryAction ? (
               <Text
                 preset="caption"
                 color="tint"
                 style={styles.reflectionSummary}
+                numberOfLines={1}
                 onPress={() => onReflectionSummaryPress?.(entry.id)}
               >
-                {reflectionCountLabel(entry.reflections.length, t)}
+                {reflectionSummaryLabel}
               </Text>
             ) : null}
-          </View>
-        ) : entry.reflections.length > 0 ? (
-          <View style={styles.cardFooter}>
-            <Text
-              preset="caption"
-              color="tint"
-              style={styles.reflectionSummary}
-              onPress={() => onReflectionSummaryPress?.(entry.id)}
-            >
-              {reflectionCountLabel(entry.reflections.length, t)}
-            </Text>
           </View>
         ) : null}
       </View>
