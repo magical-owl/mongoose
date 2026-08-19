@@ -15,7 +15,13 @@
     "doctor": "npx expo-doctor",
     "init-app": "node scripts/init-app.js",
     "eas:build": "eas build",
-    "eas:update": "eas update"
+    "eas:update": "eas update",
+    "start:dev-client": "expo start --dev-client",
+    "start:tunnel": "expo start --dev-client --tunnel",
+    "ios:device": "expo run:ios --device",
+    "ios:device:clean": "expo run:ios --device --no-build-cache",
+    "clean:cache": "rm -rf .expo node_modules/.cache ios/build",
+    "clean:ios": "rm -rf ios/build ~/Library/Developer/Xcode/DerivedData/Mongoose-*"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
