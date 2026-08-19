@@ -24,12 +24,15 @@ import { stripHtml } from "@shared/utils/html";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
 import { appLockService } from "@/services/AppLockService";
 import { DiaryEntryView } from "@/features/diary/components/DiaryEntryView";
+import { PaywallModal } from "@/shared/components/PaywallModal";
 import { formatDisplayDate } from "@shared/utils/dateFormat";
 import { useAppStore } from "@/stores/useAppStore";
+import { useSubscription } from "@/features/subscription/hooks/useSubscription";
+import { APP_IDENTITY } from "@/config/appIdentity";
 import type { HomeViewMode } from "@/stores/useAppStore";
 import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
-import { homeFilterAllLabel, homeFilterKindLabel, homeViewModeLabel, manualMoodLabel, useTranslation } from "@/localization/i18n";
+import { homeFilterAllLabel, homeFilterKindLabel, homeViewModeLabel, manualMoodLabel, premiumPaywallTitle, useTranslation } from "@/localization/i18n";
 
 function formatTimelineMonth(value: string): string {
   const [year, month] = value.split("-").map(Number);
@@ -43,12 +46,8 @@ type HierarchyMode = "year-month-date" | "month-date" | "date" | "none";
 const HIERARCHY_MODES: HierarchyMode[] = ["year-month-date", "month-date", "date", "none"];
 const HOME_VIEW_MODES = ["timeline", "detailed", "feed"] as const satisfies readonly HomeViewMode[];
 const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
-
-function viewModeIcon(mode: HomeViewMode): "albums-outline" | "git-branch-outline" | "newspaper-outline" {
-  if (mode === "timeline") return "git-branch-outline";
-  if (mode === "feed") return "newspaper-outline";
-  return "albums-outline";
-}
+const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
+const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 
 function hierarchyModeLabel(mode: HierarchyMode): string {
   if (mode === "month-date") return "Month / Date";
@@ -71,12 +70,19 @@ export default function TimelineScreen() {
   const t = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const { entries, isLoading, refresh, addReflection } = useDiary();
+  const { isPro } = useSubscription();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
+  const isOnboarded = useAppStore((state) => state.isOnboarded);
   const homeViewModes = useAppStore((state) => state.homeViewModes);
   const homeViewMode = useAppStore((state) => state.homeViewMode);
+  const premiumOnboardingPromptShown = useAppStore((state) => state.premiumOnboardingPromptShown);
+  const premiumPromptDismissedAt = useAppStore((state) => state.premiumPromptDismissedAt);
   const setHomeViewMode = useAppStore((state) => state.setHomeViewMode);
+  const markPremiumOnboardingPromptShown = useAppStore((state) => state.markPremiumOnboardingPromptShown);
+  const markPremiumPromptDismissed = useAppStore((state) => state.markPremiumPromptDismissed);
   const selectableViewModes = HOME_VIEW_MODES.filter((mode) => homeViewModes[mode]);
   const moodColor = useCallback((mood: string) => getManualMoodColor(mood as ManualMood, theme.colors), [theme.colors]);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [search, setSearch] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterTag, setFilterTag] = useState("");
@@ -105,6 +111,7 @@ export default function TimelineScreen() {
   const entryRefs = useRef(new Map<string, View>());
   const scrollOffsetY = useRef(0);
   const pendingScrollEntryId = useRef<string | null>(null);
+  const premiumPromptShownThisSession = useRef(false);
 
   const filterOptions = useMemo(
     () => ({
@@ -139,6 +146,44 @@ export default function TimelineScreen() {
       drawerProgress.removeListener(listenerId);
     };
   }, [drawerProgress]);
+
+  useEffect(() => {
+    if (!isOnboarded || isPro || showPremiumModal) return;
+
+    const now = Date.now();
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    if (!premiumOnboardingPromptShown) {
+      premiumPromptShownThisSession.current = true;
+      markPremiumOnboardingPromptShown(new Date(now).toISOString());
+      timeout = setTimeout(() => setShowPremiumModal(true), 0);
+      return () => {
+        if (timeout) clearTimeout(timeout);
+      };
+    }
+
+    const dismissedAtMs = premiumPromptDismissedAt ? new Date(premiumPromptDismissedAt).getTime() : 0;
+    const cooldownElapsed = !dismissedAtMs || Number.isNaN(dismissedAtMs) || now - dismissedAtMs >= PREMIUM_REMINDER_COOLDOWN_MS;
+    if (!premiumPromptShownThisSession.current && entries.length >= PREMIUM_REMINDER_ENTRY_THRESHOLD && cooldownElapsed) {
+      premiumPromptShownThisSession.current = true;
+      timeout = setTimeout(() => setShowPremiumModal(true), 0);
+    }
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [
+    entries.length,
+    isOnboarded,
+    isPro,
+    markPremiumOnboardingPromptShown,
+    premiumOnboardingPromptShown,
+    premiumPromptDismissedAt,
+    showPremiumModal,
+  ]);
+
+  const closePremiumModal = useCallback(() => {
+    markPremiumPromptDismissed(new Date().toISOString());
+    setShowPremiumModal(false);
+  }, [markPremiumPromptDismissed]);
 
   const closeDrawer = useCallback(() => {
     setIsDrawerOpen(false);
@@ -455,28 +500,6 @@ export default function TimelineScreen() {
                   style={styles.headerOptionsSlider}
                   contentContainerStyle={styles.headerOptionsSliderContent}
                 >
-                  {selectableViewModes.map((mode, idx) => (
-                    <TouchableOpacity
-                      key={mode}
-                      onPress={() => { setViewModeIndex(idx); setHomeViewMode(mode); }}
-                      style={[
-                        styles.headerSliderButton,
-                        viewModeIndex === idx && { backgroundColor: theme.colors.tint + "18" },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel={homeViewModeLabel(mode, t)}
-                      accessibilityState={{ selected: viewModeIndex === idx }}
-                    >
-                      <Ionicons
-                        name={viewModeIcon(mode)}
-                        size={20}
-                        color={viewModeIndex === idx ? theme.colors.tint : theme.colors.text}
-                      />
-                    </TouchableOpacity>
-                  ))}
-
-                  <View style={[styles.headerSliderDivider, { backgroundColor: theme.colors.border }]} />
-
                   <TouchableOpacity
                     onPress={() => {
                       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -519,9 +542,36 @@ export default function TimelineScreen() {
                 accessibilityLabel={t("homeHeaderOptions")}
                 accessibilityState={{ expanded: showHeaderOptions }}
               >
-                <Ionicons name="options-outline" size={22} color={showHeaderOptions ? theme.colors.tint : theme.colors.text} />
+              <Ionicons name="options-outline" size={22} color={showHeaderOptions ? theme.colors.tint : theme.colors.text} />
               </TouchableOpacity>
             </View>
+          </View>
+
+          <View style={[styles.viewModePill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            {selectableViewModes.map((mode, idx) => {
+              const selected = viewModeIndex === idx;
+              return (
+                <TouchableOpacity
+                  key={mode}
+                  onPress={() => { setViewModeIndex(idx); setHomeViewMode(mode); }}
+                  style={[styles.viewModeButton, selected && { backgroundColor: theme.colors.tint }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={homeViewModeLabel(mode, t)}
+                  accessibilityState={{ selected }}
+                >
+                  <Text
+                    preset="caption"
+                    style={[
+                      styles.viewModeButtonText,
+                      { color: selected ? "#fff" : theme.colors.textSecondary },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {homeViewModeLabel(mode, t)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {showHeaderOptions && showHierarchyMenu && (
@@ -709,6 +759,21 @@ export default function TimelineScreen() {
           </Animated.View>
         )}
       </Animated.View>
+      <PaywallModal
+        visible={showPremiumModal}
+        onClose={closePremiumModal}
+        appName={APP_IDENTITY.codename}
+        title={premiumPaywallTitle(t)}
+        subtitle={t("premiumPaywallSubtitle")}
+        features={[
+          t("premiumPaywallFeatureEntries"),
+          t("premiumPaywallFeatureStickers"),
+          t("premiumPaywallFeatureInsights"),
+          t("premiumPaywallFeatureThemes"),
+          t("premiumPaywallFeatureOffline"),
+        ]}
+        onSuccess={closePremiumModal}
+      />
     </View>
   );
 }
@@ -734,11 +799,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
-    gap: 6,
+    marginBottom: 10,
+    gap: 8,
   },
   menuButton: { width: 30, height: 36, alignItems: "flex-start", justifyContent: "center" },
-  headerControls: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 2 },
+  viewModePill: {
+    alignSelf: "center",
+    flexDirection: "row",
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 2,
+    marginBottom: 14,
+  },
+  viewModeButton: {
+    minWidth: 68,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 15,
+    paddingHorizontal: 12,
+  },
+  viewModeButtonText: {
+    fontWeight: "700",
+  },
+  headerControls: { flexShrink: 0, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 2 },
   headerOptionToggle: {
     width: 38,
     height: 38,
@@ -747,11 +831,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   headerOptionsSlider: {
-    flex: 1,
-    minWidth: 0,
+    flexGrow: 0,
+    flexShrink: 0,
   },
   headerOptionsSliderContent: {
-    flexGrow: 1,
     alignItems: "center",
     justifyContent: "flex-end",
     gap: 2,
@@ -763,11 +846,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 8,
-  },
-  headerSliderDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 22,
-    marginHorizontal: 4,
   },
   searchInput: {
     height: 44,
@@ -902,10 +980,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 8,
+    marginTop: 2,
     marginBottom: 0,
     paddingHorizontal: 0,
-    paddingVertical: 9,
+    paddingVertical: 6,
   },
   yearHeading: {
     margin: 0,

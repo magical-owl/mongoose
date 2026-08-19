@@ -1,13 +1,19 @@
 import { View } from 'react-native';
-import { Tabs, useRouter } from 'expo-router';
+import { Redirect, Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useTranslation } from '@/localization/i18n';
+import { useAppStore } from '@/stores/useAppStore';
 
 export default function TabLayout() {
   const { colors, isDark } = useTheme();
   const router = useRouter();
   const t = useTranslation();
+  const isOnboarded = useAppStore((state) => state.isOnboarded);
+
+  if (!isOnboarded) {
+    return <Redirect href="/onboarding" />;
+  }
 
   return (
     <Tabs
