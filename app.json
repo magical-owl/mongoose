@@ -9,7 +9,7 @@
     "scheme": "mongoose",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.magicalowl.mongoose",
+      "bundleIdentifier": "com.ezephyrmor.mongoose",
       "buildNumber": "1",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Face ID is used to securely authenticate and protect your data.",
@@ -21,15 +21,11 @@
         "NSPrivacyAccessedAPITypes": [
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
-            "NSPrivacyAccessedAPITypeReasons": [
-              "CA92.1"
-            ]
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
           },
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
-            "NSPrivacyAccessedAPITypeReasons": [
-              "C617.1"
-            ]
+            "NSPrivacyAccessedAPITypeReasons": ["C617.1"]
           }
         ]
       }
@@ -42,7 +38,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.magicalowl.mongoose",
+      "package": "com.ezephyrmor.mongoose",
       "versionCode": 1
     },
     "web": {
