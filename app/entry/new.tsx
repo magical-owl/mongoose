@@ -514,22 +514,22 @@ export default function CreateEntryScreen() {
 
           <TouchableOpacity
             style={styles.toolbarIcon}
-            onPress={() => handlePhotoPickerResult('library')}
-            activeOpacity={0.6}
-            accessibilityLabel={t('entryChoosePhotoA11y')}
-            accessibilityRole="button"
-          >
-            <MaterialCommunityIcons name="image-outline" size={22} color={theme.colors.tint} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.toolbarIcon}
             onPress={() => handlePhotoPickerResult('camera')}
             activeOpacity={0.6}
             accessibilityLabel={t('entryTakePhotoA11y')}
             accessibilityRole="button"
           >
             <MaterialCommunityIcons name="camera-outline" size={22} color={theme.colors.tint} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.toolbarIcon}
+            onPress={() => handlePhotoPickerResult('library')}
+            activeOpacity={0.6}
+            accessibilityLabel={t('entryChoosePhotoA11y')}
+            accessibilityRole="button"
+          >
+            <MaterialCommunityIcons name="image-outline" size={22} color={theme.colors.tint} />
           </TouchableOpacity>
 
           {/* Sticker button */}
