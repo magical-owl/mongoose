@@ -31,4 +31,9 @@ describe('Diary migrations', () => {
     const result = migrateDiaryStorage([entry]);
     expect(result.entries[0]?.reflections).toEqual([]);
   });
+
+  it('defaults photos for legacy entries', () => {
+    const result = migrateDiaryStorage([entry]);
+    expect(result.entries[0]?.photos).toEqual([]);
+  });
 });

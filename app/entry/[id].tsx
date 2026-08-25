@@ -36,7 +36,7 @@ import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { MarkdownText } from '@shared/components/MarkdownText';
-import { DiaryEntry, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
+import { DiaryEntry, DiaryPhoto, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
 import type { CompanionType } from '@/features/diary/domain/Companion';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
@@ -49,6 +49,7 @@ import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSelector';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
+import { DiaryPhotoStrip } from '@/features/diary/components/DiaryPhotoStrip';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { formatDisplayMonthDayTime } from '@shared/utils/timeFormat';
@@ -100,6 +101,7 @@ export default function EntryDetailScreen() {
   const [editContent, setEditContent] = useState('');
   const [editDate, setEditDate] = useState(new Date());
   const [editStickers, setEditStickers] = useState<PlacedSticker[]>([]);
+  const [editPhotos, setEditPhotos] = useState<DiaryPhoto[]>([]);
   const [editMoodWeather, setEditMoodWeather] = useState<ManualMoodWeather>('neutral');
   const [editMood, setEditMood] = useState<ManualMood>('neutral');
   const [editWritingMode, setEditWritingMode] = useState<WritingMode>('free-write');
@@ -154,6 +156,7 @@ export default function EntryDetailScreen() {
         setEditContent(found.content);
         setEditDate(entryDate(found.date));
         setEditStickers(found.stickers);
+        setEditPhotos(found.photos);
         setEditCompanion(found.companion);
         setEditFavorite(found.isFavorite);
         setEditJournalIds(found.journalIds ?? found.collectionIds);
@@ -175,6 +178,7 @@ export default function EntryDetailScreen() {
     setEditContent(entry.content);
     setEditDate(entryDate(entry.date));
     setEditStickers(entry.stickers);
+    setEditPhotos(entry.photos);
     setEditCompanion(entry.companion);
     setEditFavorite(entry.isFavorite);
     setEditJournalIds(entry.journalIds ?? entry.collectionIds);
@@ -189,6 +193,7 @@ export default function EntryDetailScreen() {
     setEditContent(entry.content);
     setEditDate(entryDate(entry.date));
     setEditStickers(entry.stickers);
+    setEditPhotos(entry.photos);
     setEditCompanion(entry.companion);
     setEditFavorite(entry.isFavorite);
     setEditJournalIds(entry.journalIds ?? entry.collectionIds);
@@ -207,6 +212,7 @@ export default function EntryDetailScreen() {
       content: editContent.trim(),
       date: `${editDate.getFullYear()}-${String(editDate.getMonth() + 1).padStart(2, '0')}-${String(editDate.getDate()).padStart(2, '0')}`,
       stickers: editStickers,
+      photos: editPhotos,
       companion: editCompanion,
       isFavorite: editFavorite,
       tags: editTags,
@@ -438,6 +444,7 @@ export default function EntryDetailScreen() {
                   onChange={setEditTags}
                 />
                 <DiaryDatePicker value={editDate} onChange={setEditDate} maximumDate={new Date()} />
+                <DiaryPhotoStrip photos={editPhotos} onChange={setEditPhotos} />
                 <NativeTextInput
                   value={editTitle}
                   onChangeText={setEditTitle}
@@ -493,6 +500,7 @@ export default function EntryDetailScreen() {
                     {entry.tags.map((tag) => <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>)}
                   </View>
                 </View>
+                <DiaryPhotoStrip photos={entry.photos} editable={false} />
                 <MarkdownText style={{ lineHeight: 26 }}>
                   {entry.content}
                 </MarkdownText>

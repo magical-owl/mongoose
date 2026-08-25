@@ -52,6 +52,7 @@ describe('DiaryRepository', () => {
     isLockbox: false,
     collectionIds: [],
     journalIds: [],
+    photos: [],
     reflections: [],
   };
 

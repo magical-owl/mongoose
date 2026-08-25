@@ -2,7 +2,7 @@ import { secureStorage, type ISecureStorageDataSource } from '@/database/SecureS
 import { secureStorageKeys } from '@/constants/secureStorageKeys';
 import type { CompanionType } from '../domain/Companion';
 import type { PlacedSticker } from '../domain/Sticker';
-import type { ManualMood, ManualMoodWeather, SensoryDetails, WritingMode } from '../domain/DiaryEntry';
+import type { DiaryPhoto, ManualMood, ManualMoodWeather, SensoryDetails, WritingMode } from '../domain/DiaryEntry';
 
 export interface DiaryDraft {
   readonly title: string;
@@ -10,6 +10,7 @@ export interface DiaryDraft {
   readonly date: string;
   readonly companion: CompanionType;
   readonly stickers: PlacedSticker[];
+  readonly photos: DiaryPhoto[];
   readonly tags: string[];
   readonly manualMoodWeather: ManualMoodWeather;
   readonly manualMood?: ManualMood;
@@ -31,7 +32,7 @@ export class DiaryDraftService {
       const parsed: unknown = JSON.parse(raw);
       if (!isDraft(parsed)) return null;
       const legacyDraft = parsed as Partial<DiaryDraft>;
-      return { tags: [], manualMood: 'neutral', manualMoodWeather: 'neutral', writingMode: 'free-write', sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' }, isLockbox: false, ...legacyDraft } as DiaryDraft;
+      return { photos: [], tags: [], manualMood: 'neutral', manualMoodWeather: 'neutral', writingMode: 'free-write', sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' }, isLockbox: false, ...legacyDraft } as DiaryDraft;
     } catch {
       return null;
     }

@@ -67,7 +67,7 @@ Implementation rules:
 
 ### Composer
 
-- Title, content, mood, tags, journal selection, favorite, stickers, and entry details must feel like one writing surface.
+- Title, content, mood, tags, journal selection, photos, favorite, stickers, and entry details must feel like one writing surface.
 - Secondary details belong in compact rows, sheets, or modals.
 - The formatting toolbar should stay reachable above the keyboard.
 - Sticker drag, selection, layering, and scrolling must not fight each other.

@@ -13,6 +13,9 @@
       "buildNumber": "1",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Face ID is used to securely authenticate and protect your data.",
+        "NSPhotoLibraryUsageDescription": "Allow Mongoose to add photos you choose to your diary entries.",
+        "NSPhotoLibraryAddUsageDescription": "Allow Mongoose to save diary photos when you choose to keep them.",
+        "NSCameraUsageDescription": "Allow Mongoose to take photos for your diary entries.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false
         }
@@ -58,7 +61,15 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Mongoose to add photos you choose to your diary entries.",
+          "cameraPermission": "Allow Mongoose to take photos for your diary entries.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

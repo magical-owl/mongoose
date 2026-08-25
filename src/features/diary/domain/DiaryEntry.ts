@@ -72,6 +72,15 @@ export const DiaryReflectionSchema = z.object({
 });
 export type DiaryReflection = z.infer<typeof DiaryReflectionSchema>;
 
+export const DiaryPhotoSchema = z.object({
+  id: z.string().uuid(),
+  uri: z.string().min(1),
+  width: z.number().positive().optional(),
+  height: z.number().positive().optional(),
+  createdAt: z.string().datetime(),
+});
+export type DiaryPhoto = z.infer<typeof DiaryPhotoSchema>;
+
 export const DiaryEntrySchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1, 'Title is required').max(150),
@@ -96,6 +105,7 @@ export const DiaryEntrySchema = z.object({
   chapterId: z.string().uuid().optional(),
   collectionIds: z.array(z.string().uuid()).default([]),
   journalIds: z.array(z.string().uuid()).default([]),
+  photos: z.array(DiaryPhotoSchema).default([]),
   reflections: z.array(DiaryReflectionSchema).default([]),
 });
 

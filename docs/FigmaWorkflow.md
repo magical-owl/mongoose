@@ -178,8 +178,9 @@ Use the existing Ionicons and Material Community Icons style: simple outline ico
 1. Compact journal selector for existing journals only. Journal creation stays on the Journals screen.
 2. Compact tag selector.
 3. Date picker.
-4. Title field.
-5. Body editor with placeholder “What’s on your mind today? Write freely...”.
+4. Compact photo strip with camera and photo-library actions on the left, followed by selected thumbnails.
+5. Title field.
+6. Body editor with placeholder “What’s on your mind today? Write freely...”.
 
 **Bottom toolbar:**
 

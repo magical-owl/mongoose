@@ -49,6 +49,7 @@ describe('DiaryService', () => {
     isLockbox: false,
     collectionIds: [],
     journalIds: [],
+    photos: [],
     reflections: [],
   };
 
