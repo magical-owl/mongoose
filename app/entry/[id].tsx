@@ -253,6 +253,11 @@ export default function EntryDetailScreen() {
     ));
   }, []);
 
+  const dismissEntryKeyboard = useCallback(() => {
+    editorRef.current?.dismissKeyboard();
+    Keyboard.dismiss();
+  }, []);
+
   const handleDelete = async () => {
     if (!entry) return;
     Alert.alert(t('entryDeleteTitle'), t('entryDeleteMessage'), [
@@ -403,8 +408,14 @@ export default function EntryDetailScreen() {
               paddingBottom: TOOLBAR_H + theme.spacing.xl,
             },
           ]}
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={dismissEntryKeyboard}
+          onStartShouldSetResponderCapture={() => {
+            dismissEntryKeyboard();
+            return false;
+          }}
         >
           {isEditing ? (
             /* ── Edit mode ──────────────────────────────────────────────── */
@@ -620,6 +631,17 @@ export default function EntryDetailScreen() {
             >
               <MaterialCommunityIcons name="sticker-outline" size={22} color={theme.colors.tint} />
             </TouchableOpacity>
+            {keyboardHeight > 0 ? (
+              <TouchableOpacity
+                style={styles.toolbarIcon}
+                onPress={dismissEntryKeyboard}
+                activeOpacity={0.6}
+                accessibilityLabel={t('entryDismissKeyboardA11y')}
+                accessibilityRole="button"
+              >
+                <MaterialCommunityIcons name="keyboard-close" size={22} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            ) : null}
           </View>
 
           {/* Right: word count */}

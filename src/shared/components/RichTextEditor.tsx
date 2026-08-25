@@ -25,6 +25,7 @@ export interface RichTextEditorHandle {
   togglePreview: () => void;
   setContentHTML: (html: string) => void;
   insertHTML: (html: string) => void;
+  dismissKeyboard: () => void;
   richTextRef: React.RefObject<RichEditor | null>;
 }
 
@@ -87,6 +88,10 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
       }
     }, []);
 
+    const dismissKeyboard = useCallback(() => {
+      richTextRef.current?.dismissKeyboard();
+    }, []);
+
     useImperativeHandle(
       ref,
       () => ({
@@ -94,9 +99,10 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
         togglePreview: () => {},
         setContentHTML,
         insertHTML,
+        dismissKeyboard,
         richTextRef,
       }),
-      [applyFormat, setContentHTML, insertHTML]
+      [applyFormat, dismissKeyboard, setContentHTML, insertHTML]
     );
 
     return (
