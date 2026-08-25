@@ -211,6 +211,14 @@ export default function CreateEntryScreen() {
     setStickers((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
+  const toggleSelectedJournal = useCallback((journalId: string) => {
+    setSelectedJournalIds((current) => (
+      current.includes(journalId)
+        ? current.filter((id) => id !== journalId)
+        : [...current, journalId]
+    ));
+  }, []);
+
   const navigateBack = () => {
     setSelectedCalendarDate(null);
     if (router.canGoBack()) router.back();
@@ -354,6 +362,40 @@ export default function CreateEntryScreen() {
             >
               <MaterialCommunityIcons name={isFavorite ? 'star' : 'star-outline'} size={20} color={theme.colors.warning} />
             </TouchableOpacity>
+            {journals.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                style={styles.entryJournalSelector}
+                contentContainerStyle={styles.entryJournalSelectorContent}
+              >
+                {journals.map((journal) => {
+                  const selected = selectedJournalIds.includes(journal.id);
+                  return (
+                    <TouchableOpacity
+                      key={journal.id}
+                      onPress={() => toggleSelectedJournal(journal.id)}
+                      style={[
+                        styles.entryJournalChip,
+                        {
+                          borderColor: selected ? theme.colors.tint : theme.colors.border,
+                          backgroundColor: selected ? theme.colors.tint + '18' : 'transparent',
+                        },
+                      ]}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: selected }}
+                      accessibilityLabel={`${t('entryJournalSection')} ${journal.title}`}
+                    >
+                      <MaterialCommunityIcons name="book-outline" size={15} color={selected ? theme.colors.tint : theme.colors.textSecondary} />
+                      <Text preset="caption" color={selected ? 'tint' : 'text'} numberOfLines={1} style={styles.entryJournalChipText}>
+                        {journal.title}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            ) : null}
             <TouchableOpacity
               onPress={() => setShowEntryDetails(true)}
               style={[styles.entryDetailsToggle, { borderColor: theme.colors.border }]}
@@ -559,6 +601,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  entryJournalSelector: { flex: 1 },
+  entryJournalSelectorContent: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 2 },
+  entryJournalChip: { maxWidth: 142, minHeight: 30, flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 15, paddingHorizontal: 10 },
+  entryJournalChipText: { fontWeight: '700', flexShrink: 1 },
   floatingBar: {
     position: 'absolute',
     left: 0,
