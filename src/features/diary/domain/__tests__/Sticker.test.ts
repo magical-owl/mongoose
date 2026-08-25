@@ -1,4 +1,4 @@
-import { getStickerPacksByAccessTier, STICKER_PACKS } from '../Sticker';
+import { getStickerPacksByAccessTier, PlacedStickerSchema, STICKER_PACKS } from '../Sticker';
 
 describe('Sticker catalog', () => {
   it('groups sticker packs by access tier', () => {
@@ -17,5 +17,27 @@ describe('Sticker catalog', () => {
 
     expect(imagePacks.length).toBeGreaterThan(0);
     expect(imagePacks.every((pack) => pack.accessTier === 'premium')).toBe(true);
+  });
+
+  it('supports text stickers in placed sticker data', () => {
+    const result = PlacedStickerSchema.parse({
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      stickerId: 'text-sticker',
+      category: 'text',
+      x: 20,
+      y: 30,
+      scale: 1,
+      rotation: 0,
+      zIndex: 1,
+      text: 'A small note',
+      textColor: '#2563EB',
+      textBackgroundColor: '#FEF3C7',
+      opacity: 0.75,
+    });
+
+    expect(result.text).toBe('A small note');
+    expect(result.textColor).toBe('#2563EB');
+    expect(result.textBackgroundColor).toBe('#FEF3C7');
+    expect(result.opacity).toBe(0.75);
   });
 });

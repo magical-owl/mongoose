@@ -255,6 +255,24 @@ export default function EntryDetailScreen() {
     setEditStickers((prev) => prev.filter((s) => s.id !== stickerId));
   }, []);
 
+  const handleAddTextSticker = useCallback(() => {
+    const newSticker: PlacedSticker = {
+      id: generateUUID(),
+      stickerId: 'text-sticker',
+      category: 'text',
+      x: 72 + (editStickers.length % 4) * 28,
+      y: 150 + (editStickers.length % 5) * 28,
+      scale: 1,
+      rotation: 0,
+      zIndex: editStickers.length + 1,
+      behindText: false,
+      text: '',
+      textColor: '#111827',
+      opacity: 1,
+    };
+    setEditStickers((prev) => [...prev, newSticker]);
+  }, [editStickers.length, setEditStickers]);
+
   const handlePhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
     const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhotos();
     if (!result.success) {
@@ -642,6 +660,15 @@ export default function EntryDetailScreen() {
               accessibilityRole="button"
             >
               <MaterialCommunityIcons name="image-outline" size={22} color={theme.colors.tint} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toolbarIcon}
+              onPress={handleAddTextSticker}
+              activeOpacity={0.6}
+              accessibilityLabel={t('entryAddTextStickerA11y')}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="format-textbox" size={22} color={theme.colors.tint} />
             </TouchableOpacity>
             {/* Sticker button */}
             <TouchableOpacity

@@ -31,14 +31,16 @@ const FEED_PHOTO_WIDTH = 148;
 const FEED_PHOTO_MAX_HEIGHT = 190;
 
 function getFeedStickerHeight(sticker: PlacedSticker): number {
+  if (sticker.text !== undefined) return 54;
   if (!sticker.imageUri) return FEED_STICKER_SIZE;
   const aspectRatio = sticker.imageWidth && sticker.imageHeight ? sticker.imageWidth / sticker.imageHeight : 1;
   return Math.min(FEED_PHOTO_MAX_HEIGHT, FEED_PHOTO_WIDTH / aspectRatio);
 }
 
 function FeedStickerPreview({ sticker }: { readonly sticker: PlacedSticker }) {
-  const stickerItem = sticker.imageUri ? undefined : findStickerItem(sticker.stickerId);
-  if (!sticker.imageUri && !stickerItem) return null;
+  const isTextSticker = sticker.text !== undefined;
+  const stickerItem = sticker.imageUri || isTextSticker ? undefined : findStickerItem(sticker.stickerId);
+  if (!isTextSticker && !sticker.imageUri && !stickerItem) return null;
   const photoAspectRatio = sticker.imageWidth && sticker.imageHeight ? sticker.imageWidth / sticker.imageHeight : 1;
 
   return (
@@ -54,7 +56,20 @@ function FeedStickerPreview({ sticker }: { readonly sticker: PlacedSticker }) {
         },
       ]}
     >
-      {sticker.imageUri ? (
+      {isTextSticker ? (
+        <Text
+          style={[
+            styles.feedTextSticker,
+            {
+              backgroundColor: sticker.textBackgroundColor ?? 'transparent',
+              color: sticker.textColor ?? '#111827',
+              opacity: sticker.opacity ?? 1,
+            },
+          ]}
+        >
+          {sticker.text}
+        </Text>
+      ) : sticker.imageUri ? (
         <Image source={{ uri: sticker.imageUri }} style={[styles.feedPhotoStickerImage, { aspectRatio: photoAspectRatio }]} resizeMode="cover" />
       ) : stickerItem?.source != null ? (
         <Image source={stickerItem.source} style={styles.feedStickerImage} resizeMode="contain" />
@@ -323,6 +338,7 @@ const styles = StyleSheet.create({
   feedSticker: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   feedStickerImage: { width: 80, height: 80 },
   feedPhotoStickerImage: { width: 148, maxHeight: 190, borderRadius: 8 },
+  feedTextSticker: { minWidth: 120, maxWidth: 220, color: '#111827', fontSize: 24, lineHeight: 30, fontWeight: '700', textAlign: 'center' },
   feedStickerEmoji: { fontSize: 48, lineHeight: 60, includeFontPadding: true, textAlign: 'center' },
   feedTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 10 },
   feedTitle: { flex: 1, fontWeight: '700' },

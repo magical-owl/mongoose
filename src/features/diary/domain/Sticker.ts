@@ -13,6 +13,10 @@ export const PlacedStickerSchema = z.object({
   imageUri: z.string().min(1).optional(),
   imageWidth: z.number().positive().optional(),
   imageHeight: z.number().positive().optional(),
+  text: z.string().max(500).optional(),
+  textColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  textBackgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  opacity: z.number().min(0.2).max(1).optional(),
   // Optional keeps stickers saved before this feature readable on restore.
   behindText: z.boolean().optional().default(false),
 });
