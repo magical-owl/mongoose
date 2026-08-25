@@ -116,6 +116,7 @@ export default function CreateEntryScreen() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [isStickerDragging, setIsStickerDragging] = useState(false);
   const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
@@ -191,6 +192,8 @@ export default function CreateEntryScreen() {
 
   const wordCount = countWords(content);
   const availableTags = useMemo(() => normalizeDiaryTags(entries.flatMap((entry) => entry.tags)), [entries]);
+  const behindStickers = useMemo(() => stickers.filter((sticker) => sticker.behindText), [stickers]);
+  const foregroundStickers = useMemo(() => stickers.filter((sticker) => !sticker.behindText), [stickers]);
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
     const newSticker: PlacedSticker = {
@@ -334,16 +337,6 @@ export default function CreateEntryScreen() {
         </View>
       </View>
 
-      {/* ── Stickers (float above scroll area) ────────────────────────────── */}
-      {stickers.map((sticker) => (
-        <StickerCanvasItem
-          key={sticker.id}
-          sticker={sticker}
-          onUpdate={handleUpdateSticker}
-          onDelete={handleDeleteSticker}
-        />
-      ))}
-
       {/* ── Journal body ─────────────────────────────────────────────────── */}
       <KeyboardAvoidingView
         style={{ flex: 1, zIndex: 2, elevation: 2 }}
@@ -352,6 +345,7 @@ export default function CreateEntryScreen() {
       >
         <ScrollView
           style={{ flex: 1 }}
+          scrollEnabled={!isStickerDragging}
           contentContainerStyle={[
             styles.scrollContent,
             {
@@ -368,94 +362,114 @@ export default function CreateEntryScreen() {
           }}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.entryDetailsToggleRow}>
-            <TouchableOpacity
-              onPress={() => setIsFavorite((current) => !current)}
-              style={styles.entryFavoriteToggle}
-              accessibilityRole="button"
-              accessibilityLabel={isFavorite ? t('entryRemoveFavoriteA11y') : t('entryAddFavoriteA11y')}
-            >
-              <MaterialCommunityIcons name={isFavorite ? 'star' : 'star-outline'} size={20} color={theme.colors.warning} />
-            </TouchableOpacity>
-            {journals.length > 0 ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                style={styles.entryJournalSelector}
-                contentContainerStyle={styles.entryJournalSelectorContent}
+          {behindStickers.map((sticker) => (
+            <StickerCanvasItem
+              key={sticker.id}
+              sticker={sticker}
+              onUpdate={handleUpdateSticker}
+              onDelete={handleDeleteSticker}
+              onDragStateChange={setIsStickerDragging}
+            />
+          ))}
+          <View style={styles.entryContentLayer}>
+            <View style={styles.entryDetailsToggleRow}>
+              <TouchableOpacity
+                onPress={() => setIsFavorite((current) => !current)}
+                style={styles.entryFavoriteToggle}
+                accessibilityRole="button"
+                accessibilityLabel={isFavorite ? t('entryRemoveFavoriteA11y') : t('entryAddFavoriteA11y')}
               >
-                {journals.map((journal) => {
-                  const selected = selectedJournalIds.includes(journal.id);
-                  return (
-                    <TouchableOpacity
-                      key={journal.id}
-                      onPress={() => toggleSelectedJournal(journal.id)}
-                      style={[
-                        styles.entryJournalChip,
-                        {
-                          borderColor: selected ? theme.colors.tint : theme.colors.border,
-                          backgroundColor: selected ? theme.colors.tint + '18' : 'transparent',
-                        },
-                      ]}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: selected }}
-                      accessibilityLabel={`${t('entryJournalSection')} ${journal.title}`}
-                    >
-                      <MaterialCommunityIcons name="book-outline" size={15} color={selected ? theme.colors.tint : theme.colors.textSecondary} />
-                      <Text preset="caption" color={selected ? 'tint' : 'text'} numberOfLines={1} style={styles.entryJournalChipText}>
-                        {journal.title}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            ) : null}
-            <TouchableOpacity
-              onPress={() => setShowEntryDetails(true)}
-              style={[styles.entryDetailsToggle, { borderColor: theme.colors.border }]}
-              accessibilityRole="button"
-              accessibilityLabel={t('entryDetailsA11y')}
-            >
-              <MaterialCommunityIcons name="information-outline" size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
+                <MaterialCommunityIcons name={isFavorite ? 'star' : 'star-outline'} size={20} color={theme.colors.warning} />
+              </TouchableOpacity>
+              {journals.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  style={styles.entryJournalSelector}
+                  contentContainerStyle={styles.entryJournalSelectorContent}
+                >
+                  {journals.map((journal) => {
+                    const selected = selectedJournalIds.includes(journal.id);
+                    return (
+                      <TouchableOpacity
+                        key={journal.id}
+                        onPress={() => toggleSelectedJournal(journal.id)}
+                        style={[
+                          styles.entryJournalChip,
+                          {
+                            borderColor: selected ? theme.colors.tint : theme.colors.border,
+                            backgroundColor: selected ? theme.colors.tint + '18' : 'transparent',
+                          },
+                        ]}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: selected }}
+                        accessibilityLabel={`${t('entryJournalSection')} ${journal.title}`}
+                      >
+                        <MaterialCommunityIcons name="book-outline" size={15} color={selected ? theme.colors.tint : theme.colors.textSecondary} />
+                        <Text preset="caption" color={selected ? 'tint' : 'text'} numberOfLines={1} style={styles.entryJournalChipText}>
+                          {journal.title}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              ) : null}
+              <TouchableOpacity
+                onPress={() => setShowEntryDetails(true)}
+                style={[styles.entryDetailsToggle, { borderColor: theme.colors.border }]}
+                accessibilityRole="button"
+                accessibilityLabel={t('entryDetailsA11y')}
+              >
+                <MaterialCommunityIcons name="information-outline" size={20} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <DiaryDatePicker value={selectedDate} onChange={setSelectedDate} maximumDate={new Date()} />
+
+            {/* Title */}
+            <NativeTextInput
+              value={title}
+              onChangeText={setTitle}
+              placeholder={t('entryTitlePlaceholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              style={[styles.titleInput, { color: theme.colors.text }]}
+              multiline
+              returnKeyType="next"
+              accessibilityLabel={t('entryTitleA11y')}
+              accessibilityHint={t('entryTitleHint')}
+            />
+
+            <ManualMoodPicker value={manualMood} onChange={setManualMood} />
+
+            <DiaryTagSelector
+              selectedTags={selectedTags}
+              availableTags={availableTags}
+              onChange={setSelectedTags}
+            />
+
+            {/* Divider */}
+            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+
+            {/* Rich content editor — toolbar hidden, controlled from floating bar */}
+            <RichTextEditor
+              ref={editorRef}
+              value={content}
+              onChangeText={setContent}
+              placeholder={t('entryCreateContentPlaceholder')}
+              minHeight={320}
+              showToolbar={false}
+              accessibilityLabel={t('entryContentA11y')}
+            />
           </View>
-          <DiaryDatePicker value={selectedDate} onChange={setSelectedDate} maximumDate={new Date()} />
-
-          {/* Title */}
-          <NativeTextInput
-            value={title}
-            onChangeText={setTitle}
-            placeholder={t('entryTitlePlaceholder')}
-            placeholderTextColor={theme.colors.textSecondary}
-            style={[styles.titleInput, { color: theme.colors.text }]}
-            multiline
-            returnKeyType="next"
-            accessibilityLabel={t('entryTitleA11y')}
-            accessibilityHint={t('entryTitleHint')}
-          />
-
-          <ManualMoodPicker value={manualMood} onChange={setManualMood} />
-
-          <DiaryTagSelector
-            selectedTags={selectedTags}
-            availableTags={availableTags}
-            onChange={setSelectedTags}
-          />
-
-          {/* Divider */}
-          <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-
-          {/* Rich content editor — toolbar hidden, controlled from floating bar */}
-          <RichTextEditor
-            ref={editorRef}
-            value={content}
-            onChangeText={setContent}
-            placeholder={t('entryCreateContentPlaceholder')}
-            minHeight={320}
-            showToolbar={false}
-            accessibilityLabel={t('entryContentA11y')}
-          />
+          {foregroundStickers.map((sticker) => (
+            <StickerCanvasItem
+              key={sticker.id}
+              sticker={sticker}
+              onUpdate={handleUpdateSticker}
+              onDelete={handleDeleteSticker}
+              onDragStateChange={setIsStickerDragging}
+            />
+          ))}
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -599,6 +613,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 16,
     flexGrow: 1,
+    position: 'relative',
+  },
+  entryContentLayer: {
+    position: 'relative',
+    zIndex: 2,
+    elevation: 2,
   },
   titleInput: {
     fontSize: 26,

@@ -37,6 +37,7 @@ interface StickerCanvasItemProps {
   readonly onUpdate: (updated: PlacedSticker) => void;
   readonly onDelete: (id: string) => void;
   readonly isEditable?: boolean;
+  readonly onDragStateChange?: (isDragging: boolean) => void;
 }
 
 export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
@@ -44,6 +45,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   onUpdate,
   onDelete,
   isEditable = true,
+  onDragStateChange,
 }) => {
   const t = useTranslation();
   const [isSelected, setIsSelected] = useState(false);
@@ -71,10 +73,14 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => editableRef.current,
+      onStartShouldSetPanResponderCapture: () => editableRef.current,
       onMoveShouldSetPanResponder: (_, gs) =>
+        editableRef.current && (Math.abs(gs.dx) > 4 || Math.abs(gs.dy) > 4),
+      onMoveShouldSetPanResponderCapture: (_, gs) =>
         editableRef.current && (Math.abs(gs.dx) > 4 || Math.abs(gs.dy) > 4),
 
       onPanResponderGrant: () => {
+        onDragStateChange?.(true);
         pan.setOffset({ x: position.current.x, y: position.current.y });
         pan.setValue({ x: 0, y: 0 });
         dragMoved.current = false;
@@ -87,6 +93,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
       },
 
       onPanResponderRelease: (_, gs) => {
+        onDragStateChange?.(false);
         pan.flattenOffset();
         if (!dragMoved.current) {
           setIsSelected((selected) => !selected);
@@ -105,6 +112,11 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
           rotation: rotationRef.current,
         });
       },
+      onPanResponderTerminate: () => {
+        onDragStateChange?.(false);
+      },
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
     })
   ).current;
 
