@@ -28,7 +28,6 @@ const FEED_STICKER_ORIGIN_Y = 170;
 const FEED_STICKER_SIZE = 80;
 const FEED_PHOTO_WIDTH = 148;
 const FEED_PHOTO_MAX_HEIGHT = 190;
-const ENTRY_BODY_CANVAS_MIN_HEIGHT = 320;
 
 function getFeedStickerHeight(sticker: PlacedSticker): number {
   if (!sticker.imageUri) return FEED_STICKER_SIZE;
@@ -152,7 +151,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
           onPress={onPress}
           style={[
             styles.feedCanvas,
-            { minHeight: Math.max(220, ENTRY_BODY_CANVAS_MIN_HEIGHT, ...entry.stickers.map((sticker) => sticker.y - FEED_STICKER_ORIGIN_Y + getFeedStickerHeight(sticker) * sticker.scale)) },
+            { minHeight: Math.max(220, ...entry.stickers.map((sticker) => sticker.y - FEED_STICKER_ORIGIN_Y + getFeedStickerHeight(sticker) * sticker.scale)) },
           ]}
         >
           {entry.stickers.map((sticker) => <FeedStickerPreview key={sticker.id} sticker={sticker} />)}
@@ -192,9 +191,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
                 </Text>
               ) : null}
             </View>
-            <View style={styles.feedBodyCanvas}>
-              <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>{entry.content}</MarkdownText>
-            </View>
+            <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>{entry.content}</MarkdownText>
           </View>
         </TouchableOpacity>
         {inlineReflectionSection}
@@ -308,7 +305,6 @@ const styles = StyleSheet.create({
   feedMoodBadgeText: { fontSize: 11, lineHeight: 14, fontWeight: '700' },
   feedTime: { flexShrink: 0, fontSize: 11, lineHeight: 14 },
   feedContent: { fontSize: 16, lineHeight: 24 },
-  feedBodyCanvas: { minHeight: ENTRY_BODY_CANVAS_MIN_HEIGHT },
   feedMetaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   timelineEntry: { minHeight: 76, marginBottom: 12 },
   timelineBody: { flex: 1, paddingVertical: 4 },

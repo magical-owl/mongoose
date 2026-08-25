@@ -524,11 +524,9 @@ export default function EntryDetailScreen() {
                     {entry.tags.map((tag) => <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>)}
                   </View>
                 </View>
-                <View style={styles.readOnlyBodyCanvas}>
-                  <MarkdownText style={{ lineHeight: 26 }}>
-                    {entry.content}
-                  </MarkdownText>
-                </View>
+                <MarkdownText style={{ lineHeight: 26 }}>
+                  {entry.content}
+                </MarkdownText>
 
               </>
             )}
@@ -809,9 +807,6 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     marginBottom: 8,
-  },
-  readOnlyBodyCanvas: {
-    minHeight: 320,
   },
   headerActions: { minWidth: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
