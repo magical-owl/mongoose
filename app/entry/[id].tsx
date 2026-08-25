@@ -120,7 +120,6 @@ export default function EntryDetailScreen() {
   const [reflectionText, setReflectionText] = useState('');
   const [isSavingReflection, setIsSavingReflection] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [isJournalSectionExpanded, setIsJournalSectionExpanded] = useState(true);
   const [isTagSectionExpanded, setIsTagSectionExpanded] = useState(true);
 
   const handleSelectTemplate = (template: Template) => {
@@ -225,15 +224,6 @@ export default function EntryDetailScreen() {
     else Alert.alert(t('entrySaveFailedTitle'), result.error.message);
   };
 
-  const handleToggleJournal = useCallback((journalId: string) => {
-    setEditJournalIds((current) => current.includes(journalId) ? current.filter((id) => id !== journalId) : [...current, journalId]);
-  }, []);
-
-  const toggleJournalSection = useCallback(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsJournalSectionExpanded((current) => !current);
-  }, []);
-
   const toggleTagSection = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsTagSectionExpanded((current) => !current);
@@ -311,7 +301,7 @@ export default function EntryDetailScreen() {
       <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
         <View style={[styles.header, { paddingTop: insets.top + 4, borderBottomColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
           <TouchableOpacity onPress={navigateBack} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryBackA11y')}>
-            <Text preset="label" color="textSecondary">‹ {t('entryBack')}</Text>
+            <MaterialCommunityIcons name="chevron-left" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
           <View style={{ flex: 1 }} />
           <View style={styles.headerBtn} />
@@ -346,7 +336,7 @@ export default function EntryDetailScreen() {
         {isEditing ? (
           <>
             <TouchableOpacity onPress={handleCancelEdit} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryCancelEditingA11y')}>
-              <Text preset="label" color="textSecondary">{t('entryCancel')}</Text>
+              <MaterialCommunityIcons name="close" size={22} color={theme.colors.textSecondary} />
             </TouchableOpacity>
             <Text preset="label" color="text" style={{ fontWeight: '600' }}>{t('entryEditTitle')}</Text>
             <View style={styles.headerActions}>
@@ -361,24 +351,22 @@ export default function EntryDetailScreen() {
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={handleSaveEdit} disabled={isSaving} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entrySaveChangesA11y')}>
-                <Text preset="label" style={{ color: isSaving ? theme.colors.textSecondary : '#1E90FF', fontWeight: '600', textAlign: 'right' }}>
-                  {isSaving ? t('entrySaving') : t('entrySave')}
-                </Text>
+                <MaterialCommunityIcons name="content-save-outline" size={22} color={isSaving ? theme.colors.textSecondary : theme.colors.tint} />
               </TouchableOpacity>
             </View>
           </>
         ) : (
           <>
             <TouchableOpacity onPress={navigateBack} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryBackA11y')}>
-              <Text preset="label" color="textSecondary">‹ {t('entryBack')}</Text>
+              <MaterialCommunityIcons name="chevron-left" size={24} color={theme.colors.textSecondary} />
             </TouchableOpacity>
             <View style={styles.headerDateSpacer} />
-            <View style={[styles.headerBtn, { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }]}>
-              <TouchableOpacity onPress={handleStartEdit} accessibilityRole="button" accessibilityLabel={t('entryEditA11y')}>
-                <Text preset="label" style={{ color: '#1E90FF', fontWeight: '600' }}>{t('entryEdit')}</Text>
+            <View style={styles.headerActions}>
+              <TouchableOpacity onPress={handleStartEdit} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryEditA11y')}>
+                <MaterialCommunityIcons name="pencil-outline" size={21} color={theme.colors.tint} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleDelete} accessibilityRole="button" accessibilityLabel={t('entryDeleteA11y')}>
-                <Text preset="label" color="textSecondary">{t('entryDelete')}</Text>
+              <TouchableOpacity onPress={handleDelete} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryDeleteA11y')}>
+                <MaterialCommunityIcons name="trash-can-outline" size={21} color={theme.colors.error} />
               </TouchableOpacity>
             </View>
           </>
@@ -450,26 +438,6 @@ export default function EntryDetailScreen() {
                 accessibilityLabel={t('entryTitleA11y')}
               />
               <ManualMoodPicker value={editMood} onChange={setEditMood} />
-              {journals.length > 0 ? (
-                <EntryOptionSection title={t('entryJournalSection')} expanded={isJournalSectionExpanded} onToggle={toggleJournalSection} selectedCount={editJournalIds.length}>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.journalSelectorChips}>
-                    {journals.map((journal) => {
-                      const selected = editJournalIds.includes(journal.id);
-                      return (
-                        <TouchableOpacity
-                          key={journal.id}
-                          onPress={() => handleToggleJournal(journal.id)}
-                          style={[styles.journalSelectorChip, { borderColor: selected ? theme.colors.tint : theme.colors.border, backgroundColor: selected ? theme.colors.tint + '18' : theme.colors.surface }]}
-                          accessibilityRole="checkbox"
-                          accessibilityState={{ checked: selected }}
-                        >
-                          <Text preset="caption" color={selected ? "tint" : "text"} style={styles.journalSelectorChipText}>{journal.title}</Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </ScrollView>
-                </EntryOptionSection>
-              ) : null}
               <EntryOptionSection title={t('entryTagsSection')} expanded={isTagSectionExpanded} onToggle={toggleTagSection} selectedCount={editTags.length}>
                 <DiaryTagSelector
                   selectedTags={editTags}
@@ -725,8 +693,9 @@ export default function EntryDetailScreen() {
       <EntryDetailsModal
         visible={showEntryDetails}
         onDismiss={() => setShowEntryDetails(false)}
-        values={{ manualMood: editMood, manualMoodWeather: editMoodWeather, writingMode: editWritingMode, sensory: { locationLabel: editLocation, sounds: editSounds, smells: editSmells, energyLevel: Number(editEnergy) || 5, bodyState: editBody }, isLockbox: editLockbox, timeCapsuleUnlockAt: editUnlockAt, expiresAt: editExpiresAt }}
-        onChange={(next) => { if (next.manualMood) setEditMood(next.manualMood); if (next.manualMoodWeather) setEditMoodWeather(next.manualMoodWeather); if (next.writingMode) setEditWritingMode(next.writingMode); if (next.sensory) { setEditLocation(next.sensory.locationLabel); setEditSounds(next.sensory.sounds); setEditSmells(next.sensory.smells); setEditEnergy(String(next.sensory.energyLevel)); setEditBody(next.sensory.bodyState); } if (next.isLockbox !== undefined) setEditLockbox(next.isLockbox); if (next.timeCapsuleUnlockAt !== undefined) setEditUnlockAt(next.timeCapsuleUnlockAt); if (next.expiresAt !== undefined) setEditExpiresAt(next.expiresAt); }}
+        values={{ manualMood: editMood, manualMoodWeather: editMoodWeather, journalIds: editJournalIds, writingMode: editWritingMode, sensory: { locationLabel: editLocation, sounds: editSounds, smells: editSmells, energyLevel: Number(editEnergy) || 5, bodyState: editBody }, isLockbox: editLockbox, timeCapsuleUnlockAt: editUnlockAt, expiresAt: editExpiresAt }}
+        journals={journals}
+        onChange={(next) => { if (next.manualMood) setEditMood(next.manualMood); if (next.manualMoodWeather) setEditMoodWeather(next.manualMoodWeather); if (next.journalIds) setEditJournalIds([...next.journalIds]); if (next.writingMode) setEditWritingMode(next.writingMode); if (next.sensory) { setEditLocation(next.sensory.locationLabel); setEditSounds(next.sensory.sounds); setEditSmells(next.sensory.smells); setEditEnergy(String(next.sensory.energyLevel)); setEditBody(next.sensory.bodyState); } if (next.isLockbox !== undefined) setEditLockbox(next.isLockbox); if (next.timeCapsuleUnlockAt !== undefined) setEditUnlockAt(next.timeCapsuleUnlockAt); if (next.expiresAt !== undefined) setEditExpiresAt(next.expiresAt); }}
       />
     </View>
   );
@@ -739,10 +708,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingBottom: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerBtn: { padding: 6, minWidth: 70 },
+  headerBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
   headerDateSpacer: { flex: 1 },
   scrollContent: {
     paddingTop: 16,
@@ -757,12 +726,9 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  journalSelectorChips: { gap: 8, paddingRight: 8 },
-  journalSelectorChip: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, minHeight: 32, alignItems: 'center', justifyContent: 'center' },
-  journalSelectorChipText: { fontWeight: '700' },
-  headerActions: { flexDirection: 'row', alignItems: 'center' },
+  headerActions: { minWidth: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   entryDetailsToggleRow: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 8, marginBottom: 4 },
   entryFavoriteToggle: {

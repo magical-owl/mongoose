@@ -5,11 +5,13 @@ import { Text } from '@shared/components/Text';
 import { Modal } from '@shared/components/Modal';
 import { MANUAL_MOOD_OPTIONS, MANUAL_MOOD_WEATHER_OPTIONS, type ManualMood, type ManualMoodWeather, type SensoryDetails, type WritingMode } from '@/features/diary/domain/DiaryEntry';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
+import type { Journal } from '@/features/journal/domain/Journal';
 import { manualMoodLabel, manualMoodWeatherLabel, useTranslation } from '@/localization/i18n';
 
 export interface EntryDetailsValues {
   manualMoodWeather: ManualMoodWeather;
   manualMood?: ManualMood;
+  journalIds: readonly string[];
   writingMode: WritingMode;
   sensory: SensoryDetails;
   isLockbox: boolean;
@@ -21,15 +23,23 @@ interface Props {
   visible: boolean;
   onDismiss: () => void;
   values: EntryDetailsValues;
+  journals: readonly Journal[];
   onChange: (values: Partial<EntryDetailsValues>) => void;
 }
 
 const weather: readonly ManualMoodWeather[] = MANUAL_MOOD_WEATHER_OPTIONS;
 const moods: readonly ManualMood[] = MANUAL_MOOD_OPTIONS;
 
-export function EntryDetailsModal({ visible, onDismiss, values, onChange }: Props) {
+export function EntryDetailsModal({ visible, onDismiss, values, journals, onChange }: Props) {
   const theme = useTheme();
   const t = useTranslation();
+  const toggleJournal = (journalId: string) => {
+    onChange({
+      journalIds: values.journalIds.includes(journalId)
+        ? values.journalIds.filter((id) => id !== journalId)
+        : [...values.journalIds, journalId],
+    });
+  };
 
   return (
     <>
@@ -44,6 +54,33 @@ export function EntryDetailsModal({ visible, onDismiss, values, onChange }: Prop
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
             {moods.map((item) => { const color = getManualMoodColor(item, theme.colors); return <TouchableOpacity key={item} onPress={() => onChange({ manualMood: item })} style={[styles.choice, { borderColor: values.manualMood === item ? color : theme.colors.border, backgroundColor: values.manualMood === item ? color + '20' : 'transparent' }]}><Text preset="caption" style={{ color }}>{manualMoodLabel(item, t)}</Text></TouchableOpacity>; })}
           </ScrollView>
+          {journals.length > 0 ? (
+            <>
+              <Text preset="caption" color="textSecondary" style={styles.label}>{t('entryJournalSection')}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+                {journals.map((journal) => {
+                  const selected = values.journalIds.includes(journal.id);
+                  return (
+                    <TouchableOpacity
+                      key={journal.id}
+                      onPress={() => toggleJournal(journal.id)}
+                      style={[
+                        styles.choice,
+                        {
+                          borderColor: selected ? theme.colors.tint : theme.colors.border,
+                          backgroundColor: selected ? theme.colors.tint + '20' : 'transparent',
+                        },
+                      ]}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: selected }}
+                    >
+                      <Text preset="caption" color={selected ? "tint" : "text"}>{journal.title}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </>
+          ) : null}
           <View style={styles.labelRow}>
             <Text preset="caption" color="textSecondary" style={styles.label}>{t('entryMoodWeatherSection')}</Text>
             <TouchableOpacity onPress={() => Alert.alert(t('entryMoodWeatherHelpTitle'), t('entryMoodWeatherHelpMessage'))} accessibilityLabel={t('entryMoodWeatherHelpA11y')}>

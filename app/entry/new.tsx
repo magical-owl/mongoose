@@ -111,7 +111,6 @@ export default function CreateEntryScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedJournalIds, setSelectedJournalIds] = useState<string[]>(() => paramJournalId && !isSyntheticJournalId(paramJournalId) ? [paramJournalId] : []);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [isJournalSectionExpanded, setIsJournalSectionExpanded] = useState(true);
   const [isTagSectionExpanded, setIsTagSectionExpanded] = useState(true);
   const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -214,15 +213,6 @@ export default function CreateEntryScreen() {
     setStickers((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
-  const handleToggleJournal = useCallback((journalId: string) => {
-    setSelectedJournalIds((current) => current.includes(journalId) ? current.filter((id) => id !== journalId) : [...current, journalId]);
-  }, []);
-
-  const toggleJournalSection = useCallback(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsJournalSectionExpanded((current) => !current);
-  }, []);
-
   const toggleTagSection = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsTagSectionExpanded((current) => !current);
@@ -303,14 +293,15 @@ export default function CreateEntryScreen() {
           accessibilityLabel={t('entryCancelA11y')}
           accessibilityRole="button"
         >
-          <Text preset="label" color="textSecondary">{t('entryCancel')}</Text>
+          <MaterialCommunityIcons name="close" size={22} color={theme.colors.textSecondary} />
         </TouchableOpacity>
 
         <Text preset="label" color="text" style={{ fontWeight: '600' }}>
           {t('entryCreateTitle')}
         </Text>
 
-        {stickers.some((sticker) => sticker.behindText) && (
+        <View style={styles.headerActions}>
+          {stickers.some((sticker) => sticker.behindText) && (
           <TouchableOpacity
             onPress={() => setStickers((current) => current.map((sticker) => ({ ...sticker, behindText: false })))}
             style={styles.headerIcon}
@@ -319,22 +310,18 @@ export default function CreateEntryScreen() {
           >
             <MaterialCommunityIcons name="layers" size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
-        )}
+          )}
 
-        <TouchableOpacity
-          onPress={handleSave}
-          disabled={isSaving}
-          style={styles.headerBtn}
-          accessibilityLabel={t('entrySaveA11y')}
-          accessibilityRole="button"
-        >
-          <Text
-            preset="label"
-            style={{ color: isSaving ? theme.colors.textSecondary : '#1E90FF', fontWeight: '600' }}
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={isSaving}
+            style={styles.headerBtn}
+            accessibilityLabel={t('entrySaveA11y')}
+            accessibilityRole="button"
           >
-            {isSaving ? t('entrySaving') : t('entrySave')}
-          </Text>
-        </TouchableOpacity>
+            <MaterialCommunityIcons name="content-save-outline" size={22} color={isSaving ? theme.colors.textSecondary : theme.colors.tint} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* ── Stickers (float above scroll area) ────────────────────────────── */}
@@ -399,27 +386,6 @@ export default function CreateEntryScreen() {
           />
 
           <ManualMoodPicker value={manualMood} onChange={setManualMood} />
-
-          {journals.length > 0 ? (
-            <EntryOptionSection title={t('entryJournalSection')} expanded={isJournalSectionExpanded} onToggle={toggleJournalSection} selectedCount={selectedJournalIds.length}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.journalSelectorChips}>
-                {journals.map((journal) => {
-                  const selected = selectedJournalIds.includes(journal.id);
-                  return (
-                    <TouchableOpacity
-                      key={journal.id}
-                      onPress={() => handleToggleJournal(journal.id)}
-                      style={[styles.journalSelectorChip, { borderColor: selected ? theme.colors.tint : theme.colors.border, backgroundColor: selected ? theme.colors.tint + '18' : theme.colors.surface }]}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: selected }}
-                    >
-                      <Text preset="caption" color={selected ? "tint" : "text"} style={styles.journalSelectorChipText}>{journal.title}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </EntryOptionSection>
-          ) : null}
 
           <EntryOptionSection title={t('entryTagsSection')} expanded={isTagSectionExpanded} onToggle={toggleTagSection} selectedCount={selectedTags.length}>
             <DiaryTagSelector
@@ -529,10 +495,12 @@ export default function CreateEntryScreen() {
       <EntryDetailsModal
         visible={showEntryDetails}
         onDismiss={() => setShowEntryDetails(false)}
-        values={{ manualMood, manualMoodWeather, writingMode, sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState }, isLockbox, timeCapsuleUnlockAt, expiresAt }}
+        values={{ manualMood, manualMoodWeather, journalIds: selectedJournalIds, writingMode, sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState }, isLockbox, timeCapsuleUnlockAt, expiresAt }}
+        journals={journals}
         onChange={(next) => {
           if (next.manualMood) setManualMood(next.manualMood);
           if (next.manualMoodWeather) setManualMoodWeather(next.manualMoodWeather);
+          if (next.journalIds) setSelectedJournalIds([...next.journalIds]);
           if (next.writingMode) setWritingMode(next.writingMode);
           if (next.sensory) { setLocationLabel(next.sensory.locationLabel); setSounds(next.sensory.sounds); setSmells(next.sensory.smells); setEnergyLevel(String(next.sensory.energyLevel)); setBodyState(next.sensory.bodyState); }
           if (next.isLockbox !== undefined) setIsLockbox(next.isLockbox);
@@ -565,10 +533,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingBottom: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerBtn: { padding: 6, minWidth: 60 },
+  headerBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
+  headerActions: { minWidth: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   scrollContent: {
     paddingTop: 16,
     flexGrow: 1,
@@ -582,11 +551,8 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  journalSelectorChips: { gap: 8, paddingRight: 8 },
-  journalSelectorChip: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, minHeight: 32, alignItems: 'center', justifyContent: 'center' },
-  journalSelectorChipText: { fontWeight: '700' },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   entryDetailsToggleRow: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 8, marginBottom: 4 },
   entryFavoriteToggle: {
