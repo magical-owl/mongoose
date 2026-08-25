@@ -507,7 +507,44 @@ export default function JournalEntriesScreen() {
               </TouchableOpacity>
             </View>
             <Text preset="label" color="text" numberOfLines={1} style={styles.journalContextTitle}>{journalId === "unassigned" ? t("journalUnassignedTitle") : selectedJournal?.title ?? t("journalFallbackTitle")}</Text>
-            <View style={[styles.headerSide, styles.headerSideRight]}>
+            <View style={[styles.headerSide, styles.headerSideRight, showHeaderOptions && styles.headerSideRightExpanded]}>
+              {showHeaderOptions && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="always"
+                  style={styles.headerOptionsSlider}
+                  contentContainerStyle={styles.headerOptionsSliderContent}
+                >
+                  <TouchableOpacity
+                    onPress={() => {
+                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                      setShowHierarchyMenu((current) => !current);
+                    }}
+                    style={[
+                      styles.headerSliderButton,
+                      showHierarchyMenu && { backgroundColor: theme.colors.tint + "18" },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Entry hierarchy: ${hierarchyModeLabel(hierarchyMode)}. Open options.`}
+                    accessibilityState={{ expanded: showHierarchyMenu }}
+                  >
+                    <Ionicons name="calendar-outline" size={20} color={showHierarchyMenu ? theme.colors.tint : theme.colors.text} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => setIsSearchOpen((current) => !current)}
+                    style={[
+                      styles.headerSliderButton,
+                      isSearchOpen && { backgroundColor: theme.colors.tint + "18" },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={isSearchOpen ? t("homeHeaderCloseSearch") : t("homeHeaderSearch")}
+                  >
+                    <Ionicons name={isSearchOpen ? "close" : "search-outline"} size={20} color={isSearchOpen ? theme.colors.tint : theme.colors.text} />
+                  </TouchableOpacity>
+                </ScrollView>
+              )}
               <TouchableOpacity
                 onPress={() => {
                   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -524,44 +561,6 @@ export default function JournalEntriesScreen() {
               </TouchableOpacity>
             </View>
           </View>
-
-          {showHeaderOptions && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyboardShouldPersistTaps="always"
-              style={styles.headerOptionsSlider}
-              contentContainerStyle={styles.headerOptionsSliderContent}
-            >
-              <TouchableOpacity
-                onPress={() => {
-                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                  setShowHierarchyMenu((current) => !current);
-                }}
-                style={[
-                  styles.headerSliderButton,
-                  showHierarchyMenu && { backgroundColor: theme.colors.tint + "18" },
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={`Entry hierarchy: ${hierarchyModeLabel(hierarchyMode)}. Open options.`}
-                accessibilityState={{ expanded: showHierarchyMenu }}
-              >
-                <Ionicons name="calendar-outline" size={20} color={showHierarchyMenu ? theme.colors.tint : theme.colors.text} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setIsSearchOpen((current) => !current)}
-                style={[
-                  styles.headerSliderButton,
-                  isSearchOpen && { backgroundColor: theme.colors.tint + "18" },
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={isSearchOpen ? t("homeHeaderCloseSearch") : t("homeHeaderSearch")}
-              >
-                <Ionicons name={isSearchOpen ? "close" : "search-outline"} size={20} color={isSearchOpen ? theme.colors.tint : theme.colors.text} />
-              </TouchableOpacity>
-            </ScrollView>
-          )}
 
           <View style={[styles.viewModePill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
             {selectableViewModes.map((mode, idx) => {
@@ -828,6 +827,7 @@ const styles = StyleSheet.create({
   },
   headerSide: { width: 82, flexDirection: "row", alignItems: "center", gap: 6 },
   headerSideRight: { justifyContent: "flex-end" },
+  headerSideRightExpanded: { width: 166 },
   menuButton: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 8 },
   createFab: {
     position: "absolute",
@@ -863,14 +863,13 @@ const styles = StyleSheet.create({
   },
   headerOptionsSlider: {
     flexGrow: 0,
-    flexShrink: 0,
-    marginBottom: 10,
+    flexShrink: 1,
+    maxWidth: 82,
   },
   headerOptionsSliderContent: {
     alignItems: "center",
-    justifyContent: "flex-start",
+    justifyContent: "flex-end",
     gap: 2,
-    paddingRight: 2,
   },
   headerSliderButton: {
     width: 38,
