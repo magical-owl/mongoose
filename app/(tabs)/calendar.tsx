@@ -99,6 +99,9 @@ export default function CalendarScreen() {
     month: 'long',
     year: 'numeric',
   });
+  const monthLabel = currentDate.toLocaleDateString('en-US', {
+    month: 'long',
+  });
 
   const entryDateMap = useMemo(() => {
     const map = new Map<string, typeof entries>();
@@ -157,12 +160,24 @@ export default function CalendarScreen() {
                 <Text style={[styles.monthNavArrow, { color: theme.colors.text }]}>‹</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => { setPickerYear(year); setShowMonthPicker(true); }} accessibilityRole="button" accessibilityLabel={t('calendarChooseMonthYearA11y')}>
-                <View style={styles.monthTitleButton}>
-                  <Text style={[styles.monthTitle, { color: theme.colors.text }]}>{monthName}</Text>
-                  <Ionicons name="chevron-down" size={16} color={theme.colors.textSecondary} />
-                </View>
-              </TouchableOpacity>
+              <View style={[styles.monthYearPill, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
+                <TouchableOpacity
+                  onPress={() => { setPickerYear(year); setShowMonthPicker(true); }}
+                  style={[styles.monthYearButton, { backgroundColor: theme.colors.tint }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('calendarChooseMonthA11y')}
+                >
+                  <Text preset="caption" style={[styles.monthYearButtonText, { color: '#fff' }]} numberOfLines={1}>{monthLabel}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => { setPickerYear(year); setShowMonthPicker(true); }}
+                  style={styles.monthYearButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('calendarChooseYearA11y')}
+                >
+                  <Text preset="caption" style={[styles.monthYearButtonText, { color: theme.colors.textSecondary }]} numberOfLines={1}>{year}</Text>
+                </TouchableOpacity>
+              </View>
 
               <TouchableOpacity
                 onPress={handleNextMonth}
@@ -361,12 +376,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 24,
   },
-  monthTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
+  monthYearPill: {
+    flex: 1,
+    maxWidth: 210,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 2,
+    marginHorizontal: 8,
   },
-  monthTitleButton: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  monthYearButton: {
+    minWidth: 78,
+    height: 30,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 15,
+    paddingHorizontal: 10,
+  },
+  monthYearButtonText: { fontWeight: '700' },
   monthSummary: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8, marginBottom: 10, gap: 6 },
   monthSummaryItem: { flex: 1, alignItems: 'center', minWidth: 0 },
   monthSummaryValue: { fontSize: 16, fontWeight: '800', lineHeight: 19 },
