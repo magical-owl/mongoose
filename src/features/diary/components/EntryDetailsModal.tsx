@@ -47,12 +47,28 @@ export function EntryDetailsModal({ visible, onDismiss, values, journals, onChan
         <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.labelRow}>
             <Text preset="caption" color="textSecondary" style={styles.label}>{t('entryMoodSection')}</Text>
-            <TouchableOpacity onPress={() => Alert.alert(t('entryMoodHelpTitle'), t('entryMoodHelpMessage'))} accessibilityLabel={t('entryMoodHelpA11y')}>
+            <TouchableOpacity onPress={() => Alert.alert(t('entryMoodHelpTitle'), t('entryMoodHelpMessage'))} accessibilityRole="button" accessibilityLabel={t('entryMoodHelpA11y')}>
               <Ionicons name="information-circle-outline" size={17} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-            {moods.map((item) => { const color = getManualMoodColor(item, theme.colors); return <TouchableOpacity key={item} onPress={() => onChange({ manualMood: item })} style={[styles.choice, { borderColor: values.manualMood === item ? color : theme.colors.border, backgroundColor: values.manualMood === item ? color + '20' : 'transparent' }]}><Text preset="caption" style={{ color }}>{manualMoodLabel(item, t)}</Text></TouchableOpacity>; })}
+            {moods.map((item) => {
+              const selected = values.manualMood === item;
+              const color = getManualMoodColor(item, theme.colors);
+              const label = manualMoodLabel(item, t);
+              return (
+                <TouchableOpacity
+                  key={item}
+                  onPress={() => onChange({ manualMood: item })}
+                  style={[styles.choice, { borderColor: selected ? color : theme.colors.border, backgroundColor: selected ? color + '20' : 'transparent' }]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`${label} ${t('moodEmotionA11y')}${selected ? `, ${t('moodSelectedA11y')}` : ''}`}
+                >
+                  <Text preset="caption" style={{ color }}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
           {journals.length > 0 ? (
             <>
@@ -83,12 +99,26 @@ export function EntryDetailsModal({ visible, onDismiss, values, journals, onChan
           ) : null}
           <View style={styles.labelRow}>
             <Text preset="caption" color="textSecondary" style={styles.label}>{t('entryMoodWeatherSection')}</Text>
-            <TouchableOpacity onPress={() => Alert.alert(t('entryMoodWeatherHelpTitle'), t('entryMoodWeatherHelpMessage'))} accessibilityLabel={t('entryMoodWeatherHelpA11y')}>
+            <TouchableOpacity onPress={() => Alert.alert(t('entryMoodWeatherHelpTitle'), t('entryMoodWeatherHelpMessage'))} accessibilityRole="button" accessibilityLabel={t('entryMoodWeatherHelpA11y')}>
               <Ionicons name="information-circle-outline" size={17} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-            {weather.map((item) => <TouchableOpacity key={item} onPress={() => onChange({ manualMoodWeather: item })} style={[styles.choice, { borderColor: values.manualMoodWeather === item ? theme.colors.tint : theme.colors.border, backgroundColor: values.manualMoodWeather === item ? theme.colors.tint + '20' : 'transparent' }]}><Text preset="caption" color="text">{manualMoodWeatherLabel(item, t)}</Text></TouchableOpacity>)}
+            {weather.map((item) => {
+              const selected = values.manualMoodWeather === item;
+              return (
+                <TouchableOpacity
+                  key={item}
+                  onPress={() => onChange({ manualMoodWeather: item })}
+                  style={[styles.choice, { borderColor: selected ? theme.colors.tint : theme.colors.border, backgroundColor: selected ? theme.colors.tint + '20' : 'transparent' }]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={manualMoodWeatherLabel(item, t)}
+                >
+                  <Text preset="caption" color={selected ? "tint" : "text"}>{manualMoodWeatherLabel(item, t)}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
 
         </ScrollView>

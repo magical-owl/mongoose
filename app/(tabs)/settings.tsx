@@ -469,6 +469,9 @@ export default function SettingsScreen() {
                 <TouchableOpacity
                   key={m}
                   onPress={() => theme.setThemeMode(m)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={m === 'light' ? t('settingsThemeLight') : m === 'dark' ? t('settingsThemeDark') : t('settingsThemeSystem')}
                   style={{
                     width: 118,
                     paddingVertical: 12,
@@ -543,7 +546,8 @@ export default function SettingsScreen() {
                 <TouchableOpacity
                   key={color}
                   onPress={() => theme.setAccentColor(color)}
-                  accessibilityRole="button"
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: active }}
                   accessibilityLabel={`${accentColors[color].label} accent color${active ? ', selected' : ''}`}
                   style={[styles.colorSwatch, { backgroundColor: accentColors[color][theme.isDark ? 'dark' : 'light'], borderColor: active ? theme.colors.text : theme.colors.border, borderWidth: active ? 3 : 1 }]}
                 />

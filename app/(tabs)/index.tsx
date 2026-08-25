@@ -255,7 +255,7 @@ export default function JournalsScreen(): React.JSX.Element {
               key={mode}
               onPress={() => setJournalViewMode(mode)}
               style={[styles.viewModeButton, selected && { backgroundColor: theme.colors.tint }]}
-              accessibilityRole="button"
+              accessibilityRole="tab"
               accessibilityLabel={mode === 'list' ? t('journalViewList') : t('journalViewGrid')}
               accessibilityState={{ selected }}
             >

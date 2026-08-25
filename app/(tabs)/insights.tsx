@@ -269,7 +269,7 @@ export default function InsightsScreen() {
                 key={value}
                 onPress={() => setRange(value)}
                 style={[styles.rangePill, selected && { backgroundColor: theme.colors.tint }]}
-                accessibilityRole="button"
+                accessibilityRole="tab"
                 accessibilityState={{ selected }}
                 accessibilityLabel={rangeLabel(value)}
               >

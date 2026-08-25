@@ -4,6 +4,8 @@
 
 This document is the practical design brief for Mongoose. Use it when designing or reviewing screens, components, and interaction patterns before implementation.
 
+Current audit report: [`docs/DesignAudit.md`](./DesignAudit.md).
+
 Mongoose is a private diary app. The UI should feel calm, personal, native, and writing-first. It should never feel like a marketing page, a social feed, or a decorative dashboard.
 
 ## Source References

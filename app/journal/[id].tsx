@@ -578,7 +578,7 @@ export default function JournalEntriesScreen() {
                   key={mode}
                   onPress={() => { setViewModeIndex(idx); setHomeViewMode(mode); }}
                   style={[styles.viewModeButton, selected && { backgroundColor: theme.colors.tint }]}
-                  accessibilityRole="button"
+                  accessibilityRole="tab"
                   accessibilityLabel={homeViewModeLabel(mode, t)}
                   accessibilityState={{ selected }}
                 >

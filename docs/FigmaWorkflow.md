@@ -175,7 +175,7 @@ Use the existing Ionicons and Material Community Icons style: simple outline ico
 
 **Writing surface order:**
 
-1. Centered favorite and three-dot Entry Details controls.
+1. Compact favorite, journal selector, and Entry Details controls.
 2. Date picker.
 3. Title field.
 4. Body editor with placeholder “What’s on your mind today? Write freely...”.
@@ -188,7 +188,7 @@ Use the existing Ionicons and Material Community Icons style: simple outline ico
 - Word count.
 - Companion selector.
 
-**Entry Details modal:** Optional structured metadata and personal context. Mood uses manual mood selection, with Neutral first. Mood Weather is a separate personal weather selector. Avoid presenting automated sentiment analysis.
+**Entry Details modal:** Optional structured metadata and personal context. Mood uses the manual nine-step mood scale from `-4` through `4`, with Neutral in the center of the range. Mood Weather is a separate personal weather selector. Avoid presenting automated sentiment analysis.
 
 **States:** empty, typing, autosaved draft, saving, saved, validation error, keyboard open, template picker, sticker picker, companion picker, details modal, favorite active, sticker selected, sticker behind text.
 

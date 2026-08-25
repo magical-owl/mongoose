@@ -247,6 +247,8 @@ export default function CalendarScreen() {
                       },
                     ]}
                     onPress={() => handleSelectDate(dateStr)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
                     accessibilityLabel={`${day} ${monthName}${hasEntries ? `, ${t('calendarHasEntriesA11y')}` : ''}`}
                   >
                     <Text
@@ -321,7 +323,21 @@ export default function CalendarScreen() {
             <View style={styles.monthGrid}>
               {Array.from({ length: 12 }, (_, index) => index).map((monthIndex) => {
                 const selected = pickerYear === year && monthIndex === month;
-                return <TouchableOpacity key={monthIndex} onPress={() => { const key = `${pickerYear}-${String(monthIndex + 1).padStart(2, '0')}-01`; setCurrentDate(new Date(pickerYear, monthIndex, 1)); setSelectedDateStr(key); setSelectedCalendarDate(key); setShowMonthPicker(false); }} style={[styles.monthChoice, { borderColor: selected ? theme.colors.tint : theme.colors.border, backgroundColor: selected ? theme.colors.tint : 'transparent' }]}><Text preset="caption" style={{ color: selected ? theme.colors.background : theme.colors.text }}>{new Date(2000, monthIndex, 1).toLocaleDateString('en-US', { month: 'short' })}</Text></TouchableOpacity>;
+                const label = new Date(2000, monthIndex, 1).toLocaleDateString('en-US', { month: 'long' });
+                return (
+                  <TouchableOpacity
+                    key={monthIndex}
+                    onPress={() => { const key = `${pickerYear}-${String(monthIndex + 1).padStart(2, '0')}-01`; setCurrentDate(new Date(pickerYear, monthIndex, 1)); setSelectedDateStr(key); setSelectedCalendarDate(key); setShowMonthPicker(false); }}
+                    style={[styles.monthChoice, { borderColor: selected ? theme.colors.tint : theme.colors.border, backgroundColor: selected ? theme.colors.tint : 'transparent' }]}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={label}
+                  >
+                    <Text preset="caption" style={{ color: selected ? theme.colors.background : theme.colors.text }}>
+                      {new Date(2000, monthIndex, 1).toLocaleDateString('en-US', { month: 'short' })}
+                    </Text>
+                  </TouchableOpacity>
+                );
               })}
             </View>
           </Pressable>
