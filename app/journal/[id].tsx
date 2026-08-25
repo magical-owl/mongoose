@@ -19,6 +19,7 @@ import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@providers/ThemeProvider";
 import { Text } from "@shared/components/Text";
+import { FAB } from "@shared/components/FAB";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import { useJournals } from "@/features/journal/hooks/useJournals";
 import { stripHtml } from "@shared/utils/html";
@@ -496,60 +497,17 @@ export default function JournalEntriesScreen() {
         ]}
       >
         <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
-          <View style={styles.journalContextRow}>
-            <TouchableOpacity onPress={() => router.replace("/(tabs)")} style={styles.backToJournals} accessibilityRole="button">
-              <Ionicons name="chevron-back" size={18} color={theme.colors.textSecondary} />
-              <Text preset="caption" color="textSecondary">{t("tabsHome")}</Text>
-            </TouchableOpacity>
-            <Text preset="label" color="text" numberOfLines={1} style={styles.journalContextTitle}>{journalId === "unassigned" ? t("journalUnassignedTitle") : selectedJournal?.title ?? t("journalFallbackTitle")}</Text>
-            <TouchableOpacity onPress={() => router.push({ pathname: "/entry/new", params: { journalId } })} style={[styles.journalEntryAddButton, { backgroundColor: theme.colors.tint }]} accessibilityRole="button" accessibilityLabel={t("entryCreateTitle")}>
-              <Ionicons name="add" size={18} color={theme.isDark ? theme.colors.background : theme.colors.card} />
-            </TouchableOpacity>
-          </View>
           <View style={styles.headerRow}>
-            <TouchableOpacity onPress={openDrawer} style={styles.menuButton} accessibilityRole="button" accessibilityLabel={t("homeDrawerOpenA11y")}>
-              <Ionicons name="menu-outline" size={26} color={theme.colors.text} />
-            </TouchableOpacity>
-
-            <View style={styles.headerControls}>
-              {showHeaderOptions && (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  keyboardShouldPersistTaps="always"
-                  style={styles.headerOptionsSlider}
-                  contentContainerStyle={styles.headerOptionsSliderContent}
-                >
-                  <TouchableOpacity
-                    onPress={() => {
-                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                      setShowHierarchyMenu((current) => !current);
-                    }}
-                    style={[
-                      styles.headerSliderButton,
-                      showHierarchyMenu && { backgroundColor: theme.colors.tint + "18" },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Entry hierarchy: ${hierarchyModeLabel(hierarchyMode)}. Open options.`}
-                    accessibilityState={{ expanded: showHierarchyMenu }}
-                  >
-                    <Ionicons name="calendar-outline" size={20} color={showHierarchyMenu ? theme.colors.tint : theme.colors.text} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => setIsSearchOpen((current) => !current)}
-                    style={[
-                      styles.headerSliderButton,
-                      isSearchOpen && { backgroundColor: theme.colors.tint + "18" },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={isSearchOpen ? t("homeHeaderCloseSearch") : t("homeHeaderSearch")}
-                  >
-                    <Ionicons name={isSearchOpen ? "close" : "search-outline"} size={20} color={isSearchOpen ? theme.colors.tint : theme.colors.text} />
-                  </TouchableOpacity>
-                </ScrollView>
-              )}
-
+            <View style={styles.headerSide}>
+              <TouchableOpacity onPress={() => router.replace("/(tabs)")} style={styles.backToJournals} accessibilityRole="button" accessibilityLabel={t("entryBackA11y")}>
+                <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={openDrawer} style={styles.menuButton} accessibilityRole="button" accessibilityLabel={t("homeDrawerOpenA11y")}>
+                <Ionicons name="menu-outline" size={26} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+            <Text preset="label" color="text" numberOfLines={1} style={styles.journalContextTitle}>{journalId === "unassigned" ? t("journalUnassignedTitle") : selectedJournal?.title ?? t("journalFallbackTitle")}</Text>
+            <View style={[styles.headerSide, styles.headerSideRight]}>
               <TouchableOpacity
                 onPress={() => {
                   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -566,6 +524,44 @@ export default function JournalEntriesScreen() {
               </TouchableOpacity>
             </View>
           </View>
+
+          {showHeaderOptions && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="always"
+              style={styles.headerOptionsSlider}
+              contentContainerStyle={styles.headerOptionsSliderContent}
+            >
+              <TouchableOpacity
+                onPress={() => {
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                  setShowHierarchyMenu((current) => !current);
+                }}
+                style={[
+                  styles.headerSliderButton,
+                  showHierarchyMenu && { backgroundColor: theme.colors.tint + "18" },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Entry hierarchy: ${hierarchyModeLabel(hierarchyMode)}. Open options.`}
+                accessibilityState={{ expanded: showHierarchyMenu }}
+              >
+                <Ionicons name="calendar-outline" size={20} color={showHierarchyMenu ? theme.colors.tint : theme.colors.text} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setIsSearchOpen((current) => !current)}
+                style={[
+                  styles.headerSliderButton,
+                  isSearchOpen && { backgroundColor: theme.colors.tint + "18" },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={isSearchOpen ? t("homeHeaderCloseSearch") : t("homeHeaderSearch")}
+              >
+                <Ionicons name={isSearchOpen ? "close" : "search-outline"} size={20} color={isSearchOpen ? theme.colors.tint : theme.colors.text} />
+              </TouchableOpacity>
+            </ScrollView>
+          )}
 
           <View style={[styles.viewModePill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
             {selectableViewModes.map((mode, idx) => {
@@ -636,7 +632,7 @@ export default function JournalEntriesScreen() {
           scrollEventThrottle={16}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: insets.bottom + 80 },
+            { paddingBottom: insets.bottom + 124 },
           ]}
           showsVerticalScrollIndicator={false}
         >
@@ -761,7 +757,13 @@ export default function JournalEntriesScreen() {
             })
           )}
         </ScrollView>
-      )}
+        )}
+        <FAB
+          icon="add"
+          onPress={() => router.push({ pathname: "/entry/new", params: { journalId } })}
+          accessibilityLabel={t("entryCreateTitle")}
+          style={[styles.createFab, { bottom: insets.bottom + 20 }]}
+        />
         {isDrawerMounted && (
           <Animated.View
             pointerEvents={isDrawerOpen ? "auto" : "none"}
@@ -815,10 +817,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 4,
   },
-  journalContextRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
-  backToJournals: { minHeight: 34, flexDirection: "row", alignItems: "center", gap: 2 },
+  backToJournals: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 8 },
   journalContextTitle: { flex: 1, textAlign: "center", fontWeight: "800" },
-  journalEntryAddButton: { width: 34, height: 34, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -826,7 +826,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 8,
   },
-  menuButton: { width: 30, height: 36, alignItems: "flex-start", justifyContent: "center" },
+  headerSide: { width: 82, flexDirection: "row", alignItems: "center", gap: 6 },
+  headerSideRight: { justifyContent: "flex-end" },
+  menuButton: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 8 },
+  createFab: {
+    position: "absolute",
+    right: 20,
+    zIndex: 35,
+    elevation: 35,
+  },
   viewModePill: {
     alignSelf: "center",
     flexDirection: "row",
@@ -846,7 +854,6 @@ const styles = StyleSheet.create({
   viewModeButtonText: {
     fontWeight: "700",
   },
-  headerControls: { flexShrink: 0, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 2 },
   headerOptionToggle: {
     width: 38,
     height: 38,
@@ -857,10 +864,11 @@ const styles = StyleSheet.create({
   headerOptionsSlider: {
     flexGrow: 0,
     flexShrink: 0,
+    marginBottom: 10,
   },
   headerOptionsSliderContent: {
     alignItems: "center",
-    justifyContent: "flex-end",
+    justifyContent: "flex-start",
     gap: 2,
     paddingRight: 2,
   },
@@ -897,7 +905,7 @@ const styles = StyleSheet.create({
   hierarchyMenuCheck: {
     marginLeft: 16,
   },
-  drawerOverlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: "rgba(0, 0, 0, 0.35)" },
+  drawerOverlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 40, elevation: 40, backgroundColor: "rgba(0, 0, 0, 0.35)" },
   drawer: { position: "absolute", top: 0, bottom: 0, left: 0, zIndex: 2, paddingHorizontal: 20, borderTopRightRadius: 22, borderBottomRightRadius: 22, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 5, height: 0 }, shadowOpacity: 0.24, shadowRadius: 18, elevation: 18 },
   drawerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 22 },
   drawerClose: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
