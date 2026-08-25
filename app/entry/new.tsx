@@ -62,6 +62,10 @@ const FORMAT_ITEMS: { kind: FormatActionKind; icon: string }[] = [
   { kind: 'bullet',  icon: 'format-list-bulleted' },
   { kind: 'quote',   icon: 'format-quote-close' },
   { kind: 'code',    icon: 'code-tags' },
+  { kind: 'align-left', icon: 'format-align-left' },
+  { kind: 'align-center', icon: 'format-align-center' },
+  { kind: 'align-right', icon: 'format-align-right' },
+  { kind: 'align-justify', icon: 'format-align-justify' },
 ];
 const DEFAULT_COMPANION = 'cat' as const;
 

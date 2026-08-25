@@ -18,7 +18,7 @@ import {
 } from 'react-native-pell-rich-editor';
 import { useTheme } from '@providers/ThemeProvider';
 
-export type FormatActionKind = 'bold' | 'italic' | 'heading' | 'bullet' | 'quote' | 'code';
+export type FormatActionKind = 'bold' | 'italic' | 'heading' | 'bullet' | 'quote' | 'code' | 'align-left' | 'align-center' | 'align-right' | 'align-justify';
 
 export interface RichTextEditorHandle {
   applyFormat: (kind: FormatActionKind) => void;
@@ -72,6 +72,18 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
           break;
         case 'code':
           richTextRef.current.sendAction(actions.code, 'result');
+          break;
+        case 'align-left':
+          richTextRef.current.sendAction(actions.alignLeft, 'result');
+          break;
+        case 'align-center':
+          richTextRef.current.sendAction(actions.alignCenter, 'result');
+          break;
+        case 'align-right':
+          richTextRef.current.sendAction(actions.alignRight, 'result');
+          break;
+        case 'align-justify':
+          richTextRef.current.sendAction(actions.alignFull, 'result');
           break;
       }
     }, []);
