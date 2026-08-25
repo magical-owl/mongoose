@@ -48,6 +48,7 @@ import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal
 import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
+import { EntryOptionSection } from '@/features/diary/components/EntryOptionSection';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { formatDisplayMonthDayTime } from '@shared/utils/timeFormat';
@@ -119,6 +120,8 @@ export default function EntryDetailScreen() {
   const [reflectionText, setReflectionText] = useState('');
   const [isSavingReflection, setIsSavingReflection] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [isJournalSectionExpanded, setIsJournalSectionExpanded] = useState(true);
+  const [isTagSectionExpanded, setIsTagSectionExpanded] = useState(true);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = editContent
@@ -224,6 +227,16 @@ export default function EntryDetailScreen() {
 
   const handleToggleJournal = useCallback((journalId: string) => {
     setEditJournalIds((current) => current.includes(journalId) ? current.filter((id) => id !== journalId) : [...current, journalId]);
+  }, []);
+
+  const toggleJournalSection = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsJournalSectionExpanded((current) => !current);
+  }, []);
+
+  const toggleTagSection = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsTagSectionExpanded((current) => !current);
   }, []);
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
@@ -438,8 +451,7 @@ export default function EntryDetailScreen() {
               />
               <ManualMoodPicker value={editMood} onChange={setEditMood} />
               {journals.length > 0 ? (
-                <View style={styles.journalSelectorSection}>
-                  <Text preset="caption" color="textSecondary" style={styles.journalSelectorLabel}>{t('entryJournalSection')}</Text>
+                <EntryOptionSection title={t('entryJournalSection')} expanded={isJournalSectionExpanded} onToggle={toggleJournalSection}>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.journalSelectorChips}>
                     {journals.map((journal) => {
                       const selected = editJournalIds.includes(journal.id);
@@ -456,13 +468,16 @@ export default function EntryDetailScreen() {
                       );
                     })}
                   </ScrollView>
-                </View>
+                </EntryOptionSection>
               ) : null}
-              <DiaryTagSelector
-                selectedTags={editTags}
-                availableTags={availableTags}
-                onChange={setEditTags}
-              />
+              <EntryOptionSection title={t('entryTagsSection')} expanded={isTagSectionExpanded} onToggle={toggleTagSection}>
+                <DiaryTagSelector
+                  selectedTags={editTags}
+                  availableTags={availableTags}
+                  onChange={setEditTags}
+                  showLabel={false}
+                />
+              </EntryOptionSection>
               <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
               <RichTextEditor
                 ref={editorRef}
@@ -744,8 +759,6 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     marginBottom: 16,
   },
-  journalSelectorSection: { marginTop: 4, marginBottom: 12 },
-  journalSelectorLabel: { fontWeight: '800', letterSpacing: 0.8, marginBottom: 8 },
   journalSelectorChips: { gap: 8, paddingRight: 8 },
   journalSelectorChip: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, minHeight: 32, alignItems: 'center', justifyContent: 'center' },
   journalSelectorChipText: { fontWeight: '700' },

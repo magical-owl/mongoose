@@ -10,9 +10,10 @@ interface DiaryTagSelectorProps {
   readonly selectedTags: readonly string[];
   readonly availableTags: readonly string[];
   readonly onChange: (tags: string[]) => void;
+  readonly showLabel?: boolean;
 }
 
-export function DiaryTagSelector({ selectedTags, availableTags, onChange }: DiaryTagSelectorProps): React.JSX.Element {
+export function DiaryTagSelector({ selectedTags, availableTags, onChange, showLabel = true }: DiaryTagSelectorProps): React.JSX.Element {
   const theme = useTheme();
   const t = useTranslation();
   const [tagInput, setTagInput] = useState('');
@@ -41,8 +42,8 @@ export function DiaryTagSelector({ selectedTags, availableTags, onChange }: Diar
   };
 
   return (
-    <View style={styles.section}>
-      <Text preset="caption" color="textSecondary" style={styles.label}>{t('entryTagsSection')}</Text>
+    <View style={showLabel ? styles.section : styles.compactSection}>
+      {showLabel ? <Text preset="caption" color="textSecondary" style={styles.label}>{t('entryTagsSection')}</Text> : null}
       {normalizedSelectedTags.length > 0 ? (
         <View style={styles.selectedTags}>
           {normalizedSelectedTags.map((tag) => (
@@ -103,6 +104,7 @@ export function DiaryTagSelector({ selectedTags, availableTags, onChange }: Diar
 
 const styles = StyleSheet.create({
   section: { marginTop: 4, marginBottom: 12 },
+  compactSection: { marginBottom: 0 },
   label: { fontWeight: '800', letterSpacing: 0.8, marginBottom: 8 },
   selectedTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
   selectedTag: { minHeight: 32, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 16, paddingHorizontal: 10, gap: 5 },

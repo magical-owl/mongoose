@@ -42,6 +42,7 @@ import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal
 import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
+import { EntryOptionSection } from '@/features/diary/components/EntryOptionSection';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
@@ -110,6 +111,8 @@ export default function CreateEntryScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedJournalIds, setSelectedJournalIds] = useState<string[]>(() => paramJournalId && !isSyntheticJournalId(paramJournalId) ? [paramJournalId] : []);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [isJournalSectionExpanded, setIsJournalSectionExpanded] = useState(true);
+  const [isTagSectionExpanded, setIsTagSectionExpanded] = useState(true);
   const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
@@ -213,6 +216,16 @@ export default function CreateEntryScreen() {
 
   const handleToggleJournal = useCallback((journalId: string) => {
     setSelectedJournalIds((current) => current.includes(journalId) ? current.filter((id) => id !== journalId) : [...current, journalId]);
+  }, []);
+
+  const toggleJournalSection = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsJournalSectionExpanded((current) => !current);
+  }, []);
+
+  const toggleTagSection = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsTagSectionExpanded((current) => !current);
   }, []);
 
   const navigateBack = () => {
@@ -388,8 +401,7 @@ export default function CreateEntryScreen() {
           <ManualMoodPicker value={manualMood} onChange={setManualMood} />
 
           {journals.length > 0 ? (
-            <View style={styles.journalSelectorSection}>
-              <Text preset="caption" color="textSecondary" style={styles.journalSelectorLabel}>{t('entryJournalSection')}</Text>
+            <EntryOptionSection title={t('entryJournalSection')} expanded={isJournalSectionExpanded} onToggle={toggleJournalSection}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.journalSelectorChips}>
                 {journals.map((journal) => {
                   const selected = selectedJournalIds.includes(journal.id);
@@ -406,14 +418,17 @@ export default function CreateEntryScreen() {
                   );
                 })}
               </ScrollView>
-            </View>
+            </EntryOptionSection>
           ) : null}
 
-          <DiaryTagSelector
-            selectedTags={selectedTags}
-            availableTags={availableTags}
-            onChange={setSelectedTags}
-          />
+          <EntryOptionSection title={t('entryTagsSection')} expanded={isTagSectionExpanded} onToggle={toggleTagSection}>
+            <DiaryTagSelector
+              selectedTags={selectedTags}
+              availableTags={availableTags}
+              onChange={setSelectedTags}
+              showLabel={false}
+            />
+          </EntryOptionSection>
 
           {/* Divider */}
           <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
@@ -569,8 +584,6 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     marginBottom: 16,
   },
-  journalSelectorSection: { marginTop: 4, marginBottom: 12 },
-  journalSelectorLabel: { fontWeight: '800', letterSpacing: 0.8, marginBottom: 8 },
   journalSelectorChips: { gap: 8, paddingRight: 8 },
   journalSelectorChip: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, minHeight: 32, alignItems: 'center', justifyContent: 'center' },
   journalSelectorChipText: { fontWeight: '700' },
