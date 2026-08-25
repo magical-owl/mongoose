@@ -499,11 +499,11 @@ export default function JournalEntriesScreen() {
         <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
           <View style={styles.headerRow}>
             <View style={styles.headerSide}>
-              <TouchableOpacity onPress={() => router.replace("/(tabs)")} style={styles.backToJournals} accessibilityRole="button" accessibilityLabel={t("entryBackA11y")}>
-                <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
-              </TouchableOpacity>
               <TouchableOpacity onPress={openDrawer} style={styles.menuButton} accessibilityRole="button" accessibilityLabel={t("homeDrawerOpenA11y")}>
                 <Ionicons name="menu-outline" size={26} color={theme.colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => router.replace("/(tabs)")} style={styles.backToJournals} accessibilityRole="button" accessibilityLabel={t("entryBackA11y")}>
+                <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
             <Text preset="label" color="text" numberOfLines={1} style={styles.journalContextTitle}>{journalId === "unassigned" ? t("journalUnassignedTitle") : selectedJournal?.title ?? t("journalFallbackTitle")}</Text>
