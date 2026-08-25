@@ -136,9 +136,6 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
   if (mode === 'timeline') {
     return (
       <View style={styles.timelineEntry}>
-        <View style={[styles.timelineRail, { backgroundColor: theme.colors.border }]}>
-          <View style={[styles.timelineDot, { backgroundColor: hasMood ? moodTone : theme.colors.tint }]} />
-        </View>
         <View style={styles.timelineBody}>
           <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.timelinePressArea}>
             <View style={styles.timelineHeader}>
@@ -285,9 +282,7 @@ const styles = StyleSheet.create({
   feedMoodBadgeText: { fontWeight: '700' },
   feedContent: { fontSize: 16, lineHeight: 24 },
   feedMetaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  timelineEntry: { flexDirection: 'row', alignItems: 'stretch', minHeight: 76, marginBottom: 12 },
-  timelineRail: { width: 2, marginHorizontal: 10, position: 'relative' },
-  timelineDot: { position: 'absolute', top: 10, left: -4, width: 10, height: 10, borderRadius: 5 },
+  timelineEntry: { minHeight: 76, marginBottom: 12 },
   timelineBody: { flex: 1, paddingVertical: 4 },
   timelinePressArea: { marginBottom: 2 },
   timelineHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 5 },
