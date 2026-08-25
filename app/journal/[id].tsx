@@ -50,6 +50,7 @@ const HOME_VIEW_MODES = ["timeline", "detailed", "feed"] as const satisfies read
 const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
 const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
 const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+const ALL_ENTRIES_JOURNAL_ID = "all";
 
 function hierarchyModeLabel(mode: HierarchyMode): string {
   if (mode === "month-date") return "Month / Date";
@@ -119,9 +120,16 @@ export default function JournalEntriesScreen() {
   const premiumPromptShownThisSession = useRef(false);
   const selectedJournal = journals.find((journal) => journal.id === journalId);
   const journalEntries = useMemo(() => {
+    if (journalId === ALL_ENTRIES_JOURNAL_ID) return entries;
     if (journalId === "unassigned") return entries.filter((entry) => (entry.journalIds?.length ?? entry.collectionIds.length) === 0);
     return entries.filter((entry) => (entry.journalIds ?? entry.collectionIds).includes(journalId));
   }, [entries, journalId]);
+
+  const journalTitle = journalId === ALL_ENTRIES_JOURNAL_ID
+    ? t("journalAllEntriesTitle")
+    : journalId === "unassigned"
+      ? t("journalUnassignedTitle")
+      : selectedJournal?.title ?? t("journalFallbackTitle");
 
   const filterOptions = useMemo(
     () => ({
@@ -506,7 +514,7 @@ export default function JournalEntriesScreen() {
                 <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
-            <Text preset="label" color="text" numberOfLines={1} style={styles.journalContextTitle}>{journalId === "unassigned" ? t("journalUnassignedTitle") : selectedJournal?.title ?? t("journalFallbackTitle")}</Text>
+            <Text preset="label" color="text" numberOfLines={1} style={styles.journalContextTitle}>{journalTitle}</Text>
             <View style={[styles.headerSide, styles.headerSideRight, showHeaderOptions && styles.headerSideRightExpanded]}>
               {showHeaderOptions && (
                 <ScrollView
@@ -759,7 +767,13 @@ export default function JournalEntriesScreen() {
         )}
         <FAB
           icon="add"
-          onPress={() => router.push({ pathname: "/entry/new", params: { journalId } })}
+          onPress={() => {
+            if (journalId === ALL_ENTRIES_JOURNAL_ID) {
+              router.push("/entry/new");
+              return;
+            }
+            router.push({ pathname: "/entry/new", params: { journalId } });
+          }}
           accessibilityLabel={t("entryCreateTitle")}
           style={[styles.createFab, { bottom: insets.bottom + 20 }]}
         />

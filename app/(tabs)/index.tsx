@@ -31,6 +31,7 @@ interface JournalHomeItem {
 const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
 const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const JOURNAL_VIEW_MODES = ['list', 'grid'] as const satisfies readonly JournalViewMode[];
+const ALL_ENTRIES_JOURNAL_ID = 'all';
 
 export default function JournalsScreen(): React.JSX.Element {
   const router = useRouter();
@@ -112,9 +113,19 @@ export default function JournalsScreen(): React.JSX.Element {
       canRename: true,
     }));
 
-    if (unassignedEntries.length === 0) return assignedItems;
+    const permanentItems: JournalHomeItem[] = [
+      {
+        id: ALL_ENTRIES_JOURNAL_ID,
+        title: t('journalAllEntriesTitle'),
+        count: visibleEntries.length,
+        canRename: false,
+      },
+    ];
+
+    if (unassignedEntries.length === 0) return [...permanentItems, ...assignedItems];
 
     return [
+      ...permanentItems,
       ...assignedItems,
       {
         id: 'unassigned',
