@@ -18,8 +18,18 @@ function entryBelongsToJournal(entry: { readonly journalIds?: readonly string[];
   return (entry.journalIds ?? entry.collectionIds ?? []).includes(journalId);
 }
 
+type JournalViewMode = 'list' | 'grid';
+
+interface JournalHomeItem {
+  readonly id: string;
+  readonly title: string;
+  readonly count: number;
+  readonly color: string;
+}
+
 const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
 const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+const JOURNAL_VIEW_MODES = ['list', 'grid'] as const satisfies readonly JournalViewMode[];
 
 export default function JournalsScreen(): React.JSX.Element {
   const router = useRouter();
@@ -38,6 +48,7 @@ export default function JournalsScreen(): React.JSX.Element {
   const [journalTitle, setJournalTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [journalViewMode, setJournalViewMode] = useState<JournalViewMode>('list');
   const premiumPromptShownThisSession = useRef(false);
 
   useFocusEffect(
@@ -87,6 +98,26 @@ export default function JournalsScreen(): React.JSX.Element {
 
   const visibleEntries = useMemo(() => entries.filter((entry) => isDiaryEntryVisible(entry)), [entries]);
   const unassignedEntries = useMemo(() => visibleEntries.filter((entry) => (entry.journalIds?.length ?? entry.collectionIds.length) === 0), [visibleEntries]);
+  const journalItems = useMemo<JournalHomeItem[]>(() => {
+    const assignedItems = journals.map((journal) => ({
+      id: journal.id,
+      title: journal.title,
+      count: visibleEntries.filter((entry) => entryBelongsToJournal(entry, journal.id)).length,
+      color: journal.color,
+    }));
+
+    if (unassignedEntries.length === 0) return assignedItems;
+
+    return [
+      ...assignedItems,
+      {
+        id: 'unassigned',
+        title: t('journalUnassignedTitle'),
+        count: unassignedEntries.length,
+        color: theme.colors.textTertiary,
+      },
+    ];
+  }, [journals, t, theme.colors.textTertiary, unassignedEntries.length, visibleEntries]);
 
   const handleCreateJournal = async () => {
     const trimmed = journalTitle.trim();
@@ -123,8 +154,35 @@ export default function JournalsScreen(): React.JSX.Element {
         </TouchableOpacity>
       </View>
 
+      <View style={[styles.viewModePill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        {JOURNAL_VIEW_MODES.map((mode) => {
+          const selected = journalViewMode === mode;
+          return (
+            <TouchableOpacity
+              key={mode}
+              onPress={() => setJournalViewMode(mode)}
+              style={[styles.viewModeButton, selected && { backgroundColor: theme.colors.tint }]}
+              accessibilityRole="button"
+              accessibilityLabel={mode === 'list' ? t('journalViewList') : t('journalViewGrid')}
+              accessibilityState={{ selected }}
+            >
+              <Text
+                preset="caption"
+                style={[
+                  styles.viewModeButtonText,
+                  { color: selected ? '#fff' : theme.colors.textSecondary },
+                ]}
+                numberOfLines={1}
+              >
+                {mode === 'list' ? t('journalViewList') : t('journalViewGrid')}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 88 }]} showsVerticalScrollIndicator={false}>
-        {journals.length === 0 ? (
+        {journalItems.length === 0 ? (
           <View style={[styles.emptyState, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
             <Ionicons name="journal-outline" size={34} color={theme.colors.tint} />
             <Text preset="label" color="text" style={styles.emptyTitle}>{t('journalsEmptyTitle')}</Text>
@@ -134,40 +192,28 @@ export default function JournalsScreen(): React.JSX.Element {
             </TouchableOpacity>
           </View>
         ) : (
-          journals.map((journal) => {
-            const count = visibleEntries.filter((entry) => entryBelongsToJournal(entry, journal.id)).length;
-            return (
+          <View style={journalViewMode === 'grid' ? styles.journalGrid : styles.journalList}>
+            {journalItems.map((journal) => (
               <TouchableOpacity
                 key={journal.id}
                 onPress={() => router.push({ pathname: '/journal/[id]', params: { id: journal.id } })}
-                style={[styles.journalCard, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+                style={[
+                  journalViewMode === 'grid' ? styles.journalGridCard : styles.journalCard,
+                  { borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
+                ]}
                 accessibilityRole="button"
               >
-                <View style={[styles.journalColor, { backgroundColor: journal.color }]} />
-                <View style={styles.journalCopy}>
-                  <Text preset="h3" color="text" numberOfLines={1}>{journal.title}</Text>
-                  <Text preset="caption" color="textSecondary">{count === 1 ? t('journalEntryCountOne') : t('journalEntryCountMany').replace('{count}', String(count))}</Text>
+                <View style={[journalViewMode === 'grid' ? styles.journalGridColor : styles.journalColor, { backgroundColor: journal.color }]} />
+                <View style={journalViewMode === 'grid' ? styles.journalGridCopy : styles.journalCopy}>
+                  {journalViewMode === 'grid' ? <Ionicons name="journal-outline" size={22} color={theme.colors.textSecondary} /> : null}
+                  <Text preset="h3" color="text" numberOfLines={journalViewMode === 'grid' ? 2 : 1} style={journalViewMode === 'grid' ? styles.journalGridTitle : undefined}>{journal.title}</Text>
+                  <Text preset="caption" color="textSecondary">{journal.count === 1 ? t('journalEntryCountOne') : t('journalEntryCountMany').replace('{count}', String(journal.count))}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
+                {journalViewMode === 'list' ? <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} /> : null}
               </TouchableOpacity>
-            );
-          })
+            ))}
+          </View>
         )}
-
-        {unassignedEntries.length > 0 ? (
-          <TouchableOpacity
-            onPress={() => router.push({ pathname: '/journal/[id]', params: { id: 'unassigned' } })}
-            style={[styles.journalCard, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
-            accessibilityRole="button"
-          >
-            <View style={[styles.journalColor, { backgroundColor: theme.colors.textTertiary }]} />
-            <View style={styles.journalCopy}>
-              <Text preset="h3" color="text" numberOfLines={1}>{t('journalUnassignedTitle')}</Text>
-              <Text preset="caption" color="textSecondary">{t('journalEntryCountMany').replace('{count}', String(unassignedEntries.length))}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
-        ) : null}
       </ScrollView>
 
       <PaywallModal
@@ -220,10 +266,33 @@ const styles = StyleSheet.create({
   title: { fontWeight: '800' },
   subtitle: { marginTop: 4 },
   addButton: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  content: { paddingHorizontal: 20, paddingTop: 8, gap: 10 },
+  viewModePill: {
+    alignSelf: 'center',
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 2,
+    marginBottom: 14,
+  },
+  viewModeButton: {
+    minWidth: 68,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 15,
+    paddingHorizontal: 12,
+  },
+  viewModeButtonText: { fontWeight: '700' },
+  content: { paddingHorizontal: 20, paddingTop: 2 },
+  journalList: { gap: 10 },
+  journalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   journalCard: { minHeight: 74, borderWidth: 1, borderRadius: 8, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 12 },
+  journalGridCard: { width: '48%', minHeight: 138, borderWidth: 1, borderRadius: 8, overflow: 'hidden' },
   journalColor: { width: 12, height: 42, borderRadius: 6 },
+  journalGridColor: { height: 8, width: '100%' },
   journalCopy: { flex: 1 },
+  journalGridCopy: { flex: 1, padding: 14, justifyContent: 'space-between', gap: 10 },
+  journalGridTitle: { fontWeight: '800', lineHeight: 22 },
   emptyState: { borderWidth: 1, borderRadius: 8, padding: 22, alignItems: 'center' },
   emptyTitle: { marginTop: 12, marginBottom: 6, fontWeight: '800' },
   emptyBody: { textAlign: 'center', lineHeight: 20 },
