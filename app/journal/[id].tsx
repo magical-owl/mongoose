@@ -52,6 +52,9 @@ const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
 const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
 const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const ALL_ENTRIES_JOURNAL_ID = "all";
+const JOURNAL_COVER_EXPANDED_HEIGHT = 184;
+const JOURNAL_COVER_COLLAPSED_HEIGHT = 74;
+const JOURNAL_COVER_COLLAPSE_DISTANCE = 120;
 
 function hierarchyModeLabel(mode: HierarchyMode): string {
   if (mode === "month-date") return "Month / Date";
@@ -109,6 +112,7 @@ export default function JournalEntriesScreen() {
   const [showHierarchyMenu, setShowHierarchyMenu] = useState(false);
   const drawerWidth = Math.min(windowWidth * 0.86, 380);
   const drawerProgress = useRef(new Animated.Value(0)).current;
+  const scrollY = useRef(new Animated.Value(0)).current;
   const drawerProgressValue = useRef(0);
   const drawerDragStart = useRef(0);
   const scrollRef = useRef<ScrollView | null>(null);
@@ -359,7 +363,7 @@ export default function JournalEntriesScreen() {
         }, delay);
       });
     },
-    [journalEntries, scrollToEntry, selectableViewModes, setHomeViewMode, t],
+    [journalEntries, scrollToEntry, selectableViewModes, setHomeViewMode, setViewModeIndex, t],
   );
 
   const filteredEntries = useMemo(() => {
@@ -409,6 +413,56 @@ export default function JournalEntriesScreen() {
       });
     return Array.from(groups.entries());
   }, [filteredEntries]);
+
+  const hasJournalCover = Boolean(selectedJournal?.coverImageUri);
+  const journalCoverHeight = scrollY.interpolate({
+    inputRange: [0, JOURNAL_COVER_COLLAPSE_DISTANCE],
+    outputRange: [JOURNAL_COVER_EXPANDED_HEIGHT, JOURNAL_COVER_COLLAPSED_HEIGHT],
+    extrapolate: "clamp",
+  });
+  const journalCoverOverlayOpacity = scrollY.interpolate({
+    inputRange: [0, JOURNAL_COVER_COLLAPSE_DISTANCE * 0.65],
+    outputRange: [1, 0],
+    extrapolate: "clamp",
+  });
+
+  const viewModePill = (
+    <View
+      style={[
+        styles.viewModePill,
+        hasJournalCover && styles.viewModePillOnCover,
+        {
+          backgroundColor: hasJournalCover ? "rgba(0, 0, 0, 0.42)" : theme.colors.surface,
+          borderColor: hasJournalCover ? "rgba(255, 255, 255, 0.28)" : theme.colors.border,
+        },
+      ]}
+    >
+      {selectableViewModes.map((mode, idx) => {
+        const selected = viewModeIndex === idx;
+        return (
+          <TouchableOpacity
+            key={mode}
+            onPress={() => { setViewModeIndex(idx); setHomeViewMode(mode); }}
+            style={[styles.viewModeButton, selected && { backgroundColor: theme.colors.tint }]}
+            accessibilityRole="tab"
+            accessibilityLabel={homeViewModeLabel(mode, t)}
+            accessibilityState={{ selected }}
+          >
+            <Text
+              preset="caption"
+              style={[
+                styles.viewModeButtonText,
+                { color: selected || hasJournalCover ? "#fff" : theme.colors.textSecondary },
+              ]}
+              numberOfLines={1}
+            >
+              {homeViewModeLabel(mode, t)}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
 
   return (
     <View
@@ -571,32 +625,35 @@ export default function JournalEntriesScreen() {
             </View>
           </View>
 
-          <View style={[styles.viewModePill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-            {selectableViewModes.map((mode, idx) => {
-              const selected = viewModeIndex === idx;
-              return (
-                <TouchableOpacity
-                  key={mode}
-                  onPress={() => { setViewModeIndex(idx); setHomeViewMode(mode); }}
-                  style={[styles.viewModeButton, selected && { backgroundColor: theme.colors.tint }]}
-                  accessibilityRole="tab"
-                  accessibilityLabel={homeViewModeLabel(mode, t)}
-                  accessibilityState={{ selected }}
-                >
-                  <Text
-                    preset="caption"
-                    style={[
-                      styles.viewModeButtonText,
-                      { color: selected ? "#fff" : theme.colors.textSecondary },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {homeViewModeLabel(mode, t)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          {selectedJournal?.coverImageUri ? (
+            <Animated.View
+              style={[
+                styles.journalCoverContext,
+                {
+                  height: journalCoverHeight,
+                  borderColor: theme.colors.border,
+                  backgroundColor: theme.colors.surface,
+                },
+              ]}
+            >
+              <Image
+                source={{ uri: selectedJournal.coverImageUri }}
+                style={styles.journalCoverImage}
+                resizeMode="cover"
+                accessibilityRole="image"
+                accessibilityLabel={journalTitle}
+              />
+              {viewModePill}
+              <Animated.View style={[styles.journalCoverContextOverlay, { opacity: journalCoverOverlayOpacity }]}>
+                <Text preset="label" numberOfLines={2} style={styles.journalCoverContextTitle}>
+                  {journalTitle}
+                </Text>
+                <Text preset="caption" numberOfLines={1} style={styles.journalCoverContextMeta}>
+                  {filteredEntries.length === 1 ? t("journalEntryCountOne") : t("journalEntryCountMany").replace("{count}", String(filteredEntries.length))}
+                </Text>
+              </Animated.View>
+            </Animated.View>
+          ) : viewModePill}
 
           {showHeaderOptions && showHierarchyMenu && (
             <View style={[styles.hierarchyInlineMenu, { borderTopColor: theme.colors.border }]}>
@@ -635,7 +692,9 @@ export default function JournalEntriesScreen() {
         <ScrollView
           ref={scrollRef}
           onScroll={(event) => {
-            scrollOffsetY.current = event.nativeEvent.contentOffset.y;
+            const nextScrollY = event.nativeEvent.contentOffset.y;
+            scrollOffsetY.current = nextScrollY;
+            scrollY.setValue(nextScrollY);
           }}
           scrollEventThrottle={16}
           contentContainerStyle={[
@@ -650,26 +709,6 @@ export default function JournalEntriesScreen() {
               <Text preset="caption" color="textSecondary">You have {onThisDay.length} memor{onThisDay.length === 1 ? 'y' : 'ies'} from this date in previous years.</Text>
             </View>
           )} */}
-
-          {selectedJournal?.coverImageUri ? (
-            <View style={[styles.journalCoverContext, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
-              <Image
-                source={{ uri: selectedJournal.coverImageUri }}
-                style={styles.journalCoverImage}
-                resizeMode="cover"
-                accessibilityRole="image"
-                accessibilityLabel={journalTitle}
-              />
-              <View style={styles.journalCoverContextOverlay}>
-                <Text preset="label" numberOfLines={2} style={styles.journalCoverContextTitle}>
-                  {journalTitle}
-                </Text>
-                <Text preset="caption" numberOfLines={1} style={styles.journalCoverContextMeta}>
-                  {filteredEntries.length === 1 ? t("journalEntryCountOne") : t("journalEntryCountMany").replace("{count}", String(filteredEntries.length))}
-                </Text>
-              </View>
-            </View>
-          ) : null}
 
           {/* Entries List */}
           {filteredEntries.length === 0 ? (
@@ -852,7 +891,6 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   journalCoverContext: {
-    height: 184,
     borderWidth: 1,
     borderRadius: 8,
     marginBottom: 14,
@@ -913,6 +951,10 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 2,
     marginBottom: 14,
+  },
+  viewModePillOnCover: {
+    marginTop: 12,
+    zIndex: 2,
   },
   viewModeButton: {
     minWidth: 68,

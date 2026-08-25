@@ -163,7 +163,6 @@ export default function JournalsScreen(): React.JSX.Element {
     }
     setJournalTitle('');
     setShowCreateModal(false);
-    router.push({ pathname: '/journal/[id]', params: { id: result.data.id } });
   };
 
   const handleOpenRenameJournal = useCallback((journalId: string) => {
