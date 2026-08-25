@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
@@ -16,6 +16,8 @@ export function DiaryTagSelector({ selectedTags, availableTags, onChange }: Diar
   const theme = useTheme();
   const t = useTranslation();
   const [tagInput, setTagInput] = useState('');
+  const [isTagInputFocused, setIsTagInputFocused] = useState(false);
+  const inputWidth = useRef(new Animated.Value(42)).current;
 
   const normalizedSelectedTags = useMemo(() => normalizeDiaryTags(selectedTags), [selectedTags]);
   const suggestedTags = useMemo(() => {
@@ -29,6 +31,15 @@ export function DiaryTagSelector({ selectedTags, availableTags, onChange }: Diar
   }, [suggestedTags, tagInput]);
   const candidateTag = normalizeDiaryTag(tagInput);
   const canAddTag = Boolean(candidateTag) && !normalizedSelectedTags.includes(candidateTag);
+  const isTagInputExpanded = isTagInputFocused || Boolean(tagInput);
+
+  useEffect(() => {
+    Animated.timing(inputWidth, {
+      toValue: isTagInputExpanded ? 132 : 42,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
+  }, [inputWidth, isTagInputExpanded]);
 
   const handleAddTag = () => {
     if (!canAddTag) return;
@@ -43,18 +54,27 @@ export function DiaryTagSelector({ selectedTags, availableTags, onChange }: Diar
   return (
     <View style={styles.section}>
       <View style={styles.selectorRow}>
-        <TextInput
-          value={tagInput}
-          onChangeText={setTagInput}
-          placeholder={t('entryTagPlaceholder')}
-          placeholderTextColor={theme.colors.textSecondary}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="done"
-          onSubmitEditing={handleAddTag}
-          style={[styles.input, { color: theme.colors.text, fontFamily: theme.fontFamily }]}
-          accessibilityLabel={t('entryTagInputA11y')}
-        />
+        <Animated.View style={[styles.inputWrap, { width: inputWidth }]}>
+          {!tagInput && !isTagInputFocused ? (
+            <View pointerEvents="none" style={styles.placeholderIcon}>
+              <Ionicons name="pricetag-outline" size={18} color={theme.colors.textSecondary} />
+            </View>
+          ) : null}
+          <TextInput
+            value={tagInput}
+            onChangeText={setTagInput}
+            placeholder=""
+            placeholderTextColor={theme.colors.textSecondary}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="done"
+            onSubmitEditing={handleAddTag}
+            onFocus={() => setIsTagInputFocused(true)}
+            onBlur={() => setIsTagInputFocused(false)}
+            style={[styles.input, { color: theme.colors.text, fontFamily: theme.fontFamily }]}
+            accessibilityLabel={t('entryTagInputA11y')}
+          />
+        </Animated.View>
         <TouchableOpacity
           onPress={handleAddTag}
           disabled={!canAddTag}
@@ -103,12 +123,14 @@ export function DiaryTagSelector({ selectedTags, availableTags, onChange }: Diar
 const styles = StyleSheet.create({
   section: { marginTop: 4, marginBottom: 4 },
   selectorRow: { minHeight: 36, flexDirection: 'row', alignItems: 'center', borderRadius: 8, paddingLeft: 0, paddingRight: 0, gap: 2 },
+  inputWrap: { height: 32, justifyContent: 'center', overflow: 'hidden' },
+  placeholderIcon: { position: 'absolute', alignSelf: 'center' },
   inlineScroll: { flex: 1 },
   inlineContent: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 5, paddingRight: 4 },
   selectedTag: { minHeight: 28, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 14, paddingHorizontal: 8, gap: 4 },
   tagText: { fontWeight: '700' },
   input: {
-    width: 132,
+    width: '100%',
     height: 32,
     paddingTop: 0,
     paddingBottom: 0,

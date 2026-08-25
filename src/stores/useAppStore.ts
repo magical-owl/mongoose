@@ -30,6 +30,7 @@ export type TimeFormat = '24-hour' | '12-hour';
 export type FontScale = 'small' | 'default' | 'large';
 export type FontFamily = 'system' | 'serif' | 'monospace';
 export type HomeViewMode = 'detailed' | 'timeline' | 'feed';
+export type EntryHierarchyMode = 'year-month-date' | 'month-date' | 'date' | 'none';
 export type AppLanguage = 'en' | 'ja' | 'zh' | 'de' | 'fr';
 
 /**
@@ -55,6 +56,7 @@ export interface AppState {
   fontFamily: FontFamily;
   homeViewModes: Record<HomeViewMode, boolean>;
   homeViewMode: HomeViewMode;
+  entryHierarchyMode: EntryHierarchyMode;
   appLanguage: AppLanguage;
   premiumOnboardingPromptShown: boolean;
   premiumPromptDismissedAt: string | null;
@@ -77,6 +79,7 @@ export interface AppState {
   setFontFamily: (family: FontFamily) => void;
   setHomeViewModeEnabled: (mode: HomeViewMode, enabled: boolean) => void;
   setHomeViewMode: (mode: HomeViewMode) => void;
+  setEntryHierarchyMode: (mode: EntryHierarchyMode) => void;
   setAppLanguage: (language: AppLanguage) => void;
   markPremiumOnboardingPromptShown: (shownAt: string) => void;
   markPremiumPromptDismissed: (dismissedAt: string) => void;
@@ -103,6 +106,7 @@ const initialState: Pick<
   | 'fontFamily'
   | 'homeViewModes'
   | 'homeViewMode'
+  | 'entryHierarchyMode'
   | 'appLanguage'
   | 'premiumOnboardingPromptShown'
   | 'premiumPromptDismissedAt'
@@ -125,6 +129,7 @@ const initialState: Pick<
   fontFamily: 'system',
   homeViewModes: { detailed: true, timeline: true, feed: true },
   homeViewMode: 'timeline',
+  entryHierarchyMode: 'year-month-date',
   appLanguage: 'en',
   premiumOnboardingPromptShown: false,
   premiumPromptDismissedAt: null,
@@ -162,6 +167,7 @@ export const useAppStore = create<AppState>()(
         homeViewModes: { ...state.homeViewModes, [mode]: enabled },
       })),
       setHomeViewMode: (homeViewMode: HomeViewMode) => set({ homeViewMode }),
+      setEntryHierarchyMode: (entryHierarchyMode: EntryHierarchyMode) => set({ entryHierarchyMode }),
       setAppLanguage: (appLanguage: AppLanguage) => set({ appLanguage }),
       markPremiumOnboardingPromptShown: (shownAt: string) => set({
         premiumOnboardingPromptShown: true,
@@ -202,6 +208,7 @@ export const useAppStore = create<AppState>()(
         fontFamily: state.fontFamily,
         homeViewModes: state.homeViewModes,
         homeViewMode: state.homeViewMode,
+        entryHierarchyMode: state.entryHierarchyMode,
         appLanguage: state.appLanguage,
         premiumOnboardingPromptShown: state.premiumOnboardingPromptShown,
         premiumPromptDismissedAt: state.premiumPromptDismissedAt,

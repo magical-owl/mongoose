@@ -411,16 +411,6 @@ export default function CreateEntryScreen() {
             />
           ))}
           <View style={styles.entryContentLayer}>
-            <DiaryJournalSelector
-              selectedJournalIds={selectedJournalIds}
-              journals={journals}
-              onChange={setSelectedJournalIds}
-            />
-            <DiaryTagSelector
-              selectedTags={selectedTags}
-              availableTags={availableTags}
-              onChange={setSelectedTags}
-            />
             <DiaryDatePicker value={selectedDate} onChange={setSelectedDate} maximumDate={new Date()} />
 
             {/* Title */}
@@ -451,6 +441,18 @@ export default function CreateEntryScreen() {
               showToolbar={false}
               accessibilityLabel={t('entryContentA11y')}
             />
+            <View style={styles.belowBodyPickers}>
+              <DiaryJournalSelector
+                selectedJournalIds={selectedJournalIds}
+                journals={journals}
+                onChange={setSelectedJournalIds}
+              />
+              <DiaryTagSelector
+                selectedTags={selectedTags}
+                availableTags={availableTags}
+                onChange={setSelectedTags}
+              />
+            </View>
           </View>
           {foregroundStickers.map((sticker) => (
             <StickerCanvasItem
@@ -622,7 +624,7 @@ const styles = StyleSheet.create({
   headerBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
   headerActions: { minWidth: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   scrollContent: {
-    paddingTop: 16,
+    paddingTop: 6,
     flexGrow: 1,
     position: 'relative',
   },
@@ -641,6 +643,10 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     marginBottom: 8,
+  },
+  belowBodyPickers: {
+    marginTop: 14,
+    paddingTop: 8,
   },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   floatingBar: {

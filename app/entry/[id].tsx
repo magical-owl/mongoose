@@ -458,16 +458,6 @@ export default function EntryDetailScreen() {
             {isEditing ? (
               /* ── Edit mode ──────────────────────────────────────────────── */
               <>
-                <DiaryJournalSelector
-                  selectedJournalIds={editJournalIds}
-                  journals={journals}
-                  onChange={setEditJournalIds}
-                />
-                <DiaryTagSelector
-                  selectedTags={editTags}
-                  availableTags={availableTags}
-                  onChange={setEditTags}
-                />
                 <DiaryDatePicker value={editDate} onChange={setEditDate} maximumDate={new Date()} />
                 <NativeTextInput
                   value={editTitle}
@@ -490,6 +480,18 @@ export default function EntryDetailScreen() {
                   showToolbar={false}
                   accessibilityLabel={t('entryContentA11y')}
                 />
+                <View style={styles.belowBodyPickers}>
+                  <DiaryJournalSelector
+                    selectedJournalIds={editJournalIds}
+                    journals={journals}
+                    onChange={setEditJournalIds}
+                  />
+                  <DiaryTagSelector
+                    selectedTags={editTags}
+                    availableTags={availableTags}
+                    onChange={setEditTags}
+                  />
+                </View>
               </>
             ) : (
               /* ── View mode ──────────────────────────────────────────────── */
@@ -788,7 +790,7 @@ const styles = StyleSheet.create({
   headerBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
   headerDateSpacer: { flex: 1 },
   scrollContent: {
-    paddingTop: 16,
+    paddingTop: 6,
     flexGrow: 1,
     position: 'relative',
   },
@@ -807,6 +809,10 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     marginBottom: 8,
+  },
+  belowBodyPickers: {
+    marginTop: 14,
+    paddingTop: 8,
   },
   headerActions: { minWidth: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },

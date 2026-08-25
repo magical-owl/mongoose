@@ -95,6 +95,14 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
     if (saved) setReflectionText('');
     setIsAddingReflection(false);
   };
+  const feedStickerCanvasHeight = entry.stickers.length > 0
+    ? Math.max(
+        0,
+        ...entry.stickers.map((sticker) => (
+          sticker.y - FEED_STICKER_ORIGIN_Y + getFeedStickerHeight(sticker) * sticker.scale
+        )),
+      )
+    : 0;
 
   const inlineReflectionSection = (
     <>
@@ -168,7 +176,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
           onPress={onPress}
           style={[
             styles.feedCanvas,
-            { minHeight: Math.max(220, ...entry.stickers.map((sticker) => sticker.y - FEED_STICKER_ORIGIN_Y + getFeedStickerHeight(sticker) * sticker.scale)) },
+            feedStickerCanvasHeight > 0 && { minHeight: feedStickerCanvasHeight },
           ]}
         >
           {entry.stickers.map((sticker) => <FeedStickerPreview key={sticker.id} sticker={sticker} />)}
@@ -310,7 +318,7 @@ const styles = StyleSheet.create({
   cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   reflectionSummary: { flexShrink: 0, fontWeight: '700' },
   feedCard: { padding: 16, marginBottom: 14 },
-  feedCanvas: { position: 'relative', minHeight: 220, overflow: 'visible' },
+  feedCanvas: { position: 'relative', overflow: 'visible' },
   feedTextLayer: { position: 'relative', zIndex: 2 },
   feedSticker: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   feedStickerImage: { width: 80, height: 80 },

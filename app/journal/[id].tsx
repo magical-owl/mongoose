@@ -2,7 +2,6 @@ import { Fragment, useState, useCallback, useEffect, useMemo, useRef } from "rea
 import {
   Animated,
   Image,
-  LayoutAnimation,
   Keyboard,
   PanResponder,
   View,
@@ -33,7 +32,7 @@ import { formatDisplayDate } from "@shared/utils/dateFormat";
 import { useAppStore } from "@/stores/useAppStore";
 import { useSubscription } from "@/features/subscription/hooks/useSubscription";
 import { APP_IDENTITY } from "@/config/appIdentity";
-import type { HomeViewMode } from "@/stores/useAppStore";
+import type { EntryHierarchyMode, HomeViewMode } from "@/stores/useAppStore";
 import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
 import { homeFilterAllLabel, homeFilterKindLabel, homeViewModeLabel, manualMoodLabel, premiumPaywallTitle, useTranslation } from "@/localization/i18n";
@@ -46,8 +45,7 @@ function formatTimelineMonth(value: string): string {
   );
 }
 
-type HierarchyMode = "year-month-date" | "month-date" | "date" | "none";
-const HIERARCHY_MODES: HierarchyMode[] = ["year-month-date", "month-date", "date", "none"];
+const HIERARCHY_MODES: EntryHierarchyMode[] = ["year-month-date", "month-date", "date", "none"];
 const HOME_VIEW_MODES = ["timeline", "detailed", "feed"] as const satisfies readonly HomeViewMode[];
 const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
 const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
@@ -57,7 +55,7 @@ const JOURNAL_COVER_EXPANDED_HEIGHT = 184;
 const JOURNAL_COVER_COLLAPSED_HEIGHT = 60;
 const JOURNAL_COVER_COLLAPSE_DISTANCE = 120;
 
-function hierarchyModeLabel(mode: HierarchyMode): string {
+function hierarchyModeLabel(mode: EntryHierarchyMode): string {
   if (mode === "month-date") return "Month / Date";
   if (mode === "date") return "Date";
   if (mode === "none") return "Flat list";
@@ -86,9 +84,11 @@ export default function JournalEntriesScreen() {
   const isOnboarded = useAppStore((state) => state.isOnboarded);
   const homeViewModes = useAppStore((state) => state.homeViewModes);
   const homeViewMode = useAppStore((state) => state.homeViewMode);
+  const entryHierarchyMode = useAppStore((state) => state.entryHierarchyMode);
   const premiumOnboardingPromptShown = useAppStore((state) => state.premiumOnboardingPromptShown);
   const premiumPromptDismissedAt = useAppStore((state) => state.premiumPromptDismissedAt);
   const setHomeViewMode = useAppStore((state) => state.setHomeViewMode);
+  const setEntryHierarchyMode = useAppStore((state) => state.setEntryHierarchyMode);
   const markPremiumOnboardingPromptShown = useAppStore((state) => state.markPremiumOnboardingPromptShown);
   const markPremiumPromptDismissed = useAppStore((state) => state.markPremiumPromptDismissed);
   const selectableViewModes = HOME_VIEW_MODES.filter((mode) => homeViewModes[mode]);
@@ -102,15 +102,11 @@ export default function JournalEntriesScreen() {
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const [collapsedYears, setCollapsedYears] = useState<Set<string>>(new Set());
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
-  const [hierarchyMode, setHierarchyMode] = useState<HierarchyMode>("year-month-date");
   const [expandedFilter, setExpandedFilter] = useState<
-    "date" | "tag" | "mood" | null
+    "date" | "tag" | "mood" | "hierarchy" | null
   >(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isDrawerMounted, setIsDrawerMounted] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [showHeaderOptions, setShowHeaderOptions] = useState(false);
-  const [showHierarchyMenu, setShowHierarchyMenu] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const drawerWidth = Math.min(windowWidth * 0.86, 380);
   const drawerProgress = useRef(new Animated.Value(0)).current;
@@ -544,6 +540,50 @@ export default function JournalEntriesScreen() {
             </TouchableOpacity>
           </View>
           <ScrollView showsVerticalScrollIndicator={false}>
+            <Text preset="caption" color="textSecondary" style={styles.drawerSectionLabel}>{t("homeHeaderSearch")}</Text>
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder={t("homeSearchPlaceholder")}
+              placeholderTextColor={theme.colors.textSecondary}
+              style={[
+                styles.searchInput,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.text,
+                },
+              ]}
+            />
+            <TouchableOpacity
+              onPress={() => setExpandedFilter(expandedFilter === "hierarchy" ? null : "hierarchy")}
+              style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel={`Entry hierarchy: ${hierarchyModeLabel(entryHierarchyMode)}. Open options.`}
+              accessibilityState={{ expanded: expandedFilter === "hierarchy" }}
+            >
+              <Ionicons name="calendar-outline" size={20} color={theme.colors.textSecondary} />
+              <Text preset="bodySmall" color="text" style={styles.drawerRowText}>{hierarchyModeLabel(entryHierarchyMode)}</Text>
+              <Ionicons name={expandedFilter === "hierarchy" ? "chevron-down" : "chevron-forward"} size={16} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+            {expandedFilter === "hierarchy" && (
+              <View style={[styles.inlineOptions, { borderBottomColor: theme.colors.border }]}>
+                {HIERARCHY_MODES.map((mode) => (
+                  <TouchableOpacity
+                    key={mode}
+                    onPress={() => {
+                      setEntryHierarchyMode(mode);
+                      setExpandedFilter(null);
+                    }}
+                    style={[styles.inlineOption, mode === entryHierarchyMode && { backgroundColor: theme.colors.tint + "18" }]}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: mode === entryHierarchyMode }}
+                  >
+                    <Text preset="caption" color={mode === entryHierarchyMode ? "tint" : "text"}>{hierarchyModeLabel(mode)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
             <Text preset="caption" color="textSecondary" style={styles.drawerSectionLabel}>{t("homeDrawerFilterEntries")}</Text>
             {(["date", "tag", "mood"] as const).map((kind) => {
               const value = kind === "date" ? filterDate : kind === "tag" ? filterTag : filterMood;
@@ -614,58 +654,7 @@ export default function JournalEntriesScreen() {
               </TouchableOpacity>
             </View>
             <Text preset="label" color="text" numberOfLines={1} style={styles.journalContextTitle}>{journalTitle}</Text>
-            <View style={[styles.headerSide, styles.headerSideRight, showHeaderOptions && styles.headerSideRightExpanded]}>
-              {showHeaderOptions && (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  keyboardShouldPersistTaps="always"
-                  style={styles.headerOptionsSlider}
-                  contentContainerStyle={styles.headerOptionsSliderContent}
-                >
-                  <TouchableOpacity
-                    onPress={() => {
-                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                      setShowHierarchyMenu((current) => !current);
-                    }}
-                    style={[
-                      styles.headerSliderButton,
-                      showHierarchyMenu && { backgroundColor: theme.colors.tint + "18" },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Entry hierarchy: ${hierarchyModeLabel(hierarchyMode)}. Open options.`}
-                    accessibilityState={{ expanded: showHierarchyMenu }}
-                  >
-                    <Ionicons name="calendar-outline" size={20} color={showHierarchyMenu ? theme.colors.tint : theme.colors.text} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => setIsSearchOpen((current) => !current)}
-                    style={[
-                      styles.headerSliderButton,
-                      isSearchOpen && { backgroundColor: theme.colors.tint + "18" },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={isSearchOpen ? t("homeHeaderCloseSearch") : t("homeHeaderSearch")}
-                  >
-                    <Ionicons name={isSearchOpen ? "close" : "search-outline"} size={20} color={isSearchOpen ? theme.colors.tint : theme.colors.text} />
-                  </TouchableOpacity>
-                </ScrollView>
-              )}
-              <TouchableOpacity
-                onPress={() => {
-                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                  const next = !showHeaderOptions;
-                  setShowHeaderOptions(next);
-                  if (!next) setShowHierarchyMenu(false);
-                }}
-                style={[styles.headerOptionToggle, showHeaderOptions && { backgroundColor: theme.colors.tint + "18" }]}
-                accessibilityRole="button"
-                accessibilityLabel={t("homeHeaderOptions")}
-                accessibilityState={{ expanded: showHeaderOptions }}
-              >
-              <Ionicons name="options-outline" size={22} color={showHeaderOptions ? theme.colors.tint : theme.colors.text} />
-              </TouchableOpacity>
+            <View style={[styles.headerSide, styles.headerSideRight]}>
               <TouchableOpacity onPress={openDrawer} style={styles.menuButton} accessibilityRole="button" accessibilityLabel={t("homeDrawerOpenA11y")}>
                 <Ionicons name="menu-outline" size={26} color={theme.colors.text} />
               </TouchableOpacity>
@@ -701,39 +690,6 @@ export default function JournalEntriesScreen() {
               </Animated.View>
             </Animated.View>
           ) : viewModePill}
-
-          {showHeaderOptions && showHierarchyMenu && (
-            <View style={[styles.hierarchyInlineMenu, { borderTopColor: theme.colors.border }]}>
-              {HIERARCHY_MODES.map((mode) => (
-                <TouchableOpacity
-                  key={mode}
-                  onPress={() => { setHierarchyMode(mode); setShowHierarchyMenu(false); }}
-                  style={[styles.hierarchyMenuOption, mode === hierarchyMode && { backgroundColor: theme.colors.tint + "18" }]}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: mode === hierarchyMode }}
-                >
-                  <Text preset="caption" color={mode === hierarchyMode ? "tint" : "text"} style={styles.hierarchyMenuLabel} numberOfLines={1}>{hierarchyModeLabel(mode)}</Text>
-                  {mode === hierarchyMode && <Ionicons name="checkmark" size={16} color={theme.colors.tint} style={styles.hierarchyMenuCheck} />}
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          {isSearchOpen && <TextInput
-            autoFocus
-            value={search}
-            onChangeText={setSearch}
-            placeholder={t("homeSearchPlaceholder")}
-            placeholderTextColor={theme.colors.textSecondary}
-            style={[
-              styles.searchInput,
-              {
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
-                color: theme.colors.text,
-              },
-            ]}
-          />}
         </View>
         {isLoading ? null : (
         <ScrollView
@@ -773,9 +729,9 @@ export default function JournalEntriesScreen() {
               const isNewMonth = isNewYear || previousDate?.slice(0, 7) !== date.slice(0, 7);
               const yearKey = date.slice(0, 4);
               const monthKey = date.slice(0, 7);
-              const isYearVisible = hierarchyMode === "year-month-date";
-              const isMonthVisible = hierarchyMode === "year-month-date" || hierarchyMode === "month-date";
-              const isDateVisible = hierarchyMode !== "none";
+              const isYearVisible = entryHierarchyMode === "year-month-date";
+              const isMonthVisible = entryHierarchyMode === "year-month-date" || entryHierarchyMode === "month-date";
+              const isDateVisible = entryHierarchyMode !== "none";
               const isYearCollapsed = isYearVisible && collapsedYears.has(yearKey);
               const isMonthCollapsed = isMonthVisible && collapsedMonths.has(monthKey);
               return (
@@ -826,7 +782,7 @@ export default function JournalEntriesScreen() {
                     else next.add(date);
                     return next;
                   })}
-                  style={[styles.dateHeadingRow, !isYearVisible && (hierarchyMode === "month-date" ? styles.monthDateHeadingRow : styles.flatDateHeadingRow)]}
+                  style={[styles.dateHeadingRow, !isYearVisible && (entryHierarchyMode === "month-date" ? styles.monthDateHeadingRow : styles.flatDateHeadingRow)]}
                   accessibilityRole="button"
                   accessibilityLabel={`${formatDisplayDate(date, calendarDateFormat)} date group`}
                   accessibilityState={{ expanded: !collapsedDates.has(date) }}
@@ -986,7 +942,6 @@ const styles = StyleSheet.create({
   },
   headerSide: { width: 82, flexDirection: "row", alignItems: "center", gap: 6 },
   headerSideRight: { justifyContent: "flex-end" },
-  headerSideRightExpanded: { width: 166 },
   menuButton: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 8 },
   createFab: {
     position: "absolute",
@@ -1018,30 +973,6 @@ const styles = StyleSheet.create({
   viewModeButtonText: {
     fontWeight: "700",
   },
-  headerOptionToggle: {
-    width: 38,
-    height: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 8,
-  },
-  headerOptionsSlider: {
-    flexGrow: 0,
-    flexShrink: 1,
-    maxWidth: 82,
-  },
-  headerOptionsSliderContent: {
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 2,
-  },
-  headerSliderButton: {
-    width: 38,
-    height: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 8,
-  },
   searchInput: {
     height: 44,
     borderWidth: 1,
@@ -1052,21 +983,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 20,
     textAlignVertical: "center",
-  },
-  hierarchyInlineMenu: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8, paddingBottom: 8, marginBottom: 8, gap: 4 },
-  hierarchyMenuOption: {
-    minHeight: 34,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 12,
-    borderRadius: 5,
-  },
-  hierarchyMenuLabel: {
-    flex: 1,
-  },
-  hierarchyMenuCheck: {
-    marginLeft: 16,
   },
   drawerOverlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 40, elevation: 40, backgroundColor: "rgba(0, 0, 0, 0.35)" },
   drawer: { position: "absolute", top: 0, bottom: 0, left: 0, zIndex: 2, paddingHorizontal: 20, borderTopRightRadius: 22, borderBottomRightRadius: 22, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 5, height: 0 }, shadowOpacity: 0.24, shadowRadius: 18, elevation: 18 },
