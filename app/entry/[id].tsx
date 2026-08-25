@@ -36,7 +36,7 @@ import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { MarkdownText } from '@shared/components/MarkdownText';
-import { DiaryEntry, DiaryPhoto, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
+import { DiaryEntry, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
 import type { CompanionType } from '@/features/diary/domain/Companion';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
@@ -49,8 +49,9 @@ import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSelector';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
-import { DiaryPhotoStrip } from '@/features/diary/components/DiaryPhotoStrip';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
+import { chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
+import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { formatDisplayMonthDayTime } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
@@ -101,7 +102,6 @@ export default function EntryDetailScreen() {
   const [editContent, setEditContent] = useState('');
   const [editDate, setEditDate] = useState(new Date());
   const [editStickers, setEditStickers] = useState<PlacedSticker[]>([]);
-  const [editPhotos, setEditPhotos] = useState<DiaryPhoto[]>([]);
   const [editMoodWeather, setEditMoodWeather] = useState<ManualMoodWeather>('neutral');
   const [editMood, setEditMood] = useState<ManualMood>('neutral');
   const [editWritingMode, setEditWritingMode] = useState<WritingMode>('free-write');
@@ -155,8 +155,7 @@ export default function EntryDetailScreen() {
         setEditTitle(found.title);
         setEditContent(found.content);
         setEditDate(entryDate(found.date));
-        setEditStickers(found.stickers);
-        setEditPhotos(found.photos);
+        setEditStickers([...found.stickers, ...found.photos.map((photo, index) => createPlacedPhotoSticker(photo, found.stickers.length + index))]);
         setEditCompanion(found.companion);
         setEditFavorite(found.isFavorite);
         setEditJournalIds(found.journalIds ?? found.collectionIds);
@@ -177,8 +176,7 @@ export default function EntryDetailScreen() {
     setEditTitle(entry.title);
     setEditContent(entry.content);
     setEditDate(entryDate(entry.date));
-    setEditStickers(entry.stickers);
-    setEditPhotos(entry.photos);
+    setEditStickers([...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))]);
     setEditCompanion(entry.companion);
     setEditFavorite(entry.isFavorite);
     setEditJournalIds(entry.journalIds ?? entry.collectionIds);
@@ -192,8 +190,7 @@ export default function EntryDetailScreen() {
     setEditTitle(entry.title);
     setEditContent(entry.content);
     setEditDate(entryDate(entry.date));
-    setEditStickers(entry.stickers);
-    setEditPhotos(entry.photos);
+    setEditStickers([...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))]);
     setEditCompanion(entry.companion);
     setEditFavorite(entry.isFavorite);
     setEditJournalIds(entry.journalIds ?? entry.collectionIds);
@@ -212,7 +209,7 @@ export default function EntryDetailScreen() {
       content: editContent.trim(),
       date: `${editDate.getFullYear()}-${String(editDate.getMonth() + 1).padStart(2, '0')}-${String(editDate.getDate()).padStart(2, '0')}`,
       stickers: editStickers,
-      photos: editPhotos,
+      photos: [],
       companion: editCompanion,
       isFavorite: editFavorite,
       tags: editTags,
@@ -256,6 +253,30 @@ export default function EntryDetailScreen() {
   const handleDeleteSticker = useCallback((stickerId: string) => {
     setEditStickers((prev) => prev.filter((s) => s.id !== stickerId));
   }, []);
+
+  const handlePhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
+    const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhotos();
+    if (!result.success) {
+      if (result.error === 'native-module-missing') {
+        Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
+      } else if (result.error === 'camera-permission-denied') {
+        Alert.alert(t('entryPhotoPermissionTitle'), t('entryCameraPermissionMessage'));
+      } else {
+        Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage'));
+      }
+      return;
+    }
+    if (result.assets.length === 0) return;
+    try {
+      const imported = await Promise.all(result.assets.map((asset) => diaryPhotoService.importAsset(asset)));
+      setEditStickers((current) => [
+        ...current,
+        ...imported.map((photo, index) => createPlacedPhotoSticker(photo, current.length + index)),
+      ]);
+    } catch {
+      Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
+    }
+  }, [t]);
 
   const dismissEntryKeyboard = useCallback(() => {
     editorRef.current?.dismissKeyboard();
@@ -323,7 +344,7 @@ export default function EntryDetailScreen() {
     );
   }
 
-  const displayStickers = isEditing ? editStickers : entry.stickers;
+  const displayStickers = isEditing ? editStickers : [...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))];
   const behindDisplayStickers = displayStickers.filter((sticker) => sticker.behindText);
   const foregroundDisplayStickers = displayStickers.filter((sticker) => !sticker.behindText);
   const wordCount = countWords(isEditing ? editContent : entry.content);
@@ -444,7 +465,6 @@ export default function EntryDetailScreen() {
                   onChange={setEditTags}
                 />
                 <DiaryDatePicker value={editDate} onChange={setEditDate} maximumDate={new Date()} />
-                <DiaryPhotoStrip photos={editPhotos} onChange={setEditPhotos} />
                 <NativeTextInput
                   value={editTitle}
                   onChangeText={setEditTitle}
@@ -500,7 +520,6 @@ export default function EntryDetailScreen() {
                     {entry.tags.map((tag) => <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>)}
                   </View>
                 </View>
-                <DiaryPhotoStrip photos={entry.photos} editable={false} />
                 <MarkdownText style={{ lineHeight: 26 }}>
                   {entry.content}
                 </MarkdownText>
@@ -599,6 +618,24 @@ export default function EntryDetailScreen() {
               accessibilityRole="button"
             >
               <MaterialCommunityIcons name="file-document-edit-outline" size={22} color={theme.colors.tint} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toolbarIcon}
+              onPress={() => handlePhotoPickerResult('library')}
+              activeOpacity={0.6}
+              accessibilityLabel={t('entryChoosePhotoA11y')}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="image-outline" size={22} color={theme.colors.tint} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toolbarIcon}
+              onPress={() => handlePhotoPickerResult('camera')}
+              activeOpacity={0.6}
+              accessibilityLabel={t('entryTakePhotoA11y')}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="camera-outline" size={22} color={theme.colors.tint} />
             </TouchableOpacity>
             {/* Sticker button */}
             <TouchableOpacity

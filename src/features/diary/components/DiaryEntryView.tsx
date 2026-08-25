@@ -25,10 +25,20 @@ interface DiaryEntryViewProps {
 
 const FEED_STICKER_ORIGIN_X = 36;
 const FEED_STICKER_ORIGIN_Y = 90;
+const FEED_STICKER_SIZE = 80;
+const FEED_PHOTO_WIDTH = 148;
+const FEED_PHOTO_MAX_HEIGHT = 190;
+
+function getFeedStickerHeight(sticker: PlacedSticker): number {
+  if (!sticker.imageUri) return FEED_STICKER_SIZE;
+  const aspectRatio = sticker.imageWidth && sticker.imageHeight ? sticker.imageWidth / sticker.imageHeight : 1;
+  return Math.min(FEED_PHOTO_MAX_HEIGHT, FEED_PHOTO_WIDTH / aspectRatio);
+}
 
 function FeedStickerPreview({ sticker }: { readonly sticker: PlacedSticker }) {
-  const stickerItem = findStickerItem(sticker.stickerId);
-  if (!stickerItem) return null;
+  const stickerItem = sticker.imageUri ? undefined : findStickerItem(sticker.stickerId);
+  if (!sticker.imageUri && !stickerItem) return null;
+  const photoAspectRatio = sticker.imageWidth && sticker.imageHeight ? sticker.imageWidth / sticker.imageHeight : 1;
 
   return (
     <View
@@ -43,10 +53,12 @@ function FeedStickerPreview({ sticker }: { readonly sticker: PlacedSticker }) {
         },
       ]}
     >
-      {stickerItem.source != null ? (
+      {sticker.imageUri ? (
+        <Image source={{ uri: sticker.imageUri }} style={[styles.feedPhotoStickerImage, { aspectRatio: photoAspectRatio }]} resizeMode="cover" />
+      ) : stickerItem?.source != null ? (
         <Image source={stickerItem.source} style={styles.feedStickerImage} resizeMode="contain" />
       ) : (
-        <Text style={styles.feedStickerEmoji}>{stickerItem.icon ?? '⭐'}</Text>
+        <Text style={styles.feedStickerEmoji}>{stickerItem?.icon ?? '⭐'}</Text>
       )}
     </View>
   );
@@ -87,7 +99,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
         <View
           style={[
             styles.feedCanvas,
-            { minHeight: Math.max(220, ...entry.stickers.map((sticker) => sticker.y - FEED_STICKER_ORIGIN_Y + 80 * sticker.scale)) },
+            { minHeight: Math.max(220, ...entry.stickers.map((sticker) => sticker.y - FEED_STICKER_ORIGIN_Y + getFeedStickerHeight(sticker) * sticker.scale)) },
           ]}
         >
           {entry.stickers.map((sticker) => <FeedStickerPreview key={sticker.id} sticker={sticker} />)}
@@ -275,6 +287,7 @@ const styles = StyleSheet.create({
   feedTextLayer: { position: 'relative', zIndex: 2 },
   feedSticker: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   feedStickerImage: { width: 80, height: 80 },
+  feedPhotoStickerImage: { width: 148, maxHeight: 190, borderRadius: 8 },
   feedStickerEmoji: { fontSize: 48, lineHeight: 60, includeFontPadding: true, textAlign: 'center' },
   feedTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 10 },
   feedTitle: { flex: 1, fontWeight: '700' },

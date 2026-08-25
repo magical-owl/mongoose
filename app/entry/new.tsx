@@ -30,7 +30,7 @@ import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { useAppStore } from '@/stores/useAppStore';
-import { DiaryEntry, DiaryPhoto, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
+import { DiaryEntry, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { StickerPickerModal } from '@/features/diary/components/StickerPickerModal';
@@ -43,8 +43,9 @@ import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSelector';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
-import { DiaryPhotoStrip } from '@/features/diary/components/DiaryPhotoStrip';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
+import { chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
+import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimitService';
@@ -99,7 +100,6 @@ export default function CreateEntryScreen() {
     return new Date();
   });
   const [stickers, setStickers] = useState<PlacedSticker[]>([]);
-  const [photos, setPhotos] = useState<DiaryPhoto[]>([]);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showFormattingTools, setShowFormattingTools] = useState(false);
@@ -131,8 +131,7 @@ export default function CreateEntryScreen() {
       }
       setTitle(draft.title);
       setContent(draft.content);
-      setStickers(draft.stickers);
-      setPhotos(draft.photos);
+      setStickers([...draft.stickers, ...draft.photos.map((photo, index) => createPlacedPhotoSticker(photo, draft.stickers.length + index))]);
       setSelectedTags(normalizeDiaryTags(draft.tags));
       setManualMoodWeather(draft.manualMoodWeather);
       setManualMood(draft.manualMood ?? 'neutral');
@@ -164,7 +163,7 @@ export default function CreateEntryScreen() {
         date: isoDate,
         companion: DEFAULT_COMPANION,
         stickers,
-        photos,
+        photos: [],
         tags: selectedTags,
         manualMood, manualMoodWeather, writingMode,
         sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState },
@@ -173,7 +172,7 @@ export default function CreateEntryScreen() {
       });
     }, 700);
     return () => clearTimeout(timer);
-  }, [title, content, isoDate, stickers, photos, selectedTags, manualMood, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
+  }, [title, content, isoDate, stickers, selectedTags, manualMood, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = content
@@ -223,6 +222,30 @@ export default function CreateEntryScreen() {
     setStickers((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
+  const handlePhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
+    const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhotos();
+    if (!result.success) {
+      if (result.error === 'native-module-missing') {
+        Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
+      } else if (result.error === 'camera-permission-denied') {
+        Alert.alert(t('entryPhotoPermissionTitle'), t('entryCameraPermissionMessage'));
+      } else {
+        Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage'));
+      }
+      return;
+    }
+    if (result.assets.length === 0) return;
+    try {
+      const imported = await Promise.all(result.assets.map((asset) => diaryPhotoService.importAsset(asset)));
+      setStickers((current) => [
+        ...current,
+        ...imported.map((photo, index) => createPlacedPhotoSticker(photo, current.length + index)),
+      ]);
+    } catch {
+      Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
+    }
+  }, [t]);
+
   const dismissEntryKeyboard = useCallback(() => {
     editorRef.current?.dismissKeyboard();
     Keyboard.dismiss();
@@ -251,7 +274,7 @@ export default function CreateEntryScreen() {
       date: isoDate,
       paperBackgroundId: 'vintage-parchment',
       stickers,
-      photos,
+      photos: [],
       companion: DEFAULT_COMPANION,
       isFavorite,
       tags: selectedTags,
@@ -399,7 +422,6 @@ export default function CreateEntryScreen() {
               onChange={setSelectedTags}
             />
             <DiaryDatePicker value={selectedDate} onChange={setSelectedDate} maximumDate={new Date()} />
-            <DiaryPhotoStrip photos={photos} onChange={setPhotos} />
 
             {/* Title */}
             <NativeTextInput
@@ -486,6 +508,26 @@ export default function CreateEntryScreen() {
             accessibilityRole="button"
           >
             <MaterialCommunityIcons name="file-document-edit-outline" size={22} color={theme.colors.tint} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.toolbarIcon}
+            onPress={() => handlePhotoPickerResult('library')}
+            activeOpacity={0.6}
+            accessibilityLabel={t('entryChoosePhotoA11y')}
+            accessibilityRole="button"
+          >
+            <MaterialCommunityIcons name="image-outline" size={22} color={theme.colors.tint} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.toolbarIcon}
+            onPress={() => handlePhotoPickerResult('camera')}
+            activeOpacity={0.6}
+            accessibilityLabel={t('entryTakePhotoA11y')}
+            accessibilityRole="button"
+          >
+            <MaterialCommunityIcons name="camera-outline" size={22} color={theme.colors.tint} />
           </TouchableOpacity>
 
           {/* Sticker button */}

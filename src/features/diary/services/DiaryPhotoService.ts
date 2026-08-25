@@ -1,6 +1,7 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import type { ImagePickerAsset } from 'expo-image-picker';
 import type { DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
+import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { generateUUID } from '@/shared/utils/uuid';
 
 const PHOTO_DIRECTORY_NAME = 'diary-photos';
@@ -36,3 +37,20 @@ function getPhotoExtension(asset: ImagePickerAsset): string {
 }
 
 export const diaryPhotoService = new DiaryPhotoService();
+
+export function createPlacedPhotoSticker(photo: DiaryPhoto, index: number): PlacedSticker {
+  return {
+    id: photo.id,
+    stickerId: `photo:${photo.id}`,
+    category: 'photos',
+    imageUri: photo.uri,
+    imageWidth: photo.width,
+    imageHeight: photo.height,
+    x: 36 + (index % 3) * 42,
+    y: 132 + (index % 4) * 34,
+    scale: 1,
+    rotation: 0,
+    zIndex: index + 1,
+    behindText: false,
+  };
+}

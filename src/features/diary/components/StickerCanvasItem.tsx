@@ -66,9 +66,10 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   editableRef.current = isEditable;
 
   // Resolve the sticker data
-  const stickerItem = findStickerItem(sticker.stickerId);
+  const stickerItem = sticker.imageUri ? undefined : findStickerItem(sticker.stickerId);
   const stickerIcon = stickerItem?.icon ?? '⭐';
   const stickerSource = stickerItem?.source;
+  const photoAspectRatio = sticker.imageWidth && sticker.imageHeight ? sticker.imageWidth / sticker.imageHeight : 1;
 
   const panResponder = useRef(
     PanResponder.create({
@@ -291,7 +292,13 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
           accessibilityRole={isEditable ? 'button' : 'image'}
           {...panResponder.panHandlers}
         >
-          {stickerSource != null ? (
+          {sticker.imageUri ? (
+            <Image
+              source={{ uri: sticker.imageUri }}
+              style={[styles.photoStickerImage, { aspectRatio: photoAspectRatio }, isSelected && styles.selectedOverlay]}
+              resizeMode="cover"
+            />
+          ) : stickerSource != null ? (
             <Image
               source={stickerSource}
               style={[styles.stickerImage, isSelected && styles.selectedOverlay]}
@@ -323,6 +330,11 @@ const styles = StyleSheet.create({
   stickerImage: {
     width: 80,
     height: 80,
+  },
+  photoStickerImage: {
+    width: 148,
+    maxHeight: 190,
+    borderRadius: 8,
   },
   selectedOverlay: {
     opacity: 0.85,
