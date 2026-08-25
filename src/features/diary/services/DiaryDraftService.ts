@@ -10,6 +10,7 @@ export interface DiaryDraft {
   readonly date: string;
   readonly companion: CompanionType;
   readonly stickers: PlacedSticker[];
+  readonly tags: string[];
   readonly manualMoodWeather: ManualMoodWeather;
   readonly manualMood?: ManualMood;
   readonly writingMode: WritingMode;
@@ -30,7 +31,7 @@ export class DiaryDraftService {
       const parsed: unknown = JSON.parse(raw);
       if (!isDraft(parsed)) return null;
       const legacyDraft = parsed as Partial<DiaryDraft>;
-      return { manualMood: 'neutral', manualMoodWeather: 'neutral', writingMode: 'free-write', sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' }, isLockbox: false, ...legacyDraft } as DiaryDraft;
+      return { tags: [], manualMood: 'neutral', manualMoodWeather: 'neutral', writingMode: 'free-write', sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' }, isLockbox: false, ...legacyDraft } as DiaryDraft;
     } catch {
       return null;
     }

@@ -8,7 +8,7 @@
  *   - Floating bottom toolbar (above keyboard) with formatting + sticker icons
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   ScrollView,
@@ -41,6 +41,8 @@ import { diaryDraftService } from '@/features/diary/services/DiaryDraftService';
 import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
 import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
+import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
+import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimitService';
@@ -63,13 +65,17 @@ const FORMAT_ITEMS: { kind: FormatActionKind; icon: string }[] = [
 ];
 const DEFAULT_COMPANION = 'cat' as const;
 
+function isSyntheticJournalId(value: string): boolean {
+  return value === 'all' || value === 'unassigned';
+}
+
 export default function CreateEntryScreen() {
   const router = useRouter();
   const { date: paramDate, journalId: paramJournalId } = useLocalSearchParams<{ date?: string; journalId?: string }>();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useTranslation();
-  const { saveDiaryEntry } = useDiary();
+  const { entries, saveDiaryEntry } = useDiary();
   const { journals } = useJournals();
   const selectedCalendarDate = useAppStore((state) => state.selectedCalendarDate);
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
@@ -102,7 +108,8 @@ export default function CreateEntryScreen() {
   const [timeCapsuleUnlockAt, setTimeCapsuleUnlockAt] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
-  const [selectedJournalIds, setSelectedJournalIds] = useState<string[]>(() => paramJournalId && paramJournalId !== 'unassigned' ? [paramJournalId] : []);
+  const [selectedJournalIds, setSelectedJournalIds] = useState<string[]>(() => paramJournalId && !isSyntheticJournalId(paramJournalId) ? [paramJournalId] : []);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
@@ -117,6 +124,7 @@ export default function CreateEntryScreen() {
       setTitle(draft.title);
       setContent(draft.content);
       setStickers(draft.stickers);
+      setSelectedTags(normalizeDiaryTags(draft.tags));
       setManualMoodWeather(draft.manualMoodWeather);
       setManualMood(draft.manualMood ?? 'neutral');
       setWritingMode(draft.writingMode);
@@ -147,6 +155,7 @@ export default function CreateEntryScreen() {
         date: isoDate,
         companion: DEFAULT_COMPANION,
         stickers,
+        tags: selectedTags,
         manualMood, manualMoodWeather, writingMode,
         sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState },
         isLockbox, timeCapsuleUnlockAt: timeCapsuleUnlockAt ? new Date(timeCapsuleUnlockAt).toISOString() : undefined,
@@ -154,7 +163,7 @@ export default function CreateEntryScreen() {
       });
     }, 700);
     return () => clearTimeout(timer);
-  }, [title, content, isoDate, stickers, manualMood, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
+  }, [title, content, isoDate, stickers, selectedTags, manualMood, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = content
@@ -177,6 +186,7 @@ export default function CreateEntryScreen() {
   }, []);
 
   const wordCount = countWords(content);
+  const availableTags = useMemo(() => normalizeDiaryTags(entries.flatMap((entry) => entry.tags)), [entries]);
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
     const newSticker: PlacedSticker = {
@@ -230,7 +240,7 @@ export default function CreateEntryScreen() {
       stickers,
       companion: DEFAULT_COMPANION,
       isFavorite,
-      tags: [],
+      tags: selectedTags,
       manualMoodWeather,
       manualMood,
       writingMode,
@@ -398,6 +408,12 @@ export default function CreateEntryScreen() {
               </ScrollView>
             </View>
           ) : null}
+
+          <DiaryTagSelector
+            selectedTags={selectedTags}
+            availableTags={availableTags}
+            onChange={setSelectedTags}
+          />
 
           {/* Divider */}
           <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />

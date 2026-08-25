@@ -13,7 +13,7 @@
  *     - Stickers editable (drag/resize/delete)
  */
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   ScrollView,
@@ -47,6 +47,8 @@ import { generateUUID } from '@/shared/utils/uuid';
 import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
 import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
+import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
+import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { formatDisplayMonthDayTime } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
@@ -106,6 +108,7 @@ export default function EntryDetailScreen() {
   const [editExpiresAt, setEditExpiresAt] = useState('');
   const [editFavorite, setEditFavorite] = useState(false);
   const [editJournalIds, setEditJournalIds] = useState<string[]>([]);
+  const [editTags, setEditTags] = useState<string[]>([]);
   const [editCompanion, setEditCompanion] = useState<CompanionType>('cat');
   const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
@@ -148,6 +151,7 @@ export default function EntryDetailScreen() {
         setEditCompanion(found.companion);
         setEditFavorite(found.isFavorite);
         setEditJournalIds(found.journalIds ?? found.collectionIds);
+        setEditTags(normalizeDiaryTags(found.tags));
         setEditMood(found.manualMood ?? 'neutral'); setEditMoodWeather(found.manualMoodWeather); setEditWritingMode(found.writingMode); setEditLocation(found.sensory.locationLabel); setEditSounds(found.sensory.sounds); setEditSmells(found.sensory.smells); setEditEnergy(String(found.sensory.energyLevel)); setEditBody(found.sensory.bodyState); setEditLockbox(found.isLockbox); setEditUnlockAt(found.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(found.expiresAt ?? '');
       }
     }, 0);
@@ -168,6 +172,7 @@ export default function EntryDetailScreen() {
     setEditCompanion(entry.companion);
     setEditFavorite(entry.isFavorite);
     setEditJournalIds(entry.journalIds ?? entry.collectionIds);
+    setEditTags(normalizeDiaryTags(entry.tags));
     setEditMood(entry.manualMood ?? 'neutral'); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(true);
   };
@@ -181,6 +186,7 @@ export default function EntryDetailScreen() {
     setEditCompanion(entry.companion);
     setEditFavorite(entry.isFavorite);
     setEditJournalIds(entry.journalIds ?? entry.collectionIds);
+    setEditTags(normalizeDiaryTags(entry.tags));
     setEditMood(entry.manualMood ?? 'neutral'); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(false);
   };
@@ -197,8 +203,7 @@ export default function EntryDetailScreen() {
       stickers: editStickers,
       companion: editCompanion,
       isFavorite: editFavorite,
-      // Tags are intentionally preserved while tag editing is shelved.
-      tags: entry.tags,
+      tags: editTags,
       collectionIds: editJournalIds,
       journalIds: editJournalIds,
       manualMoodWeather: editMoodWeather,
@@ -285,6 +290,8 @@ export default function EntryDetailScreen() {
       },
     ]);
   };
+
+  const availableTags = useMemo(() => normalizeDiaryTags(entries.flatMap((item) => item.tags)), [entries]);
 
   if (!entry) {
     return (
@@ -451,6 +458,11 @@ export default function EntryDetailScreen() {
                   </ScrollView>
                 </View>
               ) : null}
+              <DiaryTagSelector
+                selectedTags={editTags}
+                availableTags={availableTags}
+                onChange={setEditTags}
+              />
               <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
               <RichTextEditor
                 ref={editorRef}
