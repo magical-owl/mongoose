@@ -170,15 +170,16 @@ Use the existing Ionicons and Material Community Icons style: simple outline ico
 
 - Cancel/back on the left.
 - Centered “Create Entry”.
-- Save on the right.
-- If stickers are behind text, show an unstack action before Save.
+- Favorite, Entry Details, and Save on the right, in that order.
+- If stickers are behind text, show an unstack action before Favorite, Entry Details, and Save.
 
 **Writing surface order:**
 
-1. Compact favorite, journal selector, and Entry Details controls.
-2. Date picker.
-3. Title field.
-4. Body editor with placeholder “What’s on your mind today? Write freely...”.
+1. Compact journal selector for existing journals only. Journal creation stays on the Journals screen.
+2. Compact tag selector.
+3. Date picker.
+4. Title field.
+5. Body editor with placeholder “What’s on your mind today? Write freely...”.
 
 **Bottom toolbar:**
 
@@ -209,7 +210,7 @@ The route uses the same screen for read mode and edit mode.
 
 - Cancel on the left.
 - Centered “Edit Entry”.
-- Save on the right.
+- Favorite, Entry Details, and Save on the right, in that order.
 - Same writing surface order and toolbar as Create Entry.
 - Saved stickers become interactive: drag, resize, rotate, delete, and move behind/in front of text.
 

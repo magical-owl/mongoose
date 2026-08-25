@@ -47,6 +47,7 @@ import { generateUUID } from '@/shared/utils/uuid';
 import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
 import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
+import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSelector';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
@@ -250,14 +251,6 @@ export default function EntryDetailScreen() {
     setEditStickers((prev) => prev.filter((s) => s.id !== stickerId));
   }, []);
 
-  const toggleEditJournal = useCallback((journalId: string) => {
-    setEditJournalIds((current) => (
-      current.includes(journalId)
-        ? current.filter((id) => id !== journalId)
-        : [...current, journalId]
-    ));
-  }, []);
-
   const dismissEntryKeyboard = useCallback(() => {
     editorRef.current?.dismissKeyboard();
     Keyboard.dismiss();
@@ -363,6 +356,12 @@ export default function EntryDetailScreen() {
                   <MaterialCommunityIcons name="layers" size={20} color={theme.colors.textSecondary} />
                 </TouchableOpacity>
               )}
+              <TouchableOpacity onPress={() => setEditFavorite((current) => !current)} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={editFavorite ? t('entryRemoveFavoriteA11y') : t('entryAddFavoriteA11y')}>
+                <MaterialCommunityIcons name={editFavorite ? 'star' : 'star-outline'} size={21} color={theme.colors.warning} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowEntryDetails(true)} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryDetailsA11y')}>
+                <MaterialCommunityIcons name="information-outline" size={21} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
               <TouchableOpacity onPress={handleSaveEdit} disabled={isSaving} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entrySaveChangesA11y')}>
                 <MaterialCommunityIcons name="content-save-outline" size={22} color={isSaving ? theme.colors.textSecondary : theme.colors.tint} />
               </TouchableOpacity>
@@ -428,58 +427,16 @@ export default function EntryDetailScreen() {
             {isEditing ? (
               /* ── Edit mode ──────────────────────────────────────────────── */
               <>
-                <View style={styles.entryDetailsToggleRow}>
-                  <TouchableOpacity
-                    onPress={() => setEditFavorite((current) => !current)}
-                    style={styles.entryFavoriteToggle}
-                    accessibilityRole="button"
-                    accessibilityLabel={editFavorite ? t('entryRemoveFavoriteA11y') : t('entryAddFavoriteA11y')}
-                  >
-                    <MaterialCommunityIcons name={editFavorite ? 'star' : 'star-outline'} size={20} color={theme.colors.warning} />
-                  </TouchableOpacity>
-                  {journals.length > 0 ? (
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      keyboardShouldPersistTaps="handled"
-                      style={styles.entryJournalSelector}
-                      contentContainerStyle={styles.entryJournalSelectorContent}
-                    >
-                      {journals.map((journal) => {
-                        const selected = editJournalIds.includes(journal.id);
-                        return (
-                          <TouchableOpacity
-                            key={journal.id}
-                            onPress={() => toggleEditJournal(journal.id)}
-                            style={[
-                              styles.entryJournalChip,
-                              {
-                                borderColor: selected ? theme.colors.tint : theme.colors.border,
-                                backgroundColor: selected ? theme.colors.tint + '18' : 'transparent',
-                              },
-                            ]}
-                            accessibilityRole="checkbox"
-                            accessibilityState={{ checked: selected }}
-                            accessibilityLabel={`${t('entryJournalSection')} ${journal.title}`}
-                          >
-                            <MaterialCommunityIcons name="book-outline" size={15} color={selected ? theme.colors.tint : theme.colors.textSecondary} />
-                            <Text preset="caption" color={selected ? 'tint' : 'text'} numberOfLines={1} style={styles.entryJournalChipText}>
-                              {journal.title}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </ScrollView>
-                  ) : null}
-                  <TouchableOpacity
-                    onPress={() => setShowEntryDetails(true)}
-                    style={[styles.entryDetailsToggle, { borderColor: theme.colors.border }]}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('entryDetailsA11y')}
-                  >
-                    <MaterialCommunityIcons name="information-outline" size={20} color={theme.colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
+                <DiaryJournalSelector
+                  selectedJournalIds={editJournalIds}
+                  journals={journals}
+                  onChange={setEditJournalIds}
+                />
+                <DiaryTagSelector
+                  selectedTags={editTags}
+                  availableTags={availableTags}
+                  onChange={setEditTags}
+                />
                 <DiaryDatePicker value={editDate} onChange={setEditDate} maximumDate={new Date()} />
                 <NativeTextInput
                   value={editTitle}
@@ -492,11 +449,6 @@ export default function EntryDetailScreen() {
                   accessibilityLabel={t('entryTitleA11y')}
                 />
                 <ManualMoodPicker value={editMood} onChange={setEditMood} />
-                <DiaryTagSelector
-                  selectedTags={editTags}
-                  availableTags={availableTags}
-                  onChange={setEditTags}
-                />
                 <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
                 <RichTextEditor
                   ref={editorRef}
@@ -809,25 +761,6 @@ const styles = StyleSheet.create({
   },
   headerActions: { minWidth: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  entryDetailsToggleRow: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 8, marginBottom: 4 },
-  entryFavoriteToggle: {
-    width: 42,
-    height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  entryDetailsToggle: {
-    width: 42,
-    height: 34,
-    borderWidth: 1,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  entryJournalSelector: { flex: 1 },
-  entryJournalSelectorContent: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 2 },
-  entryJournalChip: { maxWidth: 142, minHeight: 30, flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 15, paddingHorizontal: 10 },
-  entryJournalChipText: { fontWeight: '700', flexShrink: 1 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   tag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
   entryMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },

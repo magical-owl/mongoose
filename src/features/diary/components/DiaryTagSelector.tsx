@@ -101,15 +101,15 @@ export function DiaryTagSelector({ selectedTags, availableTags, onChange }: Diar
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: 4, marginBottom: 12 },
-  selectorRow: { minHeight: 42, flexDirection: 'row', alignItems: 'center', borderRadius: 8, paddingLeft: 0, paddingRight: 0, gap: 4 },
+  section: { marginTop: 4, marginBottom: 4 },
+  selectorRow: { minHeight: 36, flexDirection: 'row', alignItems: 'center', borderRadius: 8, paddingLeft: 0, paddingRight: 0, gap: 2 },
   inlineScroll: { flex: 1 },
-  inlineContent: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 8 },
-  selectedTag: { minHeight: 30, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 15, paddingHorizontal: 10, gap: 5 },
+  inlineContent: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 5, paddingRight: 4 },
+  selectedTag: { minHeight: 28, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 14, paddingHorizontal: 8, gap: 4 },
   tagText: { fontWeight: '700' },
   input: {
-    width: 150,
-    height: 36,
+    width: 132,
+    height: 32,
     paddingTop: 0,
     paddingBottom: 0,
     fontSize: 14,
@@ -117,6 +117,6 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     textAlignVertical: 'center',
   },
-  addButton: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  suggestedTag: { minHeight: 30, borderWidth: 1, borderRadius: 15, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
+  addButton: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  suggestedTag: { minHeight: 28, borderWidth: 1, borderRadius: 14, paddingHorizontal: 9, alignItems: 'center', justifyContent: 'center' },
 });

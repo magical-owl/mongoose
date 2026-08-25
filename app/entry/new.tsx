@@ -41,6 +41,7 @@ import { diaryDraftService } from '@/features/diary/services/DiaryDraftService';
 import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
 import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
+import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSelector';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
@@ -218,14 +219,6 @@ export default function CreateEntryScreen() {
     setStickers((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
-  const toggleSelectedJournal = useCallback((journalId: string) => {
-    setSelectedJournalIds((current) => (
-      current.includes(journalId)
-        ? current.filter((id) => id !== journalId)
-        : [...current, journalId]
-    ));
-  }, []);
-
   const dismissEntryKeyboard = useCallback(() => {
     editorRef.current?.dismissKeyboard();
     Keyboard.dismiss();
@@ -326,6 +319,24 @@ export default function CreateEntryScreen() {
           )}
 
           <TouchableOpacity
+            onPress={() => setIsFavorite((current) => !current)}
+            style={styles.headerBtn}
+            accessibilityRole="button"
+            accessibilityLabel={isFavorite ? t('entryRemoveFavoriteA11y') : t('entryAddFavoriteA11y')}
+          >
+            <MaterialCommunityIcons name={isFavorite ? 'star' : 'star-outline'} size={21} color={theme.colors.warning} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setShowEntryDetails(true)}
+            style={styles.headerBtn}
+            accessibilityRole="button"
+            accessibilityLabel={t('entryDetailsA11y')}
+          >
+            <MaterialCommunityIcons name="information-outline" size={21} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
             onPress={handleSave}
             disabled={isSaving}
             style={styles.headerBtn}
@@ -372,58 +383,16 @@ export default function CreateEntryScreen() {
             />
           ))}
           <View style={styles.entryContentLayer}>
-            <View style={styles.entryDetailsToggleRow}>
-              <TouchableOpacity
-                onPress={() => setIsFavorite((current) => !current)}
-                style={styles.entryFavoriteToggle}
-                accessibilityRole="button"
-                accessibilityLabel={isFavorite ? t('entryRemoveFavoriteA11y') : t('entryAddFavoriteA11y')}
-              >
-                <MaterialCommunityIcons name={isFavorite ? 'star' : 'star-outline'} size={20} color={theme.colors.warning} />
-              </TouchableOpacity>
-              {journals.length > 0 ? (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                  style={styles.entryJournalSelector}
-                  contentContainerStyle={styles.entryJournalSelectorContent}
-                >
-                  {journals.map((journal) => {
-                    const selected = selectedJournalIds.includes(journal.id);
-                    return (
-                      <TouchableOpacity
-                        key={journal.id}
-                        onPress={() => toggleSelectedJournal(journal.id)}
-                        style={[
-                          styles.entryJournalChip,
-                          {
-                            borderColor: selected ? theme.colors.tint : theme.colors.border,
-                            backgroundColor: selected ? theme.colors.tint + '18' : 'transparent',
-                          },
-                        ]}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked: selected }}
-                        accessibilityLabel={`${t('entryJournalSection')} ${journal.title}`}
-                      >
-                        <MaterialCommunityIcons name="book-outline" size={15} color={selected ? theme.colors.tint : theme.colors.textSecondary} />
-                        <Text preset="caption" color={selected ? 'tint' : 'text'} numberOfLines={1} style={styles.entryJournalChipText}>
-                          {journal.title}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              ) : null}
-              <TouchableOpacity
-                onPress={() => setShowEntryDetails(true)}
-                style={[styles.entryDetailsToggle, { borderColor: theme.colors.border }]}
-                accessibilityRole="button"
-                accessibilityLabel={t('entryDetailsA11y')}
-              >
-                <MaterialCommunityIcons name="information-outline" size={20} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
+            <DiaryJournalSelector
+              selectedJournalIds={selectedJournalIds}
+              journals={journals}
+              onChange={setSelectedJournalIds}
+            />
+            <DiaryTagSelector
+              selectedTags={selectedTags}
+              availableTags={availableTags}
+              onChange={setSelectedTags}
+            />
             <DiaryDatePicker value={selectedDate} onChange={setSelectedDate} maximumDate={new Date()} />
 
             {/* Title */}
@@ -440,12 +409,6 @@ export default function CreateEntryScreen() {
             />
 
             <ManualMoodPicker value={manualMood} onChange={setManualMood} />
-
-            <DiaryTagSelector
-              selectedTags={selectedTags}
-              availableTags={availableTags}
-              onChange={setSelectedTags}
-            />
 
             {/* Divider */}
             <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
@@ -632,25 +595,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  entryDetailsToggleRow: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 8, marginBottom: 4 },
-  entryFavoriteToggle: {
-    width: 42,
-    height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  entryDetailsToggle: {
-    width: 42,
-    height: 34,
-    borderWidth: 1,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  entryJournalSelector: { flex: 1 },
-  entryJournalSelectorContent: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 2 },
-  entryJournalChip: { maxWidth: 142, minHeight: 30, flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 15, paddingHorizontal: 10 },
-  entryJournalChipText: { fontWeight: '700', flexShrink: 1 },
   floatingBar: {
     position: 'absolute',
     left: 0,
