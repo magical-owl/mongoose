@@ -10,6 +10,7 @@ import { useDiary } from "@/features/diary/hooks/useDiary";
 import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
 import { findStickerItem } from "@/features/diary/domain/Sticker";
+import { normalizeDiaryTags } from "@/features/diary/services/DiaryTagService";
 import { useAppStore } from "@/stores/useAppStore";
 import { manualMoodLabel, type TranslationKey, useTranslation } from "@/localization/i18n";
 
@@ -133,6 +134,7 @@ export default function InsightsScreen() {
     });
     const moodCounts = new Map<string, number>();
     const stickerCounts = new Map<string, number>();
+    const tagCounts = new Map<string, number>();
     const journalTimeCounts = new Map<JournalTimeBucket, number>();
     const writingDays = new Set<string>();
     let wordTotal = 0;
@@ -147,6 +149,9 @@ export default function InsightsScreen() {
       if (entry.manualMood) moodCounts.set(entry.manualMood, (moodCounts.get(entry.manualMood) ?? 0) + 1);
       entry.stickers.forEach((sticker) => {
         stickerCounts.set(sticker.stickerId, (stickerCounts.get(sticker.stickerId) ?? 0) + 1);
+      });
+      normalizeDiaryTags(entry.tags).forEach((tag) => {
+        tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
       });
       const bucket = journalTimeBucket(entry.createdAt);
       if (bucket) journalTimeCounts.set(bucket, (journalTimeCounts.get(bucket) ?? 0) + 1);
@@ -211,6 +216,7 @@ export default function InsightsScreen() {
 
     return {
       moodCounts: [...moodCounts.entries()].sort((a, b) => b[1] - a[1]),
+      mostUsedTags: [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8),
       mostUsedStickers,
       journalTimeBuckets,
       usualJournalTime,
@@ -366,6 +372,24 @@ export default function InsightsScreen() {
           )}
         </View>
 
+        <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>{t("insightsTagSection")}</Text>
+        <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          {stats.mostUsedTags.length > 0 ? (
+            <View style={styles.tagList}>
+              {stats.mostUsedTags.map(([tag, count]) => (
+                <View key={tag} style={[styles.tagPill, { backgroundColor: theme.colors.tint + "14", borderColor: theme.colors.tint + "38" }]}>
+                  <Text preset="caption" color="text" style={styles.tagName} numberOfLines={1}>#{tag}</Text>
+                  <View style={[styles.tagCount, { backgroundColor: theme.colors.tint + "20" }]}>
+                    <Text preset="caption" color="text" style={styles.tagCountText}>{count}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text preset="bodySmall" color="textSecondary">{t("insightsTagEmpty")}</Text>
+          )}
+        </View>
+
         <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>{t("insightsActivitySection")}</Text>
         <View style={[styles.card, styles.compactCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
           <View style={styles.chart}>
@@ -510,6 +534,21 @@ const styles = StyleSheet.create({
   moodLegend: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   moodBadge: { minHeight: 30, borderWidth: 1, borderRadius: 15, paddingHorizontal: 10, alignItems: "center", justifyContent: "center" },
   moodBadgeText: { fontWeight: "700" },
+  tagList: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  tagPill: {
+    maxWidth: "100%",
+    minHeight: 34,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 17,
+    paddingLeft: 12,
+    paddingRight: 4,
+    gap: 8,
+  },
+  tagName: { maxWidth: 220, fontWeight: "700" },
+  tagCount: { minWidth: 28, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
+  tagCountText: { fontWeight: "800" },
   chart: { height: 154, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-around" },
   barColumn: { height: "100%", flex: 1, alignItems: "center", justifyContent: "flex-end", gap: 8 },
   barTrack: { width: 18, height: 112, borderRadius: 4, justifyContent: "flex-end", overflow: "hidden" },
