@@ -48,6 +48,7 @@ describe('DiaryService', () => {
     sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' },
     isLockbox: false,
     collectionIds: [],
+    journalIds: [],
     reflections: [],
   };
 

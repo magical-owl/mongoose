@@ -28,6 +28,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@shared/components/Text';
 import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { useDiary } from '@/features/diary/hooks/useDiary';
+import { useJournals } from '@/features/journal/hooks/useJournals';
 import { useAppStore } from '@/stores/useAppStore';
 import { DiaryEntry, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
@@ -64,11 +65,12 @@ const DEFAULT_COMPANION = 'cat' as const;
 
 export default function CreateEntryScreen() {
   const router = useRouter();
-  const { date: paramDate } = useLocalSearchParams<{ date?: string }>();
+  const { date: paramDate, journalId: paramJournalId } = useLocalSearchParams<{ date?: string; journalId?: string }>();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { saveDiaryEntry } = useDiary();
+  const { journals } = useJournals();
   const selectedCalendarDate = useAppStore((state) => state.selectedCalendarDate);
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const editorRef = useRef<RichTextEditorHandle>(null);
@@ -100,6 +102,7 @@ export default function CreateEntryScreen() {
   const [timeCapsuleUnlockAt, setTimeCapsuleUnlockAt] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
+  const [selectedJournalIds, setSelectedJournalIds] = useState<string[]>(() => paramJournalId && paramJournalId !== 'unassigned' ? [paramJournalId] : []);
   const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
@@ -198,6 +201,10 @@ export default function CreateEntryScreen() {
     setStickers((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
+  const handleToggleJournal = useCallback((journalId: string) => {
+    setSelectedJournalIds((current) => current.includes(journalId) ? current.filter((id) => id !== journalId) : [...current, journalId]);
+  }, []);
+
   const navigateBack = () => {
     setSelectedCalendarDate(null);
     if (router.canGoBack()) router.back();
@@ -231,7 +238,8 @@ export default function CreateEntryScreen() {
       isLockbox,
       timeCapsuleUnlockAt: timeCapsuleUnlockAt ? new Date(timeCapsuleUnlockAt).toISOString() : undefined,
       expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
-      collectionIds: [],
+      collectionIds: selectedJournalIds,
+      journalIds: selectedJournalIds,
       reflections: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -368,6 +376,28 @@ export default function CreateEntryScreen() {
           />
 
           <ManualMoodPicker value={manualMood} onChange={setManualMood} />
+
+          {journals.length > 0 ? (
+            <View style={styles.journalSelectorSection}>
+              <Text preset="caption" color="textSecondary" style={styles.journalSelectorLabel}>{t('entryJournalSection')}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.journalSelectorChips}>
+                {journals.map((journal) => {
+                  const selected = selectedJournalIds.includes(journal.id);
+                  return (
+                    <TouchableOpacity
+                      key={journal.id}
+                      onPress={() => handleToggleJournal(journal.id)}
+                      style={[styles.journalSelectorChip, { borderColor: selected ? theme.colors.tint : theme.colors.border, backgroundColor: selected ? theme.colors.tint + '18' : theme.colors.surface }]}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: selected }}
+                    >
+                      <Text preset="caption" color={selected ? "tint" : "text"} style={styles.journalSelectorChipText}>{journal.title}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          ) : null}
 
           {/* Divider */}
           <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
@@ -523,6 +553,11 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     marginBottom: 16,
   },
+  journalSelectorSection: { marginTop: 4, marginBottom: 12 },
+  journalSelectorLabel: { fontWeight: '800', letterSpacing: 0.8, marginBottom: 8 },
+  journalSelectorChips: { gap: 8, paddingRight: 8 },
+  journalSelectorChip: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, minHeight: 32, alignItems: 'center', justifyContent: 'center' },
+  journalSelectorChipText: { fontWeight: '700' },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   entryDetailsToggleRow: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 8, marginBottom: 4 },
   entryFavoriteToggle: {

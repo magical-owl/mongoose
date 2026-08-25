@@ -33,6 +33,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@shared/components/Text';
 import { Modal } from '@shared/components/Modal';
 import { useDiary } from '@/features/diary/hooks/useDiary';
+import { useJournals } from '@/features/journal/hooks/useJournals';
 import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
 import { MarkdownText } from '@shared/components/MarkdownText';
 import { DiaryEntry, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
@@ -81,6 +82,7 @@ export default function EntryDetailScreen() {
   const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection } = useDiary();
+  const { journals } = useJournals();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const timeFormat = useAppStore((state) => state.timeFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
@@ -103,6 +105,7 @@ export default function EntryDetailScreen() {
   const [editUnlockAt, setEditUnlockAt] = useState('');
   const [editExpiresAt, setEditExpiresAt] = useState('');
   const [editFavorite, setEditFavorite] = useState(false);
+  const [editJournalIds, setEditJournalIds] = useState<string[]>([]);
   const [editCompanion, setEditCompanion] = useState<CompanionType>('cat');
   const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
@@ -144,6 +147,7 @@ export default function EntryDetailScreen() {
         setEditStickers(found.stickers);
         setEditCompanion(found.companion);
         setEditFavorite(found.isFavorite);
+        setEditJournalIds(found.journalIds ?? found.collectionIds);
         setEditMood(found.manualMood ?? 'neutral'); setEditMoodWeather(found.manualMoodWeather); setEditWritingMode(found.writingMode); setEditLocation(found.sensory.locationLabel); setEditSounds(found.sensory.sounds); setEditSmells(found.sensory.smells); setEditEnergy(String(found.sensory.energyLevel)); setEditBody(found.sensory.bodyState); setEditLockbox(found.isLockbox); setEditUnlockAt(found.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(found.expiresAt ?? '');
       }
     }, 0);
@@ -163,6 +167,7 @@ export default function EntryDetailScreen() {
     setEditStickers(entry.stickers);
     setEditCompanion(entry.companion);
     setEditFavorite(entry.isFavorite);
+    setEditJournalIds(entry.journalIds ?? entry.collectionIds);
     setEditMood(entry.manualMood ?? 'neutral'); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(true);
   };
@@ -175,6 +180,7 @@ export default function EntryDetailScreen() {
     setEditStickers(entry.stickers);
     setEditCompanion(entry.companion);
     setEditFavorite(entry.isFavorite);
+    setEditJournalIds(entry.journalIds ?? entry.collectionIds);
     setEditMood(entry.manualMood ?? 'neutral'); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(false);
   };
@@ -193,6 +199,8 @@ export default function EntryDetailScreen() {
       isFavorite: editFavorite,
       // Tags are intentionally preserved while tag editing is shelved.
       tags: entry.tags,
+      collectionIds: editJournalIds,
+      journalIds: editJournalIds,
       manualMoodWeather: editMoodWeather,
       manualMood: editMood,
       writingMode: editWritingMode,
@@ -208,6 +216,10 @@ export default function EntryDetailScreen() {
     else if (isPlanLimitErrorCode(result.error.code)) setShowPremiumModal(true);
     else Alert.alert(t('entrySaveFailedTitle'), result.error.message);
   };
+
+  const handleToggleJournal = useCallback((journalId: string) => {
+    setEditJournalIds((current) => current.includes(journalId) ? current.filter((id) => id !== journalId) : [...current, journalId]);
+  }, []);
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
     const newSticker: PlacedSticker = {
@@ -418,6 +430,27 @@ export default function EntryDetailScreen() {
                 accessibilityLabel={t('entryTitleA11y')}
               />
               <ManualMoodPicker value={editMood} onChange={setEditMood} />
+              {journals.length > 0 ? (
+                <View style={styles.journalSelectorSection}>
+                  <Text preset="caption" color="textSecondary" style={styles.journalSelectorLabel}>{t('entryJournalSection')}</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.journalSelectorChips}>
+                    {journals.map((journal) => {
+                      const selected = editJournalIds.includes(journal.id);
+                      return (
+                        <TouchableOpacity
+                          key={journal.id}
+                          onPress={() => handleToggleJournal(journal.id)}
+                          style={[styles.journalSelectorChip, { borderColor: selected ? theme.colors.tint : theme.colors.border, backgroundColor: selected ? theme.colors.tint + '18' : theme.colors.surface }]}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: selected }}
+                        >
+                          <Text preset="caption" color={selected ? "tint" : "text"} style={styles.journalSelectorChipText}>{journal.title}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              ) : null}
               <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
               <RichTextEditor
                 ref={editorRef}
@@ -699,6 +732,11 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     marginBottom: 16,
   },
+  journalSelectorSection: { marginTop: 4, marginBottom: 12 },
+  journalSelectorLabel: { fontWeight: '800', letterSpacing: 0.8, marginBottom: 8 },
+  journalSelectorChips: { gap: 8, paddingRight: 8 },
+  journalSelectorChip: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, minHeight: 32, alignItems: 'center', justifyContent: 'center' },
+  journalSelectorChipText: { fontWeight: '700' },
   headerActions: { flexDirection: 'row', alignItems: 'center' },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   entryDetailsToggleRow: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 8, marginBottom: 4 },

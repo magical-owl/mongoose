@@ -84,6 +84,7 @@ export const DiaryEntrySchema = z.object({
   isLockbox: z.boolean().default(false),
   chapterId: z.string().uuid().optional(),
   collectionIds: z.array(z.string().uuid()).default([]),
+  journalIds: z.array(z.string().uuid()).default([]),
   reflections: z.array(DiaryReflectionSchema).default([]),
 });
 

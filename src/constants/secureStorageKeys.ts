@@ -7,6 +7,7 @@ export const secureStorageKeys = {
   subscriptionEntitlement: 'meadow.subscription-entitlement',
   backupEncryptionKey: 'meadow.backup-encryption-key',
   journalExtras: 'meadow.journal-extras',
+  journals: 'meadow.journals',
 } as const;
 
 export const managedSecureStorageKeys = Object.values(secureStorageKeys);
