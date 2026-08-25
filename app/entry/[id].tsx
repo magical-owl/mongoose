@@ -83,6 +83,7 @@ const FORMAT_ITEMS: { kind: FormatActionKind; icon: string }[] = [
   { kind: 'align-right', icon: 'format-align-right' },
   { kind: 'align-justify', icon: 'format-align-justify' },
 ];
+const READ_ONLY_STICKER_Y_OFFSET = 80;
 
 export default function EntryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -344,7 +345,10 @@ export default function EntryDetailScreen() {
     );
   }
 
-  const displayStickers = isEditing ? editStickers : [...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))];
+  const displayStickers = isEditing
+    ? editStickers
+    : [...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))]
+      .map((sticker) => ({ ...sticker, y: Math.max(0, sticker.y - READ_ONLY_STICKER_Y_OFFSET) }));
   const behindDisplayStickers = displayStickers.filter((sticker) => sticker.behindText);
   const foregroundDisplayStickers = displayStickers.filter((sticker) => !sticker.behindText);
   const wordCount = countWords(isEditing ? editContent : entry.content);
@@ -520,9 +524,11 @@ export default function EntryDetailScreen() {
                     {entry.tags.map((tag) => <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>)}
                   </View>
                 </View>
-                <MarkdownText style={{ lineHeight: 26 }}>
-                  {entry.content}
-                </MarkdownText>
+                <View style={styles.readOnlyBodyCanvas}>
+                  <MarkdownText style={{ lineHeight: 26 }}>
+                    {entry.content}
+                  </MarkdownText>
+                </View>
 
               </>
             )}
@@ -803,6 +809,9 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     marginBottom: 8,
+  },
+  readOnlyBodyCanvas: {
+    minHeight: 320,
   },
   headerActions: { minWidth: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
