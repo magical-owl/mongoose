@@ -42,7 +42,6 @@ import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal
 import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
-import { EntryOptionSection } from '@/features/diary/components/EntryOptionSection';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
@@ -111,7 +110,6 @@ export default function CreateEntryScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedJournalIds, setSelectedJournalIds] = useState<string[]>(() => paramJournalId && !isSyntheticJournalId(paramJournalId) ? [paramJournalId] : []);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [isTagSectionExpanded, setIsTagSectionExpanded] = useState(true);
   const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
@@ -211,11 +209,6 @@ export default function CreateEntryScreen() {
 
   const handleDeleteSticker = useCallback((id: string) => {
     setStickers((prev) => prev.filter((s) => s.id !== id));
-  }, []);
-
-  const toggleTagSection = useCallback(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsTagSectionExpanded((current) => !current);
   }, []);
 
   const navigateBack = () => {
@@ -387,14 +380,11 @@ export default function CreateEntryScreen() {
 
           <ManualMoodPicker value={manualMood} onChange={setManualMood} />
 
-          <EntryOptionSection title={t('entryTagsSection')} expanded={isTagSectionExpanded} onToggle={toggleTagSection} selectedCount={selectedTags.length}>
-            <DiaryTagSelector
-              selectedTags={selectedTags}
-              availableTags={availableTags}
-              onChange={setSelectedTags}
-              showLabel={false}
-            />
-          </EntryOptionSection>
+          <DiaryTagSelector
+            selectedTags={selectedTags}
+            availableTags={availableTags}
+            onChange={setSelectedTags}
+          />
 
           {/* Divider */}
           <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />

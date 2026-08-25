@@ -48,7 +48,6 @@ import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal
 import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
-import { EntryOptionSection } from '@/features/diary/components/EntryOptionSection';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { formatDisplayMonthDayTime } from '@shared/utils/timeFormat';
@@ -120,7 +119,6 @@ export default function EntryDetailScreen() {
   const [reflectionText, setReflectionText] = useState('');
   const [isSavingReflection, setIsSavingReflection] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [isTagSectionExpanded, setIsTagSectionExpanded] = useState(true);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = editContent
@@ -223,11 +221,6 @@ export default function EntryDetailScreen() {
     else if (isPlanLimitErrorCode(result.error.code)) setShowPremiumModal(true);
     else Alert.alert(t('entrySaveFailedTitle'), result.error.message);
   };
-
-  const toggleTagSection = useCallback(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsTagSectionExpanded((current) => !current);
-  }, []);
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
     const newSticker: PlacedSticker = {
@@ -438,14 +431,11 @@ export default function EntryDetailScreen() {
                 accessibilityLabel={t('entryTitleA11y')}
               />
               <ManualMoodPicker value={editMood} onChange={setEditMood} />
-              <EntryOptionSection title={t('entryTagsSection')} expanded={isTagSectionExpanded} onToggle={toggleTagSection} selectedCount={editTags.length}>
-                <DiaryTagSelector
-                  selectedTags={editTags}
-                  availableTags={availableTags}
-                  onChange={setEditTags}
-                  showLabel={false}
-                />
-              </EntryOptionSection>
+              <DiaryTagSelector
+                selectedTags={editTags}
+                availableTags={availableTags}
+                onChange={setEditTags}
+              />
               <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
               <RichTextEditor
                 ref={editorRef}
