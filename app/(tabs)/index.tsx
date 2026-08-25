@@ -38,7 +38,7 @@ export default function JournalsScreen(): React.JSX.Element {
   const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { entries, refresh: refreshEntries } = useDiary();
-  const { journals, refresh: refreshJournals, createJournal, saveJournal } = useJournals();
+  const { journals, refresh: refreshJournals, createJournal, saveJournal, deleteJournal } = useJournals();
   const { isPro } = useSubscription();
   const isOnboarded = useAppStore((state) => state.isOnboarded);
   const premiumOnboardingPromptShown = useAppStore((state) => state.premiumOnboardingPromptShown);
@@ -52,6 +52,7 @@ export default function JournalsScreen(): React.JSX.Element {
   const [renamingJournal, setRenamingJournal] = useState<Journal | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
+  const [deletingJournalId, setDeletingJournalId] = useState<string | null>(null);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [journalViewMode, setJournalViewMode] = useState<JournalViewMode>('list');
   const premiumPromptShownThisSession = useRef(false);
@@ -171,6 +172,33 @@ export default function JournalsScreen(): React.JSX.Element {
     setShowRenameModal(false);
   };
 
+  const handleDeleteJournal = useCallback((journalId: string) => {
+    const journal = journals.find((item) => item.id === journalId);
+    if (!journal) return;
+
+    Alert.alert(
+      t('journalDeleteTitle'),
+      t('journalDeleteMessage').replace('{title}', journal.title),
+      [
+        { text: t('entryCancel'), style: 'cancel' },
+        {
+          text: t('entryDelete'),
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              setDeletingJournalId(journal.id);
+              const result = await deleteJournal(journal.id);
+              setDeletingJournalId(null);
+              if (!result.success) {
+                Alert.alert(t('entryErrorTitle'), result.error.message);
+              }
+            })();
+          },
+        },
+      ],
+    );
+  }, [deleteJournal, journals, t]);
+
   const journalEntryLabelText = useCallback(
     (count: number) => count === 1 ? t('journalEntryLabelOne') : t('journalEntryLabelMany'),
     [t],
@@ -273,17 +301,31 @@ export default function JournalsScreen(): React.JSX.Element {
                         </Text>
                       </View>
                       {journal.canRename ? (
-                        <TouchableOpacity
-                          onPress={(event) => {
-                            event.stopPropagation();
-                            handleOpenRenameJournal(journal.id);
-                          }}
-                          style={styles.journalEditButton}
-                          accessibilityRole="button"
-                          accessibilityLabel={t('journalRenameA11y')}
-                        >
-                          <Ionicons name="pencil-outline" size={18} color={theme.colors.textSecondary} />
-                        </TouchableOpacity>
+                        <View style={styles.journalCardActions}>
+                          <TouchableOpacity
+                            onPress={(event) => {
+                              event.stopPropagation();
+                              handleDeleteJournal(journal.id);
+                            }}
+                            style={styles.journalEditButton}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('journalDeleteA11y')}
+                            disabled={deletingJournalId === journal.id}
+                          >
+                            <Ionicons name="trash-outline" size={18} color={theme.colors.error} />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={(event) => {
+                              event.stopPropagation();
+                              handleOpenRenameJournal(journal.id);
+                            }}
+                            style={styles.journalEditButton}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('journalRenameA11y')}
+                          >
+                            <Ionicons name="pencil-outline" size={18} color={theme.colors.textSecondary} />
+                          </TouchableOpacity>
+                        </View>
                       ) : null}
                     </View>
                   ) : null}
@@ -291,17 +333,31 @@ export default function JournalsScreen(): React.JSX.Element {
                   <Text preset="caption" color="textSecondary">{journalEntryLabelText(journal.count)}</Text>
                 </View>
                 {journalViewMode === 'list' && journal.canRename ? (
-                  <TouchableOpacity
-                    onPress={(event) => {
-                      event.stopPropagation();
-                      handleOpenRenameJournal(journal.id);
-                    }}
-                    style={styles.journalEditButton}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('journalRenameA11y')}
-                  >
-                    <Ionicons name="pencil-outline" size={18} color={theme.colors.textSecondary} />
-                  </TouchableOpacity>
+                  <View style={styles.journalCardActions}>
+                    <TouchableOpacity
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        handleDeleteJournal(journal.id);
+                      }}
+                      style={styles.journalEditButton}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('journalDeleteA11y')}
+                      disabled={deletingJournalId === journal.id}
+                    >
+                      <Ionicons name="trash-outline" size={18} color={theme.colors.error} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        handleOpenRenameJournal(journal.id);
+                      }}
+                      style={styles.journalEditButton}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('journalRenameA11y')}
+                    >
+                      <Ionicons name="pencil-outline" size={18} color={theme.colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
                 ) : null}
                 {journalViewMode === 'list' ? <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} /> : null}
               </TouchableOpacity>
@@ -415,6 +471,7 @@ const styles = StyleSheet.create({
   journalGridCopy: { flex: 1, padding: 14, justifyContent: 'space-between', gap: 10 },
   journalGridHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   journalGridTitle: { fontWeight: '800', lineHeight: 22 },
+  journalCardActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   journalEditButton: { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   emptyState: { borderWidth: 1, borderRadius: 8, padding: 22, alignItems: 'center' },
   emptyTitle: { marginTop: 12, marginBottom: 6, fontWeight: '800' },
