@@ -1,6 +1,7 @@
 import { Fragment, useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Animated,
+  Image,
   LayoutAnimation,
   PanResponder,
   View,
@@ -650,6 +651,26 @@ export default function JournalEntriesScreen() {
             </View>
           )} */}
 
+          {selectedJournal?.coverImageUri ? (
+            <View style={[styles.journalCoverContext, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+              <Image
+                source={{ uri: selectedJournal.coverImageUri }}
+                style={styles.journalCoverImage}
+                resizeMode="cover"
+                accessibilityRole="image"
+                accessibilityLabel={journalTitle}
+              />
+              <View style={styles.journalCoverContextOverlay}>
+                <Text preset="label" numberOfLines={2} style={styles.journalCoverContextTitle}>
+                  {journalTitle}
+                </Text>
+                <Text preset="caption" numberOfLines={1} style={styles.journalCoverContextMeta}>
+                  {filteredEntries.length === 1 ? t("journalEntryCountOne") : t("journalEntryCountMany").replace("{count}", String(filteredEntries.length))}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           {/* Entries List */}
           {filteredEntries.length === 0 ? (
             <Text
@@ -829,6 +850,42 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 4,
+  },
+  journalCoverContext: {
+    height: 184,
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 14,
+    overflow: "hidden",
+  },
+  journalCoverImage: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+  },
+  journalCoverContextOverlay: {
+    position: "absolute",
+    left: 10,
+    right: 10,
+    bottom: 10,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    backgroundColor: "rgba(0, 0, 0, 0.42)",
+  },
+  journalCoverContextTitle: {
+    color: "#fff",
+    fontWeight: "800",
+    lineHeight: 20,
+    marginBottom: 2,
+  },
+  journalCoverContextMeta: {
+    color: "#fff",
+    fontWeight: "700",
   },
   backToJournals: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 8 },
   journalContextTitle: { flex: 1, textAlign: "center", fontWeight: "800" },
