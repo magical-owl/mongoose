@@ -4,6 +4,8 @@
 
 This document is the source brief for recreating and improving Meadow in Figma. It describes the current product workflow, screen responsibilities, visual hierarchy, interaction states, and reusable UI patterns. Preserve the information architecture and privacy behavior while improving spacing, typography, clarity, and visual polish.
 
+For implementation-facing design rules and official reference links, see [`docs/AppDesignGuidelines.md`](./AppDesignGuidelines.md). For AI agent UI workflow rules, see [`agents/design.md`](../agents/design.md).
+
 Meadow is a private diary app. The primary user loop is:
 
 1. Open the protected diary.

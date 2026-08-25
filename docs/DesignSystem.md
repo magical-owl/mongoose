@@ -4,6 +4,8 @@
 
 The Meadow Design System provides a unified visual language and component library that ensures consistency across iOS and Android platforms. It is organized into theme tokens, a component catalog, usage guidelines, and platform-specific adaptations.
 
+For app-specific screen and interaction guidance, see [`docs/AppDesignGuidelines.md`](./AppDesignGuidelines.md). For agent UI workflow rules, see [`agents/design.md`](../agents/design.md).
+
 ---
 
 ## Theme Tokens
