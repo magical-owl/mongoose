@@ -752,8 +752,8 @@ export default function JournalEntriesScreen() {
                       if (entry.isLockbox && !(await appLockService.authenticate())) return;
                       router.push(`/entry/${entry.id}`);
                     }}
-                    onAddReflection={viewMode === "timeline" ? handleAddReflection : undefined}
-                    onReflectionSummaryPress={viewMode === "timeline" ? undefined : handleReflectionSummaryPress}
+                    onAddReflection={viewMode === "timeline" || viewMode === "feed" ? handleAddReflection : undefined}
+                    onReflectionSummaryPress={viewMode === "timeline" || viewMode === "feed" ? undefined : handleReflectionSummaryPress}
                   />
                 </View>
               );

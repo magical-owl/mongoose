@@ -84,7 +84,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
   const showReflectionSummaryAction = mode !== 'timeline' && Boolean(onReflectionSummaryPress);
   const reflectionSummaryLabel = entry.reflections.length > 0 ? reflectionCountLabel(entry.reflections.length, t) : t('reflectOnThis');
 
-  const handleAddTimelineReflection = async () => {
+  const handleAddInlineReflection = async () => {
     const trimmed = reflectionText.trim();
     if (!trimmed || !onAddReflection) return;
     setIsAddingReflection(true);
@@ -93,10 +93,61 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
     setIsAddingReflection(false);
   };
 
+  const inlineReflectionSection = (
+    <>
+      {entry.reflections.length > 0 ? (
+        <View style={styles.timelineReflections}>
+          {entry.reflections.map((reflection) => (
+            <View key={reflection.id} style={styles.timelineReflectionItem}>
+              <Text preset="caption" color="textTertiary" numberOfLines={1}>
+                {formatDisplayMonthDayTime(reflection.createdAt, timeFormat)}
+              </Text>
+              <Text preset="bodySmall" color="text" style={styles.timelineReflectionText}>{reflection.text}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      {onAddReflection ? (
+        <View style={[styles.timelineReflectionInputBox, { minHeight: Math.max(38, theme.fontSizes.sm * 2.7), borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+          <TextInput
+            value={reflectionText}
+            onChangeText={setReflectionText}
+            placeholder={t('addReflectionPlaceholder')}
+            placeholderTextColor={theme.colors.textSecondary}
+            style={[
+              styles.timelineReflectionInput,
+              {
+                height: Math.max(36, theme.fontSizes.sm * 2.5),
+                color: theme.colors.text,
+                fontFamily: theme.fontFamily,
+                fontSize: theme.fontSizes.sm,
+                lineHeight: theme.fontSizes.sm * 1.35,
+              },
+            ]}
+            returnKeyType="send"
+            onSubmitEditing={() => { void handleAddInlineReflection(); }}
+            accessibilityLabel={t('reflectionAddA11y')}
+          />
+          <TouchableOpacity
+            onPress={() => { void handleAddInlineReflection(); }}
+            disabled={!reflectionText.trim() || isAddingReflection}
+            style={[styles.timelineReflectionButton, { backgroundColor: reflectionText.trim() && !isAddingReflection ? theme.colors.tint : 'transparent' }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('reflectionSaveA11y')}
+          >
+            <Ionicons name="add" size={18} color={reflectionText.trim() && !isAddingReflection ? '#fff' : theme.colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      ) : null}
+    </>
+  );
+
   if (mode === 'feed') {
     return (
-      <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.feedCard}>
-        <View
+      <View style={styles.feedCard}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={onPress}
           style={[
             styles.feedCanvas,
             { minHeight: Math.max(220, ...entry.stickers.map((sticker) => sticker.y - FEED_STICKER_ORIGIN_Y + getFeedStickerHeight(sticker) * sticker.scale)) },
@@ -140,8 +191,9 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
             </View>
             <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>{entry.content}</MarkdownText>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+        {inlineReflectionSection}
+      </View>
     );
   }
 
@@ -169,50 +221,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
               </View>
             )}
           </TouchableOpacity>
-          {entry.reflections.length > 0 ? (
-            <View style={styles.timelineReflections}>
-              {entry.reflections.map((reflection) => (
-                <View key={reflection.id} style={styles.timelineReflectionItem}>
-                  <Text preset="caption" color="textTertiary" numberOfLines={1}>
-                    {formatDisplayMonthDayTime(reflection.createdAt, timeFormat)}
-                  </Text>
-                  <Text preset="bodySmall" color="text" style={styles.timelineReflectionText}>{reflection.text}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-          {onAddReflection ? (
-            <View style={[styles.timelineReflectionInputBox, { minHeight: Math.max(38, theme.fontSizes.sm * 2.7), borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
-              <TextInput
-                value={reflectionText}
-                onChangeText={setReflectionText}
-                placeholder={t('addReflectionPlaceholder')}
-                placeholderTextColor={theme.colors.textSecondary}
-                style={[
-                  styles.timelineReflectionInput,
-                  {
-                    height: Math.max(36, theme.fontSizes.sm * 2.5),
-                    color: theme.colors.text,
-                    fontFamily: theme.fontFamily,
-                    fontSize: theme.fontSizes.sm,
-                    lineHeight: theme.fontSizes.sm * 1.35,
-                  },
-                ]}
-                returnKeyType="send"
-                onSubmitEditing={() => { void handleAddTimelineReflection(); }}
-                accessibilityLabel={t('reflectionAddA11y')}
-              />
-              <TouchableOpacity
-                onPress={() => { void handleAddTimelineReflection(); }}
-                disabled={!reflectionText.trim() || isAddingReflection}
-                style={[styles.timelineReflectionButton, { backgroundColor: reflectionText.trim() && !isAddingReflection ? theme.colors.tint : 'transparent' }]}
-                accessibilityRole="button"
-                accessibilityLabel={t('reflectionSaveA11y')}
-              >
-                <Ionicons name="add" size={18} color={reflectionText.trim() && !isAddingReflection ? '#fff' : theme.colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-          ) : null}
+          {inlineReflectionSection}
         </View>
       </View>
     );
