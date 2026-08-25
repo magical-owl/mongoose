@@ -401,7 +401,7 @@ export default function CreateEntryScreen() {
           <ManualMoodPicker value={manualMood} onChange={setManualMood} />
 
           {journals.length > 0 ? (
-            <EntryOptionSection title={t('entryJournalSection')} expanded={isJournalSectionExpanded} onToggle={toggleJournalSection}>
+            <EntryOptionSection title={t('entryJournalSection')} expanded={isJournalSectionExpanded} onToggle={toggleJournalSection} selectedCount={selectedJournalIds.length}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.journalSelectorChips}>
                 {journals.map((journal) => {
                   const selected = selectedJournalIds.includes(journal.id);
@@ -421,7 +421,7 @@ export default function CreateEntryScreen() {
             </EntryOptionSection>
           ) : null}
 
-          <EntryOptionSection title={t('entryTagsSection')} expanded={isTagSectionExpanded} onToggle={toggleTagSection}>
+          <EntryOptionSection title={t('entryTagsSection')} expanded={isTagSectionExpanded} onToggle={toggleTagSection} selectedCount={selectedTags.length}>
             <DiaryTagSelector
               selectedTags={selectedTags}
               availableTags={availableTags}

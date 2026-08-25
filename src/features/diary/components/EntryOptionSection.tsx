@@ -8,10 +8,11 @@ interface EntryOptionSectionProps {
   readonly title: string;
   readonly expanded: boolean;
   readonly onToggle: () => void;
+  readonly selectedCount?: number;
   readonly children: ReactNode;
 }
 
-export function EntryOptionSection({ title, expanded, onToggle, children }: EntryOptionSectionProps): React.JSX.Element {
+export function EntryOptionSection({ title, expanded, onToggle, selectedCount, children }: EntryOptionSectionProps): React.JSX.Element {
   const theme = useTheme();
 
   return (
@@ -24,7 +25,16 @@ export function EntryOptionSection({ title, expanded, onToggle, children }: Entr
         accessibilityState={{ expanded }}
       >
         <Text preset="caption" color="textSecondary" style={styles.label}>{title}</Text>
-        <Ionicons name={expanded ? 'chevron-down' : 'chevron-forward'} size={16} color={theme.colors.textSecondary} />
+        <View style={styles.headerMeta}>
+          {selectedCount !== undefined ? (
+            <View style={[styles.countBadge, { backgroundColor: selectedCount > 0 ? theme.colors.tint + '20' : theme.colors.surface, borderColor: selectedCount > 0 ? theme.colors.tint + '38' : theme.colors.border }]}>
+              <Text preset="caption" style={[styles.countText, { color: selectedCount > 0 ? theme.colors.tint : theme.colors.textSecondary }]}>
+                {selectedCount}
+              </Text>
+            </View>
+          ) : null}
+          <Ionicons name={expanded ? 'chevron-down' : 'chevron-forward'} size={16} color={theme.colors.textSecondary} />
+        </View>
       </TouchableOpacity>
       {expanded ? <View style={styles.content}>{children}</View> : null}
     </View>
@@ -35,5 +45,8 @@ const styles = StyleSheet.create({
   section: { marginTop: 4, marginBottom: 12 },
   header: { minHeight: 32, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   label: { fontWeight: '800', letterSpacing: 0.8 },
+  headerMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  countBadge: { minWidth: 28, height: 24, borderWidth: 1, borderRadius: 12, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  countText: { fontWeight: '800', fontVariant: ['tabular-nums'] },
   content: { marginTop: 6 },
 });
