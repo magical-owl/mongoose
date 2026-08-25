@@ -81,6 +81,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
   const [isAddingReflection, setIsAddingReflection] = useState(false);
   const hasMood = Boolean(entry.manualMood);
   const moodTone = getManualMoodColor(entry.manualMood, theme.colors);
+  const entryTime = formatDisplayTime(entry.createdAt, timeFormat);
   const showReflectionSummaryAction = mode !== 'timeline' && Boolean(onReflectionSummaryPress);
   const reflectionSummaryLabel = entry.reflections.length > 0 ? reflectionCountLabel(entry.reflections.length, t) : t('reflectOnThis');
 
@@ -177,6 +178,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
                   </Text>
                 </View>
               ) : null}
+              {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.feedTime}>{entryTime}</Text> : null}
               {entry.tags.map((tag) => <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>)}
               {showReflectionSummaryAction ? (
                 <Text
@@ -204,13 +206,13 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
           <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.timelinePressArea}>
             <View style={styles.timelineHeader}>
               <Text style={[styles.timelineTitle, { color: theme.colors.text }]} numberOfLines={1}>{entry.title}</Text>
-              <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.timelineTime}>{formatDisplayTime(entry.createdAt, timeFormat)}</Text>
               <View style={styles.timelineActions}>
                 {hasMood && entry.manualMood ? (
                   <View style={[styles.compactMoodBadge, { backgroundColor: moodTone + '18', borderColor: moodTone }]}>
                     <Text preset="caption" style={[styles.compactMoodBadgeText, { color: moodTone }]} numberOfLines={1}>{manualMoodLabel(entry.manualMood, t)}</Text>
                   </View>
                 ) : null}
+                {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.timelineTime}>{entryTime}</Text> : null}
                 <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
               </View>
             </View>
@@ -228,7 +230,6 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
   }
 
   const cardDate = formatCardDay(entry.date);
-  const cardTime = formatDisplayTime(entry.createdAt, timeFormat);
 
   return (
     <TouchableOpacity
@@ -244,12 +245,12 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
       <View style={styles.cardContentColumn}>
         <View style={styles.cardHeader}>
           <Text preset="h3" color="text" style={styles.title} numberOfLines={1}>{entry.title}</Text>
-          {cardTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.cardTime}>{cardTime}</Text> : null}
           {hasMood && entry.manualMood ? (
             <View style={[styles.compactMoodBadge, { backgroundColor: moodTone + '18', borderColor: moodTone }]}>
               <Text preset="caption" style={[styles.compactMoodBadgeText, { color: moodTone }]} numberOfLines={1}>{manualMoodLabel(entry.manualMood, t)}</Text>
             </View>
           ) : null}
+          {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.cardTime}>{entryTime}</Text> : null}
           <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
         </View>
         <Text style={[styles.content, { color: theme.colors.textSecondary }]} numberOfLines={3}>{stripHtml(entry.content)}</Text>
@@ -282,12 +283,12 @@ const styles = StyleSheet.create({
   cardDateColumn: { width: 66, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   cardWeekday: { fontWeight: '600' },
   cardDay: { fontSize: 34, lineHeight: 40, fontWeight: '300', marginTop: 2 },
-  cardTime: { flexShrink: 0, minWidth: 48, textAlign: 'right', fontSize: 11, lineHeight: 14 },
+  cardTime: { flexShrink: 0, fontSize: 11, lineHeight: 14 },
   cardContentColumn: { flex: 1, paddingLeft: 0, paddingRight: 14, paddingVertical: 7 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 5 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
   title: { flex: 1 },
-  compactMoodBadge: { maxWidth: 86, minHeight: 24, borderWidth: 1, borderRadius: 12, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center' },
-  compactMoodBadgeText: { fontWeight: '700' },
+  compactMoodBadge: { maxWidth: 86, minHeight: 16, borderWidth: 1, borderRadius: 8, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
+  compactMoodBadgeText: { fontSize: 11, lineHeight: 14, fontWeight: '700' },
   content: { fontSize: 16, lineHeight: 22 },
   cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   reflectionSummary: { flexShrink: 0, fontWeight: '700' },
@@ -300,8 +301,9 @@ const styles = StyleSheet.create({
   feedStickerEmoji: { fontSize: 48, lineHeight: 60, includeFontPadding: true, textAlign: 'center' },
   feedTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 10 },
   feedTitle: { flex: 1, fontWeight: '700' },
-  feedMoodBadge: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 4 },
-  feedMoodBadgeText: { fontWeight: '700' },
+  feedMoodBadge: { maxWidth: 86, minHeight: 16, borderWidth: 1, borderRadius: 8, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
+  feedMoodBadgeText: { fontSize: 11, lineHeight: 14, fontWeight: '700' },
+  feedTime: { flexShrink: 0, fontSize: 11, lineHeight: 14 },
   feedContent: { fontSize: 16, lineHeight: 24 },
   feedMetaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   timelineEntry: { minHeight: 76, marginBottom: 12 },
@@ -309,7 +311,7 @@ const styles = StyleSheet.create({
   timelinePressArea: { marginBottom: 2 },
   timelineHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 5 },
   timelineTitle: { ...diaryEntryListTitle, flex: 1 },
-  timelineTime: { flexShrink: 0 },
+  timelineTime: { flexShrink: 0, fontSize: 11, lineHeight: 14 },
   timelineActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   timelineContent: { fontSize: 14, lineHeight: 20, marginBottom: 5 },
   timelineMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

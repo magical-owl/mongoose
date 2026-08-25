@@ -31,12 +31,12 @@ export function CalendarEntryView({ entry, onPress }: CalendarEntryViewProps): R
       <View style={styles.contentColumn}>
         <View style={styles.headerRow}>
           <Text preset="body" color="text" style={styles.title} numberOfLines={1}>{entry.title}</Text>
-          {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.entryTime}>{entryTime}</Text> : null}
           {entry.manualMood ? (
             <View style={[styles.moodBadge, { backgroundColor: moodColor + '18', borderColor: moodColor }]}>
               <Text preset="caption" numberOfLines={1} style={[styles.moodBadgeText, { color: moodColor }]}>{manualMoodLabel(entry.manualMood, t)}</Text>
             </View>
           ) : null}
+          {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.entryTime}>{entryTime}</Text> : null}
           <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
         </View>
         <Text preset="caption" color="textSecondary" numberOfLines={2} style={styles.preview}>
@@ -50,9 +50,9 @@ export function CalendarEntryView({ entry, onPress }: CalendarEntryViewProps): R
 
 const styles = StyleSheet.create({
   entry: { minHeight: 92, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
-  entryTime: { flexShrink: 0 },
-  moodBadge: { maxWidth: 86, minHeight: 24, borderWidth: 1, borderRadius: 12, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center' },
-  moodBadgeText: { fontWeight: '700' },
+  entryTime: { flexShrink: 0, fontSize: 11, lineHeight: 14 },
+  moodBadge: { maxWidth: 86, minHeight: 16, borderWidth: 1, borderRadius: 8, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
+  moodBadgeText: { fontSize: 11, lineHeight: 14, fontWeight: '700' },
   contentColumn: { flex: 1, paddingRight: 2 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   title: { flex: 1, ...diaryEntryListTitle },
