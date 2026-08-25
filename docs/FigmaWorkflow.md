@@ -29,7 +29,7 @@ The visible bottom tab bar has five destinations:
 
 | Tab | Icon concept | Function |
 | --- | --- | --- |
-| Home | Journal/book | Browse diary entries, search, filter, change entry presentation |
+| Home | Journal/book | Browse journals in cover view by default, switch list/grid/cover presentation, edit journal options from each cover/menu button |
 | Calendar | Calendar | Browse writing days by month and inspect entries for a selected date |
 | Create | Centered plus action | Open the Create Entry composer at `entry/new` |
 | Insights | Chart | Review writing metrics, activity, streaks, and trends |

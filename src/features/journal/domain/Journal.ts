@@ -5,6 +5,9 @@ export const JournalSchema = z.object({
   title: z.string().min(1).max(80),
   description: z.string().max(280).default(''),
   color: z.string().default('#4ECDC4'),
+  coverImageUri: z.string().min(1).optional(),
+  coverImageWidth: z.number().positive().optional(),
+  coverImageHeight: z.number().positive().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
