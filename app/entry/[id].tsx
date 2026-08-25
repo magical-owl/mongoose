@@ -23,8 +23,11 @@ import {
   Platform,
   KeyboardAvoidingView,
   Keyboard,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   TextInput as NativeTextInput,
   StyleSheet,
+  useWindowDimensions,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -84,18 +87,24 @@ const FORMAT_ITEMS: { kind: FormatActionKind; icon: string }[] = [
   { kind: 'align-justify', icon: 'format-align-justify' },
 ];
 const READ_ONLY_STICKER_Y_OFFSET = 80;
+const STICKER_PLACEMENT_SIZE = 96;
+const TEXT_STICKER_PLACEMENT_WIDTH = 160;
+const PHOTO_STICKER_PLACEMENT_WIDTH = 148;
+const VISIBLE_STICKER_STAGGER = 18;
 
 export default function EntryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
   const t = useTranslation();
   const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection } = useDiary();
   const { journals } = useJournals();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const timeFormat = useAppStore((state) => state.timeFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
+  const scrollOffsetYRef = useRef(0);
 
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -128,6 +137,7 @@ export default function EntryDetailScreen() {
   const [isSavingReflection, setIsSavingReflection] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isStickerDragging, setIsStickerDragging] = useState(false);
+  const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = editContent
@@ -232,20 +242,35 @@ export default function EntryDetailScreen() {
     else Alert.alert(t('entrySaveFailedTitle'), result.error.message);
   };
 
+  const getVisibleStickerPosition = useCallback((index: number, stickerWidth = STICKER_PLACEMENT_SIZE) => {
+    const horizontalPadding = theme.spacing.lg * 2;
+    const usableWidth = Math.max(stickerWidth, windowWidth - horizontalPadding);
+    const stagger = (index % 5) * VISIBLE_STICKER_STAGGER;
+    return {
+      x: Math.max(0, (usableWidth - stickerWidth) / 2 + stagger),
+      y: Math.max(0, scrollOffsetYRef.current + Math.max(180, scrollViewportHeight) / 2 - STICKER_PLACEMENT_SIZE / 2 + stagger),
+    };
+  }, [scrollViewportHeight, theme.spacing.lg, windowWidth]);
+
+  const handleEditorScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollOffsetYRef.current = event.nativeEvent.contentOffset.y;
+  }, []);
+
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
+    const position = getVisibleStickerPosition(editStickers.length);
     const newSticker: PlacedSticker = {
       id: generateUUID(),
       stickerId,
       category,
-      x: 80 + (editStickers.length % 4) * 40,
-      y: 120 + (editStickers.length % 5) * 30,
+      x: position.x,
+      y: position.y,
       scale: 1,
       rotation: Math.floor(Math.random() * 30) - 15,
       zIndex: editStickers.length + 1,
       behindText: false,
     };
     setEditStickers((prev) => [...prev, newSticker]);
-  }, [editStickers.length]);
+  }, [editStickers.length, getVisibleStickerPosition]);
 
   const handleUpdateSticker = useCallback((updated: PlacedSticker) => {
     setEditStickers((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
@@ -256,22 +281,24 @@ export default function EntryDetailScreen() {
   }, []);
 
   const handleAddTextSticker = useCallback(() => {
+    const position = getVisibleStickerPosition(editStickers.length, TEXT_STICKER_PLACEMENT_WIDTH);
     const newSticker: PlacedSticker = {
       id: generateUUID(),
       stickerId: 'text-sticker',
       category: 'text',
-      x: 72 + (editStickers.length % 4) * 28,
-      y: 150 + (editStickers.length % 5) * 28,
+      x: position.x,
+      y: position.y,
       scale: 1,
       rotation: 0,
       zIndex: editStickers.length + 1,
       behindText: false,
       text: '',
-      textColor: '#111827',
+      textColor: '#DC2626',
+      textBackgroundColor: '#E5E7EB',
       opacity: 1,
     };
     setEditStickers((prev) => [...prev, newSticker]);
-  }, [editStickers.length, setEditStickers]);
+  }, [editStickers.length, getVisibleStickerPosition, setEditStickers]);
 
   const handlePhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
     const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhotos();
@@ -290,12 +317,15 @@ export default function EntryDetailScreen() {
       const imported = await Promise.all(result.assets.map((asset) => diaryPhotoService.importAsset(asset)));
       setEditStickers((current) => [
         ...current,
-        ...imported.map((photo, index) => createPlacedPhotoSticker(photo, current.length + index)),
+        ...imported.map((photo, index) => ({
+          ...createPlacedPhotoSticker(photo, current.length + index),
+          ...getVisibleStickerPosition(current.length + index, PHOTO_STICKER_PLACEMENT_WIDTH),
+        })),
       ]);
     } catch {
       Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
     }
-  }, [t]);
+  }, [getVisibleStickerPosition, t]);
 
   const dismissEntryKeyboard = useCallback(() => {
     editorRef.current?.dismissKeyboard();
@@ -446,6 +476,7 @@ export default function EntryDetailScreen() {
         <ScrollView
           style={{ flex: 1 }}
           scrollEnabled={!isStickerDragging}
+          onLayout={(event) => setScrollViewportHeight(event.nativeEvent.layout.height)}
           contentContainerStyle={[
             styles.scrollContent,
             {
@@ -456,7 +487,9 @@ export default function EntryDetailScreen() {
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onScroll={handleEditorScroll}
           onScrollBeginDrag={dismissEntryKeyboard}
+          scrollEventThrottle={16}
           onStartShouldSetResponderCapture={() => {
             dismissEntryKeyboard();
             return false;

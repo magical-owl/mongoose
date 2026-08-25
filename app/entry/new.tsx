@@ -18,8 +18,11 @@ import {
   Platform,
   KeyboardAvoidingView,
   Keyboard,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   TextInput as NativeTextInput,
   StyleSheet,
+  useWindowDimensions,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -71,6 +74,10 @@ const FORMAT_ITEMS: { kind: FormatActionKind; icon: string }[] = [
   { kind: 'align-justify', icon: 'format-align-justify' },
 ];
 const DEFAULT_COMPANION = 'cat' as const;
+const STICKER_PLACEMENT_SIZE = 96;
+const TEXT_STICKER_PLACEMENT_WIDTH = 160;
+const PHOTO_STICKER_PLACEMENT_WIDTH = 148;
+const VISIBLE_STICKER_STAGGER = 18;
 
 function isSyntheticJournalId(value: string): boolean {
   return value === 'all' || value === 'unassigned';
@@ -81,6 +88,7 @@ export default function CreateEntryScreen() {
   const { date: paramDate, journalId: paramJournalId } = useLocalSearchParams<{ date?: string; journalId?: string }>();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
   const t = useTranslation();
   const { entries, saveDiaryEntry } = useDiary();
   const { journals } = useJournals();
@@ -88,6 +96,7 @@ export default function CreateEntryScreen() {
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const isHydratingDraft = useRef(true);
+  const scrollOffsetYRef = useRef(0);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -120,6 +129,7 @@ export default function CreateEntryScreen() {
   const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isStickerDragging, setIsStickerDragging] = useState(false);
+  const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
   const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
@@ -198,21 +208,35 @@ export default function CreateEntryScreen() {
   const availableTags = useMemo(() => normalizeDiaryTags(entries.flatMap((entry) => entry.tags)), [entries]);
   const behindStickers = useMemo(() => stickers.filter((sticker) => sticker.behindText), [stickers]);
   const foregroundStickers = useMemo(() => stickers.filter((sticker) => !sticker.behindText), [stickers]);
+  const getVisibleStickerPosition = useCallback((index: number, stickerWidth = STICKER_PLACEMENT_SIZE) => {
+    const horizontalPadding = theme.spacing.lg * 2;
+    const usableWidth = Math.max(stickerWidth, windowWidth - horizontalPadding);
+    const stagger = (index % 5) * VISIBLE_STICKER_STAGGER;
+    return {
+      x: Math.max(0, (usableWidth - stickerWidth) / 2 + stagger),
+      y: Math.max(0, scrollOffsetYRef.current + Math.max(180, scrollViewportHeight) / 2 - STICKER_PLACEMENT_SIZE / 2 + stagger),
+    };
+  }, [scrollViewportHeight, theme.spacing.lg, windowWidth]);
+
+  const handleEditorScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollOffsetYRef.current = event.nativeEvent.contentOffset.y;
+  }, []);
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
+    const position = getVisibleStickerPosition(stickers.length);
     const newSticker: PlacedSticker = {
       id: generateUUID(),
       stickerId,
       category,
-      x: 80 + (stickers.length % 4) * 40,
-      y: 120 + (stickers.length % 5) * 30,
+      x: position.x,
+      y: position.y,
       scale: 1,
       rotation: Math.floor(Math.random() * 30) - 15,
       zIndex: stickers.length + 1,
       behindText: false,
     };
     setStickers((prev) => [...prev, newSticker]);
-  }, [stickers.length]);
+  }, [getVisibleStickerPosition, stickers.length]);
 
   const handleUpdateSticker = useCallback((updated: PlacedSticker) => {
     setStickers((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
@@ -223,22 +247,24 @@ export default function CreateEntryScreen() {
   }, []);
 
   const handleAddTextSticker = useCallback(() => {
+    const position = getVisibleStickerPosition(stickers.length, TEXT_STICKER_PLACEMENT_WIDTH);
     const newSticker: PlacedSticker = {
       id: generateUUID(),
       stickerId: 'text-sticker',
       category: 'text',
-      x: 72 + (stickers.length % 4) * 28,
-      y: 150 + (stickers.length % 5) * 28,
+      x: position.x,
+      y: position.y,
       scale: 1,
       rotation: 0,
       zIndex: stickers.length + 1,
       behindText: false,
       text: '',
-      textColor: '#111827',
+      textColor: '#DC2626',
+      textBackgroundColor: '#E5E7EB',
       opacity: 1,
     };
     setStickers((prev) => [...prev, newSticker]);
-  }, [setStickers, stickers.length]);
+  }, [getVisibleStickerPosition, setStickers, stickers.length]);
 
   const handlePhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
     const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhotos();
@@ -257,12 +283,15 @@ export default function CreateEntryScreen() {
       const imported = await Promise.all(result.assets.map((asset) => diaryPhotoService.importAsset(asset)));
       setStickers((current) => [
         ...current,
-        ...imported.map((photo, index) => createPlacedPhotoSticker(photo, current.length + index)),
+        ...imported.map((photo, index) => ({
+          ...createPlacedPhotoSticker(photo, current.length + index),
+          ...getVisibleStickerPosition(current.length + index, PHOTO_STICKER_PLACEMENT_WIDTH),
+        })),
       ]);
     } catch {
       Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
     }
-  }, [t]);
+  }, [getVisibleStickerPosition, t]);
 
   const dismissEntryKeyboard = useCallback(() => {
     editorRef.current?.dismissKeyboard();
@@ -403,6 +432,7 @@ export default function CreateEntryScreen() {
         <ScrollView
           style={{ flex: 1 }}
           scrollEnabled={!isStickerDragging}
+          onLayout={(event) => setScrollViewportHeight(event.nativeEvent.layout.height)}
           contentContainerStyle={[
             styles.scrollContent,
             {
@@ -412,7 +442,9 @@ export default function CreateEntryScreen() {
           ]}
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           keyboardShouldPersistTaps="handled"
+          onScroll={handleEditorScroll}
           onScrollBeginDrag={dismissEntryKeyboard}
+          scrollEventThrottle={16}
           onStartShouldSetResponderCapture={() => {
             dismissEntryKeyboard();
             return false;

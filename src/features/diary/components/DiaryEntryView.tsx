@@ -61,8 +61,8 @@ function FeedStickerPreview({ sticker }: { readonly sticker: PlacedSticker }) {
           style={[
             styles.feedTextSticker,
             {
-              backgroundColor: sticker.textBackgroundColor ?? 'transparent',
-              color: sticker.textColor ?? '#111827',
+              backgroundColor: sticker.textBackgroundColor ?? '#E5E7EB',
+              color: sticker.textColor ?? '#DC2626',
               opacity: sticker.opacity ?? 1,
             },
           ]}

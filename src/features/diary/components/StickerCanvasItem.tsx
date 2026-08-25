@@ -9,7 +9,7 @@
  *   • Drag to move
  *   • Tap to select (shows control strip)
  *   • Rotate control supports tap and horizontal drag
- *   • Drag the selected dotted outline handle to resize
+ *   • Drag the selected dotted outline to resize
  *   • Send an individual sticker behind the text canvas
  *   • ✕ button to delete
  *
@@ -18,7 +18,7 @@
  *   the parent via onUpdate so the parent array stays up-to-date for saving.
  */
 
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import {
   Animated,
   PanResponder,
@@ -28,13 +28,16 @@ import {
   Image,
   View,
   StyleSheet,
+  Keyboard,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PlacedSticker, findStickerItem } from '../domain/Sticker';
 import { useTranslation } from '@/localization/i18n';
 
-const TEXT_STICKER_COLORS = ['#111827', '#F8FAFC', '#DC2626', '#2563EB', '#059669', '#D97706', '#7C3AED', '#DB2777'] as const;
-const TEXT_STICKER_BACKGROUND_COLORS = [undefined, '#F8FAFC', '#FEF3C7', '#DBEAFE', '#DCFCE7', '#FCE7F3', '#EDE9FE', '#111827'] as const;
+const DEFAULT_TEXT_STICKER_COLOR = '#DC2626';
+const DEFAULT_TEXT_STICKER_BACKGROUND_COLOR = '#E5E7EB';
+const TEXT_STICKER_COLORS = [DEFAULT_TEXT_STICKER_COLOR, '#111827', '#F8FAFC', '#2563EB', '#059669', '#D97706', '#7C3AED', '#DB2777'] as const;
+const TEXT_STICKER_BACKGROUND_COLORS = [DEFAULT_TEXT_STICKER_BACKGROUND_COLOR, '#F8FAFC', '#FEF3C7', '#DBEAFE', '#DCFCE7', '#FCE7F3', '#EDE9FE', '#111827'] as const;
 const STICKER_OPACITIES = [1, 0.75, 0.5, 0.3] as const;
 
 interface StickerCanvasItemProps {
@@ -55,9 +58,13 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const t = useTranslation();
   const [isSelected, setIsSelected] = useState(isEditable && sticker.text !== undefined && sticker.text.length === 0);
   const selectedRef = useRef(false);
+  const stickerRef = useRef(sticker);
+  stickerRef.current = sticker;
   // Local mutable state — initialised from persisted values
   const [currentScale, setCurrentScale] = useState(sticker.scale);
   const [currentRotation, setCurrentRotation] = useState(sticker.rotation);
+  const [draftText, setDraftText] = useState(sticker.text ?? '');
+  const draftTextRef = useRef(sticker.text ?? '');
 
   // Refs mirror state so panResponder (stale closure) always reads latest values
   const scaleRef = useRef(sticker.scale);
@@ -78,9 +85,25 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const stickerIcon = stickerItem?.icon ?? '⭐';
   const stickerSource = stickerItem?.source;
   const photoAspectRatio = sticker.imageWidth && sticker.imageHeight ? sticker.imageWidth / sticker.imageHeight : 1;
-  const textColor = sticker.textColor ?? TEXT_STICKER_COLORS[0];
-  const textBackgroundColor = sticker.textBackgroundColor;
+  const textColor = sticker.textColor ?? DEFAULT_TEXT_STICKER_COLOR;
+  const textBackgroundColor = sticker.textBackgroundColor ?? DEFAULT_TEXT_STICKER_BACKGROUND_COLOR;
   const stickerOpacity = sticker.opacity ?? 1;
+
+  useEffect(() => {
+    if (sticker.text === undefined || sticker.text === draftTextRef.current) return;
+    draftTextRef.current = sticker.text;
+    setDraftText(sticker.text);
+  }, [sticker.text]);
+
+  const buildUpdatedSticker = (changes: Partial<PlacedSticker>): PlacedSticker => ({
+    ...stickerRef.current,
+    ...(stickerRef.current.text !== undefined ? { text: draftTextRef.current } : {}),
+    x: position.current.x,
+    y: position.current.y,
+    scale: scaleRef.current,
+    rotation: rotationRef.current,
+    ...changes,
+  });
 
   const panResponder = useRef(
     PanResponder.create({
@@ -116,13 +139,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
         position.current = { x: newX, y: newY };
 
         // Use refs here — closure was created once, refs always hold latest values
-        onUpdate({
-          ...sticker,
-          x: newX,
-          y: newY,
-          scale: scaleRef.current,
-          rotation: rotationRef.current,
-        });
+        onUpdate(buildUpdatedSticker({ x: newX, y: newY }));
       },
       onPanResponderTerminate: () => {
         onDragStateChange?.(false);
@@ -137,77 +154,46 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
     const next = rotationRef.current + 15;
     rotationRef.current = next;
     setCurrentRotation(next);
-    onUpdate({
-      ...sticker,
-      x: position.current.x,
-      y: position.current.y,
-      scale: scaleRef.current,
-      rotation: next,
-    });
-  }, [sticker, onUpdate]);
+    onUpdate(buildUpdatedSticker({ rotation: next }));
+  }, [onUpdate]);
 
   const handleToggleBehindText = useCallback(() => {
     // Release the editing layer immediately so the new stack order is visible.
     setIsSelected(false);
-    onUpdate({
-      ...sticker,
-      x: position.current.x,
-      y: position.current.y,
-      scale: scaleRef.current,
-      rotation: rotationRef.current,
-      behindText: !sticker.behindText,
-    });
-  }, [sticker, onUpdate]);
+    onUpdate(buildUpdatedSticker({ behindText: !stickerRef.current.behindText }));
+  }, [onUpdate]);
 
   const handleChangeText = useCallback((text: string) => {
-    onUpdate({
-      ...sticker,
-      x: position.current.x,
-      y: position.current.y,
-      scale: scaleRef.current,
-      rotation: rotationRef.current,
-      text,
-    });
-  }, [sticker, onUpdate]);
+    draftTextRef.current = text;
+    setDraftText(text);
+    onUpdate(buildUpdatedSticker({ text }));
+  }, [onUpdate]);
+
+  const handleFinishTextEditing = useCallback(() => {
+    Keyboard.dismiss();
+    setIsSelected(false);
+    if (stickerRef.current.text !== undefined) {
+      onUpdate(buildUpdatedSticker({ text: draftTextRef.current }));
+    }
+  }, [onUpdate]);
 
   const handleCycleTextColor = useCallback(() => {
     const currentIndex = TEXT_STICKER_COLORS.findIndex((color) => color === textColor);
     const nextColor = TEXT_STICKER_COLORS[(currentIndex + 1) % TEXT_STICKER_COLORS.length] ?? TEXT_STICKER_COLORS[0];
-    onUpdate({
-      ...sticker,
-      x: position.current.x,
-      y: position.current.y,
-      scale: scaleRef.current,
-      rotation: rotationRef.current,
-      textColor: nextColor,
-    });
-  }, [sticker, onUpdate, textColor]);
+    onUpdate(buildUpdatedSticker({ textColor: nextColor }));
+  }, [onUpdate, textColor]);
 
   const handleCycleOpacity = useCallback(() => {
     const currentIndex = STICKER_OPACITIES.findIndex((opacity) => opacity === stickerOpacity);
     const nextOpacity = STICKER_OPACITIES[(currentIndex + 1) % STICKER_OPACITIES.length] ?? STICKER_OPACITIES[0];
-    onUpdate({
-      ...sticker,
-      x: position.current.x,
-      y: position.current.y,
-      scale: scaleRef.current,
-      rotation: rotationRef.current,
-      opacity: nextOpacity,
-    });
-  }, [sticker, onUpdate, stickerOpacity]);
+    onUpdate(buildUpdatedSticker({ opacity: nextOpacity }));
+  }, [onUpdate, stickerOpacity]);
 
   const handleCycleTextBackground = useCallback(() => {
     const currentIndex = TEXT_STICKER_BACKGROUND_COLORS.findIndex((color) => color === textBackgroundColor);
     const nextColor = TEXT_STICKER_BACKGROUND_COLORS[(currentIndex + 1) % TEXT_STICKER_BACKGROUND_COLORS.length];
-    onUpdate({
-      ...sticker,
-      x: position.current.x,
-      y: position.current.y,
-      scale: scaleRef.current,
-      rotation: rotationRef.current,
-      textBackgroundColor: nextColor,
-    });
-  }, [sticker, onUpdate, textBackgroundColor]);
+    onUpdate(buildUpdatedSticker({ textBackgroundColor: nextColor }));
+  }, [onUpdate, textBackgroundColor]);
 
   const rotateGestureStart = useRef({ rotation: sticker.rotation, moved: false });
   const rotatePanResponder = useRef(
@@ -223,13 +209,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
         const next = rotateGestureStart.current.rotation + gesture.dx * 0.75;
         rotationRef.current = next;
         setCurrentRotation(next);
-        onUpdate({
-          ...sticker,
-          x: position.current.x,
-          y: position.current.y,
-          scale: scaleRef.current,
-          rotation: next,
-        });
+        onUpdate(buildUpdatedSticker({ rotation: next }));
       },
       onPanResponderRelease: () => {
         if (!rotateGestureStart.current.moved) handleRotate();
@@ -237,36 +217,35 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
     })
   ).current;
 
+  const createResizePanResponder = (horizontalMultiplier: number, verticalMultiplier: number) => PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 2 || Math.abs(gesture.dy) > 2,
+    onPanResponderGrant: () => {
+      onDragStateChange?.(true);
+      resizeGestureStart.current = { scale: scaleRef.current };
+    },
+    onPanResponderMove: (_, gesture) => {
+      const horizontalDelta = gesture.dx * horizontalMultiplier;
+      const verticalDelta = gesture.dy * verticalMultiplier;
+      const delta = Math.abs(horizontalDelta) > Math.abs(verticalDelta) ? horizontalDelta : verticalDelta;
+      const next = Math.max(0.4, Math.min(3, resizeGestureStart.current.scale + delta / 140));
+      scaleRef.current = next;
+      setCurrentScale(next);
+    },
+    onPanResponderRelease: () => {
+      onDragStateChange?.(false);
+      onUpdate(buildUpdatedSticker({}));
+    },
+    onPanResponderTerminate: () => {
+      onDragStateChange?.(false);
+    },
+  });
+
   const resizeGestureStart = useRef({ scale: sticker.scale });
-  const resizePanResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 2 || Math.abs(gesture.dy) > 2,
-      onPanResponderGrant: () => {
-        onDragStateChange?.(true);
-        resizeGestureStart.current = { scale: scaleRef.current };
-      },
-      onPanResponderMove: (_, gesture) => {
-        const delta = Math.max(gesture.dx, gesture.dy);
-        const next = Math.max(0.4, Math.min(3, resizeGestureStart.current.scale + delta / 140));
-        scaleRef.current = next;
-        setCurrentScale(next);
-      },
-      onPanResponderRelease: () => {
-        onDragStateChange?.(false);
-        onUpdate({
-          ...sticker,
-          x: position.current.x,
-          y: position.current.y,
-          scale: scaleRef.current,
-          rotation: rotationRef.current,
-        });
-      },
-      onPanResponderTerminate: () => {
-        onDragStateChange?.(false);
-      },
-    })
-  ).current;
+  const resizeTopPanResponder = useRef(createResizePanResponder(0, -1)).current;
+  const resizeRightPanResponder = useRef(createResizePanResponder(1, 0)).current;
+  const resizeBottomPanResponder = useRef(createResizePanResponder(0, 1)).current;
+  const resizeLeftPanResponder = useRef(createResizePanResponder(-1, 0)).current;
 
   const positionStyle = {
     transform: [
@@ -304,16 +283,6 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
             <MaterialCommunityIcons name="rotate-right" size={16} color="#FFFFFF" />
           </View>
 
-          {/* Delete */}
-          <TouchableOpacity
-            style={[styles.controlBtn, styles.deleteBtn]}
-            onPress={() => onDelete(sticker.id)}
-            accessibilityLabel={t('stickerDeleteA11y')}
-            accessibilityRole="button"
-          >
-            <Text style={styles.controlText}>✕</Text>
-          </TouchableOpacity>
-
           {/* Text layer */}
           <TouchableOpacity
             style={[styles.controlBtn, sticker.behindText && styles.activeControlBtn]}
@@ -330,6 +299,14 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
 
           {isTextSticker ? (
             <>
+              <TouchableOpacity
+                style={styles.controlBtn}
+                onPress={handleFinishTextEditing}
+                accessibilityLabel={t('entrySaveA11y')}
+                accessibilityRole="button"
+              >
+                <MaterialCommunityIcons name="check" size={17} color="#FFFFFF" />
+              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.controlBtn}
                 onPress={handleCycleTextColor}
@@ -357,64 +334,92 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
             </>
           ) : null}
 
+          {/* Delete */}
+          <TouchableOpacity
+            style={[styles.controlBtn, styles.deleteBtn]}
+            onPress={() => onDelete(sticker.id)}
+            accessibilityLabel={t('stickerDeleteA11y')}
+            accessibilityRole="button"
+          >
+            <Text style={styles.controlText}>✕</Text>
+          </TouchableOpacity>
+
         </View>
       )}
 
       {/* Sticker body — tap to toggle selection */}
       <Animated.View style={stickerTransformStyle}>
         <View style={isEditable && isSelected && styles.selectionFrame}>
-        <View
-          accessibilityLabel={`Sticker${isEditable ? ', tap to select' : ''}`}
-          accessibilityRole={isEditable ? 'button' : 'image'}
-          {...panResponder.panHandlers}
-        >
-          {isTextSticker ? (
-            isEditable && isSelected ? (
-              <TextInput
-                value={sticker.text ?? ''}
-                onChangeText={handleChangeText}
-                multiline
-                autoFocus
-                placeholder={t('stickerTextPlaceholder')}
-                placeholderTextColor="rgba(17, 24, 39, 0.45)"
-                style={[styles.textStickerInput, { backgroundColor: textBackgroundColor ?? 'transparent', color: textColor }, isSelected && styles.selectedOverlay]}
-                accessibilityLabel={t('stickerTextInputA11y')}
+          <View
+            accessibilityLabel={`Sticker${isEditable ? ', tap to select' : ''}`}
+            accessibilityRole={isEditable ? 'button' : 'image'}
+            {...panResponder.panHandlers}
+          >
+            {isTextSticker ? (
+              isEditable && isSelected ? (
+                <TextInput
+                  value={draftText}
+                  onChangeText={handleChangeText}
+                  multiline
+                  autoFocus
+                  placeholder={t('stickerTextPlaceholder')}
+                  placeholderTextColor="rgba(17, 24, 39, 0.45)"
+                  style={[styles.textStickerInput, { backgroundColor: textBackgroundColor, color: textColor }, isSelected && styles.selectedOverlay]}
+                  accessibilityLabel={t('stickerTextInputA11y')}
+                />
+              ) : (
+                <Text style={[styles.textSticker, { backgroundColor: textBackgroundColor, color: textColor }, isSelected && styles.emojiSelected]}>
+                  {sticker.text || t('stickerTextPlaceholder')}
+                </Text>
+              )
+            ) : sticker.imageUri ? (
+              <Image
+                source={{ uri: sticker.imageUri }}
+                style={[styles.photoStickerImage, { aspectRatio: photoAspectRatio }, isSelected && styles.selectedOverlay]}
+                resizeMode="cover"
+              />
+            ) : stickerSource != null ? (
+              <Image
+                source={stickerSource}
+                style={[styles.stickerImage, isSelected && styles.selectedOverlay]}
+                resizeMode="contain"
               />
             ) : (
-              <Text style={[styles.textSticker, { backgroundColor: textBackgroundColor ?? 'transparent', color: textColor }, isSelected && styles.emojiSelected]}>
-                {sticker.text || t('stickerTextPlaceholder')}
+              <Text style={[styles.emoji, isSelected && styles.emojiSelected]}>
+                {stickerIcon}
               </Text>
-            )
-          ) : sticker.imageUri ? (
-            <Image
-              source={{ uri: sticker.imageUri }}
-              style={[styles.photoStickerImage, { aspectRatio: photoAspectRatio }, isSelected && styles.selectedOverlay]}
-              resizeMode="cover"
-            />
-          ) : stickerSource != null ? (
-            <Image
-              source={stickerSource}
-              style={[styles.stickerImage, isSelected && styles.selectedOverlay]}
-              resizeMode="contain"
-            />
-          ) : (
-            <Text style={[styles.emoji, isSelected && styles.emojiSelected]}>
-              {stickerIcon}
-            </Text>
-          )}
-        </View>
+            )}
+          </View>
+          {isEditable && isSelected ? (
+            <>
+              <View
+                style={[styles.resizeOutlineTouchTarget, styles.resizeOutlineTop]}
+                {...resizeTopPanResponder.panHandlers}
+                accessibilityLabel={t('stickerResizeA11y')}
+                accessibilityRole="adjustable"
+              />
+              <View
+                style={[styles.resizeOutlineTouchTarget, styles.resizeOutlineRight]}
+                {...resizeRightPanResponder.panHandlers}
+                accessibilityLabel={t('stickerResizeA11y')}
+                accessibilityRole="adjustable"
+              />
+              <View
+                style={[styles.resizeOutlineTouchTarget, styles.resizeOutlineBottom]}
+                {...resizeBottomPanResponder.panHandlers}
+                accessibilityLabel={t('stickerResizeA11y')}
+                accessibilityRole="adjustable"
+              />
+              <View
+                style={[styles.resizeOutlineTouchTarget, styles.resizeOutlineLeft]}
+                {...resizeLeftPanResponder.panHandlers}
+                accessibilityLabel={t('stickerResizeA11y')}
+                accessibilityRole="adjustable"
+              />
+            </>
+          ) : null}
         </View>
       </Animated.View>
-      {isEditable && isSelected ? (
-        <View
-          style={styles.resizeHandle}
-          {...resizePanResponder.panHandlers}
-          accessibilityLabel={t('stickerResizeA11y')}
-          accessibilityRole="adjustable"
-        >
-          <MaterialCommunityIcons name="arrow-bottom-right" size={13} color="#FFFFFF" />
-        </View>
-      ) : null}
     </Animated.View>
   );
 };
@@ -429,21 +434,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderStyle: 'dotted',
     borderColor: 'rgba(51, 65, 85, 0.8)',
-    borderRadius: 8,
     padding: 4,
   },
-  resizeHandle: {
+  resizeOutlineTouchTarget: {
     position: 'absolute',
-    right: -18,
-    bottom: -18,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#334155',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    elevation: 10,
+    zIndex: 2,
+  },
+  resizeOutlineTop: {
+    top: -12,
+    left: -12,
+    right: -12,
+    height: 24,
+  },
+  resizeOutlineRight: {
+    top: -12,
+    right: -12,
+    bottom: -12,
+    width: 24,
+  },
+  resizeOutlineBottom: {
+    left: -12,
+    right: -12,
+    bottom: -12,
+    height: 24,
+  },
+  resizeOutlineLeft: {
+    top: -12,
+    left: -12,
+    bottom: -12,
+    width: 24,
   },
   emoji: {
     fontSize: 48,
