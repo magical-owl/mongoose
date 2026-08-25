@@ -43,7 +43,11 @@ export interface ThemeColors {
   readonly inputBorder: string;
   readonly moodExcited: string;
   readonly moodHappy: string;
+  readonly moodGrateful: string;
+  readonly moodCalm: string;
   readonly moodNeutral: string;
+  readonly moodTired: string;
+  readonly moodAnxious: string;
   readonly moodSad: string;
   readonly moodAngry: string;
 }
@@ -103,8 +107,12 @@ const lightColors: ThemeColors = {
   inputBackground: palette.gray50,
   inputBorder: palette.gray300,
   moodExcited: '#D81B60',
-  moodHappy: '#66BB6A',
+  moodHappy: '#F59E0B',
+  moodGrateful: '#7C3AED',
+  moodCalm: '#0F766E',
   moodNeutral: palette.gray500,
+  moodTired: '#64748B',
+  moodAnxious: '#EA580C',
   moodSad: '#1D4ED8',
   moodAngry: '#B91C1C',
 };
@@ -131,8 +139,12 @@ const darkColors: ThemeColors = {
   inputBackground: palette.gray800,
   inputBorder: palette.gray600,
   moodExcited: '#FF5C9A',
-  moodHappy: '#86EFAC',
+  moodHappy: '#FBBF24',
+  moodGrateful: '#A78BFA',
+  moodCalm: '#2DD4BF',
   moodNeutral: palette.gray300,
+  moodTired: '#94A3B8',
+  moodAnxious: '#FB923C',
   moodSad: '#2563EB',
   moodAngry: '#DC2626',
 };

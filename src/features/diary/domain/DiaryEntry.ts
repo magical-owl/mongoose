@@ -24,18 +24,28 @@ export function getManualMoodWeatherScore(weather: ManualMoodWeather | undefined
 export const ManualMoodSchema = z.enum(['happy', 'calm', 'sad', 'anxious', 'angry', 'grateful', 'excited', 'tired', 'neutral']);
 export type ManualMood = z.infer<typeof ManualMoodSchema>;
 
-/** Five moods available for new entries. Legacy moods remain valid for saved entries. */
-export const MANUAL_MOOD_OPTIONS: readonly ManualMood[] = ['excited', 'happy', 'neutral', 'sad', 'angry'];
+/** Nine moods available for new entries, mapped from -4 through 4. */
+export const MANUAL_MOOD_OPTIONS: readonly ManualMood[] = [
+  'excited',
+  'happy',
+  'grateful',
+  'calm',
+  'neutral',
+  'tired',
+  'anxious',
+  'sad',
+  'angry',
+];
 export const MANUAL_MOOD_SCORES: Readonly<Record<ManualMood, number>> = {
-  excited: 2,
-  happy: 1,
+  excited: 4,
+  happy: 3,
+  grateful: 2,
+  calm: 1,
   neutral: 0,
-  sad: -1,
-  angry: -2,
-  calm: 0,
-  anxious: -1,
-  grateful: 1,
   tired: -1,
+  anxious: -2,
+  sad: -3,
+  angry: -4,
 };
 
 export function getManualMoodScore(mood: ManualMood | undefined): number {
