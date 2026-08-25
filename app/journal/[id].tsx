@@ -3,6 +3,7 @@ import {
   Animated,
   Image,
   LayoutAnimation,
+  Keyboard,
   PanResponder,
   View,
   ScrollView,
@@ -77,7 +78,7 @@ export default function JournalEntriesScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useTranslation();
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { entries, isLoading, refresh, addReflection } = useDiary();
   const { journals, refresh: refreshJournals } = useJournals();
   const { isPro } = useSubscription();
@@ -110,6 +111,7 @@ export default function JournalEntriesScreen() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showHeaderOptions, setShowHeaderOptions] = useState(false);
   const [showHierarchyMenu, setShowHierarchyMenu] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const drawerWidth = Math.min(windowWidth * 0.86, 380);
   const drawerProgress = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -121,6 +123,8 @@ export default function JournalEntriesScreen() {
   const entryDateById = useRef(new Map<string, string>());
   const entryRefs = useRef(new Map<string, View>());
   const scrollOffsetY = useRef(0);
+  const keyboardTopY = useRef(windowHeight);
+  const focusedReflectionEntryId = useRef<string | null>(null);
   const pendingScrollEntryId = useRef<string | null>(null);
   const premiumPromptShownThisSession = useRef(false);
   const selectedJournal = journals.find((journal) => journal.id === journalId);
@@ -279,6 +283,49 @@ export default function JournalEntriesScreen() {
     },
     [addReflection, t],
   );
+
+  const scrollReflectionInputIntoView = useCallback((entryId: string) => {
+    const entryNode = entryRefs.current.get(entryId);
+    if (!entryNode || !scrollRef.current) return;
+    const entryHandle = findNodeHandle(entryNode);
+    const scrollHandle = findNodeHandle(scrollRef.current);
+    if (entryHandle === null || scrollHandle === null) return;
+
+    UIManager.measure(entryHandle, (_entryX: number, _entryY: number, _entryWidth: number, entryHeight: number, _entryPageX: number, entryPageY: number) => {
+      UIManager.measure(scrollHandle, (_scrollX: number, _scrollY: number, _scrollWidth: number, _scrollHeight: number, _scrollPageX: number, _scrollPageY: number) => {
+        const keyboardSafeBottom = keyboardTopY.current - 18;
+        const entryBottomY = entryPageY + entryHeight;
+        if (entryBottomY <= keyboardSafeBottom) return;
+        const nextY = scrollOffsetY.current + entryBottomY - keyboardSafeBottom;
+        scrollRef.current?.scrollTo({ y: Math.max(0, nextY), animated: true });
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", (event) => {
+      keyboardTopY.current = event.endCoordinates.screenY;
+      setKeyboardHeight(event.endCoordinates.height);
+      const entryId = focusedReflectionEntryId.current;
+      if (entryId) {
+        setTimeout(() => scrollReflectionInputIntoView(entryId), 80);
+      }
+    });
+    const hide = Keyboard.addListener("keyboardDidHide", () => {
+      keyboardTopY.current = windowHeight;
+      focusedReflectionEntryId.current = null;
+      setKeyboardHeight(0);
+    });
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [scrollReflectionInputIntoView, windowHeight]);
+
+  const handleReflectionInputFocus = useCallback((entryId: string) => {
+    focusedReflectionEntryId.current = entryId;
+    setTimeout(() => scrollReflectionInputIntoView(entryId), 80);
+  }, [scrollReflectionInputIntoView]);
 
   const scrollToEntry = useCallback((entryId: string) => {
     const entryNode = entryRefs.current.get(entryId);
@@ -699,8 +746,10 @@ export default function JournalEntriesScreen() {
           scrollEventThrottle={16}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: insets.bottom + 124 },
+            { paddingBottom: insets.bottom + 124 + keyboardHeight },
           ]}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* {onThisDay.length > 0 && (
@@ -813,6 +862,7 @@ export default function JournalEntriesScreen() {
                       router.push(`/entry/${entry.id}`);
                     }}
                     onAddReflection={viewMode === "timeline" || viewMode === "feed" ? handleAddReflection : undefined}
+                    onReflectionInputFocus={viewMode === "timeline" || viewMode === "feed" ? handleReflectionInputFocus : undefined}
                     onReflectionSummaryPress={viewMode === "timeline" || viewMode === "feed" ? undefined : handleReflectionSummaryPress}
                   />
                 </View>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, Keyboard, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
@@ -21,6 +21,7 @@ interface DiaryEntryViewProps {
   readonly onPress: () => void | Promise<void>;
   readonly onAddReflection?: (entryId: string, text: string) => Promise<boolean>;
   readonly onReflectionSummaryPress?: (entryId: string) => void;
+  readonly onReflectionInputFocus?: (entryId: string) => void;
 }
 
 const FEED_STICKER_ORIGIN_X = 36;
@@ -73,12 +74,13 @@ function formatCardDay(value: string): { weekday: string; day: string } {
   };
 }
 
-export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflectionSummaryPress }: DiaryEntryViewProps): React.JSX.Element {
+export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflectionSummaryPress, onReflectionInputFocus }: DiaryEntryViewProps): React.JSX.Element {
   const theme = useTheme();
   const timeFormat = useAppStore((state) => state.timeFormat);
   const t = useTranslation();
   const [reflectionText, setReflectionText] = useState('');
   const [isAddingReflection, setIsAddingReflection] = useState(false);
+  const [isReflectionFocused, setIsReflectionFocused] = useState(false);
   const hasMood = Boolean(entry.manualMood);
   const moodTone = getManualMoodColor(entry.manualMood, theme.colors);
   const entryTime = formatDisplayTime(entry.createdAt, timeFormat);
@@ -127,8 +129,23 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
             ]}
             returnKeyType="send"
             onSubmitEditing={() => { void handleAddInlineReflection(); }}
+            onFocus={() => {
+              setIsReflectionFocused(true);
+              onReflectionInputFocus?.(entry.id);
+            }}
+            onBlur={() => setIsReflectionFocused(false)}
             accessibilityLabel={t('reflectionAddA11y')}
           />
+          {isReflectionFocused ? (
+            <TouchableOpacity
+              onPress={Keyboard.dismiss}
+              style={styles.timelineReflectionButton}
+              accessibilityRole="button"
+              accessibilityLabel={t('entryDismissKeyboardA11y')}
+            >
+              <Ionicons name="chevron-down" size={18} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity
             onPress={() => { void handleAddInlineReflection(); }}
             disabled={!reflectionText.trim() || isAddingReflection}
