@@ -13,6 +13,7 @@ import { useSubscription } from '@/features/subscription/hooks/useSubscription';
 import { useAppStore } from '@/stores/useAppStore';
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
+import type { Journal } from '@/features/journal/domain/Journal';
 
 function entryBelongsToJournal(entry: { readonly journalIds?: readonly string[]; readonly collectionIds?: readonly string[] }, journalId: string): boolean {
   return (entry.journalIds ?? entry.collectionIds ?? []).includes(journalId);
@@ -25,6 +26,7 @@ interface JournalHomeItem {
   readonly title: string;
   readonly count: number;
   readonly color: string;
+  readonly canRename: boolean;
 }
 
 const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
@@ -37,7 +39,7 @@ export default function JournalsScreen(): React.JSX.Element {
   const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { entries, refresh: refreshEntries } = useDiary();
-  const { journals, refresh: refreshJournals, createJournal } = useJournals();
+  const { journals, refresh: refreshJournals, createJournal, saveJournal } = useJournals();
   const { isPro } = useSubscription();
   const isOnboarded = useAppStore((state) => state.isOnboarded);
   const premiumOnboardingPromptShown = useAppStore((state) => state.premiumOnboardingPromptShown);
@@ -45,8 +47,12 @@ export default function JournalsScreen(): React.JSX.Element {
   const markPremiumOnboardingPromptShown = useAppStore((state) => state.markPremiumOnboardingPromptShown);
   const markPremiumPromptDismissed = useAppStore((state) => state.markPremiumPromptDismissed);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
   const [journalTitle, setJournalTitle] = useState('');
+  const [renameJournalTitle, setRenameJournalTitle] = useState('');
+  const [renamingJournal, setRenamingJournal] = useState<Journal | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [journalViewMode, setJournalViewMode] = useState<JournalViewMode>('list');
   const premiumPromptShownThisSession = useRef(false);
@@ -104,6 +110,7 @@ export default function JournalsScreen(): React.JSX.Element {
       title: journal.title,
       count: visibleEntries.filter((entry) => entryBelongsToJournal(entry, journal.id)).length,
       color: journal.color,
+      canRename: true,
     }));
 
     if (unassignedEntries.length === 0) return assignedItems;
@@ -115,6 +122,7 @@ export default function JournalsScreen(): React.JSX.Element {
         title: t('journalUnassignedTitle'),
         count: unassignedEntries.length,
         color: theme.colors.textTertiary,
+        canRename: false,
       },
     ];
   }, [journals, t, theme.colors.textTertiary, unassignedEntries.length, visibleEntries]);
@@ -137,21 +145,49 @@ export default function JournalsScreen(): React.JSX.Element {
     router.push({ pathname: '/journal/[id]', params: { id: result.data.id } });
   };
 
+  const handleOpenRenameJournal = useCallback((journalId: string) => {
+    const journal = journals.find((item) => item.id === journalId);
+    if (!journal) return;
+    setRenamingJournal(journal);
+    setRenameJournalTitle(journal.title);
+    setShowRenameModal(true);
+  }, [journals]);
+
+  const handleRenameJournal = async () => {
+    const trimmed = renameJournalTitle.trim();
+    if (!trimmed) {
+      Alert.alert(t('journalTitleRequiredTitle'), t('journalTitleRequiredMessage'));
+      return;
+    }
+    if (!renamingJournal) return;
+
+    setIsRenaming(true);
+    const result = await saveJournal({ ...renamingJournal, title: trimmed });
+    setIsRenaming(false);
+    if (!result.success) {
+      Alert.alert(t('entryErrorTitle'), result.error.message);
+      return;
+    }
+
+    setRenamingJournal(null);
+    setRenameJournalTitle('');
+    setShowRenameModal(false);
+  };
+
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
-        <View>
-          <Text preset="h1" color="text" style={styles.title}>{t('journalsTitle')}</Text>
-          <Text preset="caption" color="textSecondary" style={styles.subtitle}>{t('journalsSubtitle')}</Text>
+      <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
+        <View style={styles.titleRow}>
+          <Text style={[styles.heading, { color: theme.colors.text }]}>{t('journalsTitle')}</Text>
+          <TouchableOpacity
+            onPress={() => setShowCreateModal(true)}
+            style={[styles.createJournalButton, { borderColor: theme.colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('journalCreateA11y')}
+          >
+            <Text preset="caption" color="tint">{t('journalCreate')}</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          onPress={() => setShowCreateModal(true)}
-          style={[styles.addButton, { backgroundColor: theme.colors.tint }]}
-          accessibilityRole="button"
-          accessibilityLabel={t('journalCreateA11y')}
-        >
-          <Ionicons name="add" size={22} color={theme.isDark ? theme.colors.background : theme.colors.card} />
-        </TouchableOpacity>
       </View>
 
       <View style={[styles.viewModePill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
@@ -205,10 +241,40 @@ export default function JournalsScreen(): React.JSX.Element {
               >
                 <View style={[journalViewMode === 'grid' ? styles.journalGridColor : styles.journalColor, { backgroundColor: journal.color }]} />
                 <View style={journalViewMode === 'grid' ? styles.journalGridCopy : styles.journalCopy}>
-                  {journalViewMode === 'grid' ? <Ionicons name="journal-outline" size={22} color={theme.colors.textSecondary} /> : null}
+                  {journalViewMode === 'grid' ? (
+                    <View style={styles.journalGridHeader}>
+                      <Ionicons name="journal-outline" size={22} color={theme.colors.textSecondary} />
+                      {journal.canRename ? (
+                        <TouchableOpacity
+                          onPress={(event) => {
+                            event.stopPropagation();
+                            handleOpenRenameJournal(journal.id);
+                          }}
+                          style={styles.journalEditButton}
+                          accessibilityRole="button"
+                          accessibilityLabel={t('journalRenameA11y')}
+                        >
+                          <Ionicons name="pencil-outline" size={18} color={theme.colors.textSecondary} />
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
+                  ) : null}
                   <Text preset="h3" color="text" numberOfLines={journalViewMode === 'grid' ? 2 : 1} style={journalViewMode === 'grid' ? styles.journalGridTitle : undefined}>{journal.title}</Text>
                   <Text preset="caption" color="textSecondary">{journal.count === 1 ? t('journalEntryCountOne') : t('journalEntryCountMany').replace('{count}', String(journal.count))}</Text>
                 </View>
+                {journalViewMode === 'list' && journal.canRename ? (
+                  <TouchableOpacity
+                    onPress={(event) => {
+                      event.stopPropagation();
+                      handleOpenRenameJournal(journal.id);
+                    }}
+                    style={styles.journalEditButton}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('journalRenameA11y')}
+                  >
+                    <Ionicons name="pencil-outline" size={18} color={theme.colors.textSecondary} />
+                  </TouchableOpacity>
+                ) : null}
                 {journalViewMode === 'list' ? <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} /> : null}
               </TouchableOpacity>
             ))}
@@ -256,16 +322,42 @@ export default function JournalsScreen(): React.JSX.Element {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={showRenameModal} animationType="fade" transparent onRequestClose={() => setShowRenameModal(false)}>
+        <View style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}>
+          <View style={[styles.modalCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
+            <Text preset="h2" color="text" style={styles.modalTitle}>{t('journalRename')}</Text>
+            <TextInput
+              value={renameJournalTitle}
+              onChangeText={setRenameJournalTitle}
+              placeholder={t('journalTitlePlaceholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              autoFocus
+              style={[styles.modalInput, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontFamily: theme.fontFamily }]}
+              returnKeyType="done"
+              onSubmitEditing={() => { void handleRenameJournal(); }}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity onPress={() => setShowRenameModal(false)} style={styles.modalAction} disabled={isRenaming}>
+                <Text preset="label" color="textSecondary">{t('entryCancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { void handleRenameJournal(); }} style={[styles.modalActionPrimary, { backgroundColor: theme.colors.tint }]} disabled={isRenaming}>
+                <Text preset="label" style={{ color: theme.isDark ? theme.colors.background : theme.colors.card }}>{t('journalRenameSave')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingBottom: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
-  title: { fontWeight: '800' },
-  subtitle: { marginTop: 4 },
-  addButton: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  heading: { fontSize: 24, fontWeight: '700' },
+  createJournalButton: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
   viewModePill: {
     alignSelf: 'center',
     flexDirection: 'row',
@@ -292,7 +384,9 @@ const styles = StyleSheet.create({
   journalGridColor: { height: 8, width: '100%' },
   journalCopy: { flex: 1 },
   journalGridCopy: { flex: 1, padding: 14, justifyContent: 'space-between', gap: 10 },
+  journalGridHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   journalGridTitle: { fontWeight: '800', lineHeight: 22 },
+  journalEditButton: { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   emptyState: { borderWidth: 1, borderRadius: 8, padding: 22, alignItems: 'center' },
   emptyTitle: { marginTop: 12, marginBottom: 6, fontWeight: '800' },
   emptyBody: { textAlign: 'center', lineHeight: 20 },
