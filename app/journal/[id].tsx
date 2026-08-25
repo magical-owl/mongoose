@@ -53,7 +53,7 @@ const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
 const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const ALL_ENTRIES_JOURNAL_ID = "all";
 const JOURNAL_COVER_EXPANDED_HEIGHT = 184;
-const JOURNAL_COVER_COLLAPSED_HEIGHT = 74;
+const JOURNAL_COVER_COLLAPSED_HEIGHT = 60;
 const JOURNAL_COVER_COLLAPSE_DISTANCE = 120;
 
 function hierarchyModeLabel(mode: HierarchyMode): string {
@@ -954,6 +954,7 @@ const styles = StyleSheet.create({
   },
   viewModePillOnCover: {
     marginTop: 12,
+    marginBottom: 12,
     zIndex: 2,
   },
   viewModeButton: {
