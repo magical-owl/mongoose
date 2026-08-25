@@ -46,6 +46,21 @@ function withCount(value: string, count: number): string {
   return value.replace('{count}', String(count));
 }
 
+interface SettingsOption {
+  readonly id: string;
+  readonly title: string;
+  readonly subtitle: string;
+  readonly icon: IconProps['name'];
+  readonly onPress: () => void;
+  readonly isDestructive?: boolean;
+}
+
+interface SettingsSection {
+  readonly id: string;
+  readonly title: string;
+  readonly options: readonly SettingsOption[];
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -240,92 +255,124 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const handleOpenFreeTier = useCallback(() => {
+    setNowMs(Date.now());
+    void refresh();
+    void loadDailyUsage();
+    setShowFreeTierModal(true);
+  }, [loadDailyUsage, refresh, setNowMs, setShowFreeTierModal]);
+
   const handleShowOnboarding = () => {
     setShowDeveloperModal(false);
     setOnboardingStatus('not_started');
     router.replace('/onboarding');
   };
 
-  const settingsOptions = [
+  const settingsSections: SettingsSection[] = [
     {
-      id: 'appearance',
-      title: t('settingsAppearanceTitle'),
-      subtitle: t('settingsAppearanceSubtitle'),
-      icon: 'color-palette-outline' as IconProps['name'],
-      onPress: () => setShowAppearanceModal(true),
+      id: 'preferences',
+      title: t('settingsPreferencesSection'),
+      options: [
+        {
+          id: 'appearance',
+          title: t('settingsAppearanceTitle'),
+          subtitle: t('settingsAppearanceSubtitle'),
+          icon: 'color-palette-outline',
+          onPress: () => setShowAppearanceModal(true),
+        },
+        {
+          id: 'display',
+          title: t('settingsDisplayTitle'),
+          subtitle: t('settingsDisplaySubtitle'),
+          icon: 'options-outline',
+          onPress: () => setShowDisplayModal(true),
+        },
+        {
+          id: 'language',
+          title: t('settingsLanguageTitle'),
+          subtitle: `${t('settingsLanguageSubtitle')}: ${activeLanguage.nativeLabel}`,
+          icon: 'language-outline',
+          onPress: () => setShowLanguageModal(true),
+        },
+      ],
     },
     {
-      id: 'display',
-      title: t('settingsDisplayTitle'),
-      subtitle: t('settingsDisplaySubtitle'),
-      icon: 'options-outline' as IconProps['name'],
-      onPress: () => setShowDisplayModal(true),
-    },
-    {
-      id: 'language',
-      title: t('settingsLanguageTitle'),
-      subtitle: `${t('settingsLanguageSubtitle')}: ${activeLanguage.nativeLabel}`,
-      icon: 'language-outline' as IconProps['name'],
-      onPress: () => setShowLanguageModal(true),
-    },
-    {
-      id: 'free-tier',
-      title: t('settingsFreeTierTitle'),
-      subtitle: isPro
-        ? t('settingsFreeTierProSubtitle')
-        : `${t('settingsFreeTierSubtitle')} ${nextFreeTierResetText}`,
-      icon: 'hourglass-outline' as IconProps['name'],
-      onPress: () => {
-        setNowMs(Date.now());
-        void refresh();
-        void loadDailyUsage();
-        setShowFreeTierModal(true);
-      },
-    },
-    {
-      id: 'premium',
-      title: t('settingsPremiumTitle'),
-      subtitle: isPro ? `${t('settingsPremiumActiveSubtitle')}: ${activeTier}` : t('settingsPremiumSubtitle'),
-      icon: 'sparkles-outline' as IconProps['name'],
-      onPress: () => setShowPremiumModal(true),
-    },
-    {
-      id: 'security',
-      title: t('settingsSecurityTitle'),
-      subtitle: t('settingsSecuritySubtitle'),
-      icon: 'lock-closed-outline' as IconProps['name'],
-      onPress: () => setShowSecurityModal(true),
+      id: 'plan-privacy',
+      title: t('settingsPlanPrivacySection'),
+      options: [
+        {
+          id: 'free-tier',
+          title: t('settingsFreeTierTitle'),
+          subtitle: isPro
+            ? t('settingsFreeTierProSubtitle')
+            : `${t('settingsFreeTierSubtitle')} ${nextFreeTierResetText}`,
+          icon: 'hourglass-outline',
+          onPress: handleOpenFreeTier,
+        },
+        {
+          id: 'premium',
+          title: t('settingsPremiumTitle'),
+          subtitle: isPro ? `${t('settingsPremiumActiveSubtitle')}: ${activeTier}` : t('settingsPremiumSubtitle'),
+          icon: 'sparkles-outline',
+          onPress: () => setShowPremiumModal(true),
+        },
+        {
+          id: 'security',
+          title: t('settingsSecurityTitle'),
+          subtitle: t('settingsSecuritySubtitle'),
+          icon: 'lock-closed-outline',
+          onPress: () => setShowSecurityModal(true),
+        },
+      ],
     },
     {
       id: 'data',
-      title: t('settingsDataTitle'),
-      subtitle: withCount(t('settingsDataSubtitle'), entries.length),
-      icon: 'archive-outline' as IconProps['name'],
-      onPress: () => setShowDataModal(true),
+      title: t('settingsDataSection'),
+      options: [
+        {
+          id: 'data',
+          title: t('settingsDataTitle'),
+          subtitle: withCount(t('settingsDataSubtitle'), entries.length),
+          icon: 'archive-outline',
+          onPress: () => setShowDataModal(true),
+        },
+        {
+          id: 'recovery-bin',
+          title: t('settingsRecoveryBinTitle'),
+          subtitle: withCount(t('settingsRecoveryBinSubtitle'), deletedEntries.length),
+          icon: 'trash-bin-outline',
+          onPress: () => setShowRecoveryBinModal(true),
+        },
+      ],
     },
     {
-      id: 'recovery-bin',
-      title: t('settingsRecoveryBinTitle'),
-      subtitle: withCount(t('settingsRecoveryBinSubtitle'), deletedEntries.length),
-      icon: 'trash-bin-outline' as IconProps['name'],
-      onPress: () => setShowRecoveryBinModal(true),
+      id: 'danger-zone',
+      title: t('settingsDangerZoneSection'),
+      options: [
+        {
+          id: 'reset',
+          title: t('settingsResetTitle'),
+          subtitle: t('settingsResetSubtitle'),
+          icon: 'trash-outline',
+          onPress: handleResetApp,
+          isDestructive: true,
+        },
+      ],
     },
-    {
-      id: 'reset',
-      title: t('settingsResetTitle'),
-      subtitle: t('settingsResetSubtitle'),
-      icon: 'trash-outline' as IconProps['name'],
-      onPress: handleResetApp,
-      isDestructive: true,
-    },
-    ...(config.isDev ? [{
-      id: 'developer',
-      title: t('settingsDeveloperTitle'),
-      subtitle: t('settingsDeveloperSubtitle'),
-      icon: 'code-slash-outline' as IconProps['name'],
-      onPress: () => setShowDeveloperModal(true),
-    }] : []),
   ];
+  if (config.isDev) {
+    settingsSections.push({
+      id: 'developer',
+      title: t('settingsDeveloperSection'),
+      options: [{
+        id: 'developer',
+        title: t('settingsDeveloperTitle'),
+        subtitle: t('settingsDeveloperSubtitle'),
+        icon: 'code-slash-outline',
+        onPress: () => setShowDeveloperModal(true),
+      }],
+    });
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -342,38 +389,46 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.optionsContainer}>
-          {settingsOptions.map((option) => (
-            <TouchableOpacity
-              key={option.id}
-              style={[
-                styles.optionRow,
-                { borderBottomColor: theme.colors.border },
-              ]}
-              onPress={option.onPress}
-              activeOpacity={0.7}
-              accessibilityLabel={`${option.title}, ${option.subtitle}`}
-              accessibilityRole="button"
-            >
-              <View style={styles.optionLeft}>
-                <Icon name={option.icon} size={22} color={option.isDestructive ? 'error' : 'textSecondary'} style={styles.optionIcon} />
-                <View style={styles.optionText}>
-                  <Text
+          {settingsSections.map((section) => (
+            <View key={section.id} style={styles.optionSection}>
+              <Text preset="caption" color="textSecondary" style={styles.optionSectionTitle}>{section.title}</Text>
+              <View style={[styles.optionGroup, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+                {section.options.map((option, index) => (
+                  <TouchableOpacity
+                    key={option.id}
                     style={[
-                      styles.optionTitle,
-                      { color: option.isDestructive ? theme.colors.error : theme.colors.text },
+                      styles.optionRow,
+                      { borderBottomColor: theme.colors.border },
+                      index === section.options.length - 1 ? styles.optionRowLast : null,
                     ]}
+                    onPress={option.onPress}
+                    activeOpacity={0.7}
+                    accessibilityLabel={`${option.title}, ${option.subtitle}`}
+                    accessibilityRole="button"
                   >
-                    {option.title}
-                  </Text>
-                  <Text style={[styles.optionSubtitle, { color: theme.colors.textSecondary }]}>
-                    {option.subtitle}
-                  </Text>
-                </View>
+                    <View style={styles.optionLeft}>
+                      <Icon name={option.icon} size={22} color={option.isDestructive ? 'error' : 'textSecondary'} style={styles.optionIcon} />
+                      <View style={styles.optionText}>
+                        <Text
+                          style={[
+                            styles.optionTitle,
+                            { color: option.isDestructive ? theme.colors.error : theme.colors.text },
+                          ]}
+                        >
+                          {option.title}
+                        </Text>
+                        <Text style={[styles.optionSubtitle, { color: theme.colors.textSecondary }]}>
+                          {option.subtitle}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.arrow, { color: theme.colors.textSecondary }]}>
+                      ›
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-              <Text style={[styles.arrow, { color: theme.colors.textSecondary }]}>
-                ›
-              </Text>
-            </TouchableOpacity>
+            </View>
           ))}
         </View>
       </ScrollView>
@@ -880,14 +935,32 @@ const styles = StyleSheet.create({
   },
   optionsContainer: {
     flex: 1,
+    paddingHorizontal: 20,
+    gap: 18,
+  },
+  optionSection: {
+    gap: 8,
+  },
+  optionSectionTitle: {
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    paddingHorizontal: 2,
+  },
+  optionGroup: {
+    borderWidth: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 14,
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  optionRowLast: {
+    borderBottomWidth: 0,
   },
   optionLeft: {
     flexDirection: 'row',
