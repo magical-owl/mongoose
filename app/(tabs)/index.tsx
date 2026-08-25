@@ -32,6 +32,7 @@ const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
 const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const JOURNAL_VIEW_MODES = ['list', 'grid'] as const satisfies readonly JournalViewMode[];
 const ALL_ENTRIES_JOURNAL_ID = 'all';
+const UNASSIGNED_JOURNAL_ID = 'unassigned';
 
 export default function JournalsScreen(): React.JSX.Element {
   const router = useRouter();
@@ -56,6 +57,7 @@ export default function JournalsScreen(): React.JSX.Element {
   const [deletingJournalId, setDeletingJournalId] = useState<string | null>(null);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [journalViewMode, setJournalViewMode] = useState<JournalViewMode>('list');
+  const [showPermanentJournals, setShowPermanentJournals] = useState(true);
   const premiumPromptShownThisSession = useRef(false);
 
   useFocusEffect(
@@ -113,28 +115,28 @@ export default function JournalsScreen(): React.JSX.Element {
       canRename: true,
     }));
 
-    const permanentItems: JournalHomeItem[] = [
+    const permanentItems: JournalHomeItem[] = showPermanentJournals ? [
       {
         id: ALL_ENTRIES_JOURNAL_ID,
         title: t('journalAllEntriesTitle'),
         count: visibleEntries.length,
         canRename: false,
       },
-    ];
+    ] : [];
 
     if (unassignedEntries.length === 0) return [...permanentItems, ...assignedItems];
 
     return [
       ...permanentItems,
       ...assignedItems,
-      {
-        id: 'unassigned',
+      ...(showPermanentJournals ? [{
+        id: UNASSIGNED_JOURNAL_ID,
         title: t('journalUnassignedTitle'),
         count: unassignedEntries.length,
         canRename: false,
-      },
+      }] : []),
     ];
-  }, [journals, t, unassignedEntries.length, visibleEntries]);
+  }, [journals, showPermanentJournals, t, unassignedEntries.length, visibleEntries]);
 
   const handleCreateJournal = async () => {
     const trimmed = journalTitle.trim();
@@ -220,14 +222,28 @@ export default function JournalsScreen(): React.JSX.Element {
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
         <View style={styles.titleRow}>
           <Text style={[styles.heading, { color: theme.colors.text }]}>{t('journalsTitle')}</Text>
-          <TouchableOpacity
-            onPress={() => setShowCreateModal(true)}
-            style={styles.createJournalButton}
-            accessibilityRole="button"
-            accessibilityLabel={t('journalCreateA11y')}
-          >
-            <Ionicons name="add-outline" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={() => setShowPermanentJournals((current) => !current)}
+              style={[
+                styles.headerIconButton,
+                showPermanentJournals && { backgroundColor: theme.colors.tint + '18' },
+              ]}
+              accessibilityRole="switch"
+              accessibilityLabel={t('journalTogglePermanentGroupsA11y')}
+              accessibilityState={{ checked: showPermanentJournals }}
+            >
+              <Ionicons name={showPermanentJournals ? 'albums-outline' : 'albums'} size={23} color={showPermanentJournals ? theme.colors.tint : theme.colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowCreateModal(true)}
+              style={styles.headerIconButton}
+              accessibilityRole="button"
+              accessibilityLabel={t('journalCreateA11y')}
+            >
+              <Ionicons name="add-outline" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -453,7 +469,8 @@ const styles = StyleSheet.create({
   fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   heading: { fontSize: 24, fontWeight: '700' },
-  createJournalButton: { width: 38, height: 34, alignItems: 'center', justifyContent: 'center' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  headerIconButton: { width: 38, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   viewModePill: {
     alignSelf: 'center',
     flexDirection: 'row',
