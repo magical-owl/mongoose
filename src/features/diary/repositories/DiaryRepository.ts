@@ -47,22 +47,45 @@ export class DiaryRepository implements IDiaryRepository {
     await this.storage.setItem(secureStorageKeys.diaryEntries, JSON.stringify(envelope));
   }
 
+  private removeExpiredEntries(): string[] {
+    const now = Date.now();
+    const expiredIds = Array.from(this.memoryStore.values())
+      .filter((entry) => entry.expiresAt && new Date(entry.expiresAt).getTime() <= now)
+      .map((entry) => entry.id);
+    expiredIds.forEach((id) => this.memoryStore.delete(id));
+    return expiredIds;
+  }
+
+  private sortEntriesByDateDesc(entries: DiaryEntry[]): DiaryEntry[] {
+    return entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
   public async getAll(): Promise<Result<DiaryEntry[]>> {
     try {
       await this.ensureLoaded();
-      const expiredIds = Array.from(this.memoryStore.values()).filter((entry) => entry.expiresAt && new Date(entry.expiresAt).getTime() <= Date.now()).map((entry) => entry.id);
-      if (expiredIds.length > 0) {
-        expiredIds.forEach((id) => this.memoryStore.delete(id));
-        await this.persist();
-      }
-      const entries = Array.from(this.memoryStore.values()).sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
+      if (this.removeExpiredEntries().length > 0) await this.persist();
+      const entries = this.sortEntriesByDateDesc(Array.from(this.memoryStore.values()).filter((entry) => !entry.deletedAt));
       return success(entries);
     } catch (error) {
       return failure({
         code: 'STORAGE_ERROR',
         message: error instanceof Error ? error.message : 'Failed to retrieve entries',
+      });
+    }
+  }
+
+  public async getDeleted(): Promise<Result<DiaryEntry[]>> {
+    try {
+      await this.ensureLoaded();
+      if (this.removeExpiredEntries().length > 0) await this.persist();
+      const entries = Array.from(this.memoryStore.values())
+        .filter((entry) => Boolean(entry.deletedAt))
+        .sort((a, b) => new Date(b.deletedAt ?? b.updatedAt).getTime() - new Date(a.deletedAt ?? a.updatedAt).getTime());
+      return success(entries);
+    } catch (error) {
+      return failure({
+        code: 'STORAGE_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to retrieve deleted entries',
       });
     }
   }
@@ -76,7 +99,7 @@ export class DiaryRepository implements IDiaryRepository {
         await this.persist();
         return success(null);
       }
-      return success(entry);
+      return success(entry?.deletedAt ? null : entry);
     } catch (error) {
       return failure({
         code: 'STORAGE_ERROR',
@@ -89,7 +112,7 @@ export class DiaryRepository implements IDiaryRepository {
     try {
       await this.ensureLoaded();
       const entries = Array.from(this.memoryStore.values()).filter(
-        (entry) => entry.date === date && (!entry.expiresAt || new Date(entry.expiresAt).getTime() > Date.now())
+        (entry) => entry.date === date && !entry.deletedAt && (!entry.expiresAt || new Date(entry.expiresAt).getTime() > Date.now())
       );
       return success(entries);
     } catch (error) {
@@ -117,6 +140,42 @@ export class DiaryRepository implements IDiaryRepository {
       return failure({
         code: 'VALIDATION_ERROR',
         message,
+      });
+    }
+  }
+
+  public async softDelete(id: string): Promise<Result<boolean>> {
+    try {
+      await this.ensureLoaded();
+      const entry = this.memoryStore.get(id);
+      if (!entry) return success(false);
+      if (entry.deletedAt) return success(true);
+      const now = new Date().toISOString();
+      const deleted: DiaryEntry = { ...entry, deletedAt: now, updatedAt: now };
+      this.memoryStore.set(id, DiaryEntrySchema.parse(deleted));
+      await this.persist();
+      return success(true);
+    } catch (error) {
+      return failure({
+        code: 'STORAGE_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to move entry to recovery bin',
+      });
+    }
+  }
+
+  public async restore(id: string): Promise<Result<DiaryEntry | null>> {
+    try {
+      await this.ensureLoaded();
+      const entry = this.memoryStore.get(id);
+      if (!entry) return success(null);
+      const restored = DiaryEntrySchema.parse({ ...entry, deletedAt: undefined, updatedAt: new Date().toISOString() });
+      this.memoryStore.set(id, restored);
+      await this.persist();
+      return success(restored);
+    } catch (error) {
+      return failure({
+        code: 'STORAGE_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to restore entry',
       });
     }
   }

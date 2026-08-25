@@ -5,6 +5,7 @@ import { useAppStore } from '@/stores/useAppStore';
 
 export function useDiary() {
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
+  const [deletedEntries, setDeletedEntries] = useState<DiaryEntry[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,13 +14,21 @@ export function useDiary() {
 
   const fetchEntries = useCallback(async () => {
     setIsLoading(true);
-    const result = await diaryService.getEntries();
-    if (result.success) {
-      setEntries(result.data);
-      setError(null);
-    } else {
-      setError(result.error.message);
+    const entriesResult = await diaryService.getEntries();
+    const deletedEntriesResult = await diaryService.getDeletedEntries();
+    if (!entriesResult.success) {
+      setError(entriesResult.error.message);
+      setIsLoading(false);
+      return;
     }
+    if (!deletedEntriesResult.success) {
+      setError(deletedEntriesResult.error.message);
+      setIsLoading(false);
+      return;
+    }
+    setEntries(entriesResult.data);
+    setDeletedEntries(deletedEntriesResult.data);
+    setError(null);
     setIsLoading(false);
   }, []);
 
@@ -40,6 +49,22 @@ export function useDiary() {
 
   const deleteEntry = async (id: string) => {
     const result = await diaryService.deleteEntry(id);
+    if (result.success) {
+      await fetchEntries();
+    }
+    return result;
+  };
+
+  const restoreDeletedEntry = async (id: string) => {
+    const result = await diaryService.restoreDeletedEntry(id);
+    if (result.success) {
+      await fetchEntries();
+    }
+    return result;
+  };
+
+  const permanentlyDeleteEntry = async (id: string) => {
+    const result = await diaryService.permanentlyDeleteEntry(id);
     if (result.success) {
       await fetchEntries();
     }
@@ -74,6 +99,7 @@ export function useDiary() {
 
   return {
     entries,
+    deletedEntries,
     isLoading,
     error,
     selectedCompanion,
@@ -82,6 +108,8 @@ export function useDiary() {
     saveDiaryEntry: saveEntry,
     deleteEntry,
     deleteDiaryEntry: deleteEntry,
+    restoreDeletedEntry,
+    permanentlyDeleteEntry,
     restoreEntries,
     addReflection,
     deleteReflection,

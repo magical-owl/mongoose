@@ -51,7 +51,7 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useTranslation();
-  const { entries, restoreEntries, refresh } = useDiary();
+  const { entries, deletedEntries, restoreEntries, restoreDeletedEntry, permanentlyDeleteEntry, refresh } = useDiary();
   const biometricLockEnabled = useAppStore((state) => state.biometricLockEnabled);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -87,6 +87,7 @@ export default function SettingsScreen() {
   const [showAppearanceModal, setShowAppearanceModal] = useState(false);
   const [showDataModal, setShowDataModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [showRecoveryBinModal, setShowRecoveryBinModal] = useState(false);
   const [showDisplayModal, setShowDisplayModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showFreeTierModal, setShowFreeTierModal] = useState(false);
@@ -220,6 +221,25 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleRestoreDeletedEntry = async (id: string) => {
+    const result = await restoreDeletedEntry(id);
+    if (!result.success) Alert.alert(t('settingsRecoveryBinRestoreFailedTitle'), result.error.message);
+  };
+
+  const handlePermanentlyDeleteEntry = (id: string) => {
+    Alert.alert(t('settingsRecoveryBinDeleteForeverTitle'), t('settingsRecoveryBinDeleteForeverMessage'), [
+      { text: t('entryCancel'), style: 'cancel' },
+      {
+        text: t('settingsRecoveryBinDeleteForeverAction'),
+        style: 'destructive',
+        onPress: async () => {
+          const result = await permanentlyDeleteEntry(id);
+          if (!result.success) Alert.alert(t('settingsRecoveryBinDeleteFailedTitle'), result.error.message);
+        },
+      },
+    ]);
+  };
+
   const handleShowOnboarding = () => {
     setShowDeveloperModal(false);
     setOnboardingStatus('not_started');
@@ -282,6 +302,13 @@ export default function SettingsScreen() {
       subtitle: withCount(t('settingsDataSubtitle'), entries.length),
       icon: 'archive-outline' as IconProps['name'],
       onPress: () => setShowDataModal(true),
+    },
+    {
+      id: 'recovery-bin',
+      title: t('settingsRecoveryBinTitle'),
+      subtitle: withCount(t('settingsRecoveryBinSubtitle'), deletedEntries.length),
+      icon: 'trash-bin-outline' as IconProps['name'],
+      onPress: () => setShowRecoveryBinModal(true),
     },
     {
       id: 'reset',
@@ -765,6 +792,50 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
+      <Modal
+        visible={showRecoveryBinModal}
+        onDismiss={() => setShowRecoveryBinModal(false)}
+        title={t('settingsRecoveryBinTitle')}
+        accessibilityLabel={t('settingsRecoveryBinTitle')}
+      >
+        <View style={{ gap: 12, paddingVertical: 8 }}>
+          {deletedEntries.length === 0 ? (
+            <Text preset="body" color="textSecondary">{t('settingsRecoveryBinEmpty')}</Text>
+          ) : (
+            deletedEntries.map((entry) => (
+              <View key={entry.id} style={[styles.recoveryEntry, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+                <View style={styles.recoveryEntryHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text preset="label" color="text">{entry.title}</Text>
+                    <Text preset="caption" color="textSecondary">
+                      {entry.date}{entry.deletedAt ? ` · ${t('settingsRecoveryBinDeletedOn')} ${formatDisplayDate(entry.deletedAt.slice(0, 10), calendarDateFormat)}` : ''}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.recoveryActions}>
+                  <TouchableOpacity
+                    onPress={() => { void handleRestoreDeletedEntry(entry.id); }}
+                    style={[styles.recoveryButton, { borderColor: theme.colors.tint }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t('settingsRecoveryBinRestoreAction')} ${entry.title}`}
+                  >
+                    <Text preset="caption" style={[styles.recoveryButtonText, { color: theme.colors.tint }]}>{t('settingsRecoveryBinRestoreAction')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handlePermanentlyDeleteEntry(entry.id)}
+                    style={[styles.recoveryButton, { borderColor: theme.colors.error }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t('settingsRecoveryBinDeleteForeverAction')} ${entry.title}`}
+                  >
+                    <Text preset="caption" style={[styles.recoveryButtonText, { color: theme.colors.error }]}>{t('settingsRecoveryBinDeleteForeverAction')}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+      </Modal>
+
       {config.isDev ? (
         <Modal
           visible={showDeveloperModal}
@@ -893,6 +964,32 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  recoveryEntry: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+  },
+  recoveryEntryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  recoveryActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  recoveryButton: {
+    minHeight: 34,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recoveryButtonText: {
+    fontWeight: '800',
   },
   displaySectionLabel: { fontWeight: '700', marginTop: 12, marginBottom: 8 },
   displayOption: {

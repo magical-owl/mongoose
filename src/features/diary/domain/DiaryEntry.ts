@@ -74,6 +74,7 @@ export const DiaryEntrySchema = z.object({
   tags: z.array(z.string()).default([]),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+  deletedAt: z.string().datetime().optional(),
   manualMoodWeather: ManualMoodWeatherSchema.default('neutral'),
   /** Optional for backwards compatibility with entries created before manual mood selection. */
   manualMood: ManualMoodSchema.optional(),

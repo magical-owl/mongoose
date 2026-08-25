@@ -97,9 +97,9 @@ describe('DiaryRepository', () => {
     }
   });
 
-  it('should delete a diary entry and persist deletion', async () => {
+  it('should move a diary entry to the recovery bin and hide it from active reads', async () => {
     await repository.save(mockEntry);
-    const deleteResult = await repository.delete(mockEntry.id);
+    const deleteResult = await repository.softDelete(mockEntry.id);
     expect(deleteResult.success).toBe(true);
 
     const getResult = await repository.getById(mockEntry.id);
@@ -108,12 +108,51 @@ describe('DiaryRepository', () => {
       expect(getResult.data).toBeNull();
     }
 
-    // Verify deletion persisted across new instance
     const newRepoInstance = new DiaryRepository(mockStorage);
     const getAllResult = await newRepoInstance.getAll();
+    const getDeletedResult = await newRepoInstance.getDeleted();
     expect(getAllResult.success).toBe(true);
     if (getAllResult.success) {
       expect(getAllResult.data.length).toBe(0);
+    }
+    expect(getDeletedResult.success).toBe(true);
+    if (getDeletedResult.success) {
+      expect(getDeletedResult.data).toHaveLength(1);
+      expect(getDeletedResult.data[0]?.id).toBe(mockEntry.id);
+      expect(getDeletedResult.data[0]?.deletedAt).toBeDefined();
+    }
+  });
+
+  it('should restore a soft-deleted diary entry', async () => {
+    await repository.save(mockEntry);
+    await repository.softDelete(mockEntry.id);
+
+    const restoreResult = await repository.restore(mockEntry.id);
+    expect(restoreResult.success).toBe(true);
+    if (restoreResult.success) {
+      expect(restoreResult.data?.id).toBe(mockEntry.id);
+      expect(restoreResult.data?.deletedAt).toBeUndefined();
+    }
+
+    const getAllResult = await repository.getAll();
+    const getDeletedResult = await repository.getDeleted();
+    expect(getAllResult.success).toBe(true);
+    expect(getDeletedResult.success).toBe(true);
+    if (getAllResult.success) expect(getAllResult.data).toHaveLength(1);
+    if (getDeletedResult.success) expect(getDeletedResult.data).toHaveLength(0);
+  });
+
+  it('should permanently delete a diary entry from the recovery bin', async () => {
+    await repository.save(mockEntry);
+    await repository.softDelete(mockEntry.id);
+
+    const permanentDeleteResult = await repository.delete(mockEntry.id);
+    expect(permanentDeleteResult.success).toBe(true);
+
+    const getDeletedResult = await repository.getDeleted();
+    expect(getDeletedResult.success).toBe(true);
+    if (getDeletedResult.success) {
+      expect(getDeletedResult.data).toHaveLength(0);
     }
   });
 });

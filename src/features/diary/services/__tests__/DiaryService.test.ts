@@ -117,6 +117,42 @@ describe('DiaryService', () => {
     }
   });
 
+  it('should soft-delete, restore, and permanently delete entries through the recovery flow', async () => {
+    await service.saveEntry(mockEntry);
+
+    const softDeleteResult = await service.deleteEntry(mockEntry.id);
+    const activeAfterDeleteResult = await service.getEntries();
+    const deletedAfterDeleteResult = await service.getDeletedEntries();
+
+    expect(softDeleteResult.success).toBe(true);
+    expect(activeAfterDeleteResult.success).toBe(true);
+    expect(deletedAfterDeleteResult.success).toBe(true);
+    if (activeAfterDeleteResult.success) expect(activeAfterDeleteResult.data).toHaveLength(0);
+    if (deletedAfterDeleteResult.success) {
+      expect(deletedAfterDeleteResult.data).toHaveLength(1);
+      expect(deletedAfterDeleteResult.data[0]?.deletedAt).toBeDefined();
+    }
+
+    const restoreResult = await service.restoreDeletedEntry(mockEntry.id);
+    const activeAfterRestoreResult = await service.getEntries();
+    const deletedAfterRestoreResult = await service.getDeletedEntries();
+
+    expect(restoreResult.success).toBe(true);
+    if (restoreResult.success) expect(restoreResult.data?.deletedAt).toBeUndefined();
+    expect(activeAfterRestoreResult.success).toBe(true);
+    expect(deletedAfterRestoreResult.success).toBe(true);
+    if (activeAfterRestoreResult.success) expect(activeAfterRestoreResult.data).toHaveLength(1);
+    if (deletedAfterRestoreResult.success) expect(deletedAfterRestoreResult.data).toHaveLength(0);
+
+    await service.deleteEntry(mockEntry.id);
+    const permanentDeleteResult = await service.permanentlyDeleteEntry(mockEntry.id);
+    const deletedAfterPermanentDeleteResult = await service.getDeletedEntries();
+
+    expect(permanentDeleteResult.success).toBe(true);
+    expect(deletedAfterPermanentDeleteResult.success).toBe(true);
+    if (deletedAfterPermanentDeleteResult.success) expect(deletedAfterPermanentDeleteResult.data).toHaveLength(0);
+  });
+
   it('should limit free users to three entries per device day', async () => {
     await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174101', dateOffset(0)));
     await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174102', dateOffset(1)));

@@ -19,6 +19,10 @@ export class DiaryService {
     return await this.repo.getAll();
   }
 
+  public async getDeletedEntries(): Promise<Result<DiaryEntry[]>> {
+    return await this.repo.getDeleted();
+  }
+
   public async getEntryById(id: string): Promise<Result<DiaryEntry | null>> {
     return await this.repo.getById(id);
   }
@@ -75,6 +79,14 @@ export class DiaryService {
   }
 
   public async deleteEntry(id: string): Promise<Result<boolean>> {
+    return await this.repo.softDelete(id);
+  }
+
+  public async restoreDeletedEntry(id: string): Promise<Result<DiaryEntry | null>> {
+    return await this.repo.restore(id);
+  }
+
+  public async permanentlyDeleteEntry(id: string): Promise<Result<boolean>> {
     return await this.repo.delete(id);
   }
 
