@@ -273,12 +273,11 @@ export default function CalendarScreen() {
               <Text preset="label" style={[styles.dateHeading, { color: theme.colors.text }]}>
                 {formatDisplayDate(selectedDateStr, calendarDateFormat)}
               </Text>
-              {selectedDayEntries.map((item, index) => {
+              {selectedDayEntries.map((item) => {
               return (
                 <CalendarEntryView
                   key={item.id}
                   entry={item}
-                  position={index}
                   onPress={async () => {
                     if (item.isLockbox && !(await appLockService.authenticate())) return;
                     router.push(`/entry/${item.id}`);

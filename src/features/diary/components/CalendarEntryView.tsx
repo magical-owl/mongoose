@@ -12,11 +12,10 @@ import { manualMoodLabel, useTranslation } from '@/localization/i18n';
 
 interface CalendarEntryViewProps {
   readonly entry: DiaryEntry;
-  readonly position: number;
   readonly onPress: () => void | Promise<void>;
 }
 
-export function CalendarEntryView({ entry, position, onPress }: CalendarEntryViewProps): React.JSX.Element {
+export function CalendarEntryView({ entry, onPress }: CalendarEntryViewProps): React.JSX.Element {
   const theme = useTheme();
   const t = useTranslation();
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -29,14 +28,6 @@ export function CalendarEntryView({ entry, position, onPress }: CalendarEntryVie
       onPress={onPress}
       style={[styles.entry, { borderBottomColor: theme.colors.border }]}
     >
-      <View style={styles.markerColumn}>
-        <View style={[styles.marker, { backgroundColor: entry.manualMood ? moodColor : theme.colors.tint }]}>
-          <Text style={[styles.markerNumber, { color: theme.colors.background }]}>
-            {String(position + 1).padStart(2, '0')}
-          </Text>
-        </View>
-        <View style={[styles.rail, { backgroundColor: theme.colors.border }]} />
-      </View>
       <View style={styles.contentColumn}>
         <View style={styles.headerRow}>
           <Text preset="body" color="text" style={styles.title} numberOfLines={1}>{entry.title}</Text>
@@ -58,15 +49,11 @@ export function CalendarEntryView({ entry, position, onPress }: CalendarEntryVie
 }
 
 const styles = StyleSheet.create({
-  entry: { flexDirection: 'row', minHeight: 92, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
-  markerColumn: { width: 42, alignItems: 'center', position: 'relative' },
-  marker: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  markerNumber: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
+  entry: { minHeight: 92, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
   entryTime: { flexShrink: 0 },
   moodBadge: { maxWidth: 86, minHeight: 24, borderWidth: 1, borderRadius: 12, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center' },
   moodBadgeText: { fontWeight: '700' },
-  rail: { position: 'absolute', top: 38, bottom: -14, width: 1 },
-  contentColumn: { flex: 1, paddingLeft: 8, paddingRight: 2 },
+  contentColumn: { flex: 1, paddingRight: 2 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   title: { flex: 1, ...diaryEntryListTitle },
   preview: { lineHeight: 18, marginTop: 5 },

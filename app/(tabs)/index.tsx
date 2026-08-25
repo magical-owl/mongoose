@@ -25,7 +25,6 @@ interface JournalHomeItem {
   readonly id: string;
   readonly title: string;
   readonly count: number;
-  readonly color: string;
   readonly canRename: boolean;
 }
 
@@ -109,7 +108,6 @@ export default function JournalsScreen(): React.JSX.Element {
       id: journal.id,
       title: journal.title,
       count: visibleEntries.filter((entry) => entryBelongsToJournal(entry, journal.id)).length,
-      color: journal.color,
       canRename: true,
     }));
 
@@ -121,11 +119,10 @@ export default function JournalsScreen(): React.JSX.Element {
         id: 'unassigned',
         title: t('journalUnassignedTitle'),
         count: unassignedEntries.length,
-        color: theme.colors.textTertiary,
         canRename: false,
       },
     ];
-  }, [journals, t, theme.colors.textTertiary, unassignedEntries.length, visibleEntries]);
+  }, [journals, t, unassignedEntries.length, visibleEntries]);
 
   const handleCreateJournal = async () => {
     const trimmed = journalTitle.trim();
@@ -174,6 +171,11 @@ export default function JournalsScreen(): React.JSX.Element {
     setShowRenameModal(false);
   };
 
+  const journalEntryLabelText = useCallback(
+    (count: number) => count === 1 ? t('journalEntryLabelOne') : t('journalEntryLabelMany'),
+    [t],
+  );
+
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
@@ -181,11 +183,11 @@ export default function JournalsScreen(): React.JSX.Element {
           <Text style={[styles.heading, { color: theme.colors.text }]}>{t('journalsTitle')}</Text>
           <TouchableOpacity
             onPress={() => setShowCreateModal(true)}
-            style={[styles.createJournalButton, { borderColor: theme.colors.border }]}
+            style={styles.createJournalButton}
             accessibilityRole="button"
             accessibilityLabel={t('journalCreateA11y')}
           >
-            <Text preset="caption" color="tint">{t('journalCreate')}</Text>
+            <Ionicons name="add-outline" size={24} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -229,7 +231,9 @@ export default function JournalsScreen(): React.JSX.Element {
           </View>
         ) : (
           <View style={journalViewMode === 'grid' ? styles.journalGrid : styles.journalList}>
-            {journalItems.map((journal) => (
+            {journalItems.map((journal) => {
+              const journalAccentColor = theme.colors.tint;
+              return (
               <TouchableOpacity
                 key={journal.id}
                 onPress={() => router.push({ pathname: '/journal/[id]', params: { id: journal.id } })}
@@ -239,11 +243,35 @@ export default function JournalsScreen(): React.JSX.Element {
                 ]}
                 accessibilityRole="button"
               >
-                <View style={[journalViewMode === 'grid' ? styles.journalGridColor : styles.journalColor, { backgroundColor: journal.color }]} />
+                {journalViewMode === 'list' ? (
+                  <View style={[styles.journalCountCircle, { backgroundColor: journalAccentColor }]}>
+                    <Text
+                      preset="label"
+                      dynamicType={false}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.65}
+                      numberOfLines={1}
+                      style={styles.journalCountText}
+                    >
+                      {journal.count}
+                    </Text>
+                  </View>
+                ) : null}
                 <View style={journalViewMode === 'grid' ? styles.journalGridCopy : styles.journalCopy}>
                   {journalViewMode === 'grid' ? (
                     <View style={styles.journalGridHeader}>
-                      <Ionicons name="journal-outline" size={22} color={theme.colors.textSecondary} />
+                      <View style={[styles.journalCountCircle, { backgroundColor: journalAccentColor }]}>
+                        <Text
+                          preset="label"
+                          dynamicType={false}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.65}
+                          numberOfLines={1}
+                          style={styles.journalCountText}
+                        >
+                          {journal.count}
+                        </Text>
+                      </View>
                       {journal.canRename ? (
                         <TouchableOpacity
                           onPress={(event) => {
@@ -260,7 +288,7 @@ export default function JournalsScreen(): React.JSX.Element {
                     </View>
                   ) : null}
                   <Text preset="h3" color="text" numberOfLines={journalViewMode === 'grid' ? 2 : 1} style={journalViewMode === 'grid' ? styles.journalGridTitle : undefined}>{journal.title}</Text>
-                  <Text preset="caption" color="textSecondary">{journal.count === 1 ? t('journalEntryCountOne') : t('journalEntryCountMany').replace('{count}', String(journal.count))}</Text>
+                  <Text preset="caption" color="textSecondary">{journalEntryLabelText(journal.count)}</Text>
                 </View>
                 {journalViewMode === 'list' && journal.canRename ? (
                   <TouchableOpacity
@@ -277,7 +305,8 @@ export default function JournalsScreen(): React.JSX.Element {
                 ) : null}
                 {journalViewMode === 'list' ? <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} /> : null}
               </TouchableOpacity>
-            ))}
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -357,7 +386,7 @@ const styles = StyleSheet.create({
   fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   heading: { fontSize: 24, fontWeight: '700' },
-  createJournalButton: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
+  createJournalButton: { width: 38, height: 34, alignItems: 'center', justifyContent: 'center' },
   viewModePill: {
     alignSelf: 'center',
     flexDirection: 'row',
@@ -379,9 +408,9 @@ const styles = StyleSheet.create({
   journalList: { gap: 10 },
   journalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   journalCard: { minHeight: 74, borderWidth: 1, borderRadius: 8, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 12 },
-  journalGridCard: { width: '48%', minHeight: 138, borderWidth: 1, borderRadius: 8, overflow: 'hidden' },
-  journalColor: { width: 12, height: 42, borderRadius: 6 },
-  journalGridColor: { height: 8, width: '100%' },
+  journalGridCard: { width: '48%', minHeight: 138, borderWidth: 1, borderRadius: 8 },
+  journalCountCircle: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  journalCountText: { color: '#fff', fontSize: 15, lineHeight: 18, fontWeight: '800', textAlign: 'center' },
   journalCopy: { flex: 1 },
   journalGridCopy: { flex: 1, padding: 14, justifyContent: 'space-between', gap: 10 },
   journalGridHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
