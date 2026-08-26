@@ -23,6 +23,7 @@ import { Text } from "@shared/components/Text";
 import { FAB } from "@shared/components/FAB";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import { useJournals } from "@/features/journal/hooks/useJournals";
+import { getJournalCoverImageSource } from "@/features/journal/domain/JournalBackgrounds";
 import { stripHtml } from "@shared/utils/html";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
 import { appLockService } from "@/services/AppLockService";
@@ -673,7 +674,7 @@ export default function JournalEntriesScreen() {
               ]}
             >
               <Image
-                source={{ uri: selectedJournal.coverImageUri }}
+                source={getJournalCoverImageSource(selectedJournal.coverImageUri)}
                 style={styles.journalCoverImage}
                 resizeMode="cover"
                 accessibilityRole="image"

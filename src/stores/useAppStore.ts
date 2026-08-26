@@ -57,6 +57,7 @@ export interface AppState {
   fontScale: FontScale;
   fontFamily: FontFamily;
   journalColumnCount: JournalColumnCount;
+  showPermanentJournals: boolean;
   homeViewModes: Record<HomeViewMode, boolean>;
   homeViewMode: HomeViewMode;
   entryHierarchyMode: EntryHierarchyMode;
@@ -81,6 +82,7 @@ export interface AppState {
   setFontScale: (scale: FontScale) => void;
   setFontFamily: (family: FontFamily) => void;
   setJournalColumnCount: (count: JournalColumnCount) => void;
+  setShowPermanentJournals: (show: boolean) => void;
   setHomeViewModeEnabled: (mode: HomeViewMode, enabled: boolean) => void;
   setHomeViewMode: (mode: HomeViewMode) => void;
   setEntryHierarchyMode: (mode: EntryHierarchyMode) => void;
@@ -109,6 +111,7 @@ const initialState: Pick<
   | 'fontScale'
   | 'fontFamily'
   | 'journalColumnCount'
+  | 'showPermanentJournals'
   | 'homeViewModes'
   | 'homeViewMode'
   | 'entryHierarchyMode'
@@ -133,6 +136,7 @@ const initialState: Pick<
   fontScale: 'default',
   fontFamily: 'system',
   journalColumnCount: 2,
+  showPermanentJournals: true,
   homeViewModes: { detailed: true, timeline: true, feed: true },
   homeViewMode: 'timeline',
   entryHierarchyMode: 'year-month-date',
@@ -170,6 +174,7 @@ export const useAppStore = create<AppState>()(
       setFontScale: (fontScale: FontScale) => set({ fontScale }),
       setFontFamily: (fontFamily: FontFamily) => set({ fontFamily }),
       setJournalColumnCount: (journalColumnCount: JournalColumnCount) => set({ journalColumnCount }),
+      setShowPermanentJournals: (showPermanentJournals: boolean) => set({ showPermanentJournals }),
       setHomeViewModeEnabled: (mode: HomeViewMode, enabled: boolean) => set((state) => ({
         homeViewModes: { ...state.homeViewModes, [mode]: enabled },
       })),
@@ -214,6 +219,7 @@ export const useAppStore = create<AppState>()(
         fontScale: state.fontScale,
         fontFamily: state.fontFamily,
         journalColumnCount: state.journalColumnCount,
+        showPermanentJournals: state.showPermanentJournals,
         homeViewModes: state.homeViewModes,
         homeViewMode: state.homeViewMode,
         entryHierarchyMode: state.entryHierarchyMode,
