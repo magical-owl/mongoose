@@ -19,17 +19,15 @@ import {
   TextInput,
   Image,
   StyleSheet,
-  Dimensions,
   Text as RNText,
+  useWindowDimensions,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { Modal } from '@shared/components/Modal';
 import { Text } from '@shared/components/Text';
-import { SegmentedControl } from '@shared/components/SegmentedControl';
 import { useTheme } from '@providers/ThemeProvider';
 import {
-  getStickerPacksByAccessTier,
   STICKER_PACKS,
   type StickerAccessTier,
   type StickerItem,
@@ -37,9 +35,8 @@ import {
 import { useTranslation } from '@/localization/i18n';
 import { useSubscription } from '@/features/subscription/hooks/useSubscription';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-// 4 columns with 8px gap each side + outer padding
-const CELL = (SCREEN_WIDTH * 0.9 - 48) / 4;
+const GRID_COLUMNS = 4;
+const GRID_CELL_GAP = 6;
 
 interface StickerPickerModalProps {
   readonly visible: boolean;
@@ -53,14 +50,12 @@ type SearchResult = { item: StickerItem; packId: string; accessTier: StickerAcce
 export function StickerPickerModal({ visible, onClose, onSelectSticker, onRequestPremium }: StickerPickerModalProps) {
   const theme = useTheme();
   const t = useTranslation();
+  const { width } = useWindowDimensions();
   const { isPro } = useSubscription();
-  const [activeAccessTier, setActiveAccessTier] = useState<StickerAccessTier>('free');
   const [activePackId, setActivePackId] = useState(STICKER_PACKS[0]?.id ?? '');
   const [search, setSearch] = useState('');
-  const accessTiers: StickerAccessTier[] = ['free', 'premium'];
 
-  const activeStickerPacks = useMemo(() => getStickerPacksByAccessTier(activeAccessTier), [activeAccessTier]);
-  const activePack = activeStickerPacks.find((p) => p.id === activePackId) ?? activeStickerPacks[0] ?? STICKER_PACKS[0]!;
+  const activePack = STICKER_PACKS.find((p) => p.id === activePackId) ?? STICKER_PACKS[0]!;
 
   // Search across all packs
   const searchResults: SearchResult[] = useMemo(() => {
@@ -81,18 +76,17 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
   }, [search]);
 
   const isSearching = search.trim().length > 0;
-
-  const handleAccessTierChange = (accessTier: StickerAccessTier) => {
-    setActiveAccessTier(accessTier);
-    setActivePackId(getStickerPacksByAccessTier(accessTier)[0]?.id ?? '');
-  };
+  const cellSize = Math.max(
+    64,
+    Math.min(88, (width - theme.spacing.lg * 2 - GRID_CELL_GAP * GRID_COLUMNS * 2) / GRID_COLUMNS)
+  );
 
   const renderSticker = ({ item, packId, accessTier }: SearchResult) => {
     const isLocked = accessTier === 'premium' && !isPro;
 
     return (
       <TouchableOpacity
-        style={[styles.cell, isLocked && styles.lockedCell]}
+        style={[styles.cell, { width: cellSize }]}
         onPress={() => {
           if (isLocked) {
             onClose();
@@ -106,16 +100,36 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
         accessibilityLabel={`${isLocked ? t('stickerPremiumLockedA11y') : t('stickerAddA11y')}: ${item.name}`}
         accessibilityRole="button"
       >
-        {item.source != null ? (
-          <Image source={item.source} style={styles.cellImage} resizeMode="contain" />
-        ) : (
-          <RNText style={styles.cellEmoji}>{item.icon}</RNText>
-        )}
-        {isLocked ? (
-          <View style={[styles.lockBadge, { backgroundColor: theme.colors.background }]}>
-            <MaterialCommunityIcons name="lock" size={13} color={theme.colors.tint} />
-          </View>
-        ) : null}
+        <View
+          style={[
+            styles.previewBox,
+            {
+              width: cellSize,
+              height: cellSize,
+              backgroundColor: theme.colors.surface,
+              borderColor: isLocked ? theme.colors.tint : theme.colors.border,
+            },
+            isLocked && styles.lockedCell,
+          ]}
+        >
+          {item.source != null ? (
+            <Image source={item.source} style={{ width: cellSize - 18, height: cellSize - 18 }} resizeMode="contain" />
+          ) : (
+            <RNText style={styles.cellEmoji}>{item.icon}</RNText>
+          )}
+          {isLocked ? (
+            <View style={[styles.lockBadge, { backgroundColor: theme.colors.background }]}>
+              <MaterialCommunityIcons name="lock" size={13} color={theme.colors.tint} />
+            </View>
+          ) : null}
+        </View>
+        <Text
+          preset="caption"
+          numberOfLines={1}
+          style={[styles.cellLabel, { color: isLocked ? theme.colors.textSecondary : theme.colors.text }]}
+        >
+          {item.name}
+        </Text>
       </TouchableOpacity>
     );
   };
@@ -147,17 +161,6 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
         </View>
       </View>
 
-      {!isSearching && (
-        <View style={styles.accessTabs}>
-          <SegmentedControl
-            segments={[t('stickerFreeGroup'), t('stickerPremiumGroup')]}
-            selectedIndex={accessTiers.indexOf(activeAccessTier)}
-            onSelect={(index) => handleAccessTierChange(accessTiers[index] ?? 'free')}
-            accessibilityLabel={t('stickerAccessGroupA11y')}
-          />
-        </View>
-      )}
-
       {/* Category tabs — hidden during search */}
       {!isSearching && (
         <ScrollView
@@ -165,8 +168,9 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={[styles.tabs, { borderBottomColor: theme.colors.border }]}
         >
-          {activeStickerPacks.map((pack) => {
+          {STICKER_PACKS.map((pack) => {
             const active = pack.id === activePack.id;
+            const categoryLocked = pack.accessTier === 'premium' && !isPro;
             return (
               <TouchableOpacity
                 key={pack.id}
@@ -180,6 +184,9 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
                 onPress={() => setActivePackId(pack.id)}
                 accessibilityLabel={`${t('stickerCategoryA11y')}: ${pack.name}`}
               >
+                {categoryLocked ? (
+                  <MaterialCommunityIcons name="lock" size={12} color={active ? theme.colors.tint : theme.colors.textSecondary} />
+                ) : null}
                 <Text
                   preset="caption"
                   style={{ color: active ? theme.colors.tint : theme.colors.text, fontWeight: '600' }}
@@ -205,6 +212,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
           contentContainerStyle={styles.grid}
           showsVerticalScrollIndicator={false}
           style={{ maxHeight: 320 }}
+          extraData={cellSize}
           renderItem={({ item: d }) => renderSticker(d)}
         />
       )}
@@ -237,9 +245,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  accessTabs: {
-    marginBottom: 10,
-  },
   tabs: {
     flexDirection: 'row',
     gap: 8,
@@ -248,6 +253,8 @@ const styles = StyleSheet.create({
   },
   tab: {
     minHeight: 36,
+    flexDirection: 'row',
+    gap: 5,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -261,15 +268,17 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   cell: {
-    width: CELL,
-    height: CELL,
     margin: 3,
+    alignItems: 'center',
+  },
+  previewBox: {
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
   lockedCell: {
-    opacity: 0.58,
+    opacity: 0.74,
   },
   lockBadge: {
     position: 'absolute',
@@ -284,9 +293,10 @@ const styles = StyleSheet.create({
   cellEmoji: {
     fontSize: 32,
   },
-  cellImage: {
-    width: CELL - 16,
-    height: CELL - 16,
+  cellLabel: {
+    width: '100%',
+    marginTop: 4,
+    textAlign: 'center',
   },
   empty: {
     paddingVertical: 40,

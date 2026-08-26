@@ -50,6 +50,11 @@ export interface ThemeColors {
   readonly moodAnxious: string;
   readonly moodSad: string;
   readonly moodAngry: string;
+  readonly stickerControl: string;
+  readonly stickerControlActive: string;
+  readonly stickerControlDestructive: string;
+  readonly stickerControlText: string;
+  readonly stickerSelectionOutline: string;
 }
 
 /**
@@ -115,6 +120,11 @@ const lightColors: ThemeColors = {
   moodAnxious: '#EA580C',
   moodSad: '#1D4ED8',
   moodAngry: '#B91C1C',
+  stickerControl: '#334155',
+  stickerControlActive: '#0F766E',
+  stickerControlDestructive: '#EF4444',
+  stickerControlText: '#FFFFFF',
+  stickerSelectionOutline: 'rgba(51, 65, 85, 0.8)',
 };
 
 const darkColors: ThemeColors = {
@@ -147,6 +157,11 @@ const darkColors: ThemeColors = {
   moodAnxious: '#FB923C',
   moodSad: '#2563EB',
   moodAngry: '#DC2626',
+  stickerControl: '#475569',
+  stickerControlActive: '#14B8A6',
+  stickerControlDestructive: '#EF4444',
+  stickerControlText: '#FFFFFF',
+  stickerSelectionOutline: 'rgba(226, 232, 240, 0.78)',
 };
 
 const ThemeContext = createContext<Theme | undefined>(undefined);

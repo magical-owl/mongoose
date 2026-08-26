@@ -33,6 +33,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PlacedSticker, findStickerItem } from '../domain/Sticker';
 import { useTranslation } from '@/localization/i18n';
+import { useTheme } from '@/providers/ThemeProvider';
 
 const DEFAULT_TEXT_STICKER_COLOR = '#DC2626';
 const DEFAULT_TEXT_STICKER_BACKGROUND_COLOR = '#E5E7EB';
@@ -56,7 +57,9 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   onDragStateChange,
 }) => {
   const t = useTranslation();
+  const theme = useTheme();
   const [isSelected, setIsSelected] = useState(isEditable && sticker.text !== undefined && sticker.text.length === 0);
+  const [showTextOptions, setShowTextOptions] = useState(false);
   const selectedRef = useRef(false);
   const stickerRef = useRef(sticker);
   stickerRef.current = sticker;
@@ -119,6 +122,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
         pan.setOffset({ x: position.current.x, y: position.current.y });
         pan.setValue({ x: 0, y: 0 });
         dragMoved.current = false;
+        setShowTextOptions(false);
         setIsSelected(false); // hide controls while dragging
       },
 
@@ -159,6 +163,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
 
   const handleToggleBehindText = useCallback(() => {
     // Release the editing layer immediately so the new stack order is visible.
+    setShowTextOptions(false);
     setIsSelected(false);
     onUpdate(buildUpdatedSticker({ behindText: !stickerRef.current.behindText }));
   }, [onUpdate]);
@@ -171,6 +176,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
 
   const handleFinishTextEditing = useCallback(() => {
     Keyboard.dismiss();
+    setShowTextOptions(false);
     setIsSelected(false);
     if (stickerRef.current.text !== undefined) {
       onUpdate(buildUpdatedSticker({ text: draftTextRef.current }));
@@ -182,9 +188,15 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
       handleFinishTextEditing();
       return;
     }
+    setShowTextOptions(false);
     setIsSelected(false);
     onUpdate(buildUpdatedSticker({}));
   }, [handleFinishTextEditing, onUpdate]);
+
+  const handleDelete = useCallback(() => {
+    setShowTextOptions(false);
+    onDelete(stickerRef.current.id);
+  }, [onDelete]);
 
   const handleCycleTextColor = useCallback(() => {
     const currentIndex = TEXT_STICKER_COLORS.findIndex((color) => color === textColor);
@@ -274,6 +286,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
     ],
     opacity: stickerOpacity,
   };
+  const controlsShouldSitBelow = position.current.y < (showTextOptions ? 112 : 62);
 
   return (
     <Animated.View
@@ -281,85 +294,108 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
     >
       {/* Control strip (only when selected and editable) */}
       {isEditable && isSelected && (
-        <View style={styles.controls}>
-          {/* Rotate */}
-          <View
-            style={styles.controlBtn}
-            {...rotatePanResponder.panHandlers}
-            accessibilityLabel={t('stickerRotateA11y')}
-            accessibilityRole="button"
-          >
-            <MaterialCommunityIcons name="rotate-right" size={16} color="#FFFFFF" />
-          </View>
-
-          {/* Text layer */}
-          <TouchableOpacity
-            style={[styles.controlBtn, sticker.behindText && styles.activeControlBtn]}
-            onPress={handleToggleBehindText}
-            accessibilityLabel={sticker.behindText ? t('stickerBringForwardA11y') : t('stickerSendBehindA11y')}
-            accessibilityRole="button"
-          >
-            <MaterialCommunityIcons
-              name={sticker.behindText ? 'layers' : 'layers-minus'}
-              size={16}
-              color="#FFFFFF"
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.controlBtn}
-            onPress={handleFinishSelection}
-            accessibilityLabel={t('entrySaveA11y')}
-            accessibilityRole="button"
-          >
-            <MaterialCommunityIcons name="check" size={17} color="#FFFFFF" />
-          </TouchableOpacity>
-
-          {isTextSticker ? (
-            <>
+        <View
+          style={[
+            styles.controls,
+            showTextOptions && styles.controlsExpanded,
+            controlsShouldSitBelow && styles.controlsBelow,
+            controlsShouldSitBelow && showTextOptions && styles.controlsBelowExpanded,
+          ]}
+        >
+          {isTextSticker && showTextOptions ? (
+            <View style={styles.secondaryControls}>
               <TouchableOpacity
-                style={styles.controlBtn}
+                style={[styles.controlBtn, { backgroundColor: theme.colors.stickerControl }]}
                 onPress={handleCycleTextColor}
                 accessibilityLabel={t('stickerTextColorA11y')}
                 accessibilityRole="button"
               >
-                <MaterialCommunityIcons name="palette-outline" size={16} color="#FFFFFF" />
+                <MaterialCommunityIcons name="palette-outline" size={16} color={theme.colors.stickerControlText} />
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.controlBtn}
+                style={[styles.controlBtn, { backgroundColor: theme.colors.stickerControl }]}
                 onPress={handleCycleOpacity}
                 accessibilityLabel={t('stickerOpacityA11y')}
                 accessibilityRole="button"
               >
-                <MaterialCommunityIcons name="opacity" size={16} color="#FFFFFF" />
+                <MaterialCommunityIcons name="opacity" size={16} color={theme.colors.stickerControlText} />
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.controlBtn}
+                style={[styles.controlBtn, { backgroundColor: theme.colors.stickerControl }]}
                 onPress={handleCycleTextBackground}
                 accessibilityLabel={t('stickerTextBackgroundA11y')}
                 accessibilityRole="button"
               >
-                <MaterialCommunityIcons name="format-color-fill" size={16} color="#FFFFFF" />
+                <MaterialCommunityIcons name="format-color-fill" size={16} color={theme.colors.stickerControlText} />
               </TouchableOpacity>
-            </>
+            </View>
           ) : null}
 
-          {/* Delete */}
-          <TouchableOpacity
-            style={[styles.controlBtn, styles.deleteBtn]}
-            onPress={() => onDelete(sticker.id)}
-            accessibilityLabel={t('stickerDeleteA11y')}
-            accessibilityRole="button"
-          >
-            <Text style={styles.controlText}>✕</Text>
-          </TouchableOpacity>
+          <View style={styles.primaryControls}>
+            <TouchableOpacity
+              style={[styles.controlBtn, { backgroundColor: theme.colors.stickerControl }]}
+              onPress={handleFinishSelection}
+              accessibilityLabel={t('entrySaveA11y')}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="check" size={19} color={theme.colors.stickerControlText} />
+            </TouchableOpacity>
 
+            <View
+              style={[styles.controlBtn, { backgroundColor: theme.colors.stickerControl }]}
+              {...rotatePanResponder.panHandlers}
+              accessibilityLabel={t('stickerRotateA11y')}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="rotate-right" size={18} color={theme.colors.stickerControlText} />
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.controlBtn,
+                { backgroundColor: sticker.behindText ? theme.colors.stickerControlActive : theme.colors.stickerControl },
+              ]}
+              onPress={handleToggleBehindText}
+              accessibilityLabel={sticker.behindText ? t('stickerBringForwardA11y') : t('stickerSendBehindA11y')}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons
+                name={sticker.behindText ? 'layers' : 'layers-minus'}
+                size={18}
+                color={theme.colors.stickerControlText}
+              />
+            </TouchableOpacity>
+
+            {isTextSticker ? (
+              <TouchableOpacity
+                style={[
+                  styles.controlBtn,
+                  { backgroundColor: showTextOptions ? theme.colors.stickerControlActive : theme.colors.stickerControl },
+                ]}
+                onPress={() => setShowTextOptions((current) => !current)}
+                accessibilityLabel={t('stickerOptionsA11y')}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: showTextOptions }}
+              >
+                <MaterialCommunityIcons name="dots-horizontal" size={20} color={theme.colors.stickerControlText} />
+              </TouchableOpacity>
+            ) : null}
+
+            <TouchableOpacity
+              style={[styles.controlBtn, { backgroundColor: theme.colors.stickerControlDestructive }]}
+              onPress={handleDelete}
+              accessibilityLabel={t('stickerDeleteA11y')}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="close" size={19} color={theme.colors.stickerControlText} />
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
       {/* Sticker body — tap to toggle selection */}
       <Animated.View style={stickerTransformStyle}>
-        <View style={isEditable && isSelected && styles.selectionFrame}>
+        <View style={isEditable && isSelected && [styles.selectionFrame, { borderColor: theme.colors.stickerSelectionOutline }]}>
           <View
             accessibilityLabel={`Sticker${isEditable ? ', tap to select' : ''}`}
             accessibilityRole={isEditable ? 'button' : 'image'}
@@ -518,31 +554,38 @@ const styles = StyleSheet.create({
   },
   controls: {
     position: 'absolute',
-    top: -40,
-    flexDirection: 'row',
-    gap: 5,
+    top: -52,
+    gap: 6,
     alignItems: 'center',
     zIndex: 1000,
     elevation: 10,
   },
+  controlsExpanded: {
+    top: -102,
+  },
+  controlsBelow: {
+    top: undefined,
+    bottom: -52,
+    flexDirection: 'column-reverse',
+  },
+  controlsBelowExpanded: {
+    bottom: -102,
+  },
+  primaryControls: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
+  secondaryControls: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
   controlBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#334155',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  deleteBtn: {
-    backgroundColor: '#EF4444',
-  },
-  activeControlBtn: {
-    backgroundColor: '#0F766E',
-  },
-  controlText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-    lineHeight: 16,
   },
 });

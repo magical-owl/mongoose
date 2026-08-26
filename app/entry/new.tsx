@@ -562,46 +562,49 @@ export default function CreateEntryScreen() {
             <MaterialCommunityIcons name="file-document-edit-outline" size={22} color={theme.colors.tint} />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.toolbarIcon}
-            onPress={() => handlePhotoPickerResult('camera')}
-            activeOpacity={0.6}
-            accessibilityLabel={t('entryTakePhotoA11y')}
-            accessibilityRole="button"
-          >
-            <MaterialCommunityIcons name="camera-outline" size={22} color={theme.colors.tint} />
-          </TouchableOpacity>
+          <View style={[styles.toolbarGroup, { backgroundColor: theme.colors.surface, borderColor: theme.colors.borderLight }]}>
+            <TouchableOpacity
+              style={styles.toolbarIcon}
+              onPress={() => handlePhotoPickerResult('camera')}
+              activeOpacity={0.6}
+              accessibilityLabel={t('entryTakePhotoA11y')}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="camera-outline" size={22} color={theme.colors.tint} />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.toolbarIcon}
-            onPress={() => handlePhotoPickerResult('library')}
-            activeOpacity={0.6}
-            accessibilityLabel={t('entryChoosePhotoA11y')}
-            accessibilityRole="button"
-          >
-            <MaterialCommunityIcons name="image-outline" size={22} color={theme.colors.tint} />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toolbarIcon}
+              onPress={() => handlePhotoPickerResult('library')}
+              activeOpacity={0.6}
+              accessibilityLabel={t('entryChoosePhotoA11y')}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="image-outline" size={22} color={theme.colors.tint} />
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity
-            style={styles.toolbarIcon}
-            onPress={handleAddTextSticker}
-            activeOpacity={0.6}
-            accessibilityLabel={t('entryAddTextStickerA11y')}
-            accessibilityRole="button"
-          >
-            <MaterialCommunityIcons name="format-textbox" size={22} color={theme.colors.tint} />
-          </TouchableOpacity>
+          <View style={[styles.toolbarGroup, { backgroundColor: theme.colors.surface, borderColor: theme.colors.borderLight }]}>
+            <TouchableOpacity
+              style={styles.toolbarIcon}
+              onPress={handleAddTextSticker}
+              activeOpacity={0.6}
+              accessibilityLabel={t('entryAddTextStickerA11y')}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="format-textbox" size={22} color={theme.colors.tint} />
+            </TouchableOpacity>
 
-          {/* Sticker button */}
-          <TouchableOpacity
-            style={styles.toolbarIcon}
-            onPress={() => setShowStickerPicker(true)}
-            activeOpacity={0.6}
-            accessibilityLabel={`${t('entryAddStickerA11y')} ${stickers.length} ${t('entryStickerPlacedA11y')}`}
-            accessibilityRole="button"
-          >
-            <MaterialCommunityIcons name="sticker-outline" size={22} color={theme.colors.tint} />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toolbarIcon}
+              onPress={() => setShowStickerPicker(true)}
+              activeOpacity={0.6}
+              accessibilityLabel={`${t('entryAddStickerA11y')} ${stickers.length} ${t('entryStickerPlacedA11y')}`}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="sticker-outline" size={22} color={theme.colors.tint} />
+            </TouchableOpacity>
+          </View>
           {keyboardHeight > 0 ? (
             <TouchableOpacity
               style={styles.toolbarIcon}
@@ -729,9 +732,15 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 4,
   },
   formattingDrawer: { flex: 1 },
+  toolbarGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 8,
+  },
   toolbarIcon: {
     width: 38,
     height: 38,
