@@ -347,12 +347,12 @@ export default function JournalsScreen(): React.JSX.Element {
             event.stopPropagation();
             setOpenJournalOptionsId((current) => current === journal.id ? null : journal.id);
           }}
-          style={[styles.journalOptionsButton, isOpen && { backgroundColor: theme.colors.tint + '18' }]}
+          style={[styles.journalOptionsButton, isOpen && { backgroundColor: theme.colors.tint }]}
           accessibilityRole="button"
           accessibilityLabel={t('journalOptionsA11y')}
           accessibilityState={{ expanded: isOpen }}
         >
-          <Ionicons name="ellipsis-horizontal" size={19} color={isOpen ? theme.colors.tint : theme.colors.text} />
+          <Ionicons name="ellipsis-horizontal" size={19} color="#fff" />
         </TouchableOpacity>
         {isOpen ? (
           <View style={[styles.journalOptionsMenu, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
@@ -767,7 +767,7 @@ const styles = StyleSheet.create({
   journalCoverTitleCompact: { fontSize: 14, lineHeight: 18 },
   journalCoverTitleDense: { fontSize: 12, lineHeight: 15 },
   journalOptionsWrap: { position: 'absolute', top: 6, right: 6, zIndex: 30, elevation: 30, alignItems: 'flex-end' },
-  journalOptionsButton: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  journalOptionsButton: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.42)' },
   journalOptionsMenu: {
     minWidth: 154,
     borderWidth: 1,
