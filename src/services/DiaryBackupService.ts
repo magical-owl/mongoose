@@ -2,11 +2,17 @@ import { AESEncryptionKey, AESSealedData, CryptoDigestAlgorithm, CryptoEncoding,
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
+import forge from 'node-forge';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import type { Profile } from '@/features/profile/domain/Profile';
 import { JournalExtrasSchema, type JournalExtras } from '@/features/journal/domain/JournalExtras';
 import { CURRENT_DIARY_SCHEMA_VERSION, migrateDiaryStorage } from '@/features/diary/domain/DiaryMigrations';
 import { APP_IDENTITY } from '@/config/appIdentity';
+
+export const BACKUP_KEY_DERIVATION = 'PBKDF2-HMAC-SHA256';
+export const LEGACY_BACKUP_KEY_DERIVATION = 'SHA-256(password + salt)';
+export const BACKUP_KDF_ITERATIONS = 210_000;
+const BACKUP_KEY_BYTE_LENGTH = 32;
 
 export interface BackupPayload {
   readonly version: number;
@@ -14,6 +20,16 @@ export interface BackupPayload {
   readonly entries: DiaryEntry[];
   readonly profile?: Profile | null;
   readonly journalExtras?: JournalExtras;
+}
+
+type BackupKeyDerivation = typeof BACKUP_KEY_DERIVATION | typeof LEGACY_BACKUP_KEY_DERIVATION;
+
+export interface EncryptedBackupFile {
+  readonly algorithm: 'AES-256-GCM';
+  readonly keyDerivation: BackupKeyDerivation;
+  readonly iterations?: number;
+  readonly salt: string;
+  readonly ciphertext: string;
 }
 
 export class DiaryBackupService {
@@ -30,12 +46,24 @@ export class DiaryBackupService {
     assertPassword(password);
     const payload = this.createPayload(entries, profile, journalExtras);
     const salt = bytesToHex(await getRandomBytesAsync(16));
-    const key = await this.getKey(password, salt);
+    const key = await this.getKey(password, {
+      algorithm: 'AES-256-GCM',
+      keyDerivation: BACKUP_KEY_DERIVATION,
+      iterations: BACKUP_KDF_ITERATIONS,
+      salt,
+      ciphertext: '',
+    });
     const plaintext = toBase64(JSON.stringify(payload));
     const sealed = await aesEncryptAsync(plaintext, key);
     const file = new File(Paths.cache, `${APP_IDENTITY.exportFilePrefix}-diary-${Date.now()}.mbackup`);
     file.create({ overwrite: true });
-    file.write(JSON.stringify({ algorithm: 'AES-256-GCM', keyDerivation: 'SHA-256(password + salt)', salt, ciphertext: await sealed.combined('base64') }));
+    file.write(JSON.stringify({
+      algorithm: 'AES-256-GCM',
+      keyDerivation: BACKUP_KEY_DERIVATION,
+      iterations: BACKUP_KDF_ITERATIONS,
+      salt,
+      ciphertext: await sealed.combined('base64'),
+    }));
     if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(file.uri, { mimeType: 'application/octet-stream' });
     return file.uri;
   }
@@ -46,9 +74,9 @@ export class DiaryBackupService {
     if (result.canceled || !result.assets[0]) return null;
     const file = new File(result.assets[0].uri);
     const parsed: unknown = JSON.parse(await file.text());
-    if (!isRecord(parsed) || parsed.algorithm !== 'AES-256-GCM' || parsed.keyDerivation !== 'SHA-256(password + salt)' || typeof parsed.ciphertext !== 'string' || typeof parsed.salt !== 'string' || !/^[a-f0-9]{32}$/i.test(parsed.salt)) throw new Error('Invalid encrypted diary backup');
-    const key = await this.getKey(password, parsed.salt);
-    const sealed = AESSealedData.fromCombined(parsed.ciphertext);
+    const encryptedBackup = parseEncryptedBackupFile(parsed);
+    const key = await this.getKey(password, encryptedBackup);
+    const sealed = AESSealedData.fromCombined(encryptedBackup.ciphertext);
     const decrypted = await aesDecryptAsync(sealed, key, { output: 'base64' });
     const payload: unknown = JSON.parse(fromBase64(String(decrypted)));
     const migrated = migrateDiaryStorage(payload);
@@ -65,8 +93,8 @@ export class DiaryBackupService {
     return { version: CURRENT_DIARY_SCHEMA_VERSION, exportedAt: new Date().toISOString(), entries, profile, journalExtras };
   }
 
-  private async getKey(password: string, salt: string): Promise<AESEncryptionKey> {
-    const digest = await digestStringAsync(CryptoDigestAlgorithm.SHA256, `${password}:${salt}`, { encoding: CryptoEncoding.HEX });
+  private async getKey(password: string, encryptedBackup: EncryptedBackupFile): Promise<AESEncryptionKey> {
+    const digest = await deriveBackupKeyHex(password, encryptedBackup);
     return AESEncryptionKey.import(digest, 'hex');
   }
 }
@@ -77,6 +105,55 @@ function assertPassword(password: string): void {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+export function parseEncryptedBackupFile(value: unknown): EncryptedBackupFile {
+  if (!isRecord(value)
+    || value.algorithm !== 'AES-256-GCM'
+    || (value.keyDerivation !== BACKUP_KEY_DERIVATION && value.keyDerivation !== LEGACY_BACKUP_KEY_DERIVATION)
+    || typeof value.ciphertext !== 'string'
+    || typeof value.salt !== 'string'
+    || !/^[a-f0-9]{32}$/i.test(value.salt)
+  ) {
+    throw new Error('Invalid encrypted diary backup');
+  }
+
+  if (value.keyDerivation === BACKUP_KEY_DERIVATION) {
+    const iterations = value.iterations;
+    if (typeof iterations !== 'number' || !Number.isInteger(iterations) || iterations < 100_000) {
+      throw new Error('Invalid encrypted diary backup');
+    }
+    return {
+      algorithm: value.algorithm,
+      keyDerivation: value.keyDerivation,
+      iterations,
+      salt: value.salt,
+      ciphertext: value.ciphertext,
+    };
+  }
+
+  return {
+    algorithm: value.algorithm,
+    keyDerivation: value.keyDerivation,
+    salt: value.salt,
+    ciphertext: value.ciphertext,
+  };
+}
+
+export async function deriveBackupKeyHex(password: string, encryptedBackup: EncryptedBackupFile): Promise<string> {
+  if (encryptedBackup.keyDerivation === LEGACY_BACKUP_KEY_DERIVATION) {
+    return digestStringAsync(CryptoDigestAlgorithm.SHA256, `${password}:${encryptedBackup.salt}`, { encoding: CryptoEncoding.HEX });
+  }
+
+  const iterations = encryptedBackup.iterations ?? BACKUP_KDF_ITERATIONS;
+  const derivedBytes = forge.pkcs5.pbkdf2(
+    password,
+    forge.util.hexToBytes(encryptedBackup.salt),
+    iterations,
+    BACKUP_KEY_BYTE_LENGTH,
+    forge.md.sha256.create()
+  );
+  return forge.util.bytesToHex(derivedBytes);
 }
 
 function isProfile(value: unknown): value is Profile {

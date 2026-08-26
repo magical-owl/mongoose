@@ -8,11 +8,13 @@ import { IDiaryRepository } from '../repositories/IDiaryRepository';
 import { diaryRepository } from '../repositories/DiaryRepository';
 import { IPlanUsageRepository } from '@/features/subscription/repositories/IPlanUsageRepository';
 import { planUsageRepository } from '@/features/subscription/repositories/PlanUsageRepository';
+import { diaryPhotoService, type IDiaryPhotoCleanupService } from './DiaryPhotoService';
 
 export class DiaryService {
   constructor(
     private repo: IDiaryRepository = diaryRepository,
-    private planUsageRepo: IPlanUsageRepository = planUsageRepository
+    private planUsageRepo: IPlanUsageRepository = planUsageRepository,
+    private photoCleanup: IDiaryPhotoCleanupService = diaryPhotoService
   ) {}
 
   public async getEntries(): Promise<Result<DiaryEntry[]>> {
@@ -87,7 +89,25 @@ export class DiaryService {
   }
 
   public async permanentlyDeleteEntry(id: string): Promise<Result<boolean>> {
-    return await this.repo.delete(id);
+    const deletedEntriesResult = await this.repo.getDeleted();
+    if (!deletedEntriesResult.success) return deletedEntriesResult;
+
+    const entryToDelete = deletedEntriesResult.data.find((entry) => entry.id === id);
+    const deleteResult = await this.repo.delete(id);
+    if (!deleteResult.success) return deleteResult;
+
+    if (deleteResult.data && entryToDelete) {
+      try {
+        await this.photoCleanup.deleteEntryPhotos(entryToDelete);
+      } catch (error) {
+        return failure({
+          code: 'PHOTO_DELETE_FAILED',
+          message: error instanceof Error ? error.message : 'Failed to delete diary entry photos',
+        });
+      }
+    }
+
+    return deleteResult;
   }
 
   public async restoreEntries(entries: readonly DiaryEntry[]): Promise<Result<DiaryEntry[]>> {

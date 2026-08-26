@@ -7,10 +7,10 @@ import { developmentSubscriptionPaymentGateway } from './DevelopmentSubscription
 import type { ISubscriptionEntitlementRepository } from '../repositories/ISubscriptionEntitlementRepository';
 import { subscriptionEntitlementRepository } from '../repositories/SubscriptionEntitlementRepository';
 import { config } from '@/config/ConfigService';
-import { unavailableSubscriptionPaymentGateway } from './UnavailableSubscriptionPaymentGateway';
+import { nativeSubscriptionPaymentGateway } from './NativeSubscriptionPaymentGateway';
 
 export function getDefaultSubscriptionPaymentGateway(): ISubscriptionPaymentGateway {
-  return config.isDev ? developmentSubscriptionPaymentGateway : unavailableSubscriptionPaymentGateway;
+  return config.isDev ? developmentSubscriptionPaymentGateway : nativeSubscriptionPaymentGateway;
 }
 
 export class SubscriptionService {
@@ -52,7 +52,15 @@ export class SubscriptionService {
   public async getPackages(): Promise<Result<SubscriptionPackage[]>> {
     try {
       const packages = useSubscriptionStore.getState().packages;
-      return success(packages.length > 0 ? packages : DEFAULT_SUBSCRIPTION_PACKAGES);
+      const fallbackPackages = packages.length > 0 ? packages : DEFAULT_SUBSCRIPTION_PACKAGES;
+      if (this.paymentGateway.getPackages) {
+        const result = await this.paymentGateway.getPackages(fallbackPackages);
+        if (result.success) {
+          useSubscriptionStore.getState().setPackages(result.data);
+        }
+        return result;
+      }
+      return success(fallbackPackages);
     } catch {
       return success(DEFAULT_SUBSCRIPTION_PACKAGES);
     }
@@ -60,8 +68,8 @@ export class SubscriptionService {
 
   /**
    * Purchase a subscription package (Monthly, Yearly, or Lifetime).
-   * Development builds use a local gateway. Production can replace the gateway
-   * with StoreKit / Google Play / RevenueCat without changing callers.
+   * Development builds use a local gateway. Production uses native StoreKit /
+   * Google Play Billing through the configured gateway.
    */
   public async purchasePackage(pkg: SubscriptionPackage): Promise<Result<CustomerEntitlement>> {
     const purchaseResult = await this.paymentGateway.purchasePackage(pkg);

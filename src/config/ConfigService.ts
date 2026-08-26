@@ -92,6 +92,9 @@ export function getConfigValidationErrors(appConfig: AppConfig): string[] {
   if (appConfig.remoteAiBaseUrl && !appConfig.remoteAiBaseUrl.startsWith('https://')) {
     errors.push('EXPO_PUBLIC_REMOTE_AI_BASE_URL must use HTTPS.');
   }
+  if (appConfig.remoteAiBaseUrl && !appConfig.remoteAiZdrConfigured) {
+    errors.push('EXPO_PUBLIC_REMOTE_AI_ZDR must be true when EXPO_PUBLIC_REMOTE_AI_BASE_URL is configured.');
+  }
   if (appConfig.apiTimeout < 1000 || appConfig.apiTimeout > 120000) {
     errors.push('EXPO_PUBLIC_API_TIMEOUT must be between 1000 and 120000 milliseconds.');
   }

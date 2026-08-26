@@ -16,11 +16,21 @@ export function useSubscription() {
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
-    void subscriptionService.initialize().then((result) => {
+    const initializeSubscription = async () => {
+      const entitlementResult = await subscriptionService.initialize();
       if (!isMounted) return;
-      setError(result.success ? null : result.error.message);
+      if (!entitlementResult.success) {
+        setError(entitlementResult.error.message);
+        setLoading(false);
+        return;
+      }
+
+      const packageResult = await subscriptionService.getPackages();
+      if (!isMounted) return;
+      setError(packageResult.success ? null : packageResult.error.message);
       setLoading(false);
-    });
+    };
+    void initializeSubscription();
     return () => {
       isMounted = false;
     };

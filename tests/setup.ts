@@ -59,6 +59,107 @@ jest.mock('expo-secure-store', () => ({
   WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WHEN_UNLOCKED_THIS_DEVICE_ONLY',
 }));
 
+jest.mock('expo-crypto', () => ({
+  AESEncryptionKey: {
+    import: jest.fn(async (value: string) => ({ value })),
+  },
+  AESSealedData: {
+    fromCombined: jest.fn((value: string) => ({ value })),
+  },
+  CryptoDigestAlgorithm: {
+    SHA256: 'SHA-256',
+  },
+  CryptoEncoding: {
+    HEX: 'hex',
+  },
+  aesEncryptAsync: jest.fn(async () => ({
+    combined: jest.fn(async () => 'encrypted-payload'),
+  })),
+  aesDecryptAsync: jest.fn(async () => ''),
+  digestStringAsync: jest.fn(async () => '0'.repeat(64)),
+  getRandomBytesAsync: jest.fn(async (length: number) => new Uint8Array(length).fill(1)),
+}));
+
+jest.mock('expo-file-system', () => {
+  const deletedUris: string[] = [];
+  class Directory {
+    public readonly uri: string;
+    public exists = true;
+
+    public constructor(...parts: (string | { uri: string })[]) {
+      this.uri = parts
+        .map((part) => (typeof part === 'string' ? part : part.uri))
+        .join('/')
+        .replace(/\/+/g, '/')
+        .replace('file:/', 'file://');
+    }
+
+    public create(): void {}
+
+    public delete(): void {
+      deletedUris.push(this.uri);
+      this.exists = false;
+    }
+  }
+
+  class File {
+    public readonly uri: string;
+    public exists = true;
+
+    public constructor(...parts: (string | { uri: string })[]) {
+      this.uri = parts
+        .map((part) => (typeof part === 'string' ? part : part.uri))
+        .join('/')
+        .replace(/\/+/g, '/')
+        .replace('file:/', 'file://');
+    }
+
+    public async copy(): Promise<void> {}
+
+    public create(): void {}
+
+    public write(): void {}
+
+    public async text(): Promise<string> {
+      return '';
+    }
+
+    public delete(): void {
+      deletedUris.push(this.uri);
+      this.exists = false;
+    }
+  }
+
+  return {
+    Directory,
+    File,
+    Paths: {
+      document: new Directory('file:///document'),
+      cache: new Directory('file:///cache'),
+    },
+    __deletedUris: deletedUris,
+  };
+});
+
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: jest.fn().mockResolvedValue(false),
+  shareAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('expo-document-picker', () => ({
+  getDocumentAsync: jest.fn().mockResolvedValue({ canceled: true, assets: [] }),
+}));
+
+jest.mock('expo-iap', () => ({
+  endConnection: jest.fn().mockResolvedValue(undefined),
+  fetchProducts: jest.fn().mockResolvedValue([]),
+  finishTransaction: jest.fn().mockResolvedValue(undefined),
+  getAvailablePurchases: jest.fn().mockResolvedValue([]),
+  initConnection: jest.fn().mockResolvedValue(true),
+  requestPurchase: jest.fn().mockResolvedValue(null),
+  restorePurchases: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('expo-linking', () => ({
   createURL: jest.fn((path: string) => `exp://localhost:19000/${path}`),
   makeUrl: jest.fn((path: string) => `exp://localhost:19000/${path}`),

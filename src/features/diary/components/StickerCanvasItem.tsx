@@ -177,6 +177,15 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
     }
   }, [onUpdate]);
 
+  const handleFinishSelection = useCallback(() => {
+    if (stickerRef.current.text !== undefined) {
+      handleFinishTextEditing();
+      return;
+    }
+    setIsSelected(false);
+    onUpdate(buildUpdatedSticker({}));
+  }, [handleFinishTextEditing, onUpdate]);
+
   const handleCycleTextColor = useCallback(() => {
     const currentIndex = TEXT_STICKER_COLORS.findIndex((color) => color === textColor);
     const nextColor = TEXT_STICKER_COLORS[(currentIndex + 1) % TEXT_STICKER_COLORS.length] ?? TEXT_STICKER_COLORS[0];
@@ -297,16 +306,17 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
             />
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={styles.controlBtn}
+            onPress={handleFinishSelection}
+            accessibilityLabel={t('entrySaveA11y')}
+            accessibilityRole="button"
+          >
+            <MaterialCommunityIcons name="check" size={17} color="#FFFFFF" />
+          </TouchableOpacity>
+
           {isTextSticker ? (
             <>
-              <TouchableOpacity
-                style={styles.controlBtn}
-                onPress={handleFinishTextEditing}
-                accessibilityLabel={t('entrySaveA11y')}
-                accessibilityRole="button"
-              >
-                <MaterialCommunityIcons name="check" size={17} color="#FFFFFF" />
-              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.controlBtn}
                 onPress={handleCycleTextColor}

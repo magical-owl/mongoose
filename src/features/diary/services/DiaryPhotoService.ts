@@ -1,15 +1,20 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import type { ImagePickerAsset } from 'expo-image-picker';
-import type { DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
+import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { generateUUID } from '@/shared/utils/uuid';
 
 const PHOTO_DIRECTORY_NAME = 'diary-photos';
 
-export class DiaryPhotoService {
+export interface IDiaryPhotoCleanupService {
+  deleteEntryPhotos(entry: DiaryEntry): Promise<void>;
+  clearImportedPhotos(): Promise<void>;
+}
+
+export class DiaryPhotoService implements IDiaryPhotoCleanupService {
   public async importAsset(asset: ImagePickerAsset): Promise<DiaryPhoto> {
     const id = generateUUID();
-    const directory = new Directory(Paths.document, PHOTO_DIRECTORY_NAME);
+    const directory = this.getPhotoDirectory();
     directory.create({ idempotent: true, intermediates: true });
 
     const source = new File(asset.uri);
@@ -23,6 +28,40 @@ export class DiaryPhotoService {
       height: asset.height > 0 ? asset.height : undefined,
       createdAt: new Date().toISOString(),
     };
+  }
+
+  public async deleteEntryPhotos(entry: DiaryEntry): Promise<void> {
+    const uris = new Set<string>();
+    entry.photos.forEach((photo) => uris.add(photo.uri));
+    entry.stickers.forEach((sticker) => {
+      if (sticker.imageUri) uris.add(sticker.imageUri);
+    });
+
+    await Promise.all(
+      Array.from(uris)
+        .filter((uri) => this.isImportedPhotoUri(uri))
+        .map((uri) => this.deleteFileIfExists(uri))
+    );
+  }
+
+  public async clearImportedPhotos(): Promise<void> {
+    const directory = this.getPhotoDirectory();
+    if (!directory.exists) return;
+    directory.delete();
+  }
+
+  private getPhotoDirectory(): Directory {
+    return new Directory(Paths.document, PHOTO_DIRECTORY_NAME);
+  }
+
+  private isImportedPhotoUri(uri: string): boolean {
+    return uri.startsWith(this.getPhotoDirectory().uri);
+  }
+
+  private async deleteFileIfExists(uri: string): Promise<void> {
+    const file = new File(uri);
+    if (!file.exists) return;
+    file.delete();
   }
 }
 

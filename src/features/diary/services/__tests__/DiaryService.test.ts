@@ -5,6 +5,7 @@ import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
 import { PlanUsageRepository } from '@/features/subscription/repositories/PlanUsageRepository';
 import type { ISecureStorageDataSource } from '@/database/SecureStorageDataSource';
 import { getLocalDateKey } from '@/features/subscription/services/PlanLimitService';
+import type { IDiaryPhotoCleanupService } from '../DiaryPhotoService';
 
 class MemorySecureStorage implements ISecureStorageDataSource {
   private readonly items = new Map<string, string>();
@@ -22,10 +23,21 @@ class MemorySecureStorage implements ISecureStorageDataSource {
   }
 }
 
+class MockDiaryPhotoCleanupService implements IDiaryPhotoCleanupService {
+  public readonly deletedEntryIds: string[] = [];
+
+  public async deleteEntryPhotos(entry: DiaryEntry): Promise<void> {
+    this.deletedEntryIds.push(entry.id);
+  }
+
+  public async clearImportedPhotos(): Promise<void> {}
+}
+
 describe('DiaryService', () => {
   let service: DiaryService;
   let repo: DiaryRepository;
   let planUsageRepo: PlanUsageRepository;
+  let photoCleanup: MockDiaryPhotoCleanupService;
 
   const dateOffset = (days: number): string => {
     return new Date(Date.now() - days * 86400000).toISOString().split('T')[0]!;
@@ -75,9 +87,10 @@ describe('DiaryService', () => {
     const storage = new MemorySecureStorage();
     repo = new DiaryRepository(storage);
     planUsageRepo = new PlanUsageRepository(storage);
+    photoCleanup = new MockDiaryPhotoCleanupService();
     await repo.clearAll();
     await planUsageRepo.clearAll();
-    service = new DiaryService(repo, planUsageRepo);
+    service = new DiaryService(repo, planUsageRepo, photoCleanup);
   });
 
   it('should save an entry without generating automated mood data', async () => {
@@ -152,6 +165,37 @@ describe('DiaryService', () => {
     expect(permanentDeleteResult.success).toBe(true);
     expect(deletedAfterPermanentDeleteResult.success).toBe(true);
     if (deletedAfterPermanentDeleteResult.success) expect(deletedAfterPermanentDeleteResult.data).toHaveLength(0);
+  });
+
+  it('should remove imported photo files only when an entry is permanently deleted', async () => {
+    const entryWithPhotoSticker: DiaryEntry = {
+      ...mockEntry,
+      stickers: [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174701',
+          stickerId: 'photo:123e4567-e89b-12d3-a456-426614174701',
+          category: 'photos',
+          imageUri: 'file:///document/diary-photos/123e4567-e89b-12d3-a456-426614174701.jpg',
+          imageWidth: 120,
+          imageHeight: 120,
+          x: 0,
+          y: 0,
+          scale: 1,
+          rotation: 0,
+          zIndex: 1,
+          behindText: false,
+        },
+      ],
+    };
+    await service.saveEntry(entryWithPhotoSticker);
+
+    const softDeleteResult = await service.deleteEntry(entryWithPhotoSticker.id);
+    expect(softDeleteResult.success).toBe(true);
+    expect(photoCleanup.deletedEntryIds).toEqual([]);
+
+    const permanentDeleteResult = await service.permanentlyDeleteEntry(entryWithPhotoSticker.id);
+    expect(permanentDeleteResult.success).toBe(true);
+    expect(photoCleanup.deletedEntryIds).toEqual([entryWithPhotoSticker.id]);
   });
 
   it('should limit free users to three entries per device day', async () => {
