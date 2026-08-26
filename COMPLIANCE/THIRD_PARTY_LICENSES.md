@@ -50,6 +50,18 @@ All third-party dependencies must be documented in a structured inventory. The f
 - **Expiration/Renewal**: N/A (perpetual open source license)
 ```
 
+### Approved Bundled Fonts
+
+The app bundles the following font families for the Settings > Preferences > Fonts selector. These packages include `LICENSE_FONT` files for the bundled font assets and are approved for commercial use under the SIL Open Font License.
+
+| Dependency | Version | License | Usage |
+| --- | --- | --- | --- |
+| `@expo-google-fonts/inter` | `^0.4.2` | SIL Open Font License | App UI typeface option |
+| `@expo-google-fonts/nunito` | `^0.4.2` | SIL Open Font License | App UI typeface option |
+| `@expo-google-fonts/lora` | `^0.4.2` | SIL Open Font License | App UI typeface option |
+| `@expo-google-fonts/merriweather` | `^0.4.2` | SIL Open Font License | App UI typeface option |
+| `@expo-google-fonts/source-code-pro` | `^0.4.1` | SIL Open Font License | App UI typeface option |
+
 ### Inventory Management
 - Maintain inventory as a structured file (JSON, YAML, or spreadsheet) alongside this document.
 - Inventory must be version-controlled in the project repository.

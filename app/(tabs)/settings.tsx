@@ -26,13 +26,14 @@ import { Modal } from '@shared/components/Modal';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
-import { useAppStore, type CalendarDateFormat, type FontFamily, type FontScale, type TimeFormat } from '@/stores/useAppStore';
+import { useAppStore, type CalendarDateFormat, type FontScale, type TimeFormat } from '@/stores/useAppStore';
 import { appLockService } from '@/services/AppLockService';
 import { dataDeletionService } from '@/services/DataDeletionService';
 import { diaryBackupService } from '@/services/DiaryBackupService';
 import { useJournalExtras } from '@/features/journal/hooks/useJournalExtras';
 import { accentColors, type AccentColor } from '@/theme/accents';
 import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
+import { appFontOptions, getAppFontLabel, normalizeAppFontFamily, resolveAppFontFamily } from '@/theme/fonts';
 import { APP_LANGUAGES, premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { FREE_PLAN_LIMITS, getLocalDateKey, getNextLocalPlanResetDate } from '@/features/subscription/services/PlanLimitService';
@@ -104,6 +105,7 @@ export default function SettingsScreen() {
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showRecoveryBinModal, setShowRecoveryBinModal] = useState(false);
   const [showDisplayModal, setShowDisplayModal] = useState(false);
+  const [showFontsModal, setShowFontsModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showFreeTierModal, setShowFreeTierModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -113,6 +115,8 @@ export default function SettingsScreen() {
   const [stickerLimitExhaustedAt, setStickerLimitExhaustedAt] = useState<string | undefined>(undefined);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const stickerUsageText = `${Math.min(stickersUsedToday, FREE_PLAN_LIMITS.stickersPerDay)}/${FREE_PLAN_LIMITS.stickersPerDay}`;
+  const activeFontFamily = normalizeAppFontFamily(fontFamily);
+  const activeFontLabel = getAppFontLabel(fontFamily);
   const entryLimitExhaustedAt = entriesCreatedToday[FREE_PLAN_LIMITS.entriesPerDay - 1]?.createdAt;
   const exhaustedAtCandidates = [entryLimitExhaustedAt, stickerLimitExhaustedAt]
     .filter((value): value is string => Boolean(value))
@@ -286,6 +290,13 @@ export default function SettingsScreen() {
           subtitle: t('settingsDisplaySubtitle'),
           icon: 'options-outline',
           onPress: () => setShowDisplayModal(true),
+        },
+        {
+          id: 'fonts',
+          title: t('settingsFontsTitle'),
+          subtitle: `${t('settingsFontsSubtitle')}: ${activeFontLabel}`,
+          icon: 'text-outline',
+          onPress: () => setShowFontsModal(true),
         },
         {
           id: 'language',
@@ -615,6 +626,14 @@ export default function SettingsScreen() {
           ))}
         </ScrollView>
 
+      </Modal>
+
+      <Modal
+        visible={showFontsModal}
+        onDismiss={() => setShowFontsModal(false)}
+        title={t('settingsFontsModalTitle')}
+        accessibilityLabel={t('settingsFontsA11y')}
+      >
         <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsGlobalFontSizeSection')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
           {([['small', t('settingsFontSmall')], ['default', t('settingsFontDefault')], ['large', t('settingsFontLarge')]] as const satisfies (readonly [FontScale, string])[]).map(([value, label]) => (
@@ -631,20 +650,50 @@ export default function SettingsScreen() {
         </ScrollView>
         <Text preset="caption" color="textSecondary" style={styles.displayHint}>{t('settingsGlobalFontSizeHint')}</Text>
 
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsFontStyleSection')}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
-          {([['system', t('settingsFontSystem')], ['serif', t('settingsFontSerif')], ['monospace', t('settingsFontMonospace')]] as const satisfies (readonly [FontFamily, string])[]).map(([value, label]) => (
-            <TouchableOpacity
-              key={value}
-              onPress={() => setFontFamily(value)}
-              style={[styles.displayOption, { borderColor: fontFamily === value ? theme.colors.tint : theme.colors.border, backgroundColor: fontFamily === value ? theme.colors.tint + '18' : theme.colors.surface }]}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: fontFamily === value }}
-            >
-              <Text preset="bodySmall" color={fontFamily === value ? 'tint' : 'text'} style={{ fontFamily: value === 'serif' ? 'serif' : value === 'monospace' ? 'monospace' : undefined }}>{label}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsFontFamilySection')}</Text>
+        <View style={styles.fontOptionList}>
+          {appFontOptions.map((option) => {
+            const active = activeFontFamily === option.value;
+            return (
+              <TouchableOpacity
+                key={option.value}
+                onPress={() => setFontFamily(option.value)}
+                style={[
+                  styles.fontOption,
+                  {
+                    borderColor: active ? theme.colors.tint : theme.colors.border,
+                    backgroundColor: active ? theme.colors.tint + '14' : theme.colors.surface,
+                  },
+                ]}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={`${option.label}, ${option.description}`}
+              >
+                <Text
+                  style={[
+                    styles.fontPreview,
+                    {
+                      color: active ? theme.colors.tint : theme.colors.text,
+                      fontFamily: resolveAppFontFamily(option.value, true),
+                    },
+                  ]}
+                >
+                  {option.previewText}
+                </Text>
+                <View style={styles.fontOptionText}>
+                  <Text preset="label" color={active ? 'tint' : 'text'} style={styles.fontOptionTitle}>
+                    {option.label}
+                  </Text>
+                  <Text preset="caption" color="textSecondary" numberOfLines={1}>
+                    {option.description}
+                  </Text>
+                </View>
+                {active ? <Icon name="checkmark" size={20} color="tint" /> : null}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        <Text preset="caption" color="textSecondary" style={styles.fontLicenseHint}>{t('settingsFontLicenseHint')}</Text>
       </Modal>
 
       <Modal
@@ -1079,6 +1128,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   displayHint: { marginTop: 16, lineHeight: 18 },
+  fontOptionList: {
+    gap: 8,
+  },
+  fontOption: {
+    minHeight: 58,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  fontPreview: {
+    width: 42,
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  fontOptionText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  fontOptionTitle: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '700',
+  },
+  fontLicenseHint: {
+    marginTop: 12,
+    lineHeight: 18,
+  },
   limitSectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -12,6 +12,7 @@ import type { ThemeMode } from '@/providers/ThemeProvider';
 import type { CompanionType } from '@/features/diary/domain/Companion';
 import type { AccentColor } from '@/theme/accents';
 import type { ColorTheme } from '@/theme/colorThemes';
+import type { AppFontFamily } from '@/theme/fonts';
 
 const storage = createSafeMMKV({ id: 'app-store' });
 
@@ -28,7 +29,7 @@ export type SessionState = 'idle' | 'active' | 'expired';
 export type CalendarDateFormat = 'month-day-year' | 'day-month-year' | 'year-month-day';
 export type TimeFormat = '24-hour' | '12-hour';
 export type FontScale = 'small' | 'default' | 'large';
-export type FontFamily = 'system' | 'serif' | 'monospace';
+export type FontFamily = AppFontFamily;
 export type HomeViewMode = 'detailed' | 'timeline' | 'feed';
 export type EntryHierarchyMode = 'year-month-date' | 'month-date' | 'date' | 'none';
 export type AppLanguage = 'en' | 'ja' | 'zh' | 'de' | 'fr';

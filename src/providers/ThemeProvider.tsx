@@ -6,14 +6,16 @@
  */
 
 import React, { createContext, useContext, useMemo, useCallback } from 'react';
-import { Platform, useColorScheme } from 'react-native';
+import { useColorScheme } from 'react-native';
+import { useFonts } from 'expo-font';
 import { palette } from '@/theme/colors';
 import { spacing, borderRadius } from '@/theme/spacing';
 import { typography, fontSizes, fontWeights } from '@/theme/typography';
 import { useAppStore } from '@/stores/useAppStore';
 import { accentColors, type AccentColor } from '@/theme/accents';
-import type { FontFamily, FontScale } from '@/stores/useAppStore';
+import type { FontScale } from '@/stores/useAppStore';
 import { colorThemes } from '@/theme/colorThemes';
+import { appFontSources, resolveAppFontFamily } from '@/theme/fonts';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -82,12 +84,6 @@ function getFontScale(scale: FontScale): number {
   if (scale === 'small') return 0.9;
   if (scale === 'large') return 1.15;
   return 1;
-}
-
-function getFontFamily(family: FontFamily): string {
-  if (family === 'serif') return Platform.OS === 'ios' ? 'Times New Roman' : 'serif';
-  if (family === 'monospace') return Platform.OS === 'ios' ? 'Courier New' : 'monospace';
-  return Platform.OS === 'ios' ? 'System' : 'sans-serif';
 }
 
 const lightColors: ThemeColors = {
@@ -186,6 +182,7 @@ export function ThemeProvider({
   const persistColorTheme = useAppStore((state) => state.setColorTheme);
   const fontScalePreference = useAppStore((state) => state.fontScale);
   const fontFamilyPreference = useAppStore((state) => state.fontFamily);
+  const [fontsLoaded] = useFonts(appFontSources);
   const mode = initialMode ?? persistedMode ?? 'dark';
   const resolvedMode = mode === 'system' && systemColorScheme === 'dark'
     ? 'dark'
@@ -195,7 +192,7 @@ export function ThemeProvider({
   const selectedAccent = accentColors[accentColor] ?? accentColors.blue;
   const selectedColorTheme = colorThemes[colorTheme] ?? colorThemes.default;
   const fontScale = getFontScale(fontScalePreference);
-  const fontFamily = getFontFamily(fontFamilyPreference);
+  const fontFamily = resolveAppFontFamily(fontFamilyPreference, fontsLoaded);
   const scaledFontSizes = useMemo(() => ({
     xs: fontSizes.xs * fontScale,
     sm: fontSizes.sm * fontScale,
