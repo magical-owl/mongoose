@@ -14,10 +14,6 @@ if (!allowedEnvironments.has(appEnv)) {
 
 const isDevelopment = appEnv === 'development';
 
-if (!isDevelopment && !apiBaseUrl) {
-  errors.push('EXPO_PUBLIC_API_BASE_URL is required outside development.');
-}
-
 if (apiBaseUrl) {
   validateUrl('EXPO_PUBLIC_API_BASE_URL', apiBaseUrl, { allowDevelopmentHttp: isDevelopment });
 }

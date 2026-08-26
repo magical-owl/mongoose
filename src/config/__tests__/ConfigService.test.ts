@@ -1,12 +1,11 @@
 import { createConfig, getConfigValidationErrors } from '../ConfigService';
 
 describe('ConfigService', () => {
-  it('requires a configured API URL outside development', () => {
+  it('allows local-first production builds without a general API URL', () => {
     const config = createConfig({ appEnv: 'production' });
 
-    expect(getConfigValidationErrors(config)).toContain(
-      'EXPO_PUBLIC_API_BASE_URL is required outside development.'
-    );
+    expect(getConfigValidationErrors(config)).toEqual([]);
+    expect(config.apiBaseUrl).toBeNull();
   });
 
   it('rejects insecure API URLs outside development', () => {

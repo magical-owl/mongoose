@@ -76,9 +76,6 @@ export function createConfig(raw: RawAppConfig): AppConfig {
 
 export function getConfigValidationErrors(appConfig: AppConfig): string[] {
   const errors: string[] = [];
-  if (!appConfig.isDev && !appConfig.apiBaseUrl) {
-    errors.push('EXPO_PUBLIC_API_BASE_URL is required outside development.');
-  }
   if (appConfig.apiBaseUrl) {
     try {
       const url = new URL(appConfig.apiBaseUrl);
