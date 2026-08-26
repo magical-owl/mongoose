@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Image, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +16,7 @@ import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import type { Journal } from '@/features/journal/domain/Journal';
 import { chooseDiaryPhotos } from '@/features/diary/services/DiaryPhotoPickerService';
 import { diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
+import type { JournalColumnCount } from '@/stores/useAppStore';
 
 function entryBelongsToJournal(entry: { readonly journalIds?: readonly string[]; readonly collectionIds?: readonly string[] }, journalId: string): boolean {
   return (entry.journalIds ?? entry.collectionIds ?? []).includes(journalId);
@@ -35,11 +36,34 @@ const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
 const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const ALL_ENTRIES_JOURNAL_ID = 'all';
 const UNASSIGNED_JOURNAL_ID = 'unassigned';
+const JOURNAL_GRID_GAP = 12;
+const JOURNAL_GRID_HORIZONTAL_PADDING = 40;
+const journalColumnOptions: readonly { readonly count: JournalColumnCount; readonly label: string }[] = [
+  { count: 1, label: '12' },
+  { count: 2, label: '6 6' },
+  { count: 3, label: '4 4 4' },
+  { count: 4, label: '3 3 3 3' },
+];
+
+function getNextJournalColumnCount(count: JournalColumnCount): JournalColumnCount {
+  if (count === 1) return 2;
+  if (count === 2) return 3;
+  if (count === 3) return 4;
+  return 1;
+}
+
+function getJournalLayoutIcon(count: JournalColumnCount): React.ComponentProps<typeof Ionicons>['name'] {
+  if (count === 1) return 'square-outline';
+  if (count === 2) return 'grid-outline';
+  if (count === 3) return 'apps-outline';
+  return 'keypad-outline';
+}
 
 export default function JournalsScreen(): React.JSX.Element {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
   const t = useTranslation();
   const { entries, refresh: refreshEntries } = useDiary();
   const { journals, refresh: refreshJournals, createJournal, saveJournal, deleteJournal } = useJournals();
@@ -47,8 +71,10 @@ export default function JournalsScreen(): React.JSX.Element {
   const isOnboarded = useAppStore((state) => state.isOnboarded);
   const premiumOnboardingPromptShown = useAppStore((state) => state.premiumOnboardingPromptShown);
   const premiumPromptDismissedAt = useAppStore((state) => state.premiumPromptDismissedAt);
+  const journalColumnCount = useAppStore((state) => state.journalColumnCount);
   const markPremiumOnboardingPromptShown = useAppStore((state) => state.markPremiumOnboardingPromptShown);
   const markPremiumPromptDismissed = useAppStore((state) => state.markPremiumPromptDismissed);
+  const setJournalColumnCount = useAppStore((state) => state.setJournalColumnCount);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [journalTitle, setJournalTitle] = useState('');
@@ -109,6 +135,14 @@ export default function JournalsScreen(): React.JSX.Element {
   }, [markPremiumPromptDismissed]);
 
   const visibleEntries = useMemo(() => entries.filter((entry) => isDiaryEntryVisible(entry)), [entries]);
+  const journalCardWidth = useMemo(() => {
+    const availableWidth = Math.max(240, windowWidth - JOURNAL_GRID_HORIZONTAL_PADDING);
+    const totalGap = JOURNAL_GRID_GAP * (journalColumnCount - 1);
+    return Math.floor((availableWidth - totalGap) / journalColumnCount);
+  }, [journalColumnCount, windowWidth]);
+  const wideJournalCover = journalColumnCount === 1;
+  const compactJournalCover = journalColumnCount >= 3;
+  const denseJournalCover = journalColumnCount >= 4;
   const unassignedEntries = useMemo(() => visibleEntries.filter((entry) => (entry.journalIds?.length ?? entry.collectionIds.length) === 0), [visibleEntries]);
   const journalItems = useMemo<JournalHomeItem[]>(() => {
     const assignedItems = journals.map((journal) => ({
@@ -360,6 +394,17 @@ export default function JournalsScreen(): React.JSX.Element {
           <Text style={[styles.heading, { color: theme.colors.text }]}>{t('journalsTitle')}</Text>
           <View style={styles.headerActions}>
             <TouchableOpacity
+              onPress={() => {
+                setOpenJournalOptionsId(null);
+                setJournalColumnCount(getNextJournalColumnCount(journalColumnCount));
+              }}
+              style={styles.headerIconButton}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('journalLayoutA11y')}: ${journalColumnOptions.find((option) => option.count === journalColumnCount)?.label ?? '6 6'}`}
+            >
+              <Ionicons name={getJournalLayoutIcon(journalColumnCount)} size={22} color={theme.colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity
               onPress={() => setShowPermanentJournals((current) => !current)}
               style={[
                 styles.headerIconButton,
@@ -397,24 +442,43 @@ export default function JournalsScreen(): React.JSX.Element {
           <View style={styles.journalCoverGrid}>
             {journalItems.map((journal) => {
               const journalAccentColor = theme.colors.tint;
-              const coverAspectRatio = journal.coverImageWidth && journal.coverImageHeight ? journal.coverImageWidth / journal.coverImageHeight : 0.72;
               const coverCountMeta = (
-                <View style={styles.journalCoverCountMeta}>
-                  <View style={[styles.journalCountCircle, { backgroundColor: journalAccentColor }]}>
+                <View style={[
+                  styles.journalCoverCountMeta,
+                  compactJournalCover && styles.journalCoverCountMetaCompact,
+                  denseJournalCover && styles.journalCoverCountMetaDense,
+                ]}>
+                  <View style={[
+                    styles.journalCountCircle,
+                    compactJournalCover && styles.journalCountCircleCompact,
+                    denseJournalCover && styles.journalCountCircleDense,
+                    { backgroundColor: journalAccentColor },
+                  ]}>
                     <Text
                       preset="label"
                       dynamicType={false}
                       adjustsFontSizeToFit
                       minimumFontScale={0.65}
                       numberOfLines={1}
-                      style={styles.journalCountText}
+                      style={[
+                        styles.journalCountText,
+                        compactJournalCover && styles.journalCountTextCompact,
+                        denseJournalCover && styles.journalCountTextDense,
+                      ]}
                     >
                       {journal.count}
                     </Text>
                   </View>
-                  <Text preset="caption" numberOfLines={1} style={styles.journalCoverCountLabel}>
-                    {journalEntryLabelText(journal.count)}
-                  </Text>
+                  {!denseJournalCover ? (
+                    <Text
+                      preset="caption"
+                      dynamicType={false}
+                      numberOfLines={1}
+                      style={[styles.journalCoverCountLabel, compactJournalCover && styles.journalCoverCountLabelCompact]}
+                    >
+                      {journalEntryLabelText(journal.count)}
+                    </Text>
+                  ) : null}
                 </View>
               );
               return (
@@ -424,14 +488,19 @@ export default function JournalsScreen(): React.JSX.Element {
                 style={[
                   styles.journalCoverCard,
                   openJournalOptionsId === journal.id && styles.journalCardRaised,
+                  { width: journalCardWidth },
                   { borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
                 ]}
                 accessibilityRole="button"
               >
                 {renderJournalOptions(journal)}
-                <View style={[styles.journalCoverImageFrame, { backgroundColor: theme.colors.tint + '18' }]}>
+                <View style={[
+                  styles.journalCoverImageFrame,
+                  wideJournalCover && styles.journalCoverImageFrameWide,
+                  { backgroundColor: theme.colors.tint + '18' },
+                ]}>
                   {journal.coverImageUri ? (
-                    <Image source={{ uri: journal.coverImageUri }} style={[styles.journalCoverImage, { aspectRatio: coverAspectRatio }]} resizeMode="cover" />
+                    <Image source={{ uri: journal.coverImageUri }} style={styles.journalCoverImage} resizeMode="cover" />
                   ) : (
                     <View style={styles.journalCoverPlaceholder}>
                       <Ionicons name="book-outline" size={34} color={theme.colors.tint} />
@@ -439,9 +508,25 @@ export default function JournalsScreen(): React.JSX.Element {
                   )}
                   {coverCountMeta}
                 </View>
-                <View style={styles.journalCoverFooter}>
+                <View style={[
+                  styles.journalCoverFooter,
+                  wideJournalCover && styles.journalCoverFooterWide,
+                  compactJournalCover && styles.journalCoverFooterCompact,
+                ]}>
                   <View style={styles.journalCoverCopy}>
-                    <Text preset="h3" color="text" numberOfLines={2} style={styles.journalCoverTitle}>{journal.title}</Text>
+                    <Text
+                      preset="h3"
+                      color="text"
+                      numberOfLines={denseJournalCover ? 1 : 2}
+                      style={[
+                        styles.journalCoverTitle,
+                        wideJournalCover && styles.journalCoverTitleWide,
+                        compactJournalCover && styles.journalCoverTitleCompact,
+                        denseJournalCover && styles.journalCoverTitleDense,
+                      ]}
+                    >
+                      {journal.title}
+                    </Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -529,8 +614,8 @@ const styles = StyleSheet.create({
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   headerIconButton: { width: 38, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 12 },
-  journalCoverGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  journalCoverCard: { width: '48%', position: 'relative', borderWidth: 1, borderRadius: 8 },
+  journalCoverGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: JOURNAL_GRID_GAP },
+  journalCoverCard: { position: 'relative', borderWidth: 1, borderRadius: 8 },
   journalCardRaised: { zIndex: 20, elevation: 20 },
   journalCoverImageFrame: {
     width: '100%',
@@ -540,6 +625,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 7,
     borderTopRightRadius: 7,
     overflow: 'hidden',
+  },
+  journalCoverImageFrameWide: {
+    aspectRatio: 1.58,
   },
   journalCoverImage: {
     width: '100%',
@@ -563,12 +651,35 @@ const styles = StyleSheet.create({
     paddingRight: 10,
     backgroundColor: 'rgba(0, 0, 0, 0.42)',
   },
+  journalCoverCountMetaCompact: {
+    left: 6,
+    bottom: 6,
+    minHeight: 30,
+    gap: 5,
+    paddingRight: 7,
+  },
+  journalCoverCountMetaDense: {
+    left: 5,
+    bottom: 5,
+    minHeight: 26,
+    paddingRight: 0,
+  },
   journalCountCircle: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  journalCountCircleCompact: { width: 30, height: 30, borderRadius: 15 },
+  journalCountCircleDense: { width: 26, height: 26, borderRadius: 13 },
   journalCountText: { color: '#fff', fontSize: 15, lineHeight: 18, fontWeight: '800', textAlign: 'center' },
+  journalCountTextCompact: { fontSize: 12, lineHeight: 14 },
+  journalCountTextDense: { fontSize: 11, lineHeight: 13 },
   journalCoverCountLabel: { flexShrink: 1, color: '#fff', fontWeight: '700' },
+  journalCoverCountLabelCompact: { fontSize: 11, lineHeight: 13 },
   journalCoverFooter: { minHeight: 76, flexDirection: 'row', alignItems: 'center', padding: 10, gap: 6 },
+  journalCoverFooterWide: { minHeight: 56, paddingHorizontal: 12, paddingVertical: 8 },
+  journalCoverFooterCompact: { minHeight: 48, padding: 7 },
   journalCoverCopy: { flex: 1, minWidth: 0 },
   journalCoverTitle: { fontWeight: '800', lineHeight: 22 },
+  journalCoverTitleWide: { fontSize: 18, lineHeight: 23 },
+  journalCoverTitleCompact: { fontSize: 14, lineHeight: 18 },
+  journalCoverTitleDense: { fontSize: 12, lineHeight: 15 },
   journalOptionsWrap: { position: 'absolute', top: 6, right: 6, zIndex: 30, elevation: 30, alignItems: 'flex-end' },
   journalOptionsButton: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   journalOptionsMenu: {

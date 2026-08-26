@@ -30,6 +30,7 @@ export type CalendarDateFormat = 'month-day-year' | 'day-month-year' | 'year-mon
 export type TimeFormat = '24-hour' | '12-hour';
 export type FontScale = 'small' | 'default' | 'large';
 export type FontFamily = AppFontFamily;
+export type JournalColumnCount = 1 | 2 | 3 | 4;
 export type HomeViewMode = 'detailed' | 'timeline' | 'feed';
 export type EntryHierarchyMode = 'year-month-date' | 'month-date' | 'date' | 'none';
 export type AppLanguage = 'en' | 'ja' | 'zh' | 'de' | 'fr';
@@ -55,6 +56,7 @@ export interface AppState {
   calendarFirstDay: 0 | 1;
   fontScale: FontScale;
   fontFamily: FontFamily;
+  journalColumnCount: JournalColumnCount;
   homeViewModes: Record<HomeViewMode, boolean>;
   homeViewMode: HomeViewMode;
   entryHierarchyMode: EntryHierarchyMode;
@@ -78,6 +80,7 @@ export interface AppState {
   setCalendarFirstDay: (day: 0 | 1) => void;
   setFontScale: (scale: FontScale) => void;
   setFontFamily: (family: FontFamily) => void;
+  setJournalColumnCount: (count: JournalColumnCount) => void;
   setHomeViewModeEnabled: (mode: HomeViewMode, enabled: boolean) => void;
   setHomeViewMode: (mode: HomeViewMode) => void;
   setEntryHierarchyMode: (mode: EntryHierarchyMode) => void;
@@ -105,6 +108,7 @@ const initialState: Pick<
   | 'calendarFirstDay'
   | 'fontScale'
   | 'fontFamily'
+  | 'journalColumnCount'
   | 'homeViewModes'
   | 'homeViewMode'
   | 'entryHierarchyMode'
@@ -128,6 +132,7 @@ const initialState: Pick<
   calendarFirstDay: 0,
   fontScale: 'default',
   fontFamily: 'system',
+  journalColumnCount: 2,
   homeViewModes: { detailed: true, timeline: true, feed: true },
   homeViewMode: 'timeline',
   entryHierarchyMode: 'year-month-date',
@@ -164,6 +169,7 @@ export const useAppStore = create<AppState>()(
       setCalendarFirstDay: (calendarFirstDay: 0 | 1) => set({ calendarFirstDay }),
       setFontScale: (fontScale: FontScale) => set({ fontScale }),
       setFontFamily: (fontFamily: FontFamily) => set({ fontFamily }),
+      setJournalColumnCount: (journalColumnCount: JournalColumnCount) => set({ journalColumnCount }),
       setHomeViewModeEnabled: (mode: HomeViewMode, enabled: boolean) => set((state) => ({
         homeViewModes: { ...state.homeViewModes, [mode]: enabled },
       })),
@@ -207,6 +213,7 @@ export const useAppStore = create<AppState>()(
         calendarFirstDay: state.calendarFirstDay,
         fontScale: state.fontScale,
         fontFamily: state.fontFamily,
+        journalColumnCount: state.journalColumnCount,
         homeViewModes: state.homeViewModes,
         homeViewMode: state.homeViewMode,
         entryHierarchyMode: state.entryHierarchyMode,
