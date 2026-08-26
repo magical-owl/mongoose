@@ -12,7 +12,6 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   ScrollView,
-  LayoutAnimation,
   Alert,
   TouchableOpacity,
   Platform,
@@ -29,7 +28,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@shared/components/Text';
-import { RichTextEditor, type RichTextEditorHandle, type FormatActionKind } from '@shared/components/RichTextEditor';
+import { RichTextEditor, type RichTextEditorHandle } from '@shared/components/RichTextEditor';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { useAppStore } from '@/stores/useAppStore';
@@ -42,6 +41,7 @@ import { Template } from '@/features/diary/domain/Template';
 import { generateUUID } from '@/shared/utils/uuid';
 import { diaryDraftService } from '@/features/diary/services/DiaryDraftService';
 import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
+import { RichTextFormattingDrawer, type RichTextFormatItem } from '@/features/diary/components/RichTextFormattingDrawer';
 import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSelector';
@@ -61,7 +61,7 @@ function countWords(text: string): number {
 }
 
 // Toolbar format items
-const FORMAT_ITEMS: { kind: FormatActionKind; icon: string }[] = [
+const FORMAT_ITEMS: readonly RichTextFormatItem[] = [
   { kind: 'bold',    icon: 'format-bold' },
   { kind: 'italic',  icon: 'format-italic' },
   { kind: 'heading', icon: 'format-header-2' },
@@ -476,8 +476,6 @@ export default function CreateEntryScreen() {
               accessibilityHint={t('entryTitleHint')}
             />
 
-            <ManualMoodPicker value={manualMood} onChange={setManualMood} />
-
             {/* Divider */}
             <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
@@ -492,6 +490,7 @@ export default function CreateEntryScreen() {
               accessibilityLabel={t('entryContentA11y')}
             />
             <View style={styles.belowBodyPickers}>
+              <ManualMoodPicker value={manualMood} onChange={setManualMood} />
               <DiaryJournalSelector
                 selectedJournalIds={selectedJournalIds}
                 journals={journals}
@@ -529,27 +528,24 @@ export default function CreateEntryScreen() {
         ]}
       >
         <View style={styles.toolbarLeft}>
-          <TouchableOpacity
-            style={[styles.toolbarIcon, showFormattingTools && { backgroundColor: theme.colors.tint + '18' }]}
-            onPress={() => {
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-              setShowFormattingTools((current) => !current);
-            }}
-            activeOpacity={0.6}
-            accessibilityLabel={showFormattingTools ? t('entryHideFormattingA11y') : t('entryShowFormattingA11y')}
-            accessibilityRole="button"
-          >
-            <MaterialCommunityIcons name="format-text" size={22} color={showFormattingTools ? theme.colors.tint : theme.colors.text} />
-          </TouchableOpacity>
-          {showFormattingTools && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" style={styles.formattingDrawer}>
-              {FORMAT_ITEMS.map((item) => (
-                <TouchableOpacity key={item.kind} style={styles.toolbarIcon} onPressIn={() => editorRef.current?.applyFormat(item.kind)} activeOpacity={0.6} accessibilityLabel={item.kind} accessibilityRole="button">
-                  <MaterialCommunityIcons name={item.icon as any} size={22} color={theme.colors.text} />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
+          <View style={styles.formattingStack}>
+            <RichTextFormattingDrawer
+              visible={showFormattingTools}
+              items={FORMAT_ITEMS}
+              onSelect={(kind) => editorRef.current?.applyFormat(kind)}
+            />
+            <TouchableOpacity
+              style={[styles.toolbarIcon, showFormattingTools && { backgroundColor: theme.colors.tint + '18' }]}
+              onPress={() => {
+                setShowFormattingTools((current) => !current);
+              }}
+              activeOpacity={0.6}
+              accessibilityLabel={showFormattingTools ? t('entryHideFormattingA11y') : t('entryShowFormattingA11y')}
+              accessibilityRole="button"
+            >
+              <MaterialCommunityIcons name="format-text" size={22} color={showFormattingTools ? theme.colors.tint : theme.colors.text} />
+            </TouchableOpacity>
+          </View>
 
           <View style={[styles.barDivider, { backgroundColor: theme.colors.border }]} />
           <TouchableOpacity
@@ -734,7 +730,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  formattingDrawer: { flex: 1 },
+  formattingStack: {
+    position: 'relative',
+  },
   toolbarGroup: {
     flexDirection: 'row',
     alignItems: 'center',

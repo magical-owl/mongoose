@@ -28,7 +28,7 @@ export function ManualMoodPicker({ value, onChange }: ManualMoodPickerProps): Re
             accessibilityState={{ selected }}
             accessibilityLabel={`${manualMoodLabel(mood, t)} ${t('moodEmotionA11y')}${selected ? `, ${t('moodSelectedA11y')}` : ''}`}
           >
-            <Text preset="caption" style={{ color }}>{manualMoodLabel(mood, t)}</Text>
+            <Text preset="caption" style={[styles.optionText, { color }]}>{manualMoodLabel(mood, t)}</Text>
           </TouchableOpacity>
         );
       })}
@@ -37,7 +37,8 @@ export function ManualMoodPicker({ value, onChange }: ManualMoodPickerProps): Re
 }
 
 const styles = StyleSheet.create({
-  scroll: { height: 34, maxHeight: 34, marginBottom: 8, flexGrow: 0, flexShrink: 0 },
-  row: { height: 34, alignItems: 'flex-start', gap: 8 },
-  option: { alignSelf: 'flex-start', minHeight: 30, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 0, alignItems: 'center', justifyContent: 'center' },
+  scroll: { height: 36, maxHeight: 36, marginTop: 4, marginBottom: 4, flexGrow: 0, flexShrink: 0 },
+  row: { minHeight: 36, alignItems: 'center', gap: 5, paddingRight: 4 },
+  option: { alignSelf: 'center', minHeight: 28, borderWidth: 1, borderRadius: 14, paddingHorizontal: 9, paddingVertical: 0, alignItems: 'center', justifyContent: 'center' },
+  optionText: { fontSize: 14, lineHeight: 18, fontWeight: '700' },
 });
