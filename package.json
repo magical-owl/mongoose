@@ -5,7 +5,8 @@
   "scripts": {
     "start": "expo start --dev-client",
     "android": "expo run:android",
-    "ios": "expo run:ios",
+    "ios": "expo run:ios --no-install",
+    "ios:pods": "npx pod-install",
     "web": "expo start --web",
     "lint": "eslint app src tests --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
@@ -56,7 +57,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.82.0",
-    "react-native": "0.86.3",
+    "react-native": "0.86.2",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-mmkv": "^4.3.2",
     "react-native-pell-rich-editor": "^1.10.0",
@@ -70,7 +71,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@react-native/jest-preset": "0.86.3",
+    "@react-native/jest-preset": "0.86.2",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^14.0.1",
     "@types/jest": "^29.5.14",
@@ -82,6 +83,11 @@
     "jest-expo": "~57.0.4",
     "react-test-renderer": "^19.2.3",
     "typescript": "~6.0.3"
+  },
+  "overrides": {
+    "metro": "0.84.5",
+    "metro-config": "0.84.5",
+    "metro-transform-worker": "0.84.5"
   },
   "private": true
 }

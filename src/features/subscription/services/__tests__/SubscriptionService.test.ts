@@ -3,8 +3,9 @@ import { UnavailableSubscriptionPaymentGateway } from '../UnavailableSubscriptio
 import { useSubscriptionStore, DEFAULT_SUBSCRIPTION_PACKAGES } from '@stores/useSubscriptionStore';
 import type { ISubscriptionEntitlementRepository } from '../../repositories/ISubscriptionEntitlementRepository';
 import type { CustomerEntitlement } from '../../domain/Subscription';
-import { success } from '@/shared/utils/result';
+import { failure, success } from '@/shared/utils/result';
 import { APP_IDENTITY } from '@/config/appIdentity';
+import type { ISubscriptionPaymentGateway } from '../ISubscriptionPaymentGateway';
 
 class MemoryEntitlementRepository implements ISubscriptionEntitlementRepository {
   private entitlement: CustomerEntitlement | null = null;
@@ -21,6 +22,25 @@ class MemoryEntitlementRepository implements ISubscriptionEntitlementRepository 
   public async clear() {
     this.entitlement = null;
     return success(undefined);
+  }
+}
+
+class SyncingPaymentGateway implements ISubscriptionPaymentGateway {
+  public constructor(private readonly currentEntitlement: CustomerEntitlement | null) {}
+
+  public async getCurrentEntitlement() {
+    return success(this.currentEntitlement);
+  }
+
+  public async purchasePackage() {
+    return failure({
+      code: 'PURCHASE_NOT_CONFIGURED',
+      message: 'Purchases are not configured.',
+    });
+  }
+
+  public async restorePurchases() {
+    return success(this.currentEntitlement);
   }
 }
 
@@ -145,5 +165,51 @@ describe('SubscriptionService', () => {
       expect(restoreResult.error.code).toBe('NO_PURCHASES_TO_RESTORE');
     }
     expect(useSubscriptionStore.getState().isPro).toBe(false);
+  });
+
+  it('initializes from the native current entitlement when available', async () => {
+    const entitlement: CustomerEntitlement = {
+      isPro: true,
+      activeTier: 'pro_lifetime',
+      originalPurchaseDate: new Date(Date.UTC(2026, 0, 1)).toISOString(),
+      willRenew: false,
+    };
+    const syncingService = new SubscriptionService(
+      new SyncingPaymentGateway(entitlement),
+      entitlementRepository
+    );
+
+    const result = await syncingService.initialize();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual(entitlement);
+    }
+    expect(useSubscriptionStore.getState().isPro).toBe(true);
+  });
+
+  it('clears stored premium access when native current entitlement is missing', async () => {
+    await entitlementRepository.save({
+      isPro: true,
+      activeTier: 'pro_lifetime',
+      willRenew: false,
+    });
+    const syncingService = new SubscriptionService(
+      new SyncingPaymentGateway(null),
+      entitlementRepository
+    );
+
+    const result = await syncingService.initialize();
+    const storedEntitlementResult = await entitlementRepository.get();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.isPro).toBe(false);
+      expect(result.data.activeTier).toBe('free');
+    }
+    expect(storedEntitlementResult.success).toBe(true);
+    if (storedEntitlementResult.success) {
+      expect(storedEntitlementResult.data).toBeNull();
+    }
   });
 });

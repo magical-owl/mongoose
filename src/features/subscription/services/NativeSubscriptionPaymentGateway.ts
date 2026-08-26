@@ -99,6 +99,22 @@ export class NativeSubscriptionPaymentGateway implements ISubscriptionPaymentGat
     }
   }
 
+  public async getCurrentEntitlement(): Promise<Result<CustomerEntitlement | null>> {
+    try {
+      await this.client.connect();
+      const purchases = await this.client.getAvailablePurchases();
+      const purchase = purchases.find((item) => this.restorableProductIds.includes(item.productId) && this.isValidPurchase(item));
+      if (!purchase) return success(null);
+
+      return success(this.createLifetimeEntitlement(purchase));
+    } catch (error) {
+      return failure({
+        code: 'ENTITLEMENT_SYNC_FAILED',
+        message: error instanceof Error ? error.message : 'Failed to sync current purchase entitlement.',
+      });
+    }
+  }
+
   public async purchasePackage(pkg: SubscriptionPackage): Promise<Result<CustomerEntitlement>> {
     try {
       await this.client.connect();
@@ -132,12 +148,7 @@ export class NativeSubscriptionPaymentGateway implements ISubscriptionPaymentGat
       if (!purchase) return success(null);
 
       await this.client.finishTransaction(purchase);
-      return success({
-        isPro: true,
-        activeTier: 'pro_lifetime',
-        originalPurchaseDate: new Date(purchase.transactionDate).toISOString(),
-        willRenew: false,
-      });
+      return success(this.createLifetimeEntitlement(purchase));
     } catch (error) {
       return failure({
         code: 'RESTORE_PURCHASES_FAILED',
@@ -163,6 +174,15 @@ export class NativeSubscriptionPaymentGateway implements ISubscriptionPaymentGat
       activeTier: pkg.tier,
       originalPurchaseDate: new Date(purchase.transactionDate).toISOString(),
       willRenew: pkg.period !== 'lifetime' && purchase.isAutoRenewing,
+    };
+  }
+
+  private createLifetimeEntitlement(purchase: Purchase): CustomerEntitlement {
+    return {
+      isPro: true,
+      activeTier: 'pro_lifetime',
+      originalPurchaseDate: new Date(purchase.transactionDate).toISOString(),
+      willRenew: false,
     };
   }
 }

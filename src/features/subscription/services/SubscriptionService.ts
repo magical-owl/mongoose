@@ -24,16 +24,38 @@ export class SubscriptionService {
    */
   public async initialize(): Promise<Result<CustomerEntitlement>> {
     try {
+      if (this.paymentGateway.getCurrentEntitlement) {
+        const currentEntitlementResult = await this.paymentGateway.getCurrentEntitlement();
+        if (!currentEntitlementResult.success) {
+          return currentEntitlementResult;
+        }
+
+        if (currentEntitlementResult.data) {
+          const saveResult = await this.entitlementRepository.save(currentEntitlementResult.data);
+          if (!saveResult.success) {
+            return saveResult;
+          }
+
+          useSubscriptionStore.getState().setEntitlement(saveResult.data);
+          return success(saveResult.data);
+        }
+
+        const clearResult = await this.entitlementRepository.clear();
+        if (!clearResult.success) {
+          return clearResult;
+        }
+
+        const freeEntitlement = createFreeEntitlement();
+        useSubscriptionStore.getState().setEntitlement(freeEntitlement);
+        return success(freeEntitlement);
+      }
+
       const storedEntitlementResult = await this.entitlementRepository.get();
       if (!storedEntitlementResult.success) {
         return storedEntitlementResult;
       }
 
-      const entitlement: CustomerEntitlement = storedEntitlementResult.data ?? {
-        isPro: false,
-        activeTier: 'free',
-        willRenew: false,
-      };
+      const entitlement: CustomerEntitlement = storedEntitlementResult.data ?? createFreeEntitlement();
 
       useSubscriptionStore.getState().setEntitlement(entitlement);
       return success(entitlement);
@@ -138,3 +160,11 @@ export class SubscriptionService {
 }
 
 export const subscriptionService = new SubscriptionService();
+
+function createFreeEntitlement(): CustomerEntitlement {
+  return {
+    isPro: false,
+    activeTier: 'free',
+    willRenew: false,
+  };
+}

@@ -103,6 +103,40 @@ describe('NativeSubscriptionPaymentGateway', () => {
     }
     expect(client.finishedPurchases).toEqual([purchase]);
   });
+
+  it('syncs an active entitlement without finishing a transaction', async () => {
+    const client = new MockNativeIapClient();
+    const purchase = createPurchase({ productId: premiumPackage.productId });
+    client.availablePurchases = [purchase];
+    const gateway = new NativeSubscriptionPaymentGateway(client);
+
+    const result = await gateway.getCurrentEntitlement();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data?.isPro).toBe(true);
+      expect(result.data?.activeTier).toBe('pro_lifetime');
+    }
+    expect(client.finishedPurchases).toEqual([]);
+  });
+
+  it('does not sync a revoked entitlement', async () => {
+    const client = new MockNativeIapClient();
+    client.availablePurchases = [
+      createPurchase({
+        productId: premiumPackage.productId,
+        revocationDateIOS: Date.UTC(2026, 0, 2),
+      }),
+    ];
+    const gateway = new NativeSubscriptionPaymentGateway(client);
+
+    const result = await gateway.getCurrentEntitlement();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toBeNull();
+    }
+  });
 });
 
 function createProduct(overrides: Partial<ProductIOS> = {}): ProductIOS {
