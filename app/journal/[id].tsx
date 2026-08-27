@@ -52,6 +52,7 @@ const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
 const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
 const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const ALL_ENTRIES_JOURNAL_ID = "all";
+const UNASSIGNED_JOURNAL_ID = "unassigned";
 const JOURNAL_COVER_EXPANDED_HEIGHT = 184;
 const JOURNAL_COVER_COLLAPSED_HEIGHT = 60;
 const JOURNAL_COVER_COLLAPSE_DISTANCE = 120;
@@ -88,6 +89,7 @@ export default function JournalEntriesScreen() {
   const entryHierarchyMode = useAppStore((state) => state.entryHierarchyMode);
   const premiumOnboardingPromptShown = useAppStore((state) => state.premiumOnboardingPromptShown);
   const premiumPromptDismissedAt = useAppStore((state) => state.premiumPromptDismissedAt);
+  const syntheticJournalCovers = useAppStore((state) => state.syntheticJournalCovers);
   const setHomeViewMode = useAppStore((state) => state.setHomeViewMode);
   const setEntryHierarchyMode = useAppStore((state) => state.setEntryHierarchyMode);
   const markPremiumOnboardingPromptShown = useAppStore((state) => state.markPremiumOnboardingPromptShown);
@@ -127,15 +129,21 @@ export default function JournalEntriesScreen() {
   const selectedJournal = journals.find((journal) => journal.id === journalId);
   const journalEntries = useMemo(() => {
     if (journalId === ALL_ENTRIES_JOURNAL_ID) return entries;
-    if (journalId === "unassigned") return entries.filter((entry) => (entry.journalIds?.length ?? entry.collectionIds.length) === 0);
+    if (journalId === UNASSIGNED_JOURNAL_ID) return entries.filter((entry) => (entry.journalIds?.length ?? entry.collectionIds.length) === 0);
     return entries.filter((entry) => (entry.journalIds ?? entry.collectionIds).includes(journalId));
   }, [entries, journalId]);
 
   const journalTitle = journalId === ALL_ENTRIES_JOURNAL_ID
     ? t("journalAllEntriesTitle")
-    : journalId === "unassigned"
+    : journalId === UNASSIGNED_JOURNAL_ID
       ? t("journalUnassignedTitle")
       : selectedJournal?.title ?? t("journalFallbackTitle");
+  const syntheticJournalCover = journalId === ALL_ENTRIES_JOURNAL_ID
+    ? syntheticJournalCovers.all
+    : journalId === UNASSIGNED_JOURNAL_ID
+      ? syntheticJournalCovers.unassigned
+      : undefined;
+  const journalCoverImageUri = selectedJournal?.coverImageUri ?? syntheticJournalCover?.coverImageUri;
 
   const filterOptions = useMemo(
     () => ({
@@ -458,7 +466,7 @@ export default function JournalEntriesScreen() {
     return Array.from(groups.entries());
   }, [filteredEntries]);
 
-  const hasJournalCover = Boolean(selectedJournal?.coverImageUri);
+  const hasJournalCover = Boolean(journalCoverImageUri);
   const journalCoverHeight = scrollY.interpolate({
     inputRange: [0, JOURNAL_COVER_COLLAPSE_DISTANCE],
     outputRange: [JOURNAL_COVER_EXPANDED_HEIGHT, JOURNAL_COVER_COLLAPSED_HEIGHT],
@@ -662,7 +670,7 @@ export default function JournalEntriesScreen() {
             </View>
           </View>
 
-          {selectedJournal?.coverImageUri ? (
+          {journalCoverImageUri ? (
             <Animated.View
               style={[
                 styles.journalCoverContext,
@@ -674,7 +682,7 @@ export default function JournalEntriesScreen() {
               ]}
             >
               <Image
-                source={getJournalCoverImageSource(selectedJournal.coverImageUri)}
+                source={getJournalCoverImageSource(journalCoverImageUri)}
                 style={styles.journalCoverImage}
                 resizeMode="cover"
                 accessibilityRole="image"

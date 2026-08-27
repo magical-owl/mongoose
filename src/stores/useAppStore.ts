@@ -34,6 +34,13 @@ export type JournalColumnCount = 1 | 2 | 3 | 4;
 export type HomeViewMode = 'detailed' | 'timeline' | 'feed';
 export type EntryHierarchyMode = 'year-month-date' | 'month-date' | 'date' | 'none';
 export type AppLanguage = 'en' | 'ja' | 'zh' | 'de' | 'fr';
+export type SyntheticJournalId = 'all' | 'unassigned';
+
+export interface JournalCoverPreference {
+  readonly coverImageUri: string;
+  readonly coverImageWidth?: number;
+  readonly coverImageHeight?: number;
+}
 
 /**
  * App state interface.
@@ -58,6 +65,7 @@ export interface AppState {
   fontFamily: FontFamily;
   journalColumnCount: JournalColumnCount;
   showPermanentJournals: boolean;
+  syntheticJournalCovers: Partial<Record<SyntheticJournalId, JournalCoverPreference>>;
   homeViewModes: Record<HomeViewMode, boolean>;
   homeViewMode: HomeViewMode;
   entryHierarchyMode: EntryHierarchyMode;
@@ -83,6 +91,7 @@ export interface AppState {
   setFontFamily: (family: FontFamily) => void;
   setJournalColumnCount: (count: JournalColumnCount) => void;
   setShowPermanentJournals: (show: boolean) => void;
+  setSyntheticJournalCover: (journalId: SyntheticJournalId, cover: JournalCoverPreference | null) => void;
   setHomeViewModeEnabled: (mode: HomeViewMode, enabled: boolean) => void;
   setHomeViewMode: (mode: HomeViewMode) => void;
   setEntryHierarchyMode: (mode: EntryHierarchyMode) => void;
@@ -112,6 +121,7 @@ const initialState: Pick<
   | 'fontFamily'
   | 'journalColumnCount'
   | 'showPermanentJournals'
+  | 'syntheticJournalCovers'
   | 'homeViewModes'
   | 'homeViewMode'
   | 'entryHierarchyMode'
@@ -137,6 +147,7 @@ const initialState: Pick<
   fontFamily: 'system',
   journalColumnCount: 2,
   showPermanentJournals: true,
+  syntheticJournalCovers: {},
   homeViewModes: { detailed: true, timeline: true, feed: true },
   homeViewMode: 'timeline',
   entryHierarchyMode: 'year-month-date',
@@ -175,6 +186,12 @@ export const useAppStore = create<AppState>()(
       setFontFamily: (fontFamily: FontFamily) => set({ fontFamily }),
       setJournalColumnCount: (journalColumnCount: JournalColumnCount) => set({ journalColumnCount }),
       setShowPermanentJournals: (showPermanentJournals: boolean) => set({ showPermanentJournals }),
+      setSyntheticJournalCover: (journalId: SyntheticJournalId, cover: JournalCoverPreference | null) => set((state) => {
+        const nextCovers = { ...state.syntheticJournalCovers };
+        if (cover) nextCovers[journalId] = cover;
+        else delete nextCovers[journalId];
+        return { syntheticJournalCovers: nextCovers };
+      }),
       setHomeViewModeEnabled: (mode: HomeViewMode, enabled: boolean) => set((state) => ({
         homeViewModes: { ...state.homeViewModes, [mode]: enabled },
       })),
@@ -220,6 +237,7 @@ export const useAppStore = create<AppState>()(
         fontFamily: state.fontFamily,
         journalColumnCount: state.journalColumnCount,
         showPermanentJournals: state.showPermanentJournals,
+        syntheticJournalCovers: state.syntheticJournalCovers,
         homeViewModes: state.homeViewModes,
         homeViewMode: state.homeViewMode,
         entryHierarchyMode: state.entryHierarchyMode,

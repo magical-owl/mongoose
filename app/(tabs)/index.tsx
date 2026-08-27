@@ -17,7 +17,7 @@ import type { Journal } from '@/features/journal/domain/Journal';
 import { BUILTIN_JOURNAL_BACKGROUNDS, getJournalCoverImageSource } from '@/features/journal/domain/JournalBackgrounds';
 import { chooseDiaryPhotos } from '@/features/diary/services/DiaryPhotoPickerService';
 import { diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
-import type { JournalColumnCount } from '@/stores/useAppStore';
+import type { JournalColumnCount, SyntheticJournalId } from '@/stores/useAppStore';
 
 function entryBelongsToJournal(entry: { readonly journalIds?: readonly string[]; readonly collectionIds?: readonly string[] }, journalId: string): boolean {
   return (entry.journalIds ?? entry.collectionIds ?? []).includes(journalId);
@@ -60,6 +60,10 @@ function getJournalLayoutIcon(count: JournalColumnCount): React.ComponentProps<t
   return 'keypad-outline';
 }
 
+function isSyntheticJournalId(journalId: string): journalId is SyntheticJournalId {
+  return journalId === ALL_ENTRIES_JOURNAL_ID || journalId === UNASSIGNED_JOURNAL_ID;
+}
+
 export default function JournalsScreen(): React.JSX.Element {
   const router = useRouter();
   const theme = useTheme();
@@ -74,10 +78,12 @@ export default function JournalsScreen(): React.JSX.Element {
   const premiumPromptDismissedAt = useAppStore((state) => state.premiumPromptDismissedAt);
   const journalColumnCount = useAppStore((state) => state.journalColumnCount);
   const showPermanentJournals = useAppStore((state) => state.showPermanentJournals);
+  const syntheticJournalCovers = useAppStore((state) => state.syntheticJournalCovers);
   const markPremiumOnboardingPromptShown = useAppStore((state) => state.markPremiumOnboardingPromptShown);
   const markPremiumPromptDismissed = useAppStore((state) => state.markPremiumPromptDismissed);
   const setJournalColumnCount = useAppStore((state) => state.setJournalColumnCount);
   const setShowPermanentJournals = useAppStore((state) => state.setShowPermanentJournals);
+  const setSyntheticJournalCover = useAppStore((state) => state.setSyntheticJournalCover);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [journalTitle, setJournalTitle] = useState('');
@@ -88,7 +94,7 @@ export default function JournalsScreen(): React.JSX.Element {
   const [deletingJournalId, setDeletingJournalId] = useState<string | null>(null);
   const [assigningCoverJournalId, setAssigningCoverJournalId] = useState<string | null>(null);
   const [openJournalOptionsId, setOpenJournalOptionsId] = useState<string | null>(null);
-  const [coverPickerJournal, setCoverPickerJournal] = useState<Journal | null>(null);
+  const [coverPickerJournal, setCoverPickerJournal] = useState<JournalHomeItem | null>(null);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const premiumPromptShownThisSession = useRef(false);
 
@@ -164,6 +170,9 @@ export default function JournalsScreen(): React.JSX.Element {
         title: t('journalAllEntriesTitle'),
         count: visibleEntries.length,
         canRename: false,
+        coverImageUri: syntheticJournalCovers.all?.coverImageUri,
+        coverImageWidth: syntheticJournalCovers.all?.coverImageWidth,
+        coverImageHeight: syntheticJournalCovers.all?.coverImageHeight,
       },
     ] : [];
 
@@ -177,9 +186,12 @@ export default function JournalsScreen(): React.JSX.Element {
         title: t('journalUnassignedTitle'),
         count: unassignedEntries.length,
         canRename: false,
+        coverImageUri: syntheticJournalCovers.unassigned?.coverImageUri,
+        coverImageWidth: syntheticJournalCovers.unassigned?.coverImageWidth,
+        coverImageHeight: syntheticJournalCovers.unassigned?.coverImageHeight,
       }] : []),
     ];
-  }, [journals, showPermanentJournals, t, unassignedEntries.length, visibleEntries]);
+  }, [journals, showPermanentJournals, syntheticJournalCovers, t, unassignedEntries.length, visibleEntries]);
 
   const handleCreateJournal = async () => {
     const trimmed = journalTitle.trim();
@@ -257,11 +269,11 @@ export default function JournalsScreen(): React.JSX.Element {
   }, [deleteJournal, journals, t]);
 
   const handleOpenCoverPicker = useCallback((journalId: string) => {
-    const journal = journals.find((item) => item.id === journalId);
+    const journal = journalItems.find((item) => item.id === journalId);
     if (!journal) return;
     setOpenJournalOptionsId(null);
     setCoverPickerJournal(journal);
-  }, [journals]);
+  }, [journalItems]);
 
   const handleAssignGalleryCover = useCallback(() => {
     const journal = coverPickerJournal;
@@ -281,13 +293,23 @@ export default function JournalsScreen(): React.JSX.Element {
       setAssigningCoverJournalId(journal.id);
       try {
         const imported = await diaryPhotoService.importAsset(asset);
-        const saveResult = await saveJournal({
-          ...journal,
-          coverImageUri: imported.uri,
-          coverImageWidth: imported.width,
-          coverImageHeight: imported.height,
-        });
-        if (!saveResult.success) Alert.alert(t('entryErrorTitle'), saveResult.error.message);
+        if (isSyntheticJournalId(journal.id)) {
+          setSyntheticJournalCover(journal.id, {
+            coverImageUri: imported.uri,
+            coverImageWidth: imported.width,
+            coverImageHeight: imported.height,
+          });
+        } else {
+          const persistedJournal = journals.find((item) => item.id === journal.id);
+          if (!persistedJournal) return;
+          const saveResult = await saveJournal({
+            ...persistedJournal,
+            coverImageUri: imported.uri,
+            coverImageWidth: imported.width,
+            coverImageHeight: imported.height,
+          });
+          if (!saveResult.success) Alert.alert(t('entryErrorTitle'), saveResult.error.message);
+        }
       } catch {
         Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
       } finally {
@@ -295,7 +317,7 @@ export default function JournalsScreen(): React.JSX.Element {
         setCoverPickerJournal(null);
       }
     })();
-  }, [coverPickerJournal, saveJournal, t]);
+  }, [coverPickerJournal, journals, saveJournal, setSyntheticJournalCover, t]);
 
   const handleAssignBuiltinCover = useCallback((backgroundUri: string) => {
     const journal = coverPickerJournal;
@@ -303,26 +325,43 @@ export default function JournalsScreen(): React.JSX.Element {
     if (!journal || !background) return;
     void (async () => {
       setAssigningCoverJournalId(journal.id);
-      const saveResult = await saveJournal({
-        ...journal,
-        coverImageUri: background.uri,
-        coverImageWidth: background.width,
-        coverImageHeight: background.height,
-      });
+      if (isSyntheticJournalId(journal.id)) {
+        setSyntheticJournalCover(journal.id, {
+          coverImageUri: background.uri,
+          coverImageWidth: background.width,
+          coverImageHeight: background.height,
+        });
+      } else {
+        const persistedJournal = journals.find((item) => item.id === journal.id);
+        if (persistedJournal) {
+          const saveResult = await saveJournal({
+            ...persistedJournal,
+            coverImageUri: background.uri,
+            coverImageWidth: background.width,
+            coverImageHeight: background.height,
+          });
+          if (!saveResult.success) Alert.alert(t('entryErrorTitle'), saveResult.error.message);
+        }
+      }
       setAssigningCoverJournalId(null);
       setCoverPickerJournal(null);
-      if (!saveResult.success) Alert.alert(t('entryErrorTitle'), saveResult.error.message);
     })();
-  }, [coverPickerJournal, saveJournal, t]);
+  }, [coverPickerJournal, journals, saveJournal, setSyntheticJournalCover, t]);
 
   const handleRemoveJournalCover = useCallback((journalId: string) => {
-    const journal = journals.find((item) => item.id === journalId);
+    const journal = journalItems.find((item) => item.id === journalId);
     if (!journal) return;
     setOpenJournalOptionsId(null);
+    if (isSyntheticJournalId(journal.id)) {
+      setSyntheticJournalCover(journal.id, null);
+      return;
+    }
+    const persistedJournal = journals.find((item) => item.id === journal.id);
+    if (!persistedJournal) return;
     void (async () => {
       setAssigningCoverJournalId(journal.id);
       const saveResult = await saveJournal({
-        ...journal,
+        ...persistedJournal,
         coverImageUri: undefined,
         coverImageWidth: undefined,
         coverImageHeight: undefined,
@@ -330,7 +369,7 @@ export default function JournalsScreen(): React.JSX.Element {
       setAssigningCoverJournalId(null);
       if (!saveResult.success) Alert.alert(t('entryErrorTitle'), saveResult.error.message);
     })();
-  }, [journals, saveJournal, t]);
+  }, [journalItems, journals, saveJournal, setSyntheticJournalCover, t]);
 
   const journalEntryLabelText = useCallback(
     (count: number) => count === 1 ? t('journalEntryLabelOne') : t('journalEntryLabelMany'),
@@ -338,7 +377,6 @@ export default function JournalsScreen(): React.JSX.Element {
   );
 
   const renderJournalOptions = (journal: JournalHomeItem) => {
-    if (!journal.canRename) return null;
     const isOpen = openJournalOptionsId === journal.id;
     return (
       <View style={styles.journalOptionsWrap}>
@@ -384,31 +422,35 @@ export default function JournalsScreen(): React.JSX.Element {
                 <Text preset="caption" color="text" style={styles.journalOptionsText}>{t('journalRemoveCover')}</Text>
               </TouchableOpacity>
             ) : null}
-            <TouchableOpacity
-              onPress={(event) => {
-                event.stopPropagation();
-                handleOpenRenameJournal(journal.id);
-              }}
-              style={styles.journalOptionsItem}
-              accessibilityRole="button"
-              accessibilityLabel={t('journalRenameA11y')}
-            >
-              <Ionicons name="pencil-outline" size={17} color={theme.colors.textSecondary} />
-              <Text preset="caption" color="text" style={styles.journalOptionsText}>{t('journalRename')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={(event) => {
-                event.stopPropagation();
-                handleDeleteJournal(journal.id);
-              }}
-              style={styles.journalOptionsItem}
-              accessibilityRole="button"
-              accessibilityLabel={t('journalDeleteA11y')}
-              disabled={deletingJournalId === journal.id}
-            >
-              <Ionicons name="trash-outline" size={17} color={theme.colors.error} />
-              <Text preset="caption" style={[styles.journalOptionsText, { color: theme.colors.error }]}>{t('entryDelete')}</Text>
-            </TouchableOpacity>
+            {journal.canRename ? (
+              <>
+                <TouchableOpacity
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    handleOpenRenameJournal(journal.id);
+                  }}
+                  style={styles.journalOptionsItem}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('journalRenameA11y')}
+                >
+                  <Ionicons name="pencil-outline" size={17} color={theme.colors.textSecondary} />
+                  <Text preset="caption" color="text" style={styles.journalOptionsText}>{t('journalRename')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    handleDeleteJournal(journal.id);
+                  }}
+                  style={styles.journalOptionsItem}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('journalDeleteA11y')}
+                  disabled={deletingJournalId === journal.id}
+                >
+                  <Ionicons name="trash-outline" size={17} color={theme.colors.error} />
+                  <Text preset="caption" style={[styles.journalOptionsText, { color: theme.colors.error }]}>{t('entryDelete')}</Text>
+                </TouchableOpacity>
+              </>
+            ) : null}
           </View>
         ) : null}
       </View>
