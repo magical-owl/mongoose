@@ -98,6 +98,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const textColor = sticker.textColor ?? DEFAULT_TEXT_STICKER_COLOR;
   const textBackgroundColor = sticker.textBackgroundColor ?? DEFAULT_TEXT_STICKER_BACKGROUND_COLOR;
   const stickerOpacity = sticker.opacity ?? 1;
+  const stickerLayerIndex = sticker.zIndex ?? 1;
 
   const getStickerVisualSize = useCallback(() => {
     if (isTextSticker) return { width: 160, height: 54 };
@@ -304,10 +305,10 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
       { translateX: pan.x },
       { translateY: pan.y },
     ],
-    // Keep a selected sticker and its controls reachable while editing. Once
-    // deselected, the visual sticker moves below the editor layer.
-    zIndex: isSelected ? 999 : sticker.behindText ? 1 : sticker.zIndex + 3,
-    elevation: isSelected ? 999 : sticker.behindText ? 1 : sticker.zIndex + 3,
+    // Keep editable stickers touchable even when their saved layer is behind
+    // the text. Read-only rendering still honors the behind-text stack order.
+    zIndex: isSelected ? 999 : sticker.behindText && !isEditable ? 1 : stickerLayerIndex + 3,
+    elevation: isSelected ? 999 : sticker.behindText && !isEditable ? 1 : stickerLayerIndex + 3,
   };
 
   const stickerTransformStyle = {

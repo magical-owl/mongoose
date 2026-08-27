@@ -95,6 +95,7 @@ const ENTRY_HEADER_TOP_OFFSET = 4;
 const ENTRY_HEADER_BUTTON_HEIGHT = 38;
 const ENTRY_HEADER_BOTTOM_PADDING = 6;
 const ENTRY_COVER_TOP_GAP = 10;
+const ENTRY_VIEW_COVER_BOTTOM_GAP = 18;
 const ENTRY_BODY_MIN_HEIGHT = 14;
 const ENTRY_BODY_DEFAULT_VIEWPORT_RATIO = 0.02125;
 const ENTRY_BODY_EXTRA_STICKER_SPACE = 6;
@@ -515,7 +516,8 @@ export default function EntryDetailScreen() {
     + ENTRY_HEADER_BUTTON_HEIGHT
     + ENTRY_HEADER_BOTTOM_PADDING;
   const headerOverlayHeight = headerOnlyHeight
-    + (hasCoverHeader ? ENTRY_COVER_TOP_GAP + coverExpandedHeight : 0);
+    + (hasCoverHeader ? ENTRY_COVER_TOP_GAP + coverExpandedHeight : 0)
+    + (!isEditing && hasViewCoverPhoto ? ENTRY_VIEW_COVER_BOTTOM_GAP : 0);
   const coverTopOffset = headerOnlyHeight;
 
   return (
