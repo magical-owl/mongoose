@@ -114,9 +114,6 @@ export default function CalendarScreen() {
   }, [entries]);
 
   const selectedDayEntries = entryDateMap.get(selectedDateStr) || [];
-  const monthEntries = entries.filter((entry) => entry.date.startsWith(`${year}-${String(month + 1).padStart(2, '0')}-`));
-  const monthWritingDays = new Set(monthEntries.map((entry) => entry.date)).size;
-  const monthFavorites = monthEntries.filter((entry) => entry.isFavorite).length;
 
   const moodColor = (mood: string) => {
     return getManualMoodColor(mood as ManualMood, theme.colors);
@@ -125,8 +122,36 @@ export default function CalendarScreen() {
   return (
     <View style={[styles.outerContainer, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
-        <View style={styles.titleRow}>
-          <Text style={[styles.heading, { color: theme.colors.text }]}>{t('calendarTitle')}</Text>
+        <View style={styles.headerNavRow}>
+          <View style={styles.calendarPeriodRow}>
+            <TouchableOpacity
+              onPress={handlePrevMonth}
+              style={styles.periodPickerButton}
+              accessibilityLabel={t('calendarPreviousMonthA11y')}
+              accessibilityRole="button"
+            >
+              <Ionicons name="chevron-back" size={20} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => { setPickerYear(year); setShowMonthPicker(true); }}
+              style={styles.calendarPeriodValueButton}
+              accessibilityRole="button"
+              accessibilityLabel={t('calendarChooseMonthYearA11y')}
+            >
+              <Text preset="label" color="text" style={styles.calendarPeriodValue} numberOfLines={1}>
+                {monthLabel} {year}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleNextMonth}
+              style={styles.periodPickerButton}
+              accessibilityLabel={t('calendarNextMonthA11y')}
+              accessibilityRole="button"
+            >
+              <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity onPress={handleJumpToToday} style={[styles.todayButton, { borderColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel={t('calendarJumpTodayA11y')}>
             <Text preset="caption" color="tint">{t('calendarToday')}</Text>
           </TouchableOpacity>
@@ -149,58 +174,6 @@ export default function CalendarScreen() {
             onTouchStart={(event) => { touchStartX.current = event.nativeEvent.pageX; }}
             onTouchEnd={(event) => handleSwipe(event.nativeEvent.pageX)}
           >
-            {/* Month Navigation Header */}
-            <View style={styles.monthHeaderRow}>
-              <TouchableOpacity
-                onPress={handlePrevMonth}
-                style={styles.monthNavBtn}
-                accessibilityLabel={t('calendarPreviousMonthA11y')}
-                accessibilityRole="button"
-              >
-                <Text style={[styles.monthNavArrow, { color: theme.colors.text }]}>‹</Text>
-              </TouchableOpacity>
-
-              <View style={[styles.monthYearPill, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-                <TouchableOpacity
-                  onPress={() => { setPickerYear(year); setShowMonthPicker(true); }}
-                  style={[styles.monthYearButton, { backgroundColor: theme.colors.tint }]}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('calendarChooseMonthA11y')}
-                >
-                  <Text preset="caption" style={[styles.monthYearButtonText, { color: '#fff' }]} numberOfLines={1}>{monthLabel}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => { setPickerYear(year); setShowMonthPicker(true); }}
-                  style={styles.monthYearButton}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('calendarChooseYearA11y')}
-                >
-                  <Text preset="caption" style={[styles.monthYearButtonText, { color: theme.colors.textSecondary }]} numberOfLines={1}>{year}</Text>
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity
-                onPress={handleNextMonth}
-                style={styles.monthNavBtn}
-                accessibilityLabel={t('calendarNextMonthA11y')}
-                accessibilityRole="button"
-              >
-                <Text style={[styles.monthNavArrow, { color: theme.colors.text }]}>›</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.monthSummary}>
-              {[
-                [monthEntries.length, t('calendarSummaryEntries')],
-                [monthWritingDays, t('calendarSummaryWritingDays')],
-                [monthFavorites, t('calendarSummaryFavorites')],
-              ].map(([value, label]) => (
-                <View key={label} style={styles.monthSummaryItem}>
-                  <Text preset="label" color="text" style={styles.monthSummaryValue}>{value}</Text>
-                  <Text preset="caption" color="textSecondary" style={styles.monthSummaryLabel}>{label}</Text>
-                </View>
-              ))}
-            </View>
-
             {/* Weekday Row */}
             <View style={styles.gridRow}>
               {(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].slice(calendarFirstDay).concat(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].slice(0, calendarFirstDay))).map((d) => (
@@ -354,68 +327,41 @@ const styles = StyleSheet.create({
   fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
   container: {
     paddingHorizontal: 20,
-    paddingTop: 18,
+    paddingTop: 12,
   },
-  heading: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  todayButton: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
-  subHeading: {
-    fontSize: 18,
-    fontWeight: '500',
-    marginTop: 10,
-    marginBottom: 12,
-  },
+  headerNavRow: { minHeight: 38, alignItems: 'center', justifyContent: 'center' },
+  todayButton: { position: 'absolute', right: 0, top: 0, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
   calendarCard: {
     borderWidth: 1,
     borderRadius: 14,
     padding: 10,
     marginBottom: 15,
   },
-  monthHeaderRow: {
+  periodPickerButton: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  calendarPeriodRow: {
+    width: '68%',
+    minHeight: 38,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
   },
-  monthNavBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 18,
-  },
-  monthNavArrow: {
-    fontSize: 22,
-    fontWeight: '600',
-    lineHeight: 24,
-  },
-  monthYearPill: {
-    flex: 1,
-    maxWidth: 210,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderRadius: 18,
-    padding: 2,
-    marginHorizontal: 8,
-  },
-  monthYearButton: {
-    minWidth: 78,
-    height: 30,
+  calendarPeriodValueButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 15,
-    paddingHorizontal: 10,
+    minWidth: 0,
   },
-  monthYearButtonText: { fontWeight: '700' },
-  monthSummary: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8, marginBottom: 10, gap: 6 },
-  monthSummaryItem: { flex: 1, alignItems: 'center', minWidth: 0 },
-  monthSummaryValue: { fontSize: 16, fontWeight: '800', lineHeight: 19 },
-  monthSummaryLabel: { marginTop: 1, textAlign: 'center', fontSize: 11, lineHeight: 13 },
+  calendarPeriodValue: {
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '700',
+  },
   gridRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
