@@ -162,9 +162,14 @@ export default function JournalEntriesScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      scrollOffsetY.current = 0;
+      scrollY.setValue(0);
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      });
       refresh();
       void refreshJournals();
-    }, [refresh, refreshJournals]),
+    }, [refresh, refreshJournals, scrollY]),
   );
 
   useEffect(() => {
