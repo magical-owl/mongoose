@@ -80,6 +80,10 @@ const STICKER_PLACEMENT_SIZE = 96;
 const TEXT_STICKER_PLACEMENT_WIDTH = 160;
 const PHOTO_STICKER_PLACEMENT_WIDTH = 148;
 const VISIBLE_STICKER_STAGGER = 18;
+const ENTRY_HEADER_TOP_OFFSET = 4;
+const ENTRY_HEADER_BUTTON_HEIGHT = 38;
+const ENTRY_HEADER_BOTTOM_PADDING = 6;
+const ENTRY_COVER_TOP_GAP = 10;
 
 function isSyntheticJournalId(value: string): boolean {
   return value === 'all' || value === 'unassigned';
@@ -90,7 +94,7 @@ export default function CreateEntryScreen() {
   const { date: paramDate, journalId: paramJournalId } = useLocalSearchParams<{ date?: string; journalId?: string }>();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const t = useTranslation();
   const { entries, saveDiaryEntry } = useDiary();
   const { journals } = useJournals();
@@ -134,7 +138,6 @@ export default function CreateEntryScreen() {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isStickerDragging, setIsStickerDragging] = useState(false);
   const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
-  const [scrollContentHeight, setScrollContentHeight] = useState(0);
   const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
@@ -227,24 +230,14 @@ export default function CreateEntryScreen() {
 
   const handleEditorScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const nextScrollY = event.nativeEvent.contentOffset.y;
-    const hasScrollableContent = scrollContentHeight > scrollViewportHeight + 24;
-    if (!hasScrollableContent && nextScrollY > -8) return;
     scrollOffsetYRef.current = nextScrollY;
     coverScrollY.setValue(nextScrollY);
-  }, [coverScrollY, scrollContentHeight, scrollViewportHeight]);
+  }, [coverScrollY]);
 
   const handleEditorScrollBeginDrag = useCallback(() => {
     editorRef.current?.dismissKeyboard();
     Keyboard.dismiss();
-    const hasScrollableContent = scrollContentHeight > scrollViewportHeight + 24;
-    if (!hasScrollableContent) {
-      Animated.timing(coverScrollY, {
-        toValue: 120,
-        duration: 160,
-        useNativeDriver: false,
-      }).start();
-    }
-  }, [coverScrollY, scrollContentHeight, scrollViewportHeight]);
+  }, []);
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
     const position = getVisibleStickerPosition(stickers.length);
@@ -400,6 +393,17 @@ export default function CreateEntryScreen() {
 
   // Toolbar height constant used for scroll padding
   const TOOLBAR_H = 56;
+  const coverExpandedHeight = Math.min(184, Math.max(120, (windowWidth - theme.spacing.lg * 2) / 1.9));
+  const headerOverlayHeight = insets.top
+    + ENTRY_HEADER_TOP_OFFSET
+    + ENTRY_HEADER_BUTTON_HEIGHT
+    + ENTRY_HEADER_BOTTOM_PADDING
+    + ENTRY_COVER_TOP_GAP
+    + coverExpandedHeight;
+  const coverTopOffset = insets.top
+    + ENTRY_HEADER_TOP_OFFSET
+    + ENTRY_HEADER_BUTTON_HEIGHT
+    + ENTRY_HEADER_BOTTOM_PADDING;
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
@@ -409,7 +413,7 @@ export default function CreateEntryScreen() {
         style={[
           styles.header,
           {
-            paddingTop: insets.top + 4,
+            paddingTop: insets.top + ENTRY_HEADER_TOP_OFFSET,
             backgroundColor: theme.colors.background,
             borderBottomColor: theme.colors.border,
           },
@@ -461,7 +465,7 @@ export default function CreateEntryScreen() {
         </View>
       </View>
 
-      <View style={[styles.coverHeader, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.coverHeader, { top: coverTopOffset, backgroundColor: theme.colors.background }]}>
         <DiaryCoverPhotoPicker
           photo={coverPhoto}
           onTakePhoto={() => handleCoverPhotoPickerResult('camera')}
@@ -481,11 +485,12 @@ export default function CreateEntryScreen() {
           style={{ flex: 1 }}
           scrollEnabled={!isStickerDragging}
           onLayout={(event) => setScrollViewportHeight(event.nativeEvent.layout.height)}
-          onContentSizeChange={(_width, height) => setScrollContentHeight(height)}
           contentContainerStyle={[
             styles.scrollContent,
             {
               paddingHorizontal: theme.spacing.lg,
+              minHeight: windowHeight + coverExpandedHeight,
+              paddingTop: headerOverlayHeight,
               paddingBottom: TOOLBAR_H + theme.spacing.xl,
             },
           ]}
@@ -722,6 +727,12 @@ export default function CreateEntryScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 30,
+    elevation: 30,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -732,10 +743,13 @@ const styles = StyleSheet.create({
   headerBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
   headerActions: { minWidth: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   coverHeader: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     paddingHorizontal: 20,
     paddingTop: 10,
-    zIndex: 3,
-    elevation: 3,
+    zIndex: 29,
+    elevation: 29,
   },
   scrollContent: {
     paddingTop: 2,

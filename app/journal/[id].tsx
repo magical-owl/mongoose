@@ -46,6 +46,11 @@ const UNASSIGNED_JOURNAL_ID = "unassigned";
 const JOURNAL_COVER_EXPANDED_HEIGHT = 184;
 const JOURNAL_COVER_COLLAPSED_HEIGHT = 60;
 const JOURNAL_COVER_COLLAPSE_DISTANCE = 120;
+const JOURNAL_HEADER_TOP_PADDING = 16;
+const JOURNAL_HEADER_ROW_HEIGHT = 38;
+const JOURNAL_HEADER_GAP = 10;
+const JOURNAL_HEADER_BOTTOM_GAP = 14;
+const JOURNAL_VIEW_PILL_HEIGHT = 36;
 
 function hierarchyModeLabel(mode: EntryHierarchyMode): string {
   if (mode === "month-date") return "Month / Date";
@@ -468,6 +473,18 @@ export default function JournalEntriesScreen() {
     outputRange: [1, 0],
     extrapolate: "clamp",
   });
+  const expandedHeaderHeight = insets.top
+    + JOURNAL_HEADER_TOP_PADDING
+    + JOURNAL_HEADER_ROW_HEIGHT
+    + JOURNAL_HEADER_GAP
+    + (hasJournalCover ? JOURNAL_COVER_EXPANDED_HEIGHT : JOURNAL_VIEW_PILL_HEIGHT)
+    + JOURNAL_HEADER_BOTTOM_GAP;
+  const collapsedHeaderHeight = insets.top
+    + JOURNAL_HEADER_TOP_PADDING
+    + JOURNAL_HEADER_ROW_HEIGHT
+    + JOURNAL_HEADER_GAP
+    + (hasJournalCover ? JOURNAL_COVER_COLLAPSED_HEIGHT : JOURNAL_VIEW_PILL_HEIGHT)
+    + JOURNAL_HEADER_BOTTOM_GAP;
 
   const viewModePill = (
     <View
@@ -646,7 +663,7 @@ export default function JournalEntriesScreen() {
           },
         ]}
       >
-        <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
+        <View style={[styles.fixedHeader, { paddingTop: insets.top + JOURNAL_HEADER_TOP_PADDING, backgroundColor: theme.colors.background }]}>
           <View style={styles.headerRow}>
             <View style={styles.headerSide}>
               <TouchableOpacity onPress={() => router.replace("/(tabs)")} style={styles.backToJournals} accessibilityRole="button" accessibilityLabel={t("entryBackA11y")}>
@@ -702,7 +719,11 @@ export default function JournalEntriesScreen() {
           scrollEventThrottle={16}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: insets.bottom + 124 + keyboardHeight },
+            {
+              minHeight: windowHeight + (hasJournalCover ? JOURNAL_COVER_EXPANDED_HEIGHT - JOURNAL_COVER_COLLAPSED_HEIGHT : 0),
+              paddingTop: expandedHeaderHeight,
+              paddingBottom: insets.bottom + 124 + keyboardHeight + collapsedHeaderHeight,
+            },
           ]}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
@@ -823,6 +844,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fixedHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
     zIndex: 30,
     elevation: 30,
     paddingHorizontal: 20,
@@ -872,7 +897,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    height: JOURNAL_HEADER_ROW_HEIGHT,
+    marginBottom: JOURNAL_HEADER_GAP,
     gap: 8,
   },
   headerSide: { width: 82, flexDirection: "row", alignItems: "center", gap: 6 },
@@ -890,7 +916,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 18,
     padding: 2,
-    marginBottom: 14,
+    minHeight: JOURNAL_VIEW_PILL_HEIGHT,
+    marginBottom: JOURNAL_HEADER_BOTTOM_GAP,
   },
   viewModePillOnCover: {
     marginTop: 12,
