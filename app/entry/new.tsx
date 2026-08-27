@@ -11,15 +11,12 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
-  Animated,
   ScrollView,
   Alert,
   TouchableOpacity,
   Platform,
   KeyboardAvoidingView,
   Keyboard,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   TextInput as NativeTextInput,
   StyleSheet,
   useWindowDimensions,
@@ -55,6 +52,7 @@ import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimitService';
 import { APP_IDENTITY } from '@/config/appIdentity';
+import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 
 // Word count helper (strips markdown syntax)
 function countWords(text: string): number {
@@ -102,8 +100,16 @@ export default function CreateEntryScreen() {
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const isHydratingDraft = useRef(true);
-  const scrollOffsetYRef = useRef(0);
-  const coverScrollY = useRef(new Animated.Value(0)).current;
+  const handleCoverScrollBeginDrag = useCallback(() => {
+    editorRef.current?.dismissKeyboard();
+    Keyboard.dismiss();
+  }, []);
+  const {
+    scrollY: coverScrollY,
+    scrollOffsetYRef,
+    handleScroll: handleEditorScroll,
+    handleScrollBeginDrag: handleEditorScrollBeginDrag,
+  } = useScrollCollapse({ onScrollBeginDrag: handleCoverScrollBeginDrag });
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -226,18 +232,7 @@ export default function CreateEntryScreen() {
       x: Math.max(0, (usableWidth - stickerWidth) / 2 + stagger),
       y: Math.max(0, scrollOffsetYRef.current + Math.max(180, scrollViewportHeight) / 2 - STICKER_PLACEMENT_SIZE / 2 + stagger),
     };
-  }, [scrollViewportHeight, theme.spacing.lg, windowWidth]);
-
-  const handleEditorScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const nextScrollY = event.nativeEvent.contentOffset.y;
-    scrollOffsetYRef.current = nextScrollY;
-    coverScrollY.setValue(nextScrollY);
-  }, [coverScrollY]);
-
-  const handleEditorScrollBeginDrag = useCallback(() => {
-    editorRef.current?.dismissKeyboard();
-    Keyboard.dismiss();
-  }, []);
+  }, [scrollOffsetYRef, scrollViewportHeight, theme.spacing.lg, windowWidth]);
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
     const position = getVisibleStickerPosition(stickers.length);

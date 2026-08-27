@@ -16,15 +16,12 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
-  Animated,
   ScrollView,
   Alert,
   TouchableOpacity,
   Platform,
   KeyboardAvoidingView,
   Keyboard,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   TextInput as NativeTextInput,
   StyleSheet,
   useWindowDimensions,
@@ -65,6 +62,7 @@ import { manualMoodLabel, premiumPaywallTitle, useTranslation } from '@/localiza
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimitService';
 import { APP_IDENTITY } from '@/config/appIdentity';
+import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 
 function countWords(text: string): number {
   const clean = text.replace(/[*#`>•\-_]/g, '').trim();
@@ -110,8 +108,18 @@ export default function EntryDetailScreen() {
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const timeFormat = useAppStore((state) => state.timeFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
-  const scrollOffsetYRef = useRef(0);
-  const coverScrollY = useRef(new Animated.Value(0)).current;
+  const handleCoverScrollBeginDrag = useCallback(() => {
+    editorRef.current?.dismissKeyboard();
+    Keyboard.dismiss();
+  }, []);
+  const {
+    scrollRef,
+    scrollY: coverScrollY,
+    scrollOffsetYRef,
+    handleScroll: handleEditorScroll,
+    handleScrollBeginDrag: handleEditorScrollBeginDrag,
+    resetScrollCollapse,
+  } = useScrollCollapse({ onScrollBeginDrag: handleCoverScrollBeginDrag });
 
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -193,7 +201,7 @@ export default function EntryDetailScreen() {
 
   const handleStartEdit = () => {
     if (!entry) return;
-    coverScrollY.setValue(0);
+    resetScrollCollapse();
     setEditTitle(entry.title);
     setEditContent(entry.content);
     setEditDate(entryDate(entry.date));
@@ -209,7 +217,7 @@ export default function EntryDetailScreen() {
 
   const handleCancelEdit = () => {
     if (!entry) return;
-    coverScrollY.setValue(0);
+    resetScrollCollapse();
     setEditTitle(entry.title);
     setEditContent(entry.content);
     setEditDate(entryDate(entry.date));
@@ -264,18 +272,7 @@ export default function EntryDetailScreen() {
       x: Math.max(0, (usableWidth - stickerWidth) / 2 + stagger),
       y: Math.max(0, scrollOffsetYRef.current + Math.max(180, scrollViewportHeight) / 2 - STICKER_PLACEMENT_SIZE / 2 + stagger),
     };
-  }, [scrollViewportHeight, theme.spacing.lg, windowWidth]);
-
-  const handleEditorScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const nextScrollY = event.nativeEvent.contentOffset.y;
-    scrollOffsetYRef.current = nextScrollY;
-    coverScrollY.setValue(nextScrollY);
-  }, [coverScrollY]);
-
-  const handleEditorScrollBeginDrag = useCallback(() => {
-    editorRef.current?.dismissKeyboard();
-    Keyboard.dismiss();
-  }, []);
+  }, [scrollOffsetYRef, scrollViewportHeight, theme.spacing.lg, windowWidth]);
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
     const position = getVisibleStickerPosition(editStickers.length);
@@ -572,6 +569,7 @@ export default function EntryDetailScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? TOOLBAR_H : 0}
       >
         <ScrollView
+          ref={scrollRef}
           style={{ flex: 1 }}
           scrollEnabled={!isStickerDragging}
           onLayout={(event) => setScrollViewportHeight(event.nativeEvent.layout.height)}

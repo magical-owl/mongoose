@@ -30,6 +30,7 @@ import { appLockService } from "@/services/AppLockService";
 import { DiaryTimelineList } from "@/features/diary/components/DiaryTimelineList";
 import { PaywallModal } from "@/shared/components/PaywallModal";
 import { useAppStore } from "@/stores/useAppStore";
+import { useScrollCollapse } from "@/shared/hooks/useScrollCollapse";
 import { useSubscription } from "@/features/subscription/hooks/useSubscription";
 import { APP_IDENTITY } from "@/config/appIdentity";
 import type { EntryHierarchyMode, HomeViewMode } from "@/stores/useAppStore";
@@ -108,15 +109,19 @@ export default function JournalEntriesScreen() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const drawerWidth = Math.min(windowWidth * 0.86, 380);
   const drawerProgress = useRef(new Animated.Value(0)).current;
-  const scrollY = useRef(new Animated.Value(0)).current;
   const drawerProgressValue = useRef(0);
   const drawerDragStart = useRef(0);
-  const scrollRef = useRef<ScrollView | null>(null);
   const entryLayoutY = useRef(new Map<string, number>());
   const dateGroupLayoutY = useRef(new Map<string, number>());
   const entryDateById = useRef(new Map<string, string>());
   const entryRefs = useRef(new Map<string, View>());
-  const scrollOffsetY = useRef(0);
+  const {
+    scrollRef,
+    scrollY,
+    scrollOffsetYRef: scrollOffsetY,
+    handleScroll,
+    resetScrollCollapse,
+  } = useScrollCollapse();
   const keyboardTopY = useRef(windowHeight);
   const focusedReflectionEntryId = useRef<string | null>(null);
   const pendingScrollEntryId = useRef<string | null>(null);
@@ -162,14 +167,10 @@ export default function JournalEntriesScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      scrollOffsetY.current = 0;
-      scrollY.setValue(0);
-      requestAnimationFrame(() => {
-        scrollRef.current?.scrollTo({ y: 0, animated: false });
-      });
+      resetScrollCollapse();
       refresh();
       void refreshJournals();
-    }, [refresh, refreshJournals, scrollY]),
+    }, [refresh, refreshJournals, resetScrollCollapse]),
   );
 
   useEffect(() => {
@@ -306,7 +307,7 @@ export default function JournalEntriesScreen() {
         scrollRef.current?.scrollTo({ y: Math.max(0, nextY), animated: true });
       });
     });
-  }, []);
+  }, [scrollOffsetY, scrollRef]);
 
   useEffect(() => {
     const show = Keyboard.addListener("keyboardDidShow", (event) => {
@@ -357,7 +358,7 @@ export default function JournalEntriesScreen() {
     scrollRef.current?.scrollTo({ y: Math.max(0, groupY + entryY - 72), animated: true });
     pendingScrollEntryId.current = null;
     return true;
-  }, []);
+  }, [scrollOffsetY, scrollRef]);
 
   const handleEntryLayout = useCallback(
     (entryId: string, entryDate: string, y: number) => {
@@ -716,11 +717,7 @@ export default function JournalEntriesScreen() {
         {isLoading ? null : (
         <ScrollView
           ref={scrollRef}
-          onScroll={(event) => {
-            const nextScrollY = event.nativeEvent.contentOffset.y;
-            scrollOffsetY.current = nextScrollY;
-            scrollY.setValue(nextScrollY);
-          }}
+          onScroll={handleScroll}
           scrollEventThrottle={16}
           contentContainerStyle={[
             styles.scrollContent,
