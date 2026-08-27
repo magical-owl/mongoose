@@ -14,8 +14,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useAppStore } from '@/stores/useAppStore';
-import { formatDisplayDate } from '@shared/utils/dateFormat';
-import { CalendarEntryView } from '@/features/diary/components/CalendarEntryView';
+import { DiaryTimelineList } from '@/features/diary/components/DiaryTimelineList';
 import { appLockService } from '@/services/AppLockService';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import type { ManualMood } from '@/features/diary/domain/DiaryEntry';
@@ -113,7 +112,14 @@ export default function CalendarScreen() {
     return map;
   }, [entries]);
 
-  const selectedDayEntries = entryDateMap.get(selectedDateStr) || [];
+  const selectedDayEntries = useMemo(
+    () => entryDateMap.get(selectedDateStr) || [],
+    [entryDateMap, selectedDateStr],
+  );
+  const selectedDayGroupedEntries = useMemo(
+    () => [[selectedDateStr, selectedDayEntries] as const],
+    [selectedDateStr, selectedDayEntries],
+  );
 
   const moodColor = (mood: string) => {
     return getManualMoodColor(mood as ManualMood, theme.colors);
@@ -261,23 +267,17 @@ export default function CalendarScreen() {
               <Text preset="bodySmall" color="textSecondary" style={styles.emptyStateText}>{t('calendarNoEntriesOnDate')}</Text>
             </View>
           ) : (
-            <View style={styles.dateGroup}>
-              <Text preset="label" style={[styles.dateHeading, { color: theme.colors.text }]}>
-                {formatDisplayDate(selectedDateStr, calendarDateFormat)}
-              </Text>
-              {selectedDayEntries.map((item) => {
-              return (
-                <CalendarEntryView
-                  key={item.id}
-                  entry={item}
-                  onPress={async () => {
-                    if (item.isLockbox && !(await appLockService.authenticate())) return;
-                    router.push(`/entry/${item.id}`);
-                  }}
-                />
-              );
-              })}
-            </View>
+            <DiaryTimelineList
+              groupedEntries={selectedDayGroupedEntries}
+              mode="timeline"
+              calendarDateFormat={calendarDateFormat}
+              entryHierarchyMode="date"
+              collapsible={false}
+              onEntryPress={async (entry) => {
+                if (entry.isLockbox && !(await appLockService.authenticate())) return;
+                router.push(`/entry/${entry.id}`);
+              }}
+            />
           )}
         </ScrollView>
       )}

@@ -27,9 +27,8 @@ import { getJournalCoverImageSource } from "@/features/journal/domain/JournalBac
 import { stripHtml } from "@shared/utils/html";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
 import { appLockService } from "@/services/AppLockService";
-import { DiaryEntryView } from "@/features/diary/components/DiaryEntryView";
+import { DiaryTimelineList } from "@/features/diary/components/DiaryTimelineList";
 import { PaywallModal } from "@/shared/components/PaywallModal";
-import { formatDisplayDate } from "@shared/utils/dateFormat";
 import { useAppStore } from "@/stores/useAppStore";
 import { useSubscription } from "@/features/subscription/hooks/useSubscription";
 import { APP_IDENTITY } from "@/config/appIdentity";
@@ -38,17 +37,8 @@ import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
 import { homeFilterAllLabel, homeFilterKindLabel, homeViewModeLabel, manualMoodLabel, premiumPaywallTitle, useTranslation } from "@/localization/i18n";
 
-function formatTimelineMonth(value: string): string {
-  const [year, month] = value.split("-").map(Number);
-  if (!year || !month) return value;
-  return new Intl.DateTimeFormat(undefined, { month: "long" }).format(
-    new Date(year, month - 1, 1, 12),
-  );
-}
-
 const HIERARCHY_MODES: EntryHierarchyMode[] = ["year-month-date", "month-date", "date", "none"];
 const HOME_VIEW_MODES = ["timeline", "detailed", "feed"] as const satisfies readonly HomeViewMode[];
-const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
 const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
 const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const ALL_ENTRIES_JOURNAL_ID = "all";
@@ -733,111 +723,46 @@ export default function JournalEntriesScreen() {
               {search.trim() ? t("homeNoMatchingEntries") : t("homeNoEntriesYet")}
             </Text>
           ) : (
-            groupedEntries.map(([date, dateEntries], index) => {
-              const previousDate = groupedEntries[index - 1]?.[0];
-              const isNewYear = !previousDate || previousDate.slice(0, 4) !== date.slice(0, 4);
-              const isNewMonth = isNewYear || previousDate?.slice(0, 7) !== date.slice(0, 7);
-              const yearKey = date.slice(0, 4);
-              const monthKey = date.slice(0, 7);
-              const isYearVisible = entryHierarchyMode === "year-month-date";
-              const isMonthVisible = entryHierarchyMode === "year-month-date" || entryHierarchyMode === "month-date";
-              const isDateVisible = entryHierarchyMode !== "none";
-              const isYearCollapsed = isYearVisible && collapsedYears.has(yearKey);
-              const isMonthCollapsed = isMonthVisible && collapsedMonths.has(monthKey);
-              return (
-              <Fragment key={date}>
-                {isNewYear && isYearVisible && (
-                  <TouchableOpacity
-                    onPress={() => setCollapsedYears((current) => {
-                      const next = new Set(current);
-                      if (next.has(yearKey)) next.delete(yearKey);
-                      else next.add(yearKey);
-                      return next;
-                    })}
-                    style={styles.yearGroupRow}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${yearKey} year group`}
-                    accessibilityState={{ expanded: !isYearCollapsed }}
-                  >
-                    <Text preset="h2" style={[styles.yearHeading, { color: theme.colors.text }]}>
-                      {yearKey}
-                    </Text>
-                    <Ionicons name={isYearCollapsed ? "chevron-forward" : "chevron-down"} size={16} color={theme.colors.textSecondary} />
-                  </TouchableOpacity>
-                )}
-                {!isYearCollapsed && isMonthVisible && isNewMonth && (
-                  <TouchableOpacity
-                    onPress={() => setCollapsedMonths((current) => {
-                      const next = new Set(current);
-                      if (next.has(monthKey)) next.delete(monthKey);
-                      else next.add(monthKey);
-                      return next;
-                    })}
-                    style={[styles.monthGroupRow, !isYearVisible && styles.flatMonthGroupRow]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${formatTimelineMonth(monthKey)} month group`}
-                    accessibilityState={{ expanded: !isMonthCollapsed }}
-                  >
-                    <Text preset="label" style={[styles.monthHeading, { color: theme.colors.textSecondary }]}>
-                      {formatTimelineMonth(monthKey)}
-                    </Text>
-                    <Ionicons name={isMonthCollapsed ? "chevron-forward" : "chevron-down"} size={15} color={theme.colors.textSecondary} />
-                  </TouchableOpacity>
-                )}
-              {!isYearCollapsed && !isMonthCollapsed && <View style={[styles.dateGroup, !isDateVisible && styles.flatDateGroup]} onLayout={(event) => handleDateGroupLayout(date, event.nativeEvent.layout.y)}>
-                {isDateVisible && <TouchableOpacity
-                  onPress={() => setCollapsedDates((current) => {
-                    const next = new Set(current);
-                    if (next.has(date)) next.delete(date);
-                    else next.add(date);
-                    return next;
-                  })}
-                  style={[styles.dateHeadingRow, !isYearVisible && (entryHierarchyMode === "month-date" ? styles.monthDateHeadingRow : styles.flatDateHeadingRow)]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${formatDisplayDate(date, calendarDateFormat)} date group`}
-                  accessibilityState={{ expanded: !collapsedDates.has(date) }}
-                >
-                  <Text
-                    preset="label"
-                    style={[styles.dateHeading, { color: theme.colors.text }]}
-                  >
-                    {formatDisplayDate(date, calendarDateFormat)}
-                  </Text>
-                  <Ionicons
-                    name={collapsedDates.has(date) ? "chevron-forward" : "chevron-down"}
-                    size={16}
-                    color={theme.colors.textSecondary}
-                  />
-                </TouchableOpacity>}
-                {(!isDateVisible || !collapsedDates.has(date)) && dateEntries.map((entry) => {
-              return (
-                <View
-                  key={entry.id}
-                  collapsable={false}
-                  ref={(node) => {
-                    if (node) entryRefs.current.set(entry.id, node);
-                    else entryRefs.current.delete(entry.id);
-                  }}
-                  onLayout={(event) => handleEntryLayout(entry.id, entry.date, event.nativeEvent.layout.y)}
-                >
-                  <DiaryEntryView
-                    entry={entry}
-                    mode={viewMode}
-                    onPress={async () => {
-                      if (entry.isLockbox && !(await appLockService.authenticate())) return;
-                      router.push(`/entry/${entry.id}`);
-                    }}
-                    onAddReflection={viewMode === "timeline" || viewMode === "feed" ? handleAddReflection : undefined}
-                    onReflectionInputFocus={viewMode === "timeline" || viewMode === "feed" ? handleReflectionInputFocus : undefined}
-                    onReflectionSummaryPress={viewMode === "timeline" || viewMode === "feed" ? undefined : handleReflectionSummaryPress}
-                  />
-                </View>
-              );
-                })}
-              </View>}
-              </Fragment>
-              );
-            })
+            <DiaryTimelineList
+              groupedEntries={groupedEntries}
+              mode={viewMode}
+              calendarDateFormat={calendarDateFormat}
+              entryHierarchyMode={entryHierarchyMode}
+              collapsedYears={collapsedYears}
+              collapsedMonths={collapsedMonths}
+              collapsedDates={collapsedDates}
+              onToggleYear={(yearKey) => setCollapsedYears((current) => {
+                const next = new Set(current);
+                if (next.has(yearKey)) next.delete(yearKey);
+                else next.add(yearKey);
+                return next;
+              })}
+              onToggleMonth={(monthKey) => setCollapsedMonths((current) => {
+                const next = new Set(current);
+                if (next.has(monthKey)) next.delete(monthKey);
+                else next.add(monthKey);
+                return next;
+              })}
+              onToggleDate={(date) => setCollapsedDates((current) => {
+                const next = new Set(current);
+                if (next.has(date)) next.delete(date);
+                else next.add(date);
+                return next;
+              })}
+              onDateGroupLayout={handleDateGroupLayout}
+              onEntryLayout={handleEntryLayout}
+              onEntryRef={(entryId, node) => {
+                if (node) entryRefs.current.set(entryId, node);
+                else entryRefs.current.delete(entryId);
+              }}
+              onEntryPress={async (entry) => {
+                if (entry.isLockbox && !(await appLockService.authenticate())) return;
+                router.push(`/entry/${entry.id}`);
+              }}
+              onAddReflection={viewMode === "timeline" || viewMode === "feed" ? handleAddReflection : undefined}
+              onReflectionInputFocus={viewMode === "timeline" || viewMode === "feed" ? handleReflectionInputFocus : undefined}
+              onReflectionSummaryPress={viewMode === "timeline" || viewMode === "feed" ? undefined : handleReflectionSummaryPress}
+            />
           )}
         </ScrollView>
         )}
@@ -1089,95 +1014,5 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 10,
     fontSize: 15,
-  },
-  dateGroup: {
-    marginBottom: 6,
-    marginLeft: HIERARCHY_INDENT.year,
-  },
-  flatDateGroup: {
-    marginLeft: HIERARCHY_INDENT.year,
-  },
-  yearGroupRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 2,
-    marginBottom: 0,
-    paddingHorizontal: 0,
-    paddingVertical: 6,
-  },
-  yearHeading: {
-    margin: 0,
-    fontWeight: "700",
-  },
-  monthGroupRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 0,
-    marginBottom: 3,
-    marginLeft: 0,
-    paddingLeft: HIERARCHY_INDENT.month,
-    paddingVertical: 7,
-  },
-  flatMonthGroupRow: {
-    paddingLeft: HIERARCHY_INDENT.year,
-  },
-  monthHeading: {
-    margin: 0,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  dateHeadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 5,
-    paddingLeft: HIERARCHY_INDENT.date,
-  },
-  monthDateHeadingRow: {
-    paddingLeft: HIERARCHY_INDENT.month,
-  },
-  flatDateHeadingRow: {
-    paddingLeft: HIERARCHY_INDENT.year,
-  },
-  dateHeading: {
-    margin: 0,
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  timelineEntry: {
-    flexDirection: "row",
-    alignItems: "stretch",
-    minHeight: 76,
-    marginBottom: 12,
-  },
-  timelineRail: {
-    width: 2,
-    marginHorizontal: 10,
-    position: "relative",
-  },
-  timelineDot: {
-    position: "absolute",
-    top: 10,
-    left: -4,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  timelineBody: {
-    flex: 1,
-    paddingVertical: 4,
-    paddingRight: 10,
-  },
-  timelineTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    marginBottom: 5,
-  },
-  timelineContent: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 5,
   },
 });
