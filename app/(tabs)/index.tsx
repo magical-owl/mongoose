@@ -95,6 +95,7 @@ export default function JournalsScreen(): React.JSX.Element {
   const [assigningCoverJournalId, setAssigningCoverJournalId] = useState<string | null>(null);
   const [openJournalOptionsId, setOpenJournalOptionsId] = useState<string | null>(null);
   const [coverPickerJournal, setCoverPickerJournal] = useState<JournalHomeItem | null>(null);
+  const [journalSearchQuery, setJournalSearchQuery] = useState('');
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const premiumPromptShownThisSession = useRef(false);
 
@@ -192,6 +193,11 @@ export default function JournalsScreen(): React.JSX.Element {
       }] : []),
     ];
   }, [journals, showPermanentJournals, syntheticJournalCovers, t, unassignedEntries.length, visibleEntries]);
+  const filteredJournalItems = useMemo(() => {
+    const query = journalSearchQuery.trim().toLocaleLowerCase();
+    if (!query) return journalItems;
+    return journalItems.filter((journal) => journal.title.toLocaleLowerCase().includes(query));
+  }, [journalItems, journalSearchQuery]);
 
   const handleCreateJournal = async () => {
     const trimmed = journalTitle.trim();
@@ -461,7 +467,28 @@ export default function JournalsScreen(): React.JSX.Element {
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
         <View style={styles.titleRow}>
-          <Text style={[styles.heading, { color: theme.colors.text }]}>{t('journalsTitle')}</Text>
+          <View style={[styles.headerSearchBar, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+            <Ionicons name="search-outline" size={18} color={theme.colors.textSecondary} />
+            <TextInput
+              value={journalSearchQuery}
+              onChangeText={setJournalSearchQuery}
+              placeholder={t('journalSearchPlaceholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              style={[styles.headerSearchInput, { color: theme.colors.text }]}
+              returnKeyType="search"
+              accessibilityLabel={t('homeHeaderSearch')}
+            />
+            {journalSearchQuery ? (
+              <TouchableOpacity
+                onPress={() => setJournalSearchQuery('')}
+                style={styles.headerSearchClear}
+                accessibilityRole="button"
+                accessibilityLabel={t('homeHeaderCloseSearch')}
+              >
+                <Ionicons name="close-circle" size={18} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
           <View style={styles.headerActions}>
             <TouchableOpacity
               onPress={() => {
@@ -508,9 +535,14 @@ export default function JournalsScreen(): React.JSX.Element {
               <Text preset="label" style={{ color: theme.isDark ? theme.colors.background : theme.colors.card }}>{t('journalCreate')}</Text>
             </TouchableOpacity>
           </View>
+        ) : filteredJournalItems.length === 0 ? (
+          <View style={[styles.emptyState, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+            <Ionicons name="search-outline" size={34} color={theme.colors.tint} />
+            <Text preset="label" color="text" style={styles.emptyTitle}>{t('journalNoMatchingJournals')}</Text>
+          </View>
         ) : (
           <View style={styles.journalCoverGrid}>
-            {journalItems.map((journal) => {
+            {filteredJournalItems.map((journal) => {
               const journalCoverSource = getJournalCoverImageSource(journal.coverImageUri);
               const coverCountMeta = (
                 <View style={[
@@ -733,8 +765,27 @@ export default function JournalsScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  heading: { fontSize: 24, fontWeight: '700' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  headerSearchBar: {
+    flex: 1,
+    minHeight: 38,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingLeft: 10,
+    paddingRight: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  headerSearchInput: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 7,
+    fontSize: 15,
+    lineHeight: 19,
+    fontWeight: '600',
+  },
+  headerSearchClear: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   headerIconButton: { width: 38, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 12 },
