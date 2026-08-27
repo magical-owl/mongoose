@@ -32,6 +32,7 @@ export interface RichTextEditorHandle {
 export interface RichTextEditorProps {
   readonly value: string;
   readonly onChangeText: (text: string) => void;
+  readonly onHeightChange?: (height: number) => void;
   readonly placeholder?: string;
   readonly minHeight?: number;
   readonly accessibilityLabel?: string;
@@ -43,6 +44,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
     {
       value,
       onChangeText,
+      onHeightChange,
       placeholder = "What's on your mind today? Write freely…",
       minHeight = 320,
       showToolbar = false,
@@ -123,6 +125,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
           ref={richTextRef}
           initialContentHTML={value || ''}
           onChange={onChangeText}
+          onHeightChange={onHeightChange}
           styleWithCSS={true}
           placeholder={placeholder}
           useContainer={true}

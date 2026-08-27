@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, ImageBackground, Keyboard, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, ImageBackground, Keyboard, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
@@ -13,6 +13,13 @@ import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import { manualMoodLabel, reflectionCountLabel, useTranslation } from '@/localization/i18n';
 import { resolveImportedDiaryPhotoUri } from '@/features/diary/services/DiaryPhotoService';
+import {
+  DIARY_PHOTO_STICKER_BASE_WIDTH,
+  DIARY_PHOTO_STICKER_MAX_HEIGHT,
+  DIARY_STICKER_BASE_SIZE,
+  getStickerBodyPreviewBottom,
+  mapStickerToBodyPreview,
+} from '@/features/diary/domain/StickerLayout';
 
 export type DiaryEntryViewMode = 'detailed' | 'timeline' | 'feed';
 
@@ -24,12 +31,6 @@ interface DiaryEntryViewProps {
   readonly onReflectionSummaryPress?: (entryId: string) => void;
   readonly onReflectionInputFocus?: (entryId: string) => void;
 }
-
-const FEED_STICKER_ORIGIN_X = 36;
-const FEED_STICKER_ORIGIN_Y = 170;
-const FEED_STICKER_SIZE = 80;
-const FEED_PHOTO_WIDTH = 148;
-const FEED_PHOTO_MAX_HEIGHT = 190;
 
 function CoverPhotoPreview({ entry, style }: { readonly entry: DiaryEntry; readonly style: object }): React.JSX.Element | null {
   if (!entry.coverPhoto) return null;
@@ -43,18 +44,12 @@ function CoverPhotoPreview({ entry, style }: { readonly entry: DiaryEntry; reado
   );
 }
 
-function getFeedStickerHeight(sticker: PlacedSticker): number {
-  if (sticker.text !== undefined) return 54;
-  if (!sticker.imageUri) return FEED_STICKER_SIZE;
-  const aspectRatio = sticker.imageWidth && sticker.imageHeight ? sticker.imageWidth / sticker.imageHeight : 1;
-  return Math.min(FEED_PHOTO_MAX_HEIGHT, FEED_PHOTO_WIDTH / aspectRatio);
-}
-
-function FeedStickerPreview({ sticker }: { readonly sticker: PlacedSticker }) {
+function FeedStickerPreview({ sticker, coordinateScale }: { readonly sticker: PlacedSticker; readonly coordinateScale: number }) {
   const isTextSticker = sticker.text !== undefined;
   const stickerItem = sticker.imageUri || isTextSticker ? undefined : findStickerItem(sticker.stickerId);
   if (!isTextSticker && !sticker.imageUri && !stickerItem) return null;
   const photoAspectRatio = sticker.imageWidth && sticker.imageHeight ? sticker.imageWidth / sticker.imageHeight : 1;
+  const layout = mapStickerToBodyPreview(sticker, coordinateScale);
 
   return (
     <View
@@ -62,10 +57,10 @@ function FeedStickerPreview({ sticker }: { readonly sticker: PlacedSticker }) {
       style={[
         styles.feedSticker,
         {
-          left: sticker.x - FEED_STICKER_ORIGIN_X,
-          top: sticker.y - FEED_STICKER_ORIGIN_Y,
+          left: layout.left,
+          top: layout.top,
           zIndex: sticker.behindText ? 1 : sticker.zIndex + 3,
-          transform: [{ scale: sticker.scale }, { rotate: `${sticker.rotation}deg` }],
+          transform: [{ scale: layout.scale }, { rotate: `${sticker.rotation}deg` }],
         },
       ]}
     >
@@ -104,17 +99,22 @@ function formatCardDay(value: string): { weekday: string; day: string } {
 
 export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflectionSummaryPress, onReflectionInputFocus }: DiaryEntryViewProps): React.JSX.Element {
   const theme = useTheme();
+  const { width: windowWidth } = useWindowDimensions();
   const timeFormat = useAppStore((state) => state.timeFormat);
   const t = useTranslation();
   const [reflectionText, setReflectionText] = useState('');
   const [isAddingReflection, setIsAddingReflection] = useState(false);
   const [isReflectionFocused, setIsReflectionFocused] = useState(false);
+  const [feedCanvasWidth, setFeedCanvasWidth] = useState(0);
   const hasMood = Boolean(entry.manualMood);
   const moodTone = getManualMoodColor(entry.manualMood, theme.colors);
   const entryTime = formatDisplayTime(entry.createdAt, timeFormat);
   const feedEntryDateTime = formatDisplayMonthDayTime(entry.createdAt, timeFormat);
   const showReflectionSummaryAction = mode !== 'timeline' && Boolean(onReflectionSummaryPress);
   const reflectionSummaryLabel = entry.reflections.length > 0 ? reflectionCountLabel(entry.reflections.length, t) : t('reflectOnThis');
+  const editorCanvasWidth = Math.max(1, windowWidth - theme.spacing.lg * 2);
+  const measuredFeedCanvasWidth = feedCanvasWidth > 0 ? feedCanvasWidth : editorCanvasWidth;
+  const feedCoordinateScale = Math.min(1, measuredFeedCanvasWidth / editorCanvasWidth);
 
   const handleAddInlineReflection = async () => {
     const trimmed = reflectionText.trim();
@@ -128,7 +128,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
     ? Math.max(
         0,
         ...entry.stickers.map((sticker) => (
-          sticker.y - FEED_STICKER_ORIGIN_Y + getFeedStickerHeight(sticker) * sticker.scale
+          getStickerBodyPreviewBottom(sticker, feedCoordinateScale)
         )),
       )
     : 0;
@@ -233,58 +233,65 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={onPress}
-          style={[
-            styles.feedCanvas,
-            feedStickerCanvasHeight > 0 && { minHeight: feedStickerCanvasHeight },
-          ]}
         >
-          {entry.stickers.map((sticker) => <FeedStickerPreview key={sticker.id} sticker={sticker} />)}
-          <View style={styles.feedTextLayer}>
-            {entry.coverPhoto ? (
-              <ImageBackground
-                source={{ uri: resolveImportedDiaryPhotoUri(entry.coverPhoto.uri) }}
-                style={styles.feedCoverHeader}
-                imageStyle={styles.feedCoverHeaderImage}
-                resizeMode="cover"
-              >
-                <View style={styles.feedCoverScrim} />
-                <View style={styles.feedCoverContent}>
-                  <Text
-                    style={[
-                      styles.feedTitle,
-                      styles.feedCoverTitle,
-                      {
-                        fontSize: theme.fontSizes.xxxl,
-                        lineHeight: theme.fontSizes.xxxl * 1.25,
-                      },
-                    ]}
-                    numberOfLines={3}
-                  >
-                    {entry.title}
-                  </Text>
-                  {feedMetaContent}
-                </View>
-              </ImageBackground>
-            ) : (
-              <>
-                <View style={styles.feedTitleRow}>
-                  <Text
-                    style={[
-                      styles.feedTitle,
-                      {
-                        color: theme.colors.text,
-                        fontSize: theme.fontSizes.xxxl,
-                        lineHeight: theme.fontSizes.xxxl * 1.25,
-                      },
-                    ]}
-                  >
-                    {entry.title}
-                  </Text>
-                </View>
+          {entry.coverPhoto ? (
+            <ImageBackground
+              source={{ uri: resolveImportedDiaryPhotoUri(entry.coverPhoto.uri) }}
+              style={styles.feedCoverHeader}
+              imageStyle={styles.feedCoverHeaderImage}
+              resizeMode="cover"
+            >
+              <View style={styles.feedCoverScrim} />
+              <View style={styles.feedCoverContent}>
+                <Text
+                  style={[
+                    styles.feedTitle,
+                    styles.feedCoverTitle,
+                    {
+                      fontSize: theme.fontSizes.xxxl,
+                      lineHeight: theme.fontSizes.xxxl * 1.25,
+                    },
+                  ]}
+                  numberOfLines={3}
+                >
+                  {entry.title}
+                </Text>
                 {feedMetaContent}
-              </>
-            )}
-            <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>{entry.content}</MarkdownText>
+              </View>
+            </ImageBackground>
+          ) : null}
+          <View
+            onLayout={(event) => setFeedCanvasWidth(event.nativeEvent.layout.width)}
+            style={[
+              styles.feedCanvas,
+              feedStickerCanvasHeight > 0 && { minHeight: feedStickerCanvasHeight },
+            ]}
+          >
+            {entry.stickers.map((sticker) => (
+              <FeedStickerPreview key={sticker.id} sticker={sticker} coordinateScale={feedCoordinateScale} />
+            ))}
+            <View style={styles.feedTextLayer}>
+              {entry.coverPhoto ? null : (
+                <>
+                  <View style={styles.feedTitleRow}>
+                    <Text
+                      style={[
+                        styles.feedTitle,
+                        {
+                          color: theme.colors.text,
+                          fontSize: theme.fontSizes.xxxl,
+                          lineHeight: theme.fontSizes.xxxl * 1.25,
+                        },
+                      ]}
+                    >
+                      {entry.title}
+                    </Text>
+                  </View>
+                  {feedMetaContent}
+                </>
+              )}
+              <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>{entry.content}</MarkdownText>
+            </View>
           </View>
         </TouchableOpacity>
         {inlineReflectionSection}
@@ -403,8 +410,8 @@ const styles = StyleSheet.create({
   feedCanvas: { position: 'relative', overflow: 'visible' },
   feedTextLayer: { position: 'relative', zIndex: 2 },
   feedSticker: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
-  feedStickerImage: { width: 80, height: 80 },
-  feedPhotoStickerImage: { width: 148, maxHeight: 190, borderRadius: 8 },
+  feedStickerImage: { width: DIARY_STICKER_BASE_SIZE, height: DIARY_STICKER_BASE_SIZE },
+  feedPhotoStickerImage: { width: DIARY_PHOTO_STICKER_BASE_WIDTH, maxHeight: DIARY_PHOTO_STICKER_MAX_HEIGHT, borderRadius: 8 },
   feedTextSticker: { minWidth: 120, maxWidth: 220, color: '#111827', fontSize: 24, lineHeight: 30, fontWeight: '700', textAlign: 'center' },
   feedStickerEmoji: { fontSize: 48, lineHeight: 60, includeFontPadding: true, textAlign: 'center' },
   feedTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 10 },

@@ -63,6 +63,7 @@ import { PaywallModal } from '@/shared/components/PaywallModal';
 import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimitService';
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
+import { getStickerBodyPreviewBottom } from '@/features/diary/domain/StickerLayout';
 
 function countWords(text: string): number {
   const clean = text.replace(/[*#`>•\-_]/g, '').trim();
@@ -86,7 +87,6 @@ const FORMAT_ITEMS: readonly RichTextFormatItem[] = [
   { kind: 'align-right', icon: 'format-align-right' },
   { kind: 'align-justify', icon: 'format-align-justify' },
 ];
-const READ_ONLY_STICKER_Y_OFFSET = 80;
 const STICKER_PLACEMENT_SIZE = 96;
 const TEXT_STICKER_PLACEMENT_WIDTH = 160;
 const PHOTO_STICKER_PLACEMENT_WIDTH = 148;
@@ -95,6 +95,9 @@ const ENTRY_HEADER_TOP_OFFSET = 4;
 const ENTRY_HEADER_BUTTON_HEIGHT = 38;
 const ENTRY_HEADER_BOTTOM_PADDING = 6;
 const ENTRY_COVER_TOP_GAP = 10;
+const ENTRY_BODY_MIN_HEIGHT = 14;
+const ENTRY_BODY_DEFAULT_VIEWPORT_RATIO = 0.02125;
+const ENTRY_BODY_EXTRA_STICKER_SPACE = 6;
 
 export default function EntryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -108,6 +111,7 @@ export default function EntryDetailScreen() {
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const timeFormat = useAppStore((state) => state.timeFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
+  const stickerBoundsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleCoverScrollBeginDrag = useCallback(() => {
     editorRef.current?.dismissKeyboard();
     Keyboard.dismiss();
@@ -153,7 +157,14 @@ export default function EntryDetailScreen() {
   const [isSavingReflection, setIsSavingReflection] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isStickerDragging, setIsStickerDragging] = useState(false);
+  const [showStickerBounds, setShowStickerBounds] = useState(false);
   const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
+  const [bodyContentHeight, setBodyContentHeight] = useState(ENTRY_BODY_MIN_HEIGHT);
+  const [bodyLayout, setBodyLayout] = useState({
+    y: 0,
+    width: 0,
+    height: ENTRY_BODY_MIN_HEIGHT,
+  });
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = editContent
@@ -171,6 +182,19 @@ export default function EntryDetailScreen() {
     const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => setKeyboardHeight(e.endCoordinates.height));
     const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardHeight(0));
     return () => { show.remove(); hide.remove(); };
+  }, []);
+
+  useEffect(() => () => {
+    if (stickerBoundsTimer.current) clearTimeout(stickerBoundsTimer.current);
+  }, []);
+
+  const revealStickerBounds = useCallback(() => {
+    setShowStickerBounds(true);
+    if (stickerBoundsTimer.current) clearTimeout(stickerBoundsTimer.current);
+    stickerBoundsTimer.current = setTimeout(() => {
+      setShowStickerBounds(false);
+      stickerBoundsTimer.current = null;
+    }, 3500);
   }, []);
 
   useEffect(() => {
@@ -266,15 +290,23 @@ export default function EntryDetailScreen() {
 
   const getVisibleStickerPosition = useCallback((index: number, stickerWidth = STICKER_PLACEMENT_SIZE) => {
     const horizontalPadding = theme.spacing.lg * 2;
-    const usableWidth = Math.max(stickerWidth, windowWidth - horizontalPadding);
+    const usableWidth = Math.max(stickerWidth, bodyLayout.width || windowWidth - horizontalPadding);
+    const usableHeight = Math.max(ENTRY_BODY_MIN_HEIGHT, bodyLayout.height);
+    const viewportTopInBody = Math.max(0, scrollOffsetYRef.current - bodyLayout.y);
+    const viewportBottomInBody = Math.min(
+      usableHeight,
+      scrollOffsetYRef.current + scrollViewportHeight - bodyLayout.y,
+    );
+    const visibleBodyHeight = Math.max(180, viewportBottomInBody - viewportTopInBody);
     const stagger = (index % 5) * VISIBLE_STICKER_STAGGER;
     return {
-      x: Math.max(0, (usableWidth - stickerWidth) / 2 + stagger),
-      y: Math.max(0, scrollOffsetYRef.current + Math.max(180, scrollViewportHeight) / 2 - STICKER_PLACEMENT_SIZE / 2 + stagger),
+      x: Math.max(0, Math.min(usableWidth - stickerWidth, (usableWidth - stickerWidth) / 2 + stagger)),
+      y: Math.max(0, Math.min(usableHeight - STICKER_PLACEMENT_SIZE, viewportTopInBody + visibleBodyHeight / 2 - STICKER_PLACEMENT_SIZE / 2 + stagger)),
     };
-  }, [scrollOffsetYRef, scrollViewportHeight, theme.spacing.lg, windowWidth]);
+  }, [bodyLayout, scrollOffsetYRef, scrollViewportHeight, theme.spacing.lg, windowWidth]);
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
+    revealStickerBounds();
     const position = getVisibleStickerPosition(editStickers.length);
     const newSticker: PlacedSticker = {
       id: generateUUID(),
@@ -288,7 +320,7 @@ export default function EntryDetailScreen() {
       behindText: false,
     };
     setEditStickers((prev) => [...prev, newSticker]);
-  }, [editStickers.length, getVisibleStickerPosition]);
+  }, [editStickers.length, getVisibleStickerPosition, revealStickerBounds]);
 
   const handleUpdateSticker = useCallback((updated: PlacedSticker) => {
     setEditStickers((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
@@ -299,6 +331,7 @@ export default function EntryDetailScreen() {
   }, []);
 
   const handleAddTextSticker = useCallback(() => {
+    revealStickerBounds();
     const position = getVisibleStickerPosition(editStickers.length, TEXT_STICKER_PLACEMENT_WIDTH);
     const newSticker: PlacedSticker = {
       id: generateUUID(),
@@ -316,7 +349,7 @@ export default function EntryDetailScreen() {
       opacity: 1,
     };
     setEditStickers((prev) => [...prev, newSticker]);
-  }, [editStickers.length, getVisibleStickerPosition, setEditStickers]);
+  }, [editStickers.length, getVisibleStickerPosition, revealStickerBounds, setEditStickers]);
 
   const handlePhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
     const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhotos();
@@ -333,6 +366,7 @@ export default function EntryDetailScreen() {
     if (result.assets.length === 0) return;
     try {
       const imported = await Promise.all(result.assets.map((asset) => diaryPhotoService.importAsset(asset)));
+      revealStickerBounds();
       setEditStickers((current) => [
         ...current,
         ...imported.map((photo, index) => ({
@@ -343,7 +377,7 @@ export default function EntryDetailScreen() {
     } catch {
       Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
     }
-  }, [getVisibleStickerPosition, t]);
+  }, [getVisibleStickerPosition, revealStickerBounds, t]);
 
   const handleCoverPhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
     const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhotos();
@@ -435,8 +469,7 @@ export default function EntryDetailScreen() {
 
   const displayStickers = isEditing
     ? editStickers
-    : [...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))]
-      .map((sticker) => ({ ...sticker, y: Math.max(0, sticker.y - READ_ONLY_STICKER_Y_OFFSET) }));
+    : [...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))];
   const behindDisplayStickers = displayStickers.filter((sticker) => sticker.behindText);
   const foregroundDisplayStickers = displayStickers.filter((sticker) => !sticker.behindText);
   const wordCount = countWords(isEditing ? editContent : entry.content);
@@ -466,6 +499,16 @@ export default function EntryDetailScreen() {
 
   const TOOLBAR_H = 56;
   const coverExpandedHeight = Math.min(184, Math.max(120, (windowWidth - theme.spacing.lg * 2) / 1.9));
+  const showBodyStickerBounds = isEditing && (showStickerPicker || showStickerBounds || isStickerDragging);
+  const stickerCanvasBottom = displayStickers.length > 0
+    ? Math.max(...displayStickers.map((sticker) => getStickerBodyPreviewBottom(sticker)))
+    : 0;
+  const bodyCanvasHeight = Math.max(
+    ENTRY_BODY_MIN_HEIGHT,
+    Math.round(windowHeight * ENTRY_BODY_DEFAULT_VIEWPORT_RATIO),
+    bodyContentHeight + ENTRY_BODY_EXTRA_STICKER_SPACE,
+    stickerCanvasBottom + ENTRY_BODY_EXTRA_STICKER_SPACE,
+  );
   const hasCoverHeader = isEditing || hasViewCoverPhoto;
   const headerOnlyHeight = insets.top
     + ENTRY_HEADER_TOP_OFFSET
@@ -593,16 +636,6 @@ export default function EntryDetailScreen() {
             return false;
           }}
         >
-          {behindDisplayStickers.map((sticker) => (
-            <StickerCanvasItem
-              key={sticker.id}
-              sticker={sticker}
-              onUpdate={handleUpdateSticker}
-              onDelete={handleDeleteSticker}
-              isEditable={isEditing}
-              onDragStateChange={setIsStickerDragging}
-            />
-          ))}
           <View style={styles.entryContentLayer}>
             {isEditing ? (
               /* ── Edit mode ──────────────────────────────────────────────── */
@@ -619,15 +652,59 @@ export default function EntryDetailScreen() {
                   accessibilityLabel={t('entryTitleA11y')}
                 />
                 <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-                <RichTextEditor
-                  ref={editorRef}
-                  value={editContent}
-                  onChangeText={setEditContent}
-                  placeholder={t('entryEditContentPlaceholder')}
-                  minHeight={260}
-                  showToolbar={false}
-                  accessibilityLabel={t('entryContentA11y')}
-                />
+                <View
+                  style={[
+                    styles.bodyStickerCanvas,
+                    { minHeight: bodyCanvasHeight },
+                    showBodyStickerBounds && [
+                      styles.bodyStickerCanvasOutlined,
+                      { borderColor: theme.colors.tint + '99', backgroundColor: theme.colors.tint + '08' },
+                    ],
+                  ]}
+                  onLayout={(event) => {
+                    const { y, width, height } = event.nativeEvent.layout;
+                    setBodyLayout((current) => (
+                      current.y === y && current.width === width && current.height === height
+                        ? current
+                        : { y, width, height }
+                    ));
+                  }}
+                >
+                  {behindDisplayStickers.map((sticker) => (
+                    <StickerCanvasItem
+                      key={sticker.id}
+                      sticker={sticker}
+                      onUpdate={handleUpdateSticker}
+                      onDelete={handleDeleteSticker}
+                      isEditable={isEditing}
+                      onDragStateChange={setIsStickerDragging}
+                      bounds={bodyLayout}
+                    />
+                  ))}
+                  <View style={styles.entryBodyLayer}>
+                    <RichTextEditor
+                      ref={editorRef}
+                      value={editContent}
+                      onChangeText={setEditContent}
+                      onHeightChange={(height) => setBodyContentHeight(Math.max(ENTRY_BODY_MIN_HEIGHT, height))}
+                      placeholder={t('entryEditContentPlaceholder')}
+                      minHeight={bodyCanvasHeight}
+                      showToolbar={false}
+                      accessibilityLabel={t('entryContentA11y')}
+                    />
+                  </View>
+                  {foregroundDisplayStickers.map((sticker) => (
+                    <StickerCanvasItem
+                      key={sticker.id}
+                      sticker={sticker}
+                      onUpdate={handleUpdateSticker}
+                      onDelete={handleDeleteSticker}
+                      isEditable={isEditing}
+                      onDragStateChange={setIsStickerDragging}
+                      bounds={bodyLayout}
+                    />
+                  ))}
+                </View>
                 <View style={styles.belowBodyPickers}>
                   <ManualMoodPicker value={editMood} onChange={setEditMood} />
                   <DiaryJournalSelector
@@ -668,23 +745,47 @@ export default function EntryDetailScreen() {
                   </>
                 )}
                 {hasViewCoverPhoto ? null : renderViewMoodAndTags(false)}
-                <MarkdownText style={{ lineHeight: 26 }}>
-                  {entry.content}
-                </MarkdownText>
+                <View
+                  style={[styles.bodyStickerCanvas, { minHeight: bodyCanvasHeight }]}
+                  onLayout={(event) => {
+                    const { y, width, height } = event.nativeEvent.layout;
+                    setBodyLayout((current) => (
+                      current.y === y && current.width === width && current.height === height
+                        ? current
+                        : { y, width, height }
+                    ));
+                  }}
+                >
+                  {behindDisplayStickers.map((sticker) => (
+                    <StickerCanvasItem
+                      key={sticker.id}
+                      sticker={sticker}
+                      onUpdate={handleUpdateSticker}
+                      onDelete={handleDeleteSticker}
+                      isEditable={isEditing}
+                      onDragStateChange={setIsStickerDragging}
+                    />
+                  ))}
+                  <View style={styles.entryBodyLayer}>
+                    <MarkdownText style={{ lineHeight: 26 }}>
+                      {entry.content}
+                    </MarkdownText>
+                  </View>
+                  {foregroundDisplayStickers.map((sticker) => (
+                    <StickerCanvasItem
+                      key={sticker.id}
+                      sticker={sticker}
+                      onUpdate={handleUpdateSticker}
+                      onDelete={handleDeleteSticker}
+                      isEditable={isEditing}
+                      onDragStateChange={setIsStickerDragging}
+                    />
+                  ))}
+                </View>
 
               </>
             )}
           </View>
-          {foregroundDisplayStickers.map((sticker) => (
-            <StickerCanvasItem
-              key={sticker.id}
-              sticker={sticker}
-              onUpdate={handleUpdateSticker}
-              onDelete={handleDeleteSticker}
-              isEditable={isEditing}
-              onDragStateChange={setIsStickerDragging}
-            />
-          ))}
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -796,7 +897,10 @@ export default function EntryDetailScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.toolbarIcon}
-                onPress={() => setShowStickerPicker(true)}
+                onPress={() => {
+                  setShowStickerPicker(true);
+                  revealStickerBounds();
+                }}
                 activeOpacity={0.6}
                 accessibilityLabel={`${t('entryAddStickerA11y')} ${editStickers.length} ${t('entryStickerPlacedA11y')}`}
                 accessibilityRole="button"
@@ -961,6 +1065,21 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   entryContentLayer: {
+    position: 'relative',
+    zIndex: 2,
+    elevation: 2,
+  },
+  bodyStickerCanvas: {
+    minHeight: ENTRY_BODY_MIN_HEIGHT,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  bodyStickerCanvasOutlined: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 8,
+  },
+  entryBodyLayer: {
     position: 'relative',
     zIndex: 2,
     elevation: 2,
