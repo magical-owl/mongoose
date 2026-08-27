@@ -452,19 +452,20 @@ export default function EntryDetailScreen() {
   const wordCount = countWords(isEditing ? editContent : entry.content);
   const moodTone = getManualMoodColor(entry.manualMood, theme.colors);
   const hasViewCoverPhoto = Boolean(entry.coverPhoto);
-  const viewMoodAndTags = (
-    <View style={hasViewCoverPhoto ? styles.coverMetaOverlay : styles.entryMetaRow}>
+  const viewDateTime = formatDisplayMonthDayTime(entry.createdAt, timeFormat);
+  const renderViewMoodAndTags = (onCover: boolean) => (
+    <View style={onCover ? styles.coverMetaLeft : styles.entryMetaRow}>
       {entry.manualMood ? (
-        <View style={[styles.moodBadge, hasViewCoverPhoto && styles.coverMoodBadge, { backgroundColor: moodTone + (hasViewCoverPhoto ? '80' : '18'), borderColor: moodTone + (hasViewCoverPhoto ? 'CC' : '') }]}>
-          <Text preset="caption" style={[styles.moodBadgeText, { color: hasViewCoverPhoto ? '#fff' : moodTone }]}>
+        <View style={[styles.moodBadge, onCover && styles.coverMoodBadge, { backgroundColor: moodTone + (onCover ? '80' : '18'), borderColor: moodTone + (onCover ? 'CC' : '') }]}>
+          <Text preset="caption" style={[styles.moodBadgeText, { color: onCover ? '#fff' : moodTone }]}>
             {manualMoodLabel(entry.manualMood, t)}
           </Text>
         </View>
       ) : null}
-      <View style={hasViewCoverPhoto ? styles.coverTagRow : styles.tagRow}>
+      <View style={onCover ? styles.coverTagRow : styles.tagRow}>
         {entry.tags.map((tag) => (
-          <View key={tag} style={hasViewCoverPhoto ? styles.coverTagBadge : undefined}>
-            <Text preset="caption" color={hasViewCoverPhoto ? undefined : 'textSecondary'} style={hasViewCoverPhoto ? styles.coverTagText : undefined}>
+          <View key={tag} style={onCover ? styles.coverTagBadge : undefined}>
+            <Text preset="caption" color={onCover ? undefined : 'textSecondary'} style={onCover ? styles.coverTagText : undefined}>
               #{tag}
             </Text>
           </View>
@@ -545,7 +546,17 @@ export default function EntryDetailScreen() {
             />
           ) : (
             <DiaryCoverPhotoPicker photo={entry.coverPhoto} editable={false} scrollY={coverScrollY}>
-              {viewMoodAndTags}
+              <View style={styles.coverEntryOverlay}>
+                <Text preset="h2" numberOfLines={2} style={styles.coverTitle}>
+                  {entry.title}
+                </Text>
+                <View style={styles.coverMetaRow}>
+                  {renderViewMoodAndTags(true)}
+                  <Text preset="caption" numberOfLines={1} style={styles.coverDateTime}>
+                    {viewDateTime}
+                  </Text>
+                </View>
+              </View>
             </DiaryCoverPhotoPicker>
           )}
         </View>
@@ -633,25 +644,29 @@ export default function EntryDetailScreen() {
             ) : (
               /* ── View mode ──────────────────────────────────────────────── */
               <>
-                <Text
-                  preset="caption"
-                  color="textSecondary"
-                  style={{ marginBottom: 4, fontWeight: '600', marginTop: 4 }}
-                >
-                  {formatDisplayDate(entry.date, calendarDateFormat)}
-                </Text>
-                <Text
-                  preset="h1"
-                  color="text"
-                  style={{
-                    fontSize: theme.fontSizes.xxxl,
-                    lineHeight: theme.fontSizes.xxxl * 1.25,
-                    marginBottom: 12,
-                  }}
-                >
-                  {entry.title}
-                </Text>
-                {hasViewCoverPhoto ? null : viewMoodAndTags}
+                {hasViewCoverPhoto ? null : (
+                  <>
+                    <Text
+                      preset="caption"
+                      color="textSecondary"
+                      style={{ marginBottom: 4, fontWeight: '600', marginTop: 4 }}
+                    >
+                      {formatDisplayDate(entry.date, calendarDateFormat)}
+                    </Text>
+                    <Text
+                      preset="h1"
+                      color="text"
+                      style={{
+                        fontSize: theme.fontSizes.xxxl,
+                        lineHeight: theme.fontSizes.xxxl * 1.25,
+                        marginBottom: 12,
+                      }}
+                    >
+                      {entry.title}
+                    </Text>
+                  </>
+                )}
+                {hasViewCoverPhoto ? null : renderViewMoodAndTags(false)}
                 <MarkdownText style={{ lineHeight: 26 }}>
                   {entry.content}
                 </MarkdownText>
@@ -960,11 +975,36 @@ const styles = StyleSheet.create({
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   tag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
   entryMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  coverMetaOverlay: {
+  coverEntryOverlay: {
     position: 'absolute',
     left: 10,
     right: 10,
     bottom: 10,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  coverDateTime: {
+    color: '#fff',
+    fontWeight: '700',
+    flexShrink: 0,
+  },
+  coverTitle: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: '800',
+    lineHeight: 34,
+    marginBottom: 8,
+  },
+  coverMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  coverMetaLeft: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
