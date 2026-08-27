@@ -511,7 +511,6 @@ export default function JournalsScreen(): React.JSX.Element {
         ) : (
           <View style={styles.journalCoverGrid}>
             {journalItems.map((journal) => {
-              const journalAccentColor = theme.colors.tint;
               const journalCoverSource = getJournalCoverImageSource(journal.coverImageUri);
               const coverCountMeta = (
                 <View style={[
@@ -519,37 +518,20 @@ export default function JournalsScreen(): React.JSX.Element {
                   compactJournalCover && styles.journalCoverCountMetaCompact,
                   denseJournalCover && styles.journalCoverCountMetaDense,
                 ]}>
-                  <View style={[
-                    styles.journalCountCircle,
-                    compactJournalCover && styles.journalCountCircleCompact,
-                    denseJournalCover && styles.journalCountCircleDense,
-                    { backgroundColor: journalAccentColor },
-                  ]}>
-                    <Text
-                      preset="label"
-                      dynamicType={false}
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.65}
-                      numberOfLines={1}
-                      style={[
-                        styles.journalCountText,
-                        compactJournalCover && styles.journalCountTextCompact,
-                        denseJournalCover && styles.journalCountTextDense,
-                      ]}
-                    >
-                      {journal.count}
-                    </Text>
-                  </View>
-                  {!denseJournalCover ? (
-                    <Text
-                      preset="caption"
-                      dynamicType={false}
-                      numberOfLines={1}
-                      style={[styles.journalCoverCountLabel, compactJournalCover && styles.journalCoverCountLabelCompact]}
-                    >
-                      {journalEntryLabelText(journal.count)}
-                    </Text>
-                  ) : null}
+                  <Text
+                    preset="caption"
+                    dynamicType={false}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                    numberOfLines={1}
+                    style={[
+                      styles.journalCoverCountLabel,
+                      compactJournalCover && styles.journalCoverCountLabelCompact,
+                      denseJournalCover && styles.journalCoverCountLabelDense,
+                    ]}
+                  >
+                    {denseJournalCover ? journal.count : `${journal.count} ${journalEntryLabelText(journal.count)}`}
+                  </Text>
                 </View>
               );
               return (
@@ -782,38 +764,40 @@ const styles = StyleSheet.create({
   },
   journalCoverCountMeta: {
     position: 'absolute',
-    left: 8,
-    bottom: 8,
-    minHeight: 36,
+    left: 10,
+    bottom: 10,
     maxWidth: '82%',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
-    borderRadius: 18,
-    paddingRight: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.42)',
+    gap: 4,
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.34)',
   },
   journalCoverCountMetaCompact: {
-    left: 6,
-    bottom: 6,
-    minHeight: 30,
-    gap: 5,
-    paddingRight: 7,
+    left: 8,
+    bottom: 8,
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
   },
   journalCoverCountMetaDense: {
-    left: 5,
-    bottom: 5,
-    minHeight: 26,
-    paddingRight: 0,
+    left: 6,
+    bottom: 6,
   },
-  journalCountCircle: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  journalCountCircleCompact: { width: 30, height: 30, borderRadius: 15 },
-  journalCountCircleDense: { width: 26, height: 26, borderRadius: 13 },
-  journalCountText: { color: '#fff', fontSize: 15, lineHeight: 18, fontWeight: '800', textAlign: 'center' },
-  journalCountTextCompact: { fontSize: 12, lineHeight: 14 },
-  journalCountTextDense: { fontSize: 11, lineHeight: 13 },
-  journalCoverCountLabel: { flexShrink: 1, color: '#fff', fontWeight: '700' },
+  journalCoverCountLabel: {
+    flexShrink: 1,
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 13,
+    lineHeight: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.62)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
   journalCoverCountLabelCompact: { fontSize: 11, lineHeight: 13 },
+  journalCoverCountLabelDense: { fontSize: 10, lineHeight: 12 },
   journalCoverFooter: { minHeight: 76, flexDirection: 'row', alignItems: 'center', padding: 10, gap: 6 },
   journalCoverFooterWide: { minHeight: 56, paddingHorizontal: 12, paddingVertical: 8 },
   journalCoverFooterCompact: { minHeight: 48, padding: 7 },
