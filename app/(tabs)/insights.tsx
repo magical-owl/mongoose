@@ -249,24 +249,28 @@ export default function InsightsScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 20, backgroundColor: theme.colors.background }]}>
         <View style={styles.headerControlsRow}>
-          <View style={[styles.rangePills, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-            {INSIGHTS_RANGES.map((value) => {
-              const selected = value === range;
-              return (
-                <TouchableOpacity
-                  key={value}
-                  onPress={() => setRange(value)}
-                  style={[styles.rangePill, selected && { backgroundColor: theme.colors.tint }]}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected }}
-                  accessibilityLabel={rangeLabel(value)}
-                >
-                  <Text preset="caption" style={[styles.rangePillText, { color: selected ? "#fff" : theme.colors.textSecondary }]}>
-                    {rangeLabel(value)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+          <View style={styles.insightsNavRegion}>
+            <View style={styles.periodPickerRow}>
+              <TouchableOpacity
+                onPress={() => movePeriod(-1)}
+                style={styles.periodPickerButton}
+                accessibilityRole="button"
+                accessibilityLabel={t("insightsPreviousPeriodA11y")}
+              >
+                <Ionicons name="chevron-back" size={20} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+              <Text preset="label" color="text" style={styles.periodPickerValue}>
+                {stats.periodLabel}
+              </Text>
+              <TouchableOpacity
+                onPress={() => movePeriod(1)}
+                style={styles.periodPickerButton}
+                accessibilityRole="button"
+                accessibilityLabel={t("insightsNextPeriodA11y")}
+              >
+                <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
           </View>
           <TouchableOpacity
             onPress={() => {
@@ -279,26 +283,24 @@ export default function InsightsScreen() {
             <Ionicons name="refresh-outline" size={22} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
-        <View style={styles.periodPickerRow}>
-          <TouchableOpacity
-            onPress={() => movePeriod(-1)}
-            style={styles.periodPickerButton}
-            accessibilityRole="button"
-            accessibilityLabel={t("insightsPreviousPeriodA11y")}
-          >
-            <Ionicons name="chevron-back" size={20} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
-          <Text preset="label" color="text" style={styles.periodPickerValue}>
-            {stats.periodLabel}
-          </Text>
-          <TouchableOpacity
-            onPress={() => movePeriod(1)}
-            style={styles.periodPickerButton}
-            accessibilityRole="button"
-            accessibilityLabel={t("insightsNextPeriodA11y")}
-          >
-            <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
+        <View style={[styles.rangePills, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          {INSIGHTS_RANGES.map((value) => {
+            const selected = value === range;
+            return (
+              <TouchableOpacity
+                key={value}
+                onPress={() => setRange(value)}
+                style={[styles.rangePill, selected && { backgroundColor: theme.colors.tint }]}
+                accessibilityRole="tab"
+                accessibilityState={{ selected }}
+                accessibilityLabel={rangeLabel(value)}
+              >
+                <Text preset="caption" style={[styles.rangePillText, { color: selected ? "#fff" : theme.colors.textSecondary }]}>
+                  {rangeLabel(value)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
       <ScrollView
@@ -461,15 +463,17 @@ export default function InsightsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
-  headerControlsRow: { minHeight: 38, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+  headerControlsRow: { minHeight: 38, flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+  insightsNavRegion: { flex: 1, alignItems: "center", minWidth: 0 },
   headerIcon: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 8 },
-  headerRefreshButton: { position: "absolute", right: 0, top: 0 },
+  headerRefreshButton: { flexShrink: 0 },
   rangePills: {
     alignSelf: "center",
     flexDirection: "row",
     borderWidth: 1,
     borderRadius: 18,
     padding: 2,
+    marginBottom: 10,
   },
   rangePill: {
     minWidth: 68,
@@ -481,11 +485,12 @@ const styles = StyleSheet.create({
   },
   rangePillText: { fontWeight: "700" },
   periodPickerRow: {
-    minHeight: 34,
+    width: "82%",
+    maxWidth: 260,
+    minHeight: 38,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 10,
   },
   periodPickerButton: {
     width: 38,

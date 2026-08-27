@@ -123,33 +123,35 @@ export default function CalendarScreen() {
     <View style={[styles.outerContainer, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
         <View style={styles.headerNavRow}>
-          <View style={styles.calendarPeriodRow}>
-            <TouchableOpacity
-              onPress={handlePrevMonth}
-              style={styles.periodPickerButton}
-              accessibilityLabel={t('calendarPreviousMonthA11y')}
-              accessibilityRole="button"
-            >
-              <Ionicons name="chevron-back" size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => { setPickerYear(year); setShowMonthPicker(true); }}
-              style={styles.calendarPeriodValueButton}
-              accessibilityRole="button"
-              accessibilityLabel={t('calendarChooseMonthYearA11y')}
-            >
-              <Text preset="label" color="text" style={styles.calendarPeriodValue} numberOfLines={1}>
-                {monthLabel} {year}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleNextMonth}
-              style={styles.periodPickerButton}
-              accessibilityLabel={t('calendarNextMonthA11y')}
-              accessibilityRole="button"
-            >
-              <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
+          <View style={styles.calendarNavRegion}>
+            <View style={styles.calendarPeriodRow}>
+              <TouchableOpacity
+                onPress={handlePrevMonth}
+                style={styles.periodPickerButton}
+                accessibilityLabel={t('calendarPreviousMonthA11y')}
+                accessibilityRole="button"
+              >
+                <Ionicons name="chevron-back" size={20} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => { setPickerYear(year); setShowMonthPicker(true); }}
+                style={styles.calendarPeriodValueButton}
+                accessibilityRole="button"
+                accessibilityLabel={t('calendarChooseMonthYearA11y')}
+              >
+                <Text preset="label" color="text" style={styles.calendarPeriodValue} numberOfLines={1}>
+                  {monthLabel} {year}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleNextMonth}
+                style={styles.periodPickerButton}
+                accessibilityLabel={t('calendarNextMonthA11y')}
+                accessibilityRole="button"
+              >
+                <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TouchableOpacity onPress={handleJumpToToday} style={[styles.todayButton, { borderColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel={t('calendarJumpTodayA11y')}>
@@ -329,8 +331,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
   },
-  headerNavRow: { minHeight: 38, alignItems: 'center', justifyContent: 'center' },
-  todayButton: { position: 'absolute', right: 0, top: 0, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
+  headerNavRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  calendarNavRegion: { flex: 1, alignItems: 'center', minWidth: 0 },
+  todayButton: { flexShrink: 0, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
   calendarCard: {
     borderWidth: 1,
     borderRadius: 14,
@@ -345,7 +348,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   calendarPeriodRow: {
-    width: '68%',
+    width: '82%',
+    maxWidth: 260,
     minHeight: 38,
     flexDirection: 'row',
     alignItems: 'center',
