@@ -1,11 +1,13 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import {
+  Animated,
   View,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
   Modal as NativeModal,
   Pressable,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -20,11 +22,18 @@ import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import type { ManualMood } from '@/features/diary/domain/DiaryEntry';
 import { useTranslation } from '@/localization/i18n';
 
+const CALENDAR_COLLAPSED_HEIGHT = 0;
+const CALENDAR_HEADER_TOP_PADDING = 16;
+const CALENDAR_NAV_HEIGHT = 38;
+const CALENDAR_HEADER_GAP = 10;
+const CALENDAR_BOTTOM_GAP = 12;
+
 export default function CalendarScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useTranslation();
+  const { height: windowHeight } = useWindowDimensions();
   const { entries, isLoading, refresh } = useDiary();
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
@@ -38,6 +47,7 @@ export default function CalendarScreen() {
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
   const touchStartX = useRef<number | null>(null);
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   useFocusEffect(
     useCallback(() => {
@@ -93,6 +103,10 @@ export default function CalendarScreen() {
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfWeek = (new Date(year, month, 1).getDay() - calendarFirstDay + 7) % 7;
+  const calendarWeekRows = Math.ceil((firstDayOfWeek + daysInMonth) / 7);
+  const calendarExpandedHeight = 58 + calendarWeekRows * 46;
+  const expandedHeaderHeight = insets.top + CALENDAR_HEADER_TOP_PADDING + CALENDAR_NAV_HEIGHT + CALENDAR_HEADER_GAP + calendarExpandedHeight + CALENDAR_BOTTOM_GAP;
+  const collapsedHeaderHeight = insets.top + CALENDAR_HEADER_TOP_PADDING + CALENDAR_NAV_HEIGHT + CALENDAR_BOTTOM_GAP;
 
   const monthName = currentDate.toLocaleDateString('en-US', {
     month: 'long',
@@ -124,10 +138,106 @@ export default function CalendarScreen() {
   const moodColor = (mood: string) => {
     return getManualMoodColor(mood as ManualMood, theme.colors);
   };
+  const calendarHeight = scrollY.interpolate({
+    inputRange: [0, calendarExpandedHeight],
+    outputRange: [calendarExpandedHeight, CALENDAR_COLLAPSED_HEIGHT],
+    extrapolate: 'clamp',
+  });
+  const calendarOpacity = scrollY.interpolate({
+    inputRange: [0, calendarExpandedHeight * 0.65],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  const calendarCard = (
+    <View
+      style={[
+        styles.calendarCard,
+        { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+      ]}
+      onTouchStart={(event) => { touchStartX.current = event.nativeEvent.pageX; }}
+      onTouchEnd={(event) => handleSwipe(event.nativeEvent.pageX)}
+    >
+      <View style={styles.gridRow}>
+        {(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].slice(calendarFirstDay).concat(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].slice(0, calendarFirstDay))).map((d) => (
+          <Text key={d} style={[styles.gridCellHeader, { color: theme.colors.textSecondary }]}>
+            {d}
+          </Text>
+        ))}
+      </View>
+
+      <View style={styles.gridRow}>
+        {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+          <View key={`empty-${i}`} style={styles.gridCell} />
+        ))}
+
+        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
+          const dayNumStr = day < 10 ? `0${day}` : `${day}`;
+          const monthNumStr = month + 1 < 10 ? `0${month + 1}` : `${month + 1}`;
+          const dateStr = `${year}-${monthNumStr}-${dayNumStr}`;
+
+          const isSelected = dateStr === selectedDateStr;
+          const dayEntries = entryDateMap.get(dateStr) || [];
+          const hasEntries = dayEntries.length > 0;
+          const moodKeys = Array.from(new Set(dayEntries.flatMap((entry) => entry.manualMood ? [entry.manualMood] : []))).slice(0, 3);
+          const hasFavorite = dayEntries.some((entry) => entry.isFavorite);
+
+          return (
+            <TouchableOpacity
+              key={day}
+              style={[
+                styles.gridCell,
+                {
+                  backgroundColor: isSelected
+                    ? theme.colors.tint
+                    : hasEntries
+                      ? `${theme.colors.tint}22`
+                      : 'transparent',
+                  borderColor: isSelected
+                    ? theme.colors.tint
+                    : hasEntries
+                      ? theme.colors.tint
+                      : 'transparent',
+                  borderWidth: hasEntries || isSelected ? 1 : 0,
+                },
+              ]}
+              onPress={() => handleSelectDate(dateStr)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={`${day} ${monthName}${hasEntries ? `, ${t('calendarHasEntriesA11y')}` : ''}`}
+            >
+              <Text
+                style={[
+                  styles.dayText,
+                  {
+                    fontWeight: isSelected || hasEntries ? '700' : '400',
+                    color: isSelected
+                      ? theme.colors.background
+                      : hasEntries
+                        ? theme.colors.tint
+                        : theme.colors.text,
+                  },
+                ]}
+              >
+                {day}
+              </Text>
+              {hasEntries && (
+                <View style={styles.markerRow}>
+                  {moodKeys.length > 0 ? moodKeys.map((mood) => <View key={mood} style={[styles.dot, { backgroundColor: isSelected ? theme.colors.background : moodColor(mood) }]} />) : <View style={[styles.dot, { backgroundColor: isSelected ? theme.colors.background : theme.colors.tint }]} />}
+                  {dayEntries.length > 1 && <Text style={[styles.entryCount, { color: isSelected ? theme.colors.background : theme.colors.textSecondary }]}>{dayEntries.length}</Text>}
+                  {hasFavorite && <Ionicons name="star" size={8} color={isSelected ? theme.colors.background : theme.colors.warning} />}
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
 
   return (
     <View style={[styles.outerContainer, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
+      <View style={[styles.fixedHeader, { paddingTop: insets.top + CALENDAR_HEADER_TOP_PADDING, backgroundColor: theme.colors.background }]}>
         <View style={styles.headerNavRow}>
           <View style={styles.calendarNavRegion}>
             <View style={styles.calendarPeriodRow}>
@@ -164,103 +274,26 @@ export default function CalendarScreen() {
             <Text preset="caption" color="tint">{t('calendarToday')}</Text>
           </TouchableOpacity>
         </View>
+        <Animated.View style={[styles.calendarCollapseWrap, { height: calendarHeight, opacity: calendarOpacity }]}>
+          {calendarCard}
+        </Animated.View>
       </View>
       {isLoading ? null : (
         <ScrollView
+          onScroll={(event) => {
+            scrollY.setValue(event.nativeEvent.contentOffset.y);
+          }}
+          scrollEventThrottle={16}
           contentContainerStyle={[
             styles.container,
-            { paddingBottom: insets.bottom + 80 },
+            {
+              minHeight: windowHeight + calendarExpandedHeight,
+              paddingTop: expandedHeaderHeight,
+              paddingBottom: insets.bottom + 80 + collapsedHeaderHeight,
+            },
           ]}
           showsVerticalScrollIndicator={false}
         >
-          {/* Calendar Card Container */}
-          <View
-            style={[
-              styles.calendarCard,
-              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-            ]}
-            onTouchStart={(event) => { touchStartX.current = event.nativeEvent.pageX; }}
-            onTouchEnd={(event) => handleSwipe(event.nativeEvent.pageX)}
-          >
-            {/* Weekday Row */}
-            <View style={styles.gridRow}>
-              {(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].slice(calendarFirstDay).concat(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].slice(0, calendarFirstDay))).map((d) => (
-                <Text key={d} style={[styles.gridCellHeader, { color: theme.colors.textSecondary }]}>
-                  {d}
-                </Text>
-              ))}
-            </View>
-
-            {/* Month Days Grid */}
-            <View style={styles.gridRow}>
-              {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                <View key={`empty-${i}`} style={styles.gridCell} />
-              ))}
-
-              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-                const dayNumStr = day < 10 ? `0${day}` : `${day}`;
-                const monthNumStr = month + 1 < 10 ? `0${month + 1}` : `${month + 1}`;
-                const dateStr = `${year}-${monthNumStr}-${dayNumStr}`;
-
-                const isSelected = dateStr === selectedDateStr;
-                const dayEntries = entryDateMap.get(dateStr) || [];
-                const hasEntries = dayEntries.length > 0;
-                const moodKeys = Array.from(new Set(dayEntries.flatMap((entry) => entry.manualMood ? [entry.manualMood] : []))).slice(0, 3);
-                const hasFavorite = dayEntries.some((entry) => entry.isFavorite);
-
-                return (
-                  <TouchableOpacity
-                    key={day}
-                    style={[
-                      styles.gridCell,
-                      {
-                        backgroundColor: isSelected
-                          ? theme.colors.tint
-                          : hasEntries
-                            ? `${theme.colors.tint}22`
-                            : 'transparent',
-                        borderColor: isSelected
-                          ? theme.colors.tint
-                          : hasEntries
-                            ? theme.colors.tint
-                            : 'transparent',
-                        borderWidth: hasEntries || isSelected ? 1 : 0,
-                      },
-                    ]}
-                    onPress={() => handleSelectDate(dateStr)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                    accessibilityLabel={`${day} ${monthName}${hasEntries ? `, ${t('calendarHasEntriesA11y')}` : ''}`}
-                  >
-                    <Text
-                      style={[
-                        styles.dayText,
-                        {
-                          fontWeight: isSelected || hasEntries ? '700' : '400',
-                          color: isSelected
-                            ? theme.colors.background
-                            : hasEntries
-                              ? theme.colors.tint
-                              : theme.colors.text,
-                        },
-                      ]}
-                    >
-                      {day}
-                    </Text>
-                    {hasEntries && (
-                      <View style={styles.markerRow}>
-                        {moodKeys.length > 0 ? moodKeys.map((mood) => <View key={mood} style={[styles.dot, { backgroundColor: isSelected ? theme.colors.background : moodColor(mood) }]} />) : <View style={[styles.dot, { backgroundColor: isSelected ? theme.colors.background : theme.colors.tint }]} />}
-                        {dayEntries.length > 1 && <Text style={[styles.entryCount, { color: isSelected ? theme.colors.background : theme.colors.textSecondary }]}>{dayEntries.length}</Text>}
-                        {hasFavorite && <Ionicons name="star" size={8} color={isSelected ? theme.colors.background : theme.colors.warning} />}
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* Entries List for Selected Date (Matches original reference layout 1:1) */}
           {selectedDayEntries.length === 0 ? (
             <View style={[styles.emptyState, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <Ionicons name="book-outline" size={28} color={theme.colors.textSecondary} />
@@ -326,12 +359,12 @@ const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
   },
-  fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
+  fixedHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 30, elevation: 30, paddingHorizontal: 20 },
   container: {
     paddingHorizontal: 20,
-    paddingTop: 12,
   },
   headerNavRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  calendarCollapseWrap: { overflow: 'hidden', marginTop: 10 },
   calendarNavRegion: { flex: 1, alignItems: 'center', minWidth: 0 },
   todayButton: { flexShrink: 0, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
   calendarCard: {
