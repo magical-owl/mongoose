@@ -190,6 +190,7 @@ export default function EntryDetailScreen() {
 
   const handleStartEdit = () => {
     if (!entry) return;
+    coverScrollY.setValue(0);
     setEditTitle(entry.title);
     setEditContent(entry.content);
     setEditDate(entryDate(entry.date));
@@ -205,6 +206,7 @@ export default function EntryDetailScreen() {
 
   const handleCancelEdit = () => {
     if (!entry) return;
+    coverScrollY.setValue(0);
     setEditTitle(entry.title);
     setEditContent(entry.content);
     setEditDate(entryDate(entry.date));
@@ -531,15 +533,21 @@ export default function EntryDetailScreen() {
       </View>
 
 
-      {isEditing ? (
+      {isEditing || hasViewCoverPhoto ? (
         <View style={[styles.coverHeader, { backgroundColor: theme.colors.background }]}>
-          <DiaryCoverPhotoPicker
-            photo={editCoverPhoto}
-            onTakePhoto={() => handleCoverPhotoPickerResult('camera')}
-            onChoosePhoto={() => handleCoverPhotoPickerResult('library')}
-            onRemovePhoto={() => setEditCoverPhoto(undefined)}
-            scrollY={coverScrollY}
-          />
+          {isEditing ? (
+            <DiaryCoverPhotoPicker
+              photo={editCoverPhoto}
+              onTakePhoto={() => handleCoverPhotoPickerResult('camera')}
+              onChoosePhoto={() => handleCoverPhotoPickerResult('library')}
+              onRemovePhoto={() => setEditCoverPhoto(undefined)}
+              scrollY={coverScrollY}
+            />
+          ) : (
+            <DiaryCoverPhotoPicker photo={entry.coverPhoto} editable={false} scrollY={coverScrollY}>
+              {viewMoodAndTags}
+            </DiaryCoverPhotoPicker>
+          )}
         </View>
       ) : null}
 
@@ -625,11 +633,6 @@ export default function EntryDetailScreen() {
             ) : (
               /* ── View mode ──────────────────────────────────────────────── */
               <>
-                <View style={styles.viewCoverWrap}>
-                  <DiaryCoverPhotoPicker photo={entry.coverPhoto} editable={false}>
-                    {viewMoodAndTags}
-                  </DiaryCoverPhotoPicker>
-                </View>
                 <Text
                   preset="caption"
                   color="textSecondary"
@@ -936,9 +939,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 2,
     elevation: 2,
-  },
-  viewCoverWrap: {
-    marginTop: 8,
   },
   titleInput: {
     fontSize: 26,

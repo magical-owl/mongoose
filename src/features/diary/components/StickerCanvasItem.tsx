@@ -34,6 +34,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PlacedSticker, findStickerItem } from '../domain/Sticker';
 import { useTranslation } from '@/localization/i18n';
 import { useTheme } from '@/providers/ThemeProvider';
+import { resolveImportedDiaryPhotoUri } from '@/features/diary/services/DiaryPhotoService';
 
 const DEFAULT_TEXT_STICKER_COLOR = '#DC2626';
 const DEFAULT_TEXT_STICKER_BACKGROUND_COLOR = '#E5E7EB';
@@ -420,7 +421,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
               )
             ) : sticker.imageUri ? (
               <Image
-                source={{ uri: sticker.imageUri }}
+                source={{ uri: resolveImportedDiaryPhotoUri(sticker.imageUri) }}
                 style={[styles.photoStickerImage, { aspectRatio: photoAspectRatio }, isSelected && styles.selectedOverlay]}
                 resizeMode="cover"
               />

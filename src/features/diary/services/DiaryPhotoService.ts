@@ -5,6 +5,7 @@ import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { generateUUID } from '@/shared/utils/uuid';
 
 const PHOTO_DIRECTORY_NAME = 'diary-photos';
+const PHOTO_DIRECTORY_MARKER = `/${PHOTO_DIRECTORY_NAME}/`;
 
 export interface IDiaryPhotoCleanupService {
   deleteEntryPhotos(entry: DiaryEntry): Promise<void>;
@@ -56,14 +57,28 @@ export class DiaryPhotoService implements IDiaryPhotoCleanupService {
   }
 
   private isImportedPhotoUri(uri: string): boolean {
-    return uri.startsWith(this.getPhotoDirectory().uri);
+    return uri.startsWith(this.getPhotoDirectory().uri) || getImportedPhotoFilename(uri) !== null;
   }
 
   private async deleteFileIfExists(uri: string): Promise<void> {
-    const file = new File(uri);
+    const file = new File(resolveImportedDiaryPhotoUri(uri));
     if (!file.exists) return;
     file.delete();
   }
+}
+
+function getImportedPhotoFilename(uri: string): string | null {
+  const markerIndex = uri.lastIndexOf(PHOTO_DIRECTORY_MARKER);
+  if (markerIndex < 0) return null;
+  const filename = uri.slice(markerIndex + PHOTO_DIRECTORY_MARKER.length);
+  if (!filename || filename.includes('/')) return null;
+  return filename;
+}
+
+export function resolveImportedDiaryPhotoUri(uri: string): string {
+  const filename = getImportedPhotoFilename(uri);
+  if (!filename) return uri;
+  return new File(new Directory(Paths.document, PHOTO_DIRECTORY_NAME), filename).uri;
 }
 
 function getPhotoExtension(asset: ImagePickerAsset): string {
@@ -83,7 +98,7 @@ export function createPlacedPhotoSticker(photo: DiaryPhoto, index: number): Plac
     id: photo.id,
     stickerId: `photo:${photo.id}`,
     category: 'photos',
-    imageUri: photo.uri,
+    imageUri: resolveImportedDiaryPhotoUri(photo.uri),
     imageWidth: photo.width,
     imageHeight: photo.height,
     x: 36 + (index % 3) * 42,

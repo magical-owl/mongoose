@@ -12,6 +12,7 @@ import { formatDisplayMonthDayTime, formatDisplayTime } from '@shared/utils/time
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import { manualMoodLabel, reflectionCountLabel, useTranslation } from '@/localization/i18n';
+import { resolveImportedDiaryPhotoUri } from '@/features/diary/services/DiaryPhotoService';
 
 export type DiaryEntryViewMode = 'detailed' | 'timeline' | 'feed';
 
@@ -34,7 +35,7 @@ function CoverPhotoPreview({ entry, style }: { readonly entry: DiaryEntry; reado
   if (!entry.coverPhoto) return null;
   return (
     <Image
-      source={{ uri: entry.coverPhoto.uri }}
+      source={{ uri: resolveImportedDiaryPhotoUri(entry.coverPhoto.uri) }}
       style={[styles.coverPhoto, style]}
       resizeMode="cover"
       accessibilityIgnoresInvertColors
@@ -82,7 +83,7 @@ function FeedStickerPreview({ sticker }: { readonly sticker: PlacedSticker }) {
           {sticker.text}
         </Text>
       ) : sticker.imageUri ? (
-        <Image source={{ uri: sticker.imageUri }} style={[styles.feedPhotoStickerImage, { aspectRatio: photoAspectRatio }]} resizeMode="cover" />
+        <Image source={{ uri: resolveImportedDiaryPhotoUri(sticker.imageUri) }} style={[styles.feedPhotoStickerImage, { aspectRatio: photoAspectRatio }]} resizeMode="cover" />
       ) : stickerItem?.source != null ? (
         <Image source={stickerItem.source} style={styles.feedStickerImage} resizeMode="contain" />
       ) : (
@@ -238,7 +239,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
           <View style={styles.feedTextLayer}>
             {entry.coverPhoto ? (
               <ImageBackground
-                source={{ uri: entry.coverPhoto.uri }}
+                source={{ uri: resolveImportedDiaryPhotoUri(entry.coverPhoto.uri) }}
                 style={styles.feedCoverHeader}
                 imageStyle={styles.feedCoverHeaderImage}
                 resizeMode="cover"

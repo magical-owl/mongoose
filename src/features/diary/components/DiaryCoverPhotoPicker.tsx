@@ -5,6 +5,7 @@ import { Text } from '@shared/components/Text';
 import { useTheme } from '@providers/ThemeProvider';
 import { useTranslation } from '@/localization/i18n';
 import type { DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
+import { resolveImportedDiaryPhotoUri } from '@/features/diary/services/DiaryPhotoService';
 
 interface DiaryCoverPhotoPickerProps {
   readonly photo?: DiaryPhoto;
@@ -28,6 +29,7 @@ export function DiaryCoverPhotoPicker({
   const theme = useTheme();
   const t = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
+  const photoUri = photo ? resolveImportedDiaryPhotoUri(photo.uri) : undefined;
 
   if (!editable && !photo) return null;
 
@@ -68,7 +70,7 @@ export function DiaryCoverPhotoPicker({
     >
       {photo ? (
         <Image
-          source={{ uri: photo.uri }}
+          source={{ uri: photoUri }}
           style={styles.image}
           resizeMode="cover"
           accessibilityIgnoresInvertColors
