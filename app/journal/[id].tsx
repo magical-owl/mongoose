@@ -144,6 +144,7 @@ export default function JournalEntriesScreen() {
       ? syntheticJournalCovers.unassigned
       : undefined;
   const journalCoverImageUri = selectedJournal?.coverImageUri ?? syntheticJournalCover?.coverImageUri;
+  const journalCoverImageSource = getJournalCoverImageSource(journalCoverImageUri);
 
   const filterOptions = useMemo(
     () => ({
@@ -466,7 +467,7 @@ export default function JournalEntriesScreen() {
     return Array.from(groups.entries());
   }, [filteredEntries]);
 
-  const hasJournalCover = Boolean(journalCoverImageUri);
+  const hasJournalCover = Boolean(journalCoverImageSource);
   const journalCoverHeight = scrollY.interpolate({
     inputRange: [0, JOURNAL_COVER_COLLAPSE_DISTANCE],
     outputRange: [JOURNAL_COVER_EXPANDED_HEIGHT, JOURNAL_COVER_COLLAPSED_HEIGHT],
@@ -670,7 +671,7 @@ export default function JournalEntriesScreen() {
             </View>
           </View>
 
-          {journalCoverImageUri ? (
+          {journalCoverImageSource ? (
             <Animated.View
               style={[
                 styles.journalCoverContext,
@@ -682,7 +683,7 @@ export default function JournalEntriesScreen() {
               ]}
             >
               <Image
-                source={getJournalCoverImageSource(journalCoverImageUri)}
+                source={journalCoverImageSource}
                 style={styles.journalCoverImage}
                 resizeMode="cover"
                 accessibilityRole="image"

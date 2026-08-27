@@ -512,6 +512,7 @@ export default function JournalsScreen(): React.JSX.Element {
           <View style={styles.journalCoverGrid}>
             {journalItems.map((journal) => {
               const journalAccentColor = theme.colors.tint;
+              const journalCoverSource = getJournalCoverImageSource(journal.coverImageUri);
               const coverCountMeta = (
                 <View style={[
                   styles.journalCoverCountMeta,
@@ -569,8 +570,8 @@ export default function JournalsScreen(): React.JSX.Element {
                   wideJournalCover && styles.journalCoverImageFrameWide,
                   { backgroundColor: theme.colors.tint + '18' },
                 ]}>
-                  {journal.coverImageUri ? (
-                    <Image source={getJournalCoverImageSource(journal.coverImageUri)} style={styles.journalCoverImage} resizeMode="cover" />
+                  {journalCoverSource ? (
+                    <Image source={journalCoverSource} style={styles.journalCoverImage} resizeMode="cover" />
                   ) : (
                     <View style={styles.journalCoverPlaceholder}>
                       <Ionicons name="book-outline" size={34} color={theme.colors.tint} />
@@ -623,7 +624,7 @@ export default function JournalsScreen(): React.JSX.Element {
 
       <Modal visible={Boolean(coverPickerJournal)} animationType="fade" transparent onRequestClose={() => setCoverPickerJournal(null)}>
         <View style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}>
-          <View style={[styles.modalCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
+          <View style={[styles.modalCard, styles.coverPickerCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
             <View style={styles.coverPickerHeader}>
               <Text preset="h2" color="text" style={styles.modalTitle}>{t('journalSetCover')}</Text>
               <TouchableOpacity
@@ -635,46 +636,59 @@ export default function JournalsScreen(): React.JSX.Element {
                 <Ionicons name="close" size={22} color={theme.colors.textSecondary} />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={handleAssignGalleryCover}
-              style={[styles.coverPickerGalleryButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
-              accessibilityRole="button"
-              accessibilityLabel={t('journalSetCoverFromGalleryA11y')}
-              disabled={Boolean(assigningCoverJournalId)}
+            <ScrollView
+              style={styles.coverPickerScroll}
+              contentContainerStyle={styles.coverPickerScrollContent}
+              showsVerticalScrollIndicator={false}
             >
-              <Ionicons name="image-outline" size={20} color={theme.colors.tint} />
-              <Text preset="label" color="text" style={styles.coverPickerGalleryText}>{t('journalSetCoverFromGallery')}</Text>
-            </TouchableOpacity>
-            <Text preset="caption" color="textSecondary" style={styles.coverPickerSectionLabel}>{t('journalAppBackgrounds')}</Text>
-            <View style={styles.coverPickerGrid}>
-              {BUILTIN_JOURNAL_BACKGROUNDS.map((background) => {
-                const selected = coverPickerJournal?.coverImageUri === background.uri;
-                return (
-                  <TouchableOpacity
-                    key={background.id}
-                    onPress={() => handleAssignBuiltinCover(background.uri)}
-                    style={[
-                      styles.coverPickerOption,
-                      {
-                        borderColor: selected ? theme.colors.tint : theme.colors.border,
-                        backgroundColor: theme.colors.surface,
-                      },
-                    ]}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected }}
-                    accessibilityLabel={`${t('journalSetCoverA11y')} ${background.title}`}
-                    disabled={Boolean(assigningCoverJournalId)}
-                  >
-                    <Image source={background.source} style={styles.coverPickerPreview} resizeMode="cover" />
-                    {selected ? (
-                      <View style={[styles.coverPickerSelectedBadge, { backgroundColor: theme.colors.tint }]}>
-                        <Ionicons name="checkmark" size={14} color="#fff" />
-                      </View>
-                    ) : null}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+              <TouchableOpacity
+                onPress={handleAssignGalleryCover}
+                style={[styles.coverPickerGalleryButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+                accessibilityRole="button"
+                accessibilityLabel={t('journalSetCoverFromGalleryA11y')}
+                disabled={Boolean(assigningCoverJournalId)}
+              >
+                <View style={[styles.coverPickerGalleryIcon, { backgroundColor: theme.colors.tint + '18' }]}>
+                  <Ionicons name="image-outline" size={20} color={theme.colors.tint} />
+                </View>
+                <Text preset="label" color="text" style={styles.coverPickerGalleryText}>{t('journalSetCoverFromGallery')}</Text>
+                <Ionicons name="chevron-forward" size={17} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+              <Text preset="caption" color="textSecondary" style={styles.coverPickerSectionLabel}>{t('journalAppBackgrounds')}</Text>
+              <View style={styles.coverPickerGrid}>
+                {BUILTIN_JOURNAL_BACKGROUNDS.map((background) => {
+                  const selected = coverPickerJournal?.coverImageUri === background.uri;
+                  return (
+                    <TouchableOpacity
+                      key={background.id}
+                      onPress={() => handleAssignBuiltinCover(background.uri)}
+                      style={[
+                        styles.coverPickerOption,
+                        {
+                          borderColor: selected ? theme.colors.tint : theme.colors.border,
+                          backgroundColor: theme.colors.surface,
+                        },
+                      ]}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                      accessibilityLabel={`${t('journalSetCoverA11y')} ${background.title}`}
+                      disabled={Boolean(assigningCoverJournalId)}
+                    >
+                      <Image source={background.source} style={styles.coverPickerPreview} resizeMode="cover" />
+                      <View style={styles.coverPickerTileShade} />
+                      <Text preset="caption" numberOfLines={1} style={styles.coverPickerTileTitle}>
+                        {background.title}
+                      </Text>
+                      {selected ? (
+                        <View style={[styles.coverPickerSelectedBadge, { backgroundColor: theme.colors.tint }]}>
+                          <Ionicons name="checkmark" size={14} color="#fff" />
+                        </View>
+                      ) : null}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -828,16 +842,22 @@ const styles = StyleSheet.create({
   emptyBody: { textAlign: 'center', lineHeight: 20 },
   emptyButton: { minHeight: 42, borderRadius: 10, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center', marginTop: 18 },
   modalOverlay: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
-  modalCard: { borderWidth: 1, borderRadius: 12, padding: 18 },
+  modalCard: { width: '100%', maxWidth: 456, alignSelf: 'center', borderWidth: 1, borderRadius: 12, padding: 18 },
   modalTitle: { marginBottom: 14 },
+  coverPickerCard: { maxHeight: '82%' },
   coverPickerHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   coverPickerClose: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  coverPickerGalleryButton: { minHeight: 44, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  coverPickerGalleryText: { fontWeight: '700' },
+  coverPickerScroll: { marginTop: 2 },
+  coverPickerScrollContent: { paddingBottom: 2 },
+  coverPickerGalleryButton: { minHeight: 48, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  coverPickerGalleryIcon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  coverPickerGalleryText: { flex: 1, fontWeight: '700' },
   coverPickerSectionLabel: { marginTop: 16, marginBottom: 8, fontWeight: '800' },
-  coverPickerGrid: { flexDirection: 'row', gap: 8 },
-  coverPickerOption: { flex: 1, aspectRatio: 1.2, borderWidth: 1, borderRadius: 8, overflow: 'hidden' },
+  coverPickerGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
+  coverPickerOption: { width: '48.5%', aspectRatio: 1.24, borderWidth: 1, borderRadius: 8, overflow: 'hidden' },
   coverPickerPreview: { width: '100%', height: '100%' },
+  coverPickerTileShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 34, backgroundColor: 'rgba(0, 0, 0, 0.38)' },
+  coverPickerTileTitle: { position: 'absolute', left: 9, right: 34, bottom: 8, color: '#fff', fontWeight: '800' },
   coverPickerSelectedBadge: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   modalInput: {
     height: 46,
