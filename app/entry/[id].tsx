@@ -624,7 +624,7 @@ export default function EntryDetailScreen() {
                   value={editContent}
                   onChangeText={setEditContent}
                   placeholder={t('entryEditContentPlaceholder')}
-                  minHeight={320}
+                  minHeight={260}
                   showToolbar={false}
                   accessibilityLabel={t('entryContentA11y')}
                 />
@@ -977,8 +977,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   belowBodyPickers: {
-    marginTop: 14,
-    paddingTop: 8,
+    marginTop: 8,
+    paddingTop: 0,
   },
   headerActions: { minWidth: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },

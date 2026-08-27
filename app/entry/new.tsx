@@ -534,7 +534,7 @@ export default function CreateEntryScreen() {
               value={content}
               onChangeText={setContent}
               placeholder={t('entryCreateContentPlaceholder')}
-              minHeight={320}
+              minHeight={260}
               showToolbar={false}
               accessibilityLabel={t('entryContentA11y')}
             />
@@ -768,8 +768,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   belowBodyPickers: {
-    marginTop: 14,
-    paddingTop: 8,
+    marginTop: 8,
+    paddingTop: 0,
   },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   floatingBar: {
