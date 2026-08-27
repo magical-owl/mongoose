@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, Keyboard, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, ImageBackground, Keyboard, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
@@ -29,6 +29,18 @@ const FEED_STICKER_ORIGIN_Y = 170;
 const FEED_STICKER_SIZE = 80;
 const FEED_PHOTO_WIDTH = 148;
 const FEED_PHOTO_MAX_HEIGHT = 190;
+
+function CoverPhotoPreview({ entry, style }: { readonly entry: DiaryEntry; readonly style: object }): React.JSX.Element | null {
+  if (!entry.coverPhoto) return null;
+  return (
+    <Image
+      source={{ uri: entry.coverPhoto.uri }}
+      style={[styles.coverPhoto, style]}
+      resizeMode="cover"
+      accessibilityIgnoresInvertColors
+    />
+  );
+}
 
 function getFeedStickerHeight(sticker: PlacedSticker): number {
   if (sticker.text !== undefined) return 54;
@@ -184,6 +196,34 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
   );
 
   if (mode === 'feed') {
+    const feedMetaContent = (
+      <View style={entry.coverPhoto ? styles.feedCoverMetaRow : styles.feedMetaRow}>
+        {hasMood && entry.manualMood ? (
+          <View style={[styles.feedMoodBadge, entry.coverPhoto && styles.feedCoverMoodBadge, { backgroundColor: entry.coverPhoto ? moodTone + '80' : moodTone + '18', borderColor: entry.coverPhoto ? moodTone + 'CC' : moodTone }]}>
+            <Text preset="caption" style={[styles.feedMoodBadgeText, { color: entry.coverPhoto ? '#fff' : moodTone }]} numberOfLines={1}>
+              {manualMoodLabel(entry.manualMood, t)}
+            </Text>
+          </View>
+        ) : null}
+        {entryTime ? <Text preset="caption" color={entry.coverPhoto ? undefined : 'textTertiary'} numberOfLines={1} style={[styles.feedTime, entry.coverPhoto && styles.feedCoverMetaText]}>{entryTime}</Text> : null}
+        {entry.tags.map((tag) => (
+          <Text key={tag} preset="caption" color={entry.coverPhoto ? undefined : 'textSecondary'} style={entry.coverPhoto ? styles.feedCoverMetaText : undefined}>
+            #{tag}
+          </Text>
+        ))}
+        {showReflectionSummaryAction ? (
+          <Text
+            preset="caption"
+            color={entry.coverPhoto ? undefined : 'tint'}
+            style={[styles.reflectionSummary, entry.coverPhoto && styles.feedCoverMetaText]}
+            onPress={() => onReflectionSummaryPress?.(entry.id)}
+          >
+            {reflectionSummaryLabel}
+          </Text>
+        ) : null}
+      </View>
+    );
+
     return (
       <View style={styles.feedCard}>
         <TouchableOpacity
@@ -196,41 +236,50 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
         >
           {entry.stickers.map((sticker) => <FeedStickerPreview key={sticker.id} sticker={sticker} />)}
           <View style={styles.feedTextLayer}>
-            <View style={styles.feedTitleRow}>
-              <Text
-                style={[
-                  styles.feedTitle,
-                  {
-                    color: theme.colors.text,
-                    fontSize: theme.fontSizes.xxxl,
-                    lineHeight: theme.fontSizes.xxxl * 1.25,
-                  },
-                ]}
+            {entry.coverPhoto ? (
+              <ImageBackground
+                source={{ uri: entry.coverPhoto.uri }}
+                style={styles.feedCoverHeader}
+                imageStyle={styles.feedCoverHeaderImage}
+                resizeMode="cover"
               >
-                {entry.title}
-              </Text>
-            </View>
-            <View style={styles.feedMetaRow}>
-              {hasMood && entry.manualMood ? (
-                <View style={[styles.feedMoodBadge, { backgroundColor: moodTone + '18', borderColor: moodTone }]}>
-                  <Text preset="caption" style={[styles.feedMoodBadgeText, { color: moodTone }]} numberOfLines={1}>
-                    {manualMoodLabel(entry.manualMood, t)}
+                <View style={styles.feedCoverScrim} />
+                <View style={styles.feedCoverContent}>
+                  <Text
+                    style={[
+                      styles.feedTitle,
+                      styles.feedCoverTitle,
+                      {
+                        fontSize: theme.fontSizes.xxxl,
+                        lineHeight: theme.fontSizes.xxxl * 1.25,
+                      },
+                    ]}
+                    numberOfLines={3}
+                  >
+                    {entry.title}
+                  </Text>
+                  {feedMetaContent}
+                </View>
+              </ImageBackground>
+            ) : (
+              <>
+                <View style={styles.feedTitleRow}>
+                  <Text
+                    style={[
+                      styles.feedTitle,
+                      {
+                        color: theme.colors.text,
+                        fontSize: theme.fontSizes.xxxl,
+                        lineHeight: theme.fontSizes.xxxl * 1.25,
+                      },
+                    ]}
+                  >
+                    {entry.title}
                   </Text>
                 </View>
-              ) : null}
-              {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.feedTime}>{entryTime}</Text> : null}
-              {entry.tags.map((tag) => <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>)}
-              {showReflectionSummaryAction ? (
-                <Text
-                  preset="caption"
-                  color="tint"
-                  style={styles.reflectionSummary}
-                  onPress={() => onReflectionSummaryPress?.(entry.id)}
-                >
-                  {reflectionSummaryLabel}
-                </Text>
-              ) : null}
-            </View>
+                {feedMetaContent}
+              </>
+            )}
             <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>{entry.content}</MarkdownText>
           </View>
         </TouchableOpacity>
@@ -256,12 +305,17 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
                 <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
               </View>
             </View>
-            <Text style={[styles.timelineContent, { color: theme.colors.textSecondary }]} numberOfLines={3}>{stripHtml(entry.content)}</Text>
-            {entry.tags.length > 0 && (
-              <View style={styles.timelineMetaRow}>
-                <Text preset="caption" color="textSecondary" numberOfLines={1} style={styles.timelineTags}>{entry.tags.map((tag) => `#${tag}`).join('  ')}</Text>
+            <View style={styles.timelinePreviewRow}>
+              <View style={styles.timelineTextPreview}>
+                <Text style={[styles.timelineContent, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
+                {entry.tags.length > 0 && (
+                  <View style={styles.timelineMetaRow}>
+                    <Text preset="caption" color="textSecondary" numberOfLines={1} style={styles.timelineTags}>{entry.tags.map((tag) => `#${tag}`).join('  ')}</Text>
+                  </View>
+                )}
               </View>
-            )}
+              <CoverPhotoPreview entry={entry} style={styles.timelineCoverPhoto} />
+            </View>
           </TouchableOpacity>
           {inlineReflectionSection}
         </View>
@@ -293,25 +347,30 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
           {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.cardTime}>{entryTime}</Text> : null}
           <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
         </View>
-        <Text style={[styles.content, { color: theme.colors.textSecondary }]} numberOfLines={3}>{stripHtml(entry.content)}</Text>
-        {entry.tags.length > 0 || showReflectionSummaryAction ? (
-          <View style={styles.cardFooter}>
-            {entry.tags.length > 0 ? (
-              <Text preset="caption" color="textSecondary" numberOfLines={1}>#{entry.tags.join(' #')}</Text>
-            ) : null}
-            {showReflectionSummaryAction ? (
-              <Text
-                preset="caption"
-                color="tint"
-                style={styles.reflectionSummary}
-                numberOfLines={1}
-                onPress={() => onReflectionSummaryPress?.(entry.id)}
-              >
-                {reflectionSummaryLabel}
-              </Text>
+        <View style={styles.cardPreviewRow}>
+          <View style={styles.cardTextPreview}>
+            <Text style={[styles.content, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
+            {entry.tags.length > 0 || showReflectionSummaryAction ? (
+              <View style={styles.cardFooter}>
+                {entry.tags.length > 0 ? (
+                  <Text preset="caption" color="textSecondary" numberOfLines={1}>#{entry.tags.join(' #')}</Text>
+                ) : null}
+                {showReflectionSummaryAction ? (
+                  <Text
+                    preset="caption"
+                    color="tint"
+                    style={styles.reflectionSummary}
+                    numberOfLines={1}
+                    onPress={() => onReflectionSummaryPress?.(entry.id)}
+                  >
+                    {reflectionSummaryLabel}
+                  </Text>
+                ) : null}
+              </View>
             ) : null}
           </View>
-        ) : null}
+          <CoverPhotoPreview entry={entry} style={styles.cardCoverPhoto} />
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -330,6 +389,10 @@ const styles = StyleSheet.create({
   compactMoodBadge: { maxWidth: 86, minHeight: 16, borderWidth: 1, borderRadius: 8, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
   compactMoodBadgeText: { fontSize: 11, lineHeight: 14, fontWeight: '700' },
   content: { fontSize: 16, lineHeight: 22 },
+  coverPhoto: { backgroundColor: '#000' },
+  cardPreviewRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  cardTextPreview: { flex: 1, minWidth: 0 },
+  cardCoverPhoto: { width: 58, height: 58, borderRadius: 6 },
   cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   reflectionSummary: { flexShrink: 0, fontWeight: '700' },
   feedCard: { padding: 16, marginBottom: 14 },
@@ -342,7 +405,15 @@ const styles = StyleSheet.create({
   feedStickerEmoji: { fontSize: 48, lineHeight: 60, includeFontPadding: true, textAlign: 'center' },
   feedTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 10 },
   feedTitle: { flex: 1, fontWeight: '700' },
+  feedCoverHeader: { minHeight: 168, justifyContent: 'flex-end', marginBottom: 12, overflow: 'hidden' },
+  feedCoverHeaderImage: { borderRadius: 8 },
+  feedCoverScrim: { ...StyleSheet.absoluteFill, borderRadius: 8, backgroundColor: 'rgba(0, 0, 0, 0.34)' },
+  feedCoverContent: { paddingHorizontal: 14, paddingTop: 42, paddingBottom: 12 },
+  feedCoverTitle: { color: '#fff', marginBottom: 10 },
+  feedCoverMetaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  feedCoverMetaText: { color: '#fff', fontWeight: '700' },
   feedMoodBadge: { maxWidth: 86, minHeight: 16, borderWidth: 1, borderRadius: 8, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
+  feedCoverMoodBadge: { backgroundColor: 'rgba(0, 0, 0, 0.42)' },
   feedMoodBadgeText: { fontSize: 11, lineHeight: 14, fontWeight: '700' },
   feedTime: { flexShrink: 0, fontSize: 11, lineHeight: 14 },
   feedContent: { fontSize: 16, lineHeight: 24 },
@@ -354,6 +425,9 @@ const styles = StyleSheet.create({
   timelineTitle: { ...diaryEntryListTitle, flex: 1 },
   timelineTime: { flexShrink: 0, fontSize: 11, lineHeight: 14 },
   timelineActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  timelinePreviewRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  timelineTextPreview: { flex: 1, minWidth: 0 },
+  timelineCoverPhoto: { width: 62, height: 48, borderRadius: 6 },
   timelineContent: { fontSize: 14, lineHeight: 20, marginBottom: 5 },
   timelineMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   timelineTags: { flex: 1 },
