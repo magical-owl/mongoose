@@ -10,6 +10,7 @@ export interface DiaryDraft {
   readonly date: string;
   readonly companion: CompanionType;
   readonly stickers: PlacedSticker[];
+  readonly coverPhoto?: DiaryPhoto;
   readonly photos: DiaryPhoto[];
   readonly tags: string[];
   readonly manualMoodWeather: ManualMoodWeather;

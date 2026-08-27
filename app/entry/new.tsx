@@ -11,6 +11,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
+  Animated,
   ScrollView,
   Alert,
   TouchableOpacity,
@@ -32,7 +33,7 @@ import { RichTextEditor, type RichTextEditorHandle } from '@shared/components/Ri
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { useAppStore } from '@/stores/useAppStore';
-import { DiaryEntry, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
+import { DiaryEntry, DiaryPhoto, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { StickerPickerModal } from '@/features/diary/components/StickerPickerModal';
@@ -46,6 +47,7 @@ import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSelector';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
+import { DiaryCoverPhotoPicker } from '@/features/diary/components/DiaryCoverPhotoPicker';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
@@ -97,6 +99,7 @@ export default function CreateEntryScreen() {
   const editorRef = useRef<RichTextEditorHandle>(null);
   const isHydratingDraft = useRef(true);
   const scrollOffsetYRef = useRef(0);
+  const coverScrollY = useRef(new Animated.Value(0)).current;
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -109,6 +112,7 @@ export default function CreateEntryScreen() {
     return new Date();
   });
   const [stickers, setStickers] = useState<PlacedSticker[]>([]);
+  const [coverPhoto, setCoverPhoto] = useState<DiaryPhoto | undefined>();
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showFormattingTools, setShowFormattingTools] = useState(false);
@@ -130,6 +134,7 @@ export default function CreateEntryScreen() {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isStickerDragging, setIsStickerDragging] = useState(false);
   const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
+  const [scrollContentHeight, setScrollContentHeight] = useState(0);
   const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
@@ -141,6 +146,7 @@ export default function CreateEntryScreen() {
       }
       setTitle(draft.title);
       setContent(draft.content);
+      setCoverPhoto(draft.coverPhoto);
       setStickers([...draft.stickers, ...draft.photos.map((photo, index) => createPlacedPhotoSticker(photo, draft.stickers.length + index))]);
       setSelectedTags(normalizeDiaryTags(draft.tags));
       setManualMoodWeather(draft.manualMoodWeather);
@@ -173,6 +179,7 @@ export default function CreateEntryScreen() {
         date: isoDate,
         companion: DEFAULT_COMPANION,
         stickers,
+        coverPhoto,
         photos: [],
         tags: selectedTags,
         manualMood, manualMoodWeather, writingMode,
@@ -182,7 +189,7 @@ export default function CreateEntryScreen() {
       });
     }, 700);
     return () => clearTimeout(timer);
-  }, [title, content, isoDate, stickers, selectedTags, manualMood, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
+  }, [title, content, isoDate, stickers, coverPhoto, selectedTags, manualMood, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = content
@@ -219,8 +226,25 @@ export default function CreateEntryScreen() {
   }, [scrollViewportHeight, theme.spacing.lg, windowWidth]);
 
   const handleEditorScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollOffsetYRef.current = event.nativeEvent.contentOffset.y;
-  }, []);
+    const nextScrollY = event.nativeEvent.contentOffset.y;
+    const hasScrollableContent = scrollContentHeight > scrollViewportHeight + 24;
+    if (!hasScrollableContent && nextScrollY > -8) return;
+    scrollOffsetYRef.current = nextScrollY;
+    coverScrollY.setValue(nextScrollY);
+  }, [coverScrollY, scrollContentHeight, scrollViewportHeight]);
+
+  const handleEditorScrollBeginDrag = useCallback(() => {
+    editorRef.current?.dismissKeyboard();
+    Keyboard.dismiss();
+    const hasScrollableContent = scrollContentHeight > scrollViewportHeight + 24;
+    if (!hasScrollableContent) {
+      Animated.timing(coverScrollY, {
+        toValue: 120,
+        duration: 160,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [coverScrollY, scrollContentHeight, scrollViewportHeight]);
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
     const position = getVisibleStickerPosition(stickers.length);
@@ -293,6 +317,28 @@ export default function CreateEntryScreen() {
     }
   }, [getVisibleStickerPosition, t]);
 
+  const handleCoverPhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
+    const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhotos();
+    if (!result.success) {
+      if (result.error === 'native-module-missing') {
+        Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
+      } else if (result.error === 'camera-permission-denied') {
+        Alert.alert(t('entryPhotoPermissionTitle'), t('entryCameraPermissionMessage'));
+      } else {
+        Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage'));
+      }
+      return;
+    }
+    const [asset] = result.assets;
+    if (!asset) return;
+    try {
+      const imported = await diaryPhotoService.importAsset(asset);
+      setCoverPhoto(imported);
+    } catch {
+      Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
+    }
+  }, [t]);
+
   const dismissEntryKeyboard = useCallback(() => {
     editorRef.current?.dismissKeyboard();
     Keyboard.dismiss();
@@ -321,6 +367,7 @@ export default function CreateEntryScreen() {
       date: isoDate,
       paperBackgroundId: 'vintage-parchment',
       stickers,
+      coverPhoto,
       photos: [],
       companion: DEFAULT_COMPANION,
       isFavorite,
@@ -403,15 +450,6 @@ export default function CreateEntryScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => setShowEntryDetails(true)}
-            style={styles.headerBtn}
-            accessibilityRole="button"
-            accessibilityLabel={t('entryDetailsA11y')}
-          >
-            <MaterialCommunityIcons name="information-outline" size={21} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
             onPress={handleSave}
             disabled={isSaving}
             style={styles.headerBtn}
@@ -421,6 +459,16 @@ export default function CreateEntryScreen() {
             <MaterialCommunityIcons name="content-save-outline" size={22} color={isSaving ? theme.colors.textSecondary : theme.colors.tint} />
           </TouchableOpacity>
         </View>
+      </View>
+
+      <View style={[styles.coverHeader, { backgroundColor: theme.colors.background }]}>
+        <DiaryCoverPhotoPicker
+          photo={coverPhoto}
+          onTakePhoto={() => handleCoverPhotoPickerResult('camera')}
+          onChoosePhoto={() => handleCoverPhotoPickerResult('library')}
+          onRemovePhoto={() => setCoverPhoto(undefined)}
+          scrollY={coverScrollY}
+        />
       </View>
 
       {/* ── Journal body ─────────────────────────────────────────────────── */}
@@ -433,6 +481,7 @@ export default function CreateEntryScreen() {
           style={{ flex: 1 }}
           scrollEnabled={!isStickerDragging}
           onLayout={(event) => setScrollViewportHeight(event.nativeEvent.layout.height)}
+          onContentSizeChange={(_width, height) => setScrollContentHeight(height)}
           contentContainerStyle={[
             styles.scrollContent,
             {
@@ -443,7 +492,7 @@ export default function CreateEntryScreen() {
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           keyboardShouldPersistTaps="handled"
           onScroll={handleEditorScroll}
-          onScrollBeginDrag={dismissEntryKeyboard}
+          onScrollBeginDrag={handleEditorScrollBeginDrag}
           scrollEventThrottle={16}
           onStartShouldSetResponderCapture={() => {
             dismissEntryKeyboard();
@@ -682,8 +731,14 @@ const styles = StyleSheet.create({
   },
   headerBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
   headerActions: { minWidth: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
+  coverHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    zIndex: 3,
+    elevation: 3,
+  },
   scrollContent: {
-    paddingTop: 6,
+    paddingTop: 2,
     flexGrow: 1,
     position: 'relative',
   },

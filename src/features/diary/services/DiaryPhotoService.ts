@@ -32,6 +32,7 @@ export class DiaryPhotoService implements IDiaryPhotoCleanupService {
 
   public async deleteEntryPhotos(entry: DiaryEntry): Promise<void> {
     const uris = new Set<string>();
+    if (entry.coverPhoto) uris.add(entry.coverPhoto.uri);
     entry.photos.forEach((photo) => uris.add(photo.uri));
     entry.stickers.forEach((sticker) => {
       if (sticker.imageUri) uris.add(sticker.imageUri);

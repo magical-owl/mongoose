@@ -105,6 +105,7 @@ export const DiaryEntrySchema = z.object({
   chapterId: z.string().uuid().optional(),
   collectionIds: z.array(z.string().uuid()).default([]),
   journalIds: z.array(z.string().uuid()).default([]),
+  coverPhoto: DiaryPhotoSchema.optional(),
   photos: z.array(DiaryPhotoSchema).default([]),
   reflections: z.array(DiaryReflectionSchema).default([]),
 });

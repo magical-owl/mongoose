@@ -16,6 +16,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
+  Animated,
   ScrollView,
   Alert,
   TouchableOpacity,
@@ -38,7 +39,7 @@ import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { RichTextEditor, type RichTextEditorHandle } from '@shared/components/RichTextEditor';
 import { MarkdownText } from '@shared/components/MarkdownText';
-import { DiaryEntry, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
+import { DiaryEntry, DiaryPhoto, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
 import type { CompanionType } from '@/features/diary/domain/Companion';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
@@ -52,6 +53,7 @@ import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSelector';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
+import { DiaryCoverPhotoPicker } from '@/features/diary/components/DiaryCoverPhotoPicker';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
@@ -105,6 +107,7 @@ export default function EntryDetailScreen() {
   const timeFormat = useAppStore((state) => state.timeFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const scrollOffsetYRef = useRef(0);
+  const coverScrollY = useRef(new Animated.Value(0)).current;
 
   const [entry, setEntry] = useState<DiaryEntry | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -112,6 +115,7 @@ export default function EntryDetailScreen() {
   const [editContent, setEditContent] = useState('');
   const [editDate, setEditDate] = useState(new Date());
   const [editStickers, setEditStickers] = useState<PlacedSticker[]>([]);
+  const [editCoverPhoto, setEditCoverPhoto] = useState<DiaryPhoto | undefined>();
   const [editMoodWeather, setEditMoodWeather] = useState<ManualMoodWeather>('neutral');
   const [editMood, setEditMood] = useState<ManualMood>('neutral');
   const [editWritingMode, setEditWritingMode] = useState<WritingMode>('free-write');
@@ -138,6 +142,7 @@ export default function EntryDetailScreen() {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isStickerDragging, setIsStickerDragging] = useState(false);
   const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
+  const [scrollContentHeight, setScrollContentHeight] = useState(0);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = editContent
@@ -166,6 +171,7 @@ export default function EntryDetailScreen() {
         setEditTitle(found.title);
         setEditContent(found.content);
         setEditDate(entryDate(found.date));
+        setEditCoverPhoto(found.coverPhoto);
         setEditStickers([...found.stickers, ...found.photos.map((photo, index) => createPlacedPhotoSticker(photo, found.stickers.length + index))]);
         setEditCompanion(found.companion);
         setEditFavorite(found.isFavorite);
@@ -187,6 +193,7 @@ export default function EntryDetailScreen() {
     setEditTitle(entry.title);
     setEditContent(entry.content);
     setEditDate(entryDate(entry.date));
+    setEditCoverPhoto(entry.coverPhoto);
     setEditStickers([...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))]);
     setEditCompanion(entry.companion);
     setEditFavorite(entry.isFavorite);
@@ -201,6 +208,7 @@ export default function EntryDetailScreen() {
     setEditTitle(entry.title);
     setEditContent(entry.content);
     setEditDate(entryDate(entry.date));
+    setEditCoverPhoto(entry.coverPhoto);
     setEditStickers([...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))]);
     setEditCompanion(entry.companion);
     setEditFavorite(entry.isFavorite);
@@ -220,6 +228,7 @@ export default function EntryDetailScreen() {
       content: editContent.trim(),
       date: `${editDate.getFullYear()}-${String(editDate.getMonth() + 1).padStart(2, '0')}-${String(editDate.getDate()).padStart(2, '0')}`,
       stickers: editStickers,
+      coverPhoto: editCoverPhoto,
       photos: [],
       companion: editCompanion,
       isFavorite: editFavorite,
@@ -253,8 +262,25 @@ export default function EntryDetailScreen() {
   }, [scrollViewportHeight, theme.spacing.lg, windowWidth]);
 
   const handleEditorScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollOffsetYRef.current = event.nativeEvent.contentOffset.y;
-  }, []);
+    const nextScrollY = event.nativeEvent.contentOffset.y;
+    const hasScrollableContent = scrollContentHeight > scrollViewportHeight + 24;
+    if (!hasScrollableContent && nextScrollY > -8) return;
+    scrollOffsetYRef.current = nextScrollY;
+    coverScrollY.setValue(nextScrollY);
+  }, [coverScrollY, scrollContentHeight, scrollViewportHeight]);
+
+  const handleEditorScrollBeginDrag = useCallback(() => {
+    editorRef.current?.dismissKeyboard();
+    Keyboard.dismiss();
+    const hasScrollableContent = scrollContentHeight > scrollViewportHeight + 24;
+    if (!hasScrollableContent) {
+      Animated.timing(coverScrollY, {
+        toValue: 120,
+        duration: 160,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [coverScrollY, scrollContentHeight, scrollViewportHeight]);
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
     const position = getVisibleStickerPosition(editStickers.length);
@@ -326,6 +352,28 @@ export default function EntryDetailScreen() {
       Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
     }
   }, [getVisibleStickerPosition, t]);
+
+  const handleCoverPhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
+    const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhotos();
+    if (!result.success) {
+      if (result.error === 'native-module-missing') {
+        Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
+      } else if (result.error === 'camera-permission-denied') {
+        Alert.alert(t('entryPhotoPermissionTitle'), t('entryCameraPermissionMessage'));
+      } else {
+        Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage'));
+      }
+      return;
+    }
+    const [asset] = result.assets;
+    if (!asset) return;
+    try {
+      const imported = await diaryPhotoService.importAsset(asset);
+      setEditCoverPhoto(imported);
+    } catch {
+      Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
+    }
+  }, [t]);
 
   const dismissEntryKeyboard = useCallback(() => {
     editorRef.current?.dismissKeyboard();
@@ -401,6 +449,27 @@ export default function EntryDetailScreen() {
   const foregroundDisplayStickers = displayStickers.filter((sticker) => !sticker.behindText);
   const wordCount = countWords(isEditing ? editContent : entry.content);
   const moodTone = getManualMoodColor(entry.manualMood, theme.colors);
+  const hasViewCoverPhoto = Boolean(entry.coverPhoto);
+  const viewMoodAndTags = (
+    <View style={hasViewCoverPhoto ? styles.coverMetaOverlay : styles.entryMetaRow}>
+      {entry.manualMood ? (
+        <View style={[styles.moodBadge, hasViewCoverPhoto && styles.coverMoodBadge, { backgroundColor: moodTone + (hasViewCoverPhoto ? '80' : '18'), borderColor: moodTone + (hasViewCoverPhoto ? 'CC' : '') }]}>
+          <Text preset="caption" style={[styles.moodBadgeText, { color: hasViewCoverPhoto ? '#fff' : moodTone }]}>
+            {manualMoodLabel(entry.manualMood, t)}
+          </Text>
+        </View>
+      ) : null}
+      <View style={hasViewCoverPhoto ? styles.coverTagRow : styles.tagRow}>
+        {entry.tags.map((tag) => (
+          <View key={tag} style={hasViewCoverPhoto ? styles.coverTagBadge : undefined}>
+            <Text preset="caption" color={hasViewCoverPhoto ? undefined : 'textSecondary'} style={hasViewCoverPhoto ? styles.coverTagText : undefined}>
+              #{tag}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
 
   const TOOLBAR_H = 56;
 
@@ -438,9 +507,6 @@ export default function EntryDetailScreen() {
               <TouchableOpacity onPress={() => setEditFavorite((current) => !current)} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={editFavorite ? t('entryRemoveFavoriteA11y') : t('entryAddFavoriteA11y')}>
                 <MaterialCommunityIcons name={editFavorite ? 'star' : 'star-outline'} size={21} color={theme.colors.warning} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowEntryDetails(true)} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryDetailsA11y')}>
-                <MaterialCommunityIcons name="information-outline" size={21} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
               <TouchableOpacity onPress={handleSaveEdit} disabled={isSaving} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entrySaveChangesA11y')}>
                 <MaterialCommunityIcons name="content-save-outline" size={22} color={isSaving ? theme.colors.textSecondary : theme.colors.tint} />
               </TouchableOpacity>
@@ -465,6 +531,17 @@ export default function EntryDetailScreen() {
       </View>
 
 
+      {isEditing ? (
+        <View style={[styles.coverHeader, { backgroundColor: theme.colors.background }]}>
+          <DiaryCoverPhotoPicker
+            photo={editCoverPhoto}
+            onTakePhoto={() => handleCoverPhotoPickerResult('camera')}
+            onChoosePhoto={() => handleCoverPhotoPickerResult('library')}
+            onRemovePhoto={() => setEditCoverPhoto(undefined)}
+            scrollY={coverScrollY}
+          />
+        </View>
+      ) : null}
 
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
@@ -477,6 +554,7 @@ export default function EntryDetailScreen() {
           style={{ flex: 1 }}
           scrollEnabled={!isStickerDragging}
           onLayout={(event) => setScrollViewportHeight(event.nativeEvent.layout.height)}
+          onContentSizeChange={(_width, height) => setScrollContentHeight(height)}
           contentContainerStyle={[
             styles.scrollContent,
             {
@@ -488,7 +566,7 @@ export default function EntryDetailScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           onScroll={handleEditorScroll}
-          onScrollBeginDrag={dismissEntryKeyboard}
+          onScrollBeginDrag={handleEditorScrollBeginDrag}
           scrollEventThrottle={16}
           onStartShouldSetResponderCapture={() => {
             dismissEntryKeyboard();
@@ -547,6 +625,11 @@ export default function EntryDetailScreen() {
             ) : (
               /* ── View mode ──────────────────────────────────────────────── */
               <>
+                <View style={styles.viewCoverWrap}>
+                  <DiaryCoverPhotoPicker photo={entry.coverPhoto} editable={false}>
+                    {viewMoodAndTags}
+                  </DiaryCoverPhotoPicker>
+                </View>
                 <Text
                   preset="caption"
                   color="textSecondary"
@@ -565,18 +648,7 @@ export default function EntryDetailScreen() {
                 >
                   {entry.title}
                 </Text>
-                <View style={styles.entryMetaRow}>
-                  {entry.manualMood ? (
-                    <View style={[styles.moodBadge, { backgroundColor: moodTone + '18', borderColor: moodTone }]}>
-                      <Text preset="caption" style={[styles.moodBadgeText, { color: moodTone }]}>
-                        {manualMoodLabel(entry.manualMood, t)}
-                      </Text>
-                    </View>
-                  ) : null}
-                  <View style={styles.tagRow}>
-                    {entry.tags.map((tag) => <Text key={tag} preset="caption" color="textSecondary">#{tag}</Text>)}
-                  </View>
-                </View>
+                {hasViewCoverPhoto ? null : viewMoodAndTags}
                 <MarkdownText style={{ lineHeight: 26 }}>
                   {entry.content}
                 </MarkdownText>
@@ -849,8 +921,14 @@ const styles = StyleSheet.create({
   },
   headerBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
   headerDateSpacer: { flex: 1 },
+  coverHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    zIndex: 3,
+    elevation: 3,
+  },
   scrollContent: {
-    paddingTop: 6,
+    paddingTop: 2,
     flexGrow: 1,
     position: 'relative',
   },
@@ -858,6 +936,9 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 2,
     elevation: 2,
+  },
+  viewCoverWrap: {
+    marginTop: 8,
   },
   titleInput: {
     fontSize: 26,
@@ -879,6 +960,39 @@ const styles = StyleSheet.create({
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   tag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
   entryMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  coverMetaOverlay: {
+    position: 'absolute',
+    left: 10,
+    right: 10,
+    bottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  coverMoodBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  coverTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    flex: 1,
+  },
+  coverTagBadge: {
+    borderRadius: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.42)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.28)',
+  },
+  coverTagText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
   moodBadge: {
     borderWidth: 1,
     borderRadius: 14,
