@@ -679,7 +679,7 @@ export default function CreateEntryScreen() {
             accessibilityLabel={t('entryChooseTemplateA11y')}
           />
 
-          <View style={[diaryEntryEditorChromeStyles.toolbarGroup, { backgroundColor: theme.colors.background, borderColor: theme.colors.borderLight }]}>
+          <View style={diaryEntryEditorChromeStyles.toolbarPlainGroup}>
             <IconCircleButton
               icon="camera-outline"
               size="sm"
@@ -697,7 +697,7 @@ export default function CreateEntryScreen() {
             />
           </View>
 
-          <View style={[diaryEntryEditorChromeStyles.toolbarGroup, { backgroundColor: theme.colors.background, borderColor: theme.colors.borderLight }]}>
+          <View style={diaryEntryEditorChromeStyles.toolbarPlainGroup}>
             <IconCircleButton
               icon="format-textbox"
               size="sm"

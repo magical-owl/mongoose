@@ -17,6 +17,7 @@ import { Text } from '@shared/components/Text';
 import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { useDiary } from '@/features/diary/hooks/useDiary';
+import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { useAppStore } from '@/stores/useAppStore';
 import { DiaryTimelineList } from '@/features/diary/components/DiaryTimelineList';
 import { appLockService } from '@/services/AppLockService';
@@ -37,6 +38,7 @@ export default function CalendarScreen() {
   const t = useTranslation();
   const { height: windowHeight } = useWindowDimensions();
   const { entries, isLoading, refresh } = useDiary();
+  const { profile } = useProfileForm();
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const calendarFirstDay = useAppStore((state) => state.calendarFirstDay);
@@ -303,6 +305,7 @@ export default function CalendarScreen() {
             <DiaryTimelineList
               groupedEntries={selectedDayGroupedEntries}
               mode="timeline"
+              profile={profile}
               calendarDateFormat={calendarDateFormat}
               entryHierarchyMode="date"
               collapsible={false}

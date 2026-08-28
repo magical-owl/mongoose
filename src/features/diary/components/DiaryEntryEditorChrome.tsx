@@ -98,6 +98,11 @@ export const diaryEntryEditorChromeStyles = StyleSheet.create({
   toolbarGroup: {
     ...insetFloatingToolbarStyles.group,
   },
+  toolbarPlainGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   toolbarDivider: {
     ...insetFloatingToolbarStyles.divider,
   },

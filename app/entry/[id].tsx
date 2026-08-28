@@ -903,7 +903,7 @@ export default function EntryDetailScreen() {
               onPress={() => setShowTemplatePicker(true)}
               accessibilityLabel={t('entryChooseTemplateA11y')}
             />
-            <View style={[diaryEntryEditorChromeStyles.toolbarGroup, { backgroundColor: theme.colors.background, borderColor: theme.colors.borderLight }]}>
+            <View style={diaryEntryEditorChromeStyles.toolbarPlainGroup}>
               <IconCircleButton
                 icon="camera-outline"
                 size="sm"
@@ -919,7 +919,7 @@ export default function EntryDetailScreen() {
                 accessibilityLabel={t('entryChoosePhotoA11y')}
               />
             </View>
-            <View style={[diaryEntryEditorChromeStyles.toolbarGroup, { backgroundColor: theme.colors.background, borderColor: theme.colors.borderLight }]}>
+            <View style={diaryEntryEditorChromeStyles.toolbarPlainGroup}>
               <IconCircleButton
                 icon="format-textbox"
                 size="sm"

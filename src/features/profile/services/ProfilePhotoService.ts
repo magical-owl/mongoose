@@ -4,6 +4,8 @@ import { generateUUID } from '@/shared/utils/uuid';
 
 const PROFILE_PHOTO_DIRECTORY_NAME = 'profile-photos';
 const PROFILE_PHOTO_DIRECTORY_MARKER = `/${PROFILE_PHOTO_DIRECTORY_NAME}/`;
+const LEGACY_DIARY_PHOTO_DIRECTORY_NAME = 'diary-photos';
+const LEGACY_DIARY_PHOTO_DIRECTORY_MARKER = `/${LEGACY_DIARY_PHOTO_DIRECTORY_NAME}/`;
 
 export class ProfilePhotoService {
   public async importAsset(asset: ImagePickerAsset): Promise<string> {
@@ -18,18 +20,26 @@ export class ProfilePhotoService {
   }
 }
 
-function getImportedProfilePhotoFilename(uri: string): string | null {
-  const markerIndex = uri.lastIndexOf(PROFILE_PHOTO_DIRECTORY_MARKER);
+function getImportedProfilePhotoFilename(uri: string, marker: string): string | null {
+  const markerIndex = uri.lastIndexOf(marker);
   if (markerIndex < 0) return null;
-  const filename = uri.slice(markerIndex + PROFILE_PHOTO_DIRECTORY_MARKER.length);
+  const filename = uri.slice(markerIndex + marker.length);
   if (!filename || filename.includes('/')) return null;
   return filename;
 }
 
 export function resolveImportedProfilePhotoUri(uri: string): string {
-  const filename = getImportedProfilePhotoFilename(uri);
-  if (!filename) return uri;
-  return new File(new Directory(Paths.document, PROFILE_PHOTO_DIRECTORY_NAME), filename).uri;
+  const profilePhotoFilename = getImportedProfilePhotoFilename(uri, PROFILE_PHOTO_DIRECTORY_MARKER);
+  if (profilePhotoFilename) {
+    return new File(new Directory(Paths.document, PROFILE_PHOTO_DIRECTORY_NAME), profilePhotoFilename).uri;
+  }
+
+  const legacyDiaryPhotoFilename = getImportedProfilePhotoFilename(uri, LEGACY_DIARY_PHOTO_DIRECTORY_MARKER);
+  if (legacyDiaryPhotoFilename) {
+    return new File(new Directory(Paths.document, LEGACY_DIARY_PHOTO_DIRECTORY_NAME), legacyDiaryPhotoFilename).uri;
+  }
+
+  return uri;
 }
 
 function getProfilePhotoExtension(asset: ImagePickerAsset): string {
