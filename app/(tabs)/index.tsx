@@ -5,6 +5,9 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
+import { AccentPillButton } from '@shared/components/AccentPillButton';
+import { IconCircleButton } from '@shared/components/IconCircleButton';
+import { SectionLabel } from '@shared/components/SectionLabel';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { isDiaryEntryVisible } from '@/features/diary/services/DiaryEntryVisibility';
@@ -53,11 +56,11 @@ function getNextJournalColumnCount(count: JournalColumnCount): JournalColumnCoun
   return 1;
 }
 
-function getJournalLayoutIcon(count: JournalColumnCount): React.ComponentProps<typeof Ionicons>['name'] {
+function getJournalLayoutMaterialIcon(count: JournalColumnCount): React.ComponentProps<typeof IconCircleButton>['icon'] {
   if (count === 1) return 'square-outline';
-  if (count === 2) return 'grid-outline';
-  if (count === 3) return 'apps-outline';
-  return 'keypad-outline';
+  if (count === 2) return 'view-grid-outline';
+  if (count === 3) return 'apps';
+  return 'dialpad';
 }
 
 function isSyntheticJournalId(journalId: string): journalId is SyntheticJournalId {
@@ -386,18 +389,19 @@ export default function JournalsScreen(): React.JSX.Element {
     const isOpen = openJournalOptionsId === journal.id;
     return (
       <View style={styles.journalOptionsWrap}>
-        <TouchableOpacity
+        <IconCircleButton
+          icon="dots-horizontal"
           onPress={(event) => {
             event.stopPropagation();
             setOpenJournalOptionsId((current) => current === journal.id ? null : journal.id);
           }}
-          style={[styles.journalOptionsButton, isOpen && { backgroundColor: theme.colors.tint }]}
-          accessibilityRole="button"
           accessibilityLabel={t('journalOptionsA11y')}
           accessibilityState={{ expanded: isOpen }}
-        >
-          <Ionicons name="ellipsis-horizontal" size={19} color="#fff" />
-        </TouchableOpacity>
+          active={isOpen}
+          size="sm"
+          surface="overlay"
+          iconSize={19}
+        />
         {isOpen ? (
           <View style={[styles.journalOptionsMenu, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
             <TouchableOpacity
@@ -479,48 +483,41 @@ export default function JournalsScreen(): React.JSX.Element {
               accessibilityLabel={t('homeHeaderSearch')}
             />
             {journalSearchQuery ? (
-              <TouchableOpacity
+              <IconCircleButton
+                icon="close-circle"
+                size="sm"
+                surface="transparent"
                 onPress={() => setJournalSearchQuery('')}
-                style={styles.headerSearchClear}
-                accessibilityRole="button"
                 accessibilityLabel={t('homeHeaderCloseSearch')}
-              >
-                <Ionicons name="close-circle" size={18} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
+                iconSize={18}
+              />
             ) : null}
           </View>
           <View style={styles.headerActions}>
-            <TouchableOpacity
+            <IconCircleButton
+              icon={getJournalLayoutMaterialIcon(journalColumnCount)}
               onPress={() => {
                 setOpenJournalOptionsId(null);
                 setJournalColumnCount(getNextJournalColumnCount(journalColumnCount));
               }}
-              style={styles.headerIconButton}
-              accessibilityRole="button"
               accessibilityLabel={`${t('journalLayoutA11y')}: ${journalColumnOptions.find((option) => option.count === journalColumnCount)?.label ?? '6 6'}`}
-            >
-              <Ionicons name={getJournalLayoutIcon(journalColumnCount)} size={22} color={theme.colors.text} />
-            </TouchableOpacity>
-            <TouchableOpacity
+              iconSize={22}
+            />
+            <IconCircleButton
+              icon={showPermanentJournals ? 'book-multiple-outline' : 'book-multiple'}
               onPress={() => setShowPermanentJournals(!showPermanentJournals)}
-              style={[
-                styles.headerIconButton,
-                showPermanentJournals && { backgroundColor: theme.colors.tint + '18' },
-              ]}
-              accessibilityRole="switch"
               accessibilityLabel={t('journalTogglePermanentGroupsA11y')}
+              accessibilityRole="switch"
               accessibilityState={{ checked: showPermanentJournals }}
-            >
-              <Ionicons name={showPermanentJournals ? 'albums-outline' : 'albums'} size={23} color={showPermanentJournals ? theme.colors.tint : theme.colors.text} />
-            </TouchableOpacity>
-            <TouchableOpacity
+              active={showPermanentJournals}
+              iconSize={23}
+            />
+            <IconCircleButton
+              icon="plus"
               onPress={() => setShowCreateModal(true)}
-              style={styles.headerIconButton}
-              accessibilityRole="button"
               accessibilityLabel={t('journalCreateA11y')}
-            >
-              <Ionicons name="add-outline" size={24} color={theme.colors.text} />
-            </TouchableOpacity>
+              iconSize={24}
+            />
           </View>
         </View>
       </View>
@@ -531,9 +528,7 @@ export default function JournalsScreen(): React.JSX.Element {
             <Ionicons name="journal-outline" size={34} color={theme.colors.tint} />
             <Text preset="label" color="text" style={styles.emptyTitle}>{t('journalsEmptyTitle')}</Text>
             <Text preset="bodySmall" color="textSecondary" style={styles.emptyBody}>{t('journalsEmptyMessage')}</Text>
-            <TouchableOpacity onPress={() => setShowCreateModal(true)} style={[styles.emptyButton, { backgroundColor: theme.colors.tint }]} accessibilityRole="button">
-              <Text preset="label" style={{ color: theme.isDark ? theme.colors.background : theme.colors.card }}>{t('journalCreate')}</Text>
-            </TouchableOpacity>
+            <AccentPillButton label={t('journalCreate')} onPress={() => setShowCreateModal(true)} style={styles.emptyButton} />
           </View>
         ) : filteredJournalItems.length === 0 ? (
           <View style={[styles.emptyState, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
@@ -560,6 +555,7 @@ export default function JournalsScreen(): React.JSX.Element {
                       styles.journalCoverCountLabel,
                       compactJournalCover && styles.journalCoverCountLabelCompact,
                       denseJournalCover && styles.journalCoverCountLabelDense,
+                      { color: theme.colors.stickerControlText },
                     ]}
                   >
                     {denseJournalCover ? journal.count : `${journal.count} ${journalEntryLabelText(journal.count)}`}
@@ -641,14 +637,12 @@ export default function JournalsScreen(): React.JSX.Element {
           <View style={[styles.modalCard, styles.coverPickerCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
             <View style={styles.coverPickerHeader}>
               <Text preset="h2" color="text" style={styles.modalTitle}>{t('journalSetCover')}</Text>
-              <TouchableOpacity
+              <IconCircleButton
+                icon="close"
+                size="sm"
                 onPress={() => setCoverPickerJournal(null)}
-                style={styles.coverPickerClose}
-                accessibilityRole="button"
                 accessibilityLabel={t('modalCloseA11y')}
-              >
-                <Ionicons name="close" size={22} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
+              />
             </View>
             <ScrollView
               style={styles.coverPickerScroll}
@@ -668,7 +662,7 @@ export default function JournalsScreen(): React.JSX.Element {
                 <Text preset="label" color="text" style={styles.coverPickerGalleryText}>{t('journalSetCoverFromGallery')}</Text>
                 <Ionicons name="chevron-forward" size={17} color={theme.colors.textSecondary} />
               </TouchableOpacity>
-              <Text preset="caption" color="textSecondary" style={styles.coverPickerSectionLabel}>{t('journalAppBackgrounds')}</Text>
+              <SectionLabel style={styles.coverPickerSectionLabel}>{t('journalAppBackgrounds')}</SectionLabel>
               <View style={styles.coverPickerGrid}>
                 {BUILTIN_JOURNAL_BACKGROUNDS.map((background) => {
                   const selected = coverPickerJournal?.coverImageUri === background.uri;
@@ -690,12 +684,12 @@ export default function JournalsScreen(): React.JSX.Element {
                     >
                       <Image source={background.source} style={styles.coverPickerPreview} resizeMode="cover" />
                       <View style={styles.coverPickerTileShade} />
-                      <Text preset="caption" numberOfLines={1} style={styles.coverPickerTileTitle}>
+                      <Text preset="caption" numberOfLines={1} style={[styles.coverPickerTileTitle, { color: theme.colors.stickerControlText }]}>
                         {background.title}
                       </Text>
                       {selected ? (
                         <View style={[styles.coverPickerSelectedBadge, { backgroundColor: theme.colors.tint }]}>
-                          <Ionicons name="checkmark" size={14} color="#fff" />
+                          <Ionicons name="checkmark" size={14} color={theme.colors.background} />
                         </View>
                       ) : null}
                     </TouchableOpacity>
@@ -725,9 +719,7 @@ export default function JournalsScreen(): React.JSX.Element {
               <TouchableOpacity onPress={() => setShowCreateModal(false)} style={styles.modalAction} disabled={isCreating}>
                 <Text preset="label" color="textSecondary">{t('entryCancel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => { void handleCreateJournal(); }} style={[styles.modalActionPrimary, { backgroundColor: theme.colors.tint }]} disabled={isCreating}>
-                <Text preset="label" style={{ color: theme.isDark ? theme.colors.background : theme.colors.card }}>{t('journalCreate')}</Text>
-              </TouchableOpacity>
+              <AccentPillButton label={t('journalCreate')} onPress={() => { void handleCreateJournal(); }} disabled={isCreating} style={styles.modalActionPrimary} />
             </View>
           </View>
         </View>
@@ -751,9 +743,7 @@ export default function JournalsScreen(): React.JSX.Element {
               <TouchableOpacity onPress={() => setShowRenameModal(false)} style={styles.modalAction} disabled={isRenaming}>
                 <Text preset="label" color="textSecondary">{t('entryCancel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => { void handleRenameJournal(); }} style={[styles.modalActionPrimary, { backgroundColor: theme.colors.tint }]} disabled={isRenaming}>
-                <Text preset="label" style={{ color: theme.isDark ? theme.colors.background : theme.colors.card }}>{t('journalRenameSave')}</Text>
-              </TouchableOpacity>
+              <AccentPillButton label={t('journalRenameSave')} onPress={() => { void handleRenameJournal(); }} disabled={isRenaming} style={styles.modalActionPrimary} />
             </View>
           </View>
         </View>
@@ -785,9 +775,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     fontWeight: '600',
   },
-  headerSearchClear: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  headerIconButton: { width: 38, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 12 },
   journalCoverGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: JOURNAL_GRID_GAP },
   journalCoverCard: { position: 'relative', borderWidth: 1, borderRadius: 8 },
@@ -839,7 +827,6 @@ const styles = StyleSheet.create({
   },
   journalCoverCountLabel: {
     flexShrink: 1,
-    color: '#fff',
     fontWeight: '800',
     fontSize: 13,
     lineHeight: 16,
@@ -858,7 +845,6 @@ const styles = StyleSheet.create({
   journalCoverTitleCompact: { fontSize: 14, lineHeight: 18 },
   journalCoverTitleDense: { fontSize: 12, lineHeight: 15 },
   journalOptionsWrap: { position: 'absolute', top: 6, right: 6, zIndex: 30, elevation: 30, alignItems: 'flex-end' },
-  journalOptionsButton: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.42)' },
   journalOptionsMenu: {
     minWidth: 154,
     borderWidth: 1,
@@ -875,13 +861,12 @@ const styles = StyleSheet.create({
   emptyState: { borderWidth: 1, borderRadius: 8, padding: 22, alignItems: 'center' },
   emptyTitle: { marginTop: 12, marginBottom: 6, fontWeight: '800' },
   emptyBody: { textAlign: 'center', lineHeight: 20 },
-  emptyButton: { minHeight: 42, borderRadius: 10, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center', marginTop: 18 },
+  emptyButton: { marginTop: 18 },
   modalOverlay: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
   modalCard: { width: '100%', maxWidth: 456, alignSelf: 'center', borderWidth: 1, borderRadius: 12, padding: 18 },
   modalTitle: { marginBottom: 14 },
   coverPickerCard: { maxHeight: '82%' },
   coverPickerHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
-  coverPickerClose: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   coverPickerScroll: { marginTop: 2 },
   coverPickerScrollContent: { paddingBottom: 2 },
   coverPickerGalleryButton: { minHeight: 48, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -892,7 +877,7 @@ const styles = StyleSheet.create({
   coverPickerOption: { width: '48.5%', aspectRatio: 1.24, borderWidth: 1, borderRadius: 8, overflow: 'hidden' },
   coverPickerPreview: { width: '100%', height: '100%' },
   coverPickerTileShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 34, backgroundColor: 'rgba(0, 0, 0, 0.38)' },
-  coverPickerTileTitle: { position: 'absolute', left: 9, right: 34, bottom: 8, color: '#fff', fontWeight: '800' },
+  coverPickerTileTitle: { position: 'absolute', left: 9, right: 34, bottom: 8, fontWeight: '800' },
   coverPickerSelectedBadge: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   modalInput: {
     height: 46,
@@ -908,5 +893,5 @@ const styles = StyleSheet.create({
   },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 18 },
   modalAction: { minHeight: 40, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
-  modalActionPrimary: { minHeight: 40, borderRadius: 8, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
+  modalActionPrimary: {},
 });

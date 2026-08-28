@@ -13,6 +13,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { Modal } from '@shared/components/Modal';
 import { Text } from '@shared/components/Text';
 import { useTheme } from '@providers/ThemeProvider';
@@ -71,10 +72,10 @@ export function TemplatePickerModal({
               onPress={() => setActiveCategory(cat)}
               accessibilityLabel={`${t('templateCategoryA11y')} ${cat}`}
             >
-              <Text
-                preset="caption"
-                style={{ color: active ? '#fff' : theme.colors.text, fontWeight: '600' }}
-              >
+                <Text
+                  preset="caption"
+                  style={{ color: active ? theme.colors.background : theme.colors.text, fontWeight: '600' }}
+                >
                 {cat}
               </Text>
             </TouchableOpacity>
@@ -120,20 +121,17 @@ export function TemplatePickerModal({
               </View>
 
               <View style={styles.cardActions}>
-                <TouchableOpacity
-                  style={[styles.btn, { backgroundColor: theme.colors.tint }]}
+                <AccentPillButton
+                  label={t('templateInsert')}
                   onPress={() => {
                     onSelectTemplate(item);
                     onClose();
                   }}
-                  activeOpacity={0.7}
                   accessibilityLabel={`${t('templateAddA11y')}: ${item.title}`}
-                >
-                  <Ionicons name="add" size={16} color="#fff" />
-                  <Text preset="caption" style={{ color: '#fff', fontWeight: '700' }}>
-                    {t('templateInsert')}
-                  </Text>
-                </TouchableOpacity>
+                  leadingIcon="plus"
+                  iconSize={16}
+                  style={styles.insertButton}
+                />
               </View>
             </View>
           );
@@ -183,12 +181,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10,
   },
-  btn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 8,
-  },
+  insertButton: { height: 38, minWidth: 104 },
 });

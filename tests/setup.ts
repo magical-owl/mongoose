@@ -172,6 +172,7 @@ jest.mock('expo-linking', () => ({
 }));
 
 jest.mock('expo-font', () => ({
+  useFonts: jest.fn(() => [true, null]),
   loadAsync: jest.fn().mockResolvedValue(undefined),
   isLoaded: jest.fn().mockReturnValue(true),
   isLoading: jest.fn().mockReturnValue(false),

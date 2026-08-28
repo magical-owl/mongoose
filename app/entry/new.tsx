@@ -13,7 +13,6 @@ import {
   View,
   ScrollView,
   Alert,
-  TouchableOpacity,
   Platform,
   KeyboardAvoidingView,
   Keyboard,
@@ -21,11 +20,11 @@ import {
   StyleSheet,
   useWindowDimensions,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text } from '@shared/components/Text';
+import { AccentPillButton } from '@shared/components/AccentPillButton';
+import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { RichTextEditor, type RichTextEditorHandle } from '@shared/components/RichTextEditor';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
@@ -54,6 +53,23 @@ import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimit
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 import { getStickerBodyPreviewBottom } from '@/features/diary/domain/StickerLayout';
+import {
+  DiaryEntryEditorFooter,
+  DiaryEntryEditorHeader,
+  ENTRY_EDITOR_BODY_DEFAULT_VIEWPORT_RATIO,
+  ENTRY_EDITOR_BODY_EXTRA_STICKER_SPACE,
+  ENTRY_EDITOR_BODY_FONT_SIZE,
+  ENTRY_EDITOR_BODY_LINE_HEIGHT,
+  ENTRY_EDITOR_BODY_MIN_HEIGHT,
+  ENTRY_EDITOR_COVER_TOP_GAP,
+  ENTRY_EDITOR_HEADER_BOTTOM_PADDING,
+  ENTRY_EDITOR_HEADER_BUTTON_HEIGHT,
+  ENTRY_EDITOR_HEADER_TOP_OFFSET,
+  ENTRY_EDITOR_TOOLBAR_HEIGHT,
+  diaryEntryEditorChromeStyles,
+  getEntryEditorCoverHeight,
+  getEntryEditorHorizontalPadding,
+} from '@/features/diary/components/DiaryEntryEditorChrome';
 
 // Word count helper (strips markdown syntax)
 function countWords(text: string): number {
@@ -79,13 +95,13 @@ const STICKER_PLACEMENT_SIZE = 96;
 const TEXT_STICKER_PLACEMENT_WIDTH = 160;
 const PHOTO_STICKER_PLACEMENT_WIDTH = 148;
 const VISIBLE_STICKER_STAGGER = 18;
-const ENTRY_HEADER_TOP_OFFSET = 4;
-const ENTRY_HEADER_BUTTON_HEIGHT = 38;
-const ENTRY_HEADER_BOTTOM_PADDING = 6;
-const ENTRY_COVER_TOP_GAP = 10;
-const ENTRY_BODY_MIN_HEIGHT = 14;
-const ENTRY_BODY_DEFAULT_VIEWPORT_RATIO = 0.02125;
-const ENTRY_BODY_EXTRA_STICKER_SPACE = 6;
+const ENTRY_HEADER_TOP_OFFSET = ENTRY_EDITOR_HEADER_TOP_OFFSET;
+const ENTRY_HEADER_BUTTON_HEIGHT = ENTRY_EDITOR_HEADER_BUTTON_HEIGHT;
+const ENTRY_HEADER_BOTTOM_PADDING = ENTRY_EDITOR_HEADER_BOTTOM_PADDING;
+const ENTRY_COVER_TOP_GAP = ENTRY_EDITOR_COVER_TOP_GAP;
+const ENTRY_BODY_MIN_HEIGHT = ENTRY_EDITOR_BODY_MIN_HEIGHT;
+const ENTRY_BODY_DEFAULT_VIEWPORT_RATIO = ENTRY_EDITOR_BODY_DEFAULT_VIEWPORT_RATIO;
+const ENTRY_BODY_EXTRA_STICKER_SPACE = ENTRY_EDITOR_BODY_EXTRA_STICKER_SPACE;
 
 function isSyntheticJournalId(value: string): boolean {
   return value === 'all' || value === 'unassigned';
@@ -422,8 +438,9 @@ export default function CreateEntryScreen() {
   };
 
   // Toolbar height constant used for scroll padding
-  const TOOLBAR_H = 56;
-  const coverExpandedHeight = Math.min(184, Math.max(120, (windowWidth - theme.spacing.lg * 2) / 1.9));
+  const TOOLBAR_H = ENTRY_EDITOR_TOOLBAR_HEIGHT;
+  const entryHorizontalPadding = getEntryEditorHorizontalPadding(windowWidth);
+  const coverExpandedHeight = getEntryEditorCoverHeight(windowWidth, entryHorizontalPadding);
   const showBodyStickerBounds = showStickerPicker || showStickerBounds || isStickerDragging;
   const stickerCanvasBottom = stickers.length > 0
     ? Math.max(...stickers.map((sticker) => getStickerBodyPreviewBottom(sticker)))
@@ -443,71 +460,62 @@ export default function CreateEntryScreen() {
   const coverTopOffset = insets.top
     + ENTRY_HEADER_TOP_OFFSET
     + ENTRY_HEADER_BUTTON_HEIGHT
-    + ENTRY_HEADER_BOTTOM_PADDING;
+    + ENTRY_HEADER_BOTTOM_PADDING
+    + ENTRY_COVER_TOP_GAP;
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
 
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <View
-        style={[
-          styles.header,
-          {
-            paddingTop: insets.top + ENTRY_HEADER_TOP_OFFSET,
-            backgroundColor: theme.colors.background,
-            borderBottomColor: theme.colors.border,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={navigateBack}
-          style={styles.headerBtn}
-          accessibilityLabel={t('entryCancelA11y')}
-          accessibilityRole="button"
-        >
-          <MaterialCommunityIcons name="close" size={22} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-
-        <Text preset="label" color="text" style={{ fontWeight: '600' }}>
-          {t('entryCreateTitle')}
-        </Text>
-
-        <View style={styles.headerActions}>
+      <DiaryEntryEditorHeader
+        topInset={insets.top}
+        horizontalPadding={entryHorizontalPadding}
+        title={t('entryCreateTitle')}
+        left={(
+          <IconCircleButton
+            icon="close-circle-outline"
+            onPress={navigateBack}
+            accessibilityLabel={t('entryCancelA11y')}
+            iconSize={25}
+          />
+        )}
+        actions={(
+          <>
           {stickers.some((sticker) => sticker.behindText) && (
-          <TouchableOpacity
+          <IconCircleButton
+            icon="layers"
             onPress={() => setStickers((current) => current.map((sticker) => ({ ...sticker, behindText: false })))}
             style={styles.headerIcon}
-            accessibilityRole="button"
             accessibilityLabel={t('entryBringStickersForwardA11y')}
-          >
-            <MaterialCommunityIcons name="layers" size={20} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
+            iconSize={20}
+            size="sm"
+          />
           )}
 
-          <TouchableOpacity
+          <IconCircleButton
+            icon={isFavorite ? 'star' : 'star-outline'}
             onPress={() => setIsFavorite((current) => !current)}
-            style={styles.headerBtn}
-            accessibilityRole="button"
             accessibilityLabel={isFavorite ? t('entryRemoveFavoriteA11y') : t('entryAddFavoriteA11y')}
-          >
-            <MaterialCommunityIcons name={isFavorite ? 'star' : 'star-outline'} size={21} color={theme.colors.warning} />
-          </TouchableOpacity>
+            active={isFavorite}
+            tone="warning"
+            iconSize={24}
+          />
 
-          <TouchableOpacity
+          <AccentPillButton
             onPress={handleSave}
             disabled={isSaving}
-            style={styles.headerBtn}
+            label={isSaving ? t('entrySaving') : t('entrySave')}
             accessibilityLabel={t('entrySaveA11y')}
-            accessibilityRole="button"
-          >
-            <MaterialCommunityIcons name="content-save-outline" size={22} color={isSaving ? theme.colors.textSecondary : theme.colors.tint} />
-          </TouchableOpacity>
-        </View>
-      </View>
+          />
+          </>
+        )}
+      />
 
-      <View style={[styles.coverHeader, { top: coverTopOffset, backgroundColor: theme.colors.background }]}>
+      <View style={[styles.coverHeader, { top: coverTopOffset, paddingHorizontal: entryHorizontalPadding, backgroundColor: theme.colors.background }]}>
         <DiaryCoverPhotoPicker
           photo={coverPhoto}
+          variant="entryHero"
+          height={coverExpandedHeight}
           onTakePhoto={() => handleCoverPhotoPickerResult('camera')}
           onChoosePhoto={() => handleCoverPhotoPickerResult('library')}
           onRemovePhoto={() => setCoverPhoto(undefined)}
@@ -528,7 +536,7 @@ export default function CreateEntryScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             {
-              paddingHorizontal: theme.spacing.lg,
+              paddingHorizontal: entryHorizontalPadding,
               minHeight: windowHeight + coverExpandedHeight,
               paddingTop: headerOverlayHeight,
               paddingBottom: TOOLBAR_H + theme.spacing.xl,
@@ -546,14 +554,14 @@ export default function CreateEntryScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.entryContentLayer}>
-            <DiaryDatePicker value={selectedDate} onChange={setSelectedDate} maximumDate={new Date()} />
+            <DiaryDatePicker value={selectedDate} onChange={setSelectedDate} maximumDate={new Date()} variant="entryHero" />
 
             {/* Title */}
             <NativeTextInput
               value={title}
               onChangeText={setTitle}
               placeholder={t('entryTitlePlaceholder')}
-              placeholderTextColor={theme.colors.textSecondary}
+              placeholderTextColor={theme.colors.textTertiary}
               style={[styles.titleInput, { color: theme.colors.text }]}
               multiline
               returnKeyType="next"
@@ -562,7 +570,7 @@ export default function CreateEntryScreen() {
             />
 
             {/* Divider */}
-            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+            <View style={[styles.divider, { backgroundColor: theme.colors.borderLight }]} />
 
             <View
               style={[
@@ -600,6 +608,10 @@ export default function CreateEntryScreen() {
                   onChangeText={setContent}
                   onHeightChange={(height) => setBodyContentHeight(Math.max(ENTRY_BODY_MIN_HEIGHT, height))}
                   placeholder={t('entryCreateContentPlaceholder')}
+                  placeholderColor={theme.colors.textTertiary}
+                  fontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
+                  lineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
+                  fontWeight="600"
                   minHeight={bodyCanvasHeight}
                   showToolbar={false}
                   accessibilityLabel={t('entryContentA11y')}
@@ -634,116 +646,85 @@ export default function CreateEntryScreen() {
       </KeyboardAvoidingView>
 
       {/* ── Floating bottom toolbar ──────────────────────────────────────── */}
-      <View
-        style={[
-          styles.floatingBar,
-          {
-            bottom: keyboardHeight,
-            backgroundColor: theme.colors.background,
-            borderTopColor: theme.colors.border,
-            paddingBottom: keyboardHeight > 0 ? 0 : insets.bottom,
-          },
-        ]}
+      <DiaryEntryEditorFooter
+        bottom={keyboardHeight > 0 ? keyboardHeight + 8 : insets.bottom + 12}
+        wordCount={wordCount}
       >
-        <View style={styles.toolbarLeft}>
           <View style={styles.formattingStack}>
             <RichTextFormattingDrawer
               visible={showFormattingTools}
               items={FORMAT_ITEMS}
               onSelect={(kind) => editorRef.current?.applyFormat(kind)}
             />
-            <TouchableOpacity
-              style={[styles.toolbarIcon, showFormattingTools && { backgroundColor: theme.colors.tint + '18' }]}
+            <IconCircleButton
+              icon="format-text"
+              size="sm"
+              active={showFormattingTools}
+              surface="transparent"
               onPress={() => {
                 setShowFormattingTools((current) => !current);
               }}
-              activeOpacity={0.6}
               accessibilityLabel={showFormattingTools ? t('entryHideFormattingA11y') : t('entryShowFormattingA11y')}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons name="format-text" size={22} color={showFormattingTools ? theme.colors.tint : theme.colors.text} />
-            </TouchableOpacity>
+            />
           </View>
 
-          <View style={[styles.barDivider, { backgroundColor: theme.colors.border }]} />
-          <TouchableOpacity
-            style={styles.toolbarIcon}
+          <View style={[diaryEntryEditorChromeStyles.toolbarDivider, { backgroundColor: theme.colors.border }]} />
+          <IconCircleButton
+            icon="file-document-edit-outline"
+            size="sm"
+            surface="transparent"
             onPress={() => setShowTemplatePicker(true)}
-            activeOpacity={0.6}
             accessibilityLabel={t('entryChooseTemplateA11y')}
-            accessibilityRole="button"
-          >
-            <MaterialCommunityIcons name="file-document-edit-outline" size={22} color={theme.colors.tint} />
-          </TouchableOpacity>
+          />
 
-          <View style={[styles.toolbarGroup, { backgroundColor: theme.colors.surface, borderColor: theme.colors.borderLight }]}>
-            <TouchableOpacity
-              style={styles.toolbarIcon}
+          <View style={[diaryEntryEditorChromeStyles.toolbarGroup, { backgroundColor: theme.colors.background, borderColor: theme.colors.borderLight }]}>
+            <IconCircleButton
+              icon="camera-outline"
+              size="sm"
+              surface="transparent"
               onPress={() => handlePhotoPickerResult('camera')}
-              activeOpacity={0.6}
               accessibilityLabel={t('entryTakePhotoA11y')}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons name="camera-outline" size={22} color={theme.colors.tint} />
-            </TouchableOpacity>
+            />
 
-            <TouchableOpacity
-              style={styles.toolbarIcon}
+            <IconCircleButton
+              icon="image-outline"
+              size="sm"
+              surface="transparent"
               onPress={() => handlePhotoPickerResult('library')}
-              activeOpacity={0.6}
               accessibilityLabel={t('entryChoosePhotoA11y')}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons name="image-outline" size={22} color={theme.colors.tint} />
-            </TouchableOpacity>
+            />
           </View>
 
-          <View style={[styles.toolbarGroup, { backgroundColor: theme.colors.surface, borderColor: theme.colors.borderLight }]}>
-            <TouchableOpacity
-              style={styles.toolbarIcon}
+          <View style={[diaryEntryEditorChromeStyles.toolbarGroup, { backgroundColor: theme.colors.background, borderColor: theme.colors.borderLight }]}>
+            <IconCircleButton
+              icon="format-textbox"
+              size="sm"
+              surface="transparent"
               onPress={handleAddTextSticker}
-              activeOpacity={0.6}
               accessibilityLabel={t('entryAddTextStickerA11y')}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons name="format-textbox" size={22} color={theme.colors.tint} />
-            </TouchableOpacity>
+            />
 
-            <TouchableOpacity
-              style={styles.toolbarIcon}
+            <IconCircleButton
+              icon="sticker-outline"
+              size="sm"
+              surface="transparent"
               onPress={() => {
                 setShowStickerPicker(true);
                 revealStickerBounds();
               }}
-              activeOpacity={0.6}
               accessibilityLabel={`${t('entryAddStickerA11y')} ${stickers.length} ${t('entryStickerPlacedA11y')}`}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons name="sticker-outline" size={22} color={theme.colors.tint} />
-            </TouchableOpacity>
+            />
           </View>
           {keyboardHeight > 0 ? (
-            <TouchableOpacity
-              style={styles.toolbarIcon}
+            <IconCircleButton
+              icon="keyboard-close"
+              size="sm"
+              surface="transparent"
               onPress={dismissEntryKeyboard}
-              activeOpacity={0.6}
               accessibilityLabel={t('entryDismissKeyboardA11y')}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons name="keyboard-close" size={22} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
+            />
           ) : null}
-        </View>
-
-        {/* Right: word count */}
-        <View style={styles.toolbarRight}>
-          {wordCount > 0 && (
-            <Text preset="caption" style={[styles.wordCount, { color: theme.colors.textSecondary }]}> 
-              {wordCount}w
-            </Text>
-          )}
-        </View>
-      </View>
+      </DiaryEntryEditorFooter>
 
       {/* Modals */}
       <StickerPickerModal
@@ -793,28 +774,12 @@ export default function CreateEntryScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 30,
-    elevation: 30,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  headerBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
-  headerActions: { minWidth: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   coverHeader: {
     position: 'absolute',
     left: 0,
     right: 0,
-    paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingHorizontal: 40,
+    paddingTop: 0,
     zIndex: 29,
     elevation: 29,
   },
@@ -844,73 +809,23 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   titleInput: {
-    fontSize: 26,
-    fontWeight: '700',
-    lineHeight: 34,
+    fontSize: 30,
+    fontStyle: 'italic',
+    fontWeight: '600',
+    lineHeight: 40,
     padding: 0,
-    marginBottom: 12,
+    marginBottom: 2,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    marginBottom: 8,
+    marginBottom: 18,
   },
   belowBodyPickers: {
     marginTop: 8,
     paddingTop: 0,
   },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  floatingBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 3000,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 20,
-  },
-  toolbarLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
   formattingStack: {
     position: 'relative',
-  },
-  toolbarGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 8,
-  },
-  toolbarIcon: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-  },
-  barDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 22,
-    marginHorizontal: 4,
-  },
-  toolbarRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 'auto',
-    gap: 4,
-    paddingLeft: 8,
-  },
-  wordCount: {
-    fontSize: 11,
-    fontVariant: ['tabular-nums'],
   },
 });

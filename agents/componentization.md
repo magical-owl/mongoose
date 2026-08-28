@@ -46,15 +46,16 @@ Already reusable:
 
 - `DiaryEntryView`: Card, Timeline, and Feed entry presentations used by Home.
 - `CalendarEntryView`: Calendar-specific compact activity rows used by Calendar.
+- `DiaryEntryEditorChrome`: shared create/edit composer header, footer, cover sizing, body sizing, and editor spacing constants.
 - `DiaryDatePicker`, `EntryDetailsModal`, `StickerPickerModal`, `TemplatePickerModal`, and `CompanionPickerModal`.
-- Shared typography, modal, input, button, and feedback components.
+- Shared typography, modal, input, button, feedback components, `IconCircleButton`, `AccentPillButton`, `InsetFloatingToolbar`, and `SectionLabel`.
 
 Recommended next extractions:
 
 1. `DiaryFilterDrawer` — Home drawer layout and filter option behavior.
 2. `DiaryDateHierarchy` — year/month/date grouping, collapse state, and headings.
 3. `DiaryCalendarGrid` — month navigation, weekday ordering, day markers, and selection.
-4. `DiaryComposer` — shared title, body editor, toolbar, stickers, companion, favorite, and save composition used by create/edit.
+4. `DiaryComposer` — shared title, body editor, stickers, companion, favorite, and save composition used by create/edit, building on `DiaryEntryEditorChrome`.
 5. `InsightsMetricCard` and chart primitives — reusable analytics presentation with data supplied by the screen.
 6. `DisplayPreferenceControl` — compact radio/toggle rows for settings screens in future apps.
 

@@ -190,7 +190,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
             accessibilityRole="button"
             accessibilityLabel={t('reflectionSaveA11y')}
           >
-            <Ionicons name="add" size={18} color={reflectionText.trim() && !isAddingReflection ? '#fff' : theme.colors.textSecondary} />
+            <Ionicons name="add" size={18} color={reflectionText.trim() && !isAddingReflection ? theme.colors.background : theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
       ) : null}
@@ -203,13 +203,18 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
         <View style={styles.feedMetaLeft}>
           {hasMood && entry.manualMood ? (
             <View style={[styles.feedMoodBadge, entry.coverPhoto && styles.feedCoverMoodBadge, { backgroundColor: entry.coverPhoto ? moodTone + '80' : moodTone + '18', borderColor: entry.coverPhoto ? moodTone + 'CC' : moodTone }]}>
-              <Text preset="caption" style={[styles.feedMoodBadgeText, { color: entry.coverPhoto ? '#fff' : moodTone }]} numberOfLines={1}>
+              <Text preset="caption" style={[styles.feedMoodBadgeText, { color: entry.coverPhoto ? theme.colors.stickerControlText : moodTone }]} numberOfLines={1}>
                 {manualMoodLabel(entry.manualMood, t)}
               </Text>
             </View>
           ) : null}
           {entry.tags.map((tag) => (
-            <Text key={tag} preset="caption" color={entry.coverPhoto ? undefined : 'textSecondary'} style={entry.coverPhoto ? styles.feedCoverMetaText : undefined}>
+            <Text
+              key={tag}
+              preset="caption"
+              color={entry.coverPhoto ? undefined : 'textSecondary'}
+              style={entry.coverPhoto ? [styles.feedCoverMetaText, { color: theme.colors.stickerControlText }] : undefined}
+            >
               #{tag}
             </Text>
           ))}
@@ -217,14 +222,31 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
             <Text
               preset="caption"
               color={entry.coverPhoto ? undefined : 'tint'}
-              style={[styles.reflectionSummary, entry.coverPhoto && styles.feedCoverMetaText]}
+              style={[
+                styles.reflectionSummary,
+                entry.coverPhoto && styles.feedCoverMetaText,
+                entry.coverPhoto && { color: theme.colors.stickerControlText },
+              ]}
               onPress={() => onReflectionSummaryPress?.(entry.id)}
             >
               {reflectionSummaryLabel}
             </Text>
           ) : null}
         </View>
-        {feedEntryDateTime ? <Text preset="caption" color={entry.coverPhoto ? undefined : 'textTertiary'} numberOfLines={1} style={[styles.feedTime, entry.coverPhoto && styles.feedCoverMetaText]}>{feedEntryDateTime}</Text> : null}
+        {feedEntryDateTime ? (
+          <Text
+            preset="caption"
+            color={entry.coverPhoto ? undefined : 'textTertiary'}
+            numberOfLines={1}
+            style={[
+              styles.feedTime,
+              entry.coverPhoto && styles.feedCoverMetaText,
+              entry.coverPhoto && { color: theme.colors.stickerControlText },
+            ]}
+          >
+            {feedEntryDateTime}
+          </Text>
+        ) : null}
       </View>
     );
 
@@ -250,6 +272,7 @@ export function DiaryEntryView({ entry, mode, onPress, onAddReflection, onReflec
                     {
                       fontSize: theme.fontSizes.xxxl,
                       lineHeight: theme.fontSizes.xxxl * 1.25,
+                      color: theme.colors.stickerControlText,
                     },
                   ]}
                   numberOfLines={3}
@@ -420,9 +443,9 @@ const styles = StyleSheet.create({
   feedCoverHeaderImage: { borderRadius: 8 },
   feedCoverScrim: { ...StyleSheet.absoluteFill, borderRadius: 8, backgroundColor: 'rgba(0, 0, 0, 0.34)' },
   feedCoverContent: { paddingHorizontal: 14, paddingTop: 42, paddingBottom: 12 },
-  feedCoverTitle: { color: '#fff', marginBottom: 10 },
+  feedCoverTitle: { marginBottom: 10 },
   feedCoverMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  feedCoverMetaText: { color: '#fff', fontWeight: '700' },
+  feedCoverMetaText: { fontWeight: '700' },
   feedMoodBadge: { maxWidth: 86, minHeight: 16, borderWidth: 1, borderRadius: 8, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
   feedCoverMoodBadge: { backgroundColor: 'rgba(0, 0, 0, 0.42)' },
   feedMoodBadgeText: { fontSize: 11, lineHeight: 14, fontWeight: '700' },

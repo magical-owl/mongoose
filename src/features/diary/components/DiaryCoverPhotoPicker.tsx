@@ -10,6 +10,8 @@ import { resolveImportedDiaryPhotoUri } from '@/features/diary/services/DiaryPho
 interface DiaryCoverPhotoPickerProps {
   readonly photo?: DiaryPhoto;
   readonly editable?: boolean;
+  readonly variant?: 'default' | 'entryHero';
+  readonly height?: number;
   readonly onTakePhoto?: () => void;
   readonly onChoosePhoto?: () => void;
   readonly onRemovePhoto?: () => void;
@@ -20,6 +22,8 @@ interface DiaryCoverPhotoPickerProps {
 export function DiaryCoverPhotoPicker({
   photo,
   editable = true,
+  variant = 'default',
+  height,
   onTakePhoto,
   onChoosePhoto,
   onRemovePhoto,
@@ -30,10 +34,11 @@ export function DiaryCoverPhotoPicker({
   const t = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const photoUri = photo ? resolveImportedDiaryPhotoUri(photo.uri) : undefined;
+  const isEntryHero = variant === 'entryHero';
 
   if (!editable && !photo) return null;
 
-  const fullHeight = Math.min(184, Math.max(120, (windowWidth - theme.spacing.lg * 2) / 1.9));
+  const fullHeight = height ?? Math.min(184, Math.max(120, (windowWidth - theme.spacing.lg * 2) / 1.9));
   const collapsedHeight = 0;
   const animatedContainerStyle = scrollY
     ? {
@@ -59,6 +64,7 @@ export function DiaryCoverPhotoPicker({
     <Animated.View
       style={[
         styles.container,
+        isEntryHero && styles.entryHeroContainer,
         animatedContainerStyle,
         {
           backgroundColor: photo ? theme.colors.surface : theme.colors.inputBackground,
@@ -76,18 +82,31 @@ export function DiaryCoverPhotoPicker({
           accessibilityIgnoresInvertColors
         />
       ) : (
-        <View style={styles.emptyState}>
-          <MaterialCommunityIcons name="image-plus-outline" size={26} color={theme.colors.textSecondary} />
-          <Text preset="caption" color="textSecondary" style={styles.emptyLabel}>
+        <TouchableOpacity
+          style={[styles.emptyState, isEntryHero && { backgroundColor: theme.colors.surface }]}
+          onPress={onChoosePhoto ?? onTakePhoto}
+          activeOpacity={0.72}
+          accessibilityRole={editable ? 'button' : undefined}
+          accessibilityLabel={t('entryChoosePhotoA11y')}
+          disabled={!editable}
+        >
+          <View style={[styles.emptyIconHalo, { backgroundColor: theme.colors.background + 'CC', borderColor: theme.colors.border }]}>
+            <MaterialCommunityIcons name="camera-outline" size={24} color={theme.colors.tint} />
+          </View>
+          <Text preset="bodySmall" color="text" style={[styles.emptyLabel, isEntryHero && styles.entryHeroEmptyLabel]}>
             {t('entryCoverPhotoTitle')}
           </Text>
-        </View>
+        </TouchableOpacity>
       )}
 
-      {editable ? (
-        <View style={styles.actions}>
+      {editable && (!isEntryHero || photo) ? (
+        <View style={isEntryHero ? styles.entryHeroActions : styles.actions}>
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: theme.colors.background + 'E6' }]}
+            style={[
+              styles.actionButton,
+              isEntryHero && styles.entryHeroActionButton,
+              { backgroundColor: theme.colors.background + 'E6' },
+            ]}
             onPress={onTakePhoto}
             activeOpacity={0.7}
             accessibilityRole="button"
@@ -96,7 +115,11 @@ export function DiaryCoverPhotoPicker({
             <MaterialCommunityIcons name="camera-outline" size={19} color={theme.colors.tint} />
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: theme.colors.background + 'E6' }]}
+            style={[
+              styles.actionButton,
+              isEntryHero && styles.entryHeroActionButton,
+              { backgroundColor: theme.colors.background + 'E6' },
+            ]}
             onPress={onChoosePhoto}
             activeOpacity={0.7}
             accessibilityRole="button"
@@ -106,7 +129,11 @@ export function DiaryCoverPhotoPicker({
           </TouchableOpacity>
           {photo ? (
             <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: theme.colors.background + 'E6' }]}
+              style={[
+                styles.actionButton,
+                isEntryHero && styles.entryHeroActionButton,
+                { backgroundColor: theme.colors.background + 'E6' },
+              ]}
               onPress={onRemovePhoto}
               activeOpacity={0.7}
               accessibilityRole="button"
@@ -129,6 +156,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
   },
+  entryHeroContainer: {
+    borderRadius: 22,
+  },
   image: {
     position: 'absolute',
     top: 0,
@@ -144,8 +174,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 5,
   },
+  emptyIconHalo: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   emptyLabel: {
     fontWeight: '600',
+  },
+  entryHeroEmptyLabel: {
+    marginTop: 4,
+    fontSize: 16,
+    lineHeight: 23,
+    fontWeight: '700',
   },
   actions: {
     position: 'absolute',
@@ -155,11 +199,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
+  entryHeroActions: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    transform: [{ translateY: -17 }],
+  },
   actionButton: {
     width: 34,
     height: 34,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 8,
+  },
+  entryHeroActionButton: {
+    borderRadius: 17,
   },
 });

@@ -4,6 +4,9 @@ import { Redirect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/shared/components/Text';
+import { AccentPillButton } from '@/shared/components/AccentPillButton';
+import { IconCircleButton } from '@/shared/components/IconCircleButton';
+import { SectionLabel } from '@/shared/components/SectionLabel';
 import { useTheme, type ThemeMode } from '@/providers/ThemeProvider';
 import { APP_LANGUAGES, appText, useTranslation, type TranslationKey } from '@/localization/i18n';
 import { useAppStore, type FontScale, type TimeFormat } from '@/stores/useAppStore';
@@ -108,10 +111,17 @@ export default function OnboardingScreen(): React.JSX.Element {
     <View style={[styles.root, { backgroundColor: theme.colors.background, paddingTop: insets.top + 14 }]}>
       <View style={styles.topBar}>
         {step > 0 ? (
-          <TouchableOpacity onPress={goBack} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('onboardingBack')}>
-            <Ionicons name="chevron-back" size={20} color={theme.colors.textSecondary} />
+          <View style={styles.backButton}>
+            <IconCircleButton
+              icon="chevron-left"
+              onPress={goBack}
+              accessibilityLabel={t('onboardingBack')}
+              size="sm"
+              surface="transparent"
+              iconSize={20}
+            />
             <Text preset="label" color="textSecondary" style={styles.backText}>{t('onboardingBack')}</Text>
-          </TouchableOpacity>
+          </View>
         ) : (
           <View style={styles.backButtonPlaceholder} />
         )}
@@ -190,7 +200,7 @@ export default function OnboardingScreen(): React.JSX.Element {
               {t('onboardingSetupSubtitle')}
             </Text>
 
-            <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>{t('settingsThemeModeSection')}</Text>
+            <SectionLabel style={styles.sectionLabel}>{t('settingsThemeModeSection')}</SectionLabel>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorSlider}>
               {THEME_MODE_OPTIONS.map((option) => {
                 const selected = themeMode === option.value;
@@ -215,7 +225,7 @@ export default function OnboardingScreen(): React.JSX.Element {
             </ScrollView>
             <Text preset="caption" color="textSecondary" style={styles.setupHint}>{t('settingsDarkModeHint')}</Text>
 
-            <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>{t('settingsColorThemeSection')}</Text>
+            <SectionLabel style={styles.sectionLabel}>{t('settingsColorThemeSection')}</SectionLabel>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorSlider}>
               {COLOR_THEME_OPTIONS.map((value) => {
                 const selected = colorTheme === value;
@@ -243,7 +253,7 @@ export default function OnboardingScreen(): React.JSX.Element {
             </ScrollView>
             <Text preset="caption" color="textSecondary" style={styles.setupHint}>{t('settingsColorThemeHint')}</Text>
 
-            <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>{t('settingsAccentColorSection')}</Text>
+            <SectionLabel style={styles.sectionLabel}>{t('settingsAccentColorSection')}</SectionLabel>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorSlider}>
               {ACCENT_COLOR_OPTIONS.map((value) => {
                 const selected = accentColor === value;
@@ -272,7 +282,7 @@ export default function OnboardingScreen(): React.JSX.Element {
             </ScrollView>
             <Text preset="caption" color="textSecondary" style={styles.setupHint}>{t('settingsAccentColorHint')}</Text>
 
-            <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>{t('settingsGlobalFontSizeSection')}</Text>
+            <SectionLabel style={styles.sectionLabel}>{t('settingsGlobalFontSizeSection')}</SectionLabel>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorSlider}>
               {FONT_SCALE_OPTIONS.map((option) => {
                 const selected = fontScale === option.value;
@@ -297,7 +307,7 @@ export default function OnboardingScreen(): React.JSX.Element {
             </ScrollView>
             <Text preset="caption" color="textSecondary" style={styles.setupHint}>{t('settingsGlobalFontSizeHint')}</Text>
 
-            <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>{t('settingsTimeFormatSection')}</Text>
+            <SectionLabel style={styles.sectionLabel}>{t('settingsTimeFormatSection')}</SectionLabel>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorSlider}>
               {TIME_FORMAT_OPTIONS.map((option) => {
                 const selected = timeFormat === option.value;
@@ -373,17 +383,13 @@ export default function OnboardingScreen(): React.JSX.Element {
             {t('onboardingNoSignup')}
           </Text>
         )}
-        <TouchableOpacity
+        <AccentPillButton
+          label={buttonLabel}
           onPress={goNext}
-          style={[styles.startButton, { backgroundColor: theme.colors.tint }]}
-          accessibilityRole="button"
           accessibilityLabel={buttonLabel}
-        >
-          <Text preset="label" style={[styles.startButtonText, { color: theme.isDark ? theme.colors.background : theme.colors.card }]}>
-            {buttonLabel}
-          </Text>
-          <Ionicons name="arrow-forward" size={18} color={theme.isDark ? theme.colors.background : theme.colors.card} />
-        </TouchableOpacity>
+          trailingIcon="arrow-right"
+          style={styles.startButton}
+        />
       </View>
     </View>
   );
@@ -403,6 +409,7 @@ const styles = StyleSheet.create({
     minHeight: 40,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 2,
   },
   backButtonPlaceholder: { minWidth: 92 },
   backText: { fontWeight: '700' },
@@ -506,8 +513,6 @@ const styles = StyleSheet.create({
   sectionLabel: {
     marginTop: 18,
     marginBottom: 10,
-    fontWeight: '800',
-    letterSpacing: 2,
   },
   selectorSlider: {
     flexDirection: 'row',
@@ -632,12 +637,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   startButton: {
-    minHeight: 56,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 10,
+    width: '100%',
+    height: 54,
+    borderRadius: 27,
   },
-  startButtonText: { fontWeight: '800' },
 });

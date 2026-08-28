@@ -15,6 +15,7 @@ interface Props {
   onChange: (date: Date) => void;
   maximumDate?: Date;
   label?: string;
+  variant?: 'default' | 'entryHero';
 }
 
 function formatDate(date: Date) {
@@ -39,6 +40,7 @@ export function DiaryDatePicker({
   onChange,
   maximumDate,
   label = "",
+  variant = 'default',
 }: Props) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
@@ -56,6 +58,55 @@ export function DiaryDatePicker({
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
   };
+  const accessibilityLabel = label ? `${label}: ${dateText}` : dateText;
+
+  if (variant === 'entryHero') {
+    return (
+      <View style={styles.entryHeroWrap}>
+        <TouchableOpacity
+          onPress={() => setOpen(true)}
+          style={styles.entryHeroButton}
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel}
+        >
+          <View style={styles.entryHeroDateLeft}>
+            <Ionicons name="calendar-outline" size={20} color={theme.colors.tint} />
+            <Text preset="bodySmall" color="textSecondary" style={styles.entryHeroDateText}>
+              {dateText}
+            </Text>
+          </View>
+          <View style={[styles.entryHeroChevron, { backgroundColor: theme.colors.surface }]}>
+            <Ionicons name="chevron-down" size={17} color={theme.colors.textSecondary} />
+          </View>
+        </TouchableOpacity>
+        {open && (
+          <View style={[styles.nativePicker, common]}>
+            {Platform.OS === "ios" && (
+              <TouchableOpacity
+                onPress={() => setOpen(false)}
+                style={[styles.done, { backgroundColor: theme.colors.tint }]}
+              >
+                <Text preset="label" style={{ color: theme.colors.background }}>
+                  Done
+                </Text>
+              </TouchableOpacity>
+            )}
+            <DateTimePicker
+              value={value}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={handleChange}
+              maximumDate={maximumDate}
+              style={{
+                width: "100%",
+                height: Platform.OS === "ios" ? 150 : undefined,
+              }}
+            />
+          </View>
+        )}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.wrap}>
@@ -64,7 +115,7 @@ export function DiaryDatePicker({
           onPress={() => setOpen(true)}
           style={[styles.outline, common]}
           accessibilityRole="button"
-          accessibilityLabel={`${label}: ${dateText}`}
+          accessibilityLabel={accessibilityLabel}
         >
           <View>
             {icon}
@@ -87,7 +138,7 @@ export function DiaryDatePicker({
           onPress={() => setOpen(true)}
           style={[styles.pill, { backgroundColor: theme.colors.tint + "14" }]}
           accessibilityRole="button"
-          accessibilityLabel={`${label}: ${dateText}`}
+          accessibilityLabel={accessibilityLabel}
         >
           {icon}
           <Text preset="bodySmall" color="tint">
@@ -101,13 +152,13 @@ export function DiaryDatePicker({
           onPress={() => setOpen(true)}
           style={[styles.calendarCard, common]}
           accessibilityRole="button"
-          accessibilityLabel={`${label}: ${dateText}`}
+          accessibilityLabel={accessibilityLabel}
         >
           <View
             style={[styles.dayBlock, { backgroundColor: theme.colors.tint }]}
           >
-            <Text style={styles.dayNumber}>{value.getDate()}</Text>
-            <Text style={styles.dayMonth}>
+            <Text style={[styles.dayNumber, { color: theme.colors.background }]}>{value.getDate()}</Text>
+            <Text style={[styles.dayMonth, { color: theme.colors.background }]}>
               {value
                 .toLocaleDateString("en-US", { month: "short" })
                 .toUpperCase()}
@@ -129,7 +180,7 @@ export function DiaryDatePicker({
           onPress={() => setOpen(true)}
           style={styles.underline}
           accessibilityRole="button"
-          accessibilityLabel={`${label}: ${dateText}`}
+          accessibilityLabel={accessibilityLabel}
         >
           <Text preset="caption" color="textSecondary">
             {label}
@@ -147,7 +198,7 @@ export function DiaryDatePicker({
           onPress={() => setOpen(true)}
           style={[styles.split, common]}
           accessibilityRole="button"
-          accessibilityLabel={`${label}: ${dateText}`}
+          accessibilityLabel={accessibilityLabel}
         >
           <View style={styles.splitDate}>
             <Text style={[styles.splitDay, { color: theme.colors.tint }]}>
@@ -176,7 +227,7 @@ export function DiaryDatePicker({
               onPress={() => setOpen(false)}
               style={[styles.done, { backgroundColor: theme.colors.tint }]}
             >
-              <Text preset="label" style={{ color: "#fff" }}>
+              <Text preset="label" style={{ color: theme.colors.background }}>
                 Done
               </Text>
             </TouchableOpacity>
@@ -200,6 +251,36 @@ export function DiaryDatePicker({
 
 const styles = StyleSheet.create({
   wrap: { marginBottom: 4, marginTop: 0 },
+  entryHeroWrap: {
+    marginTop: 18,
+    marginBottom: 14,
+  },
+  entryHeroButton: {
+    minHeight: 40,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  entryHeroDateLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 1,
+    gap: 8,
+  },
+  entryHeroDateText: {
+    flexShrink: 1,
+    fontSize: 17,
+    lineHeight: 25,
+    fontWeight: "600",
+  },
+  entryHeroChevron: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   outline: {
     minHeight: 52,
     borderWidth: 1,
@@ -235,8 +316,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  dayNumber: { color: "#fff", fontSize: 20, fontWeight: "700" },
-  dayMonth: { color: "#fff", fontSize: 9, fontWeight: "700" },
+  dayNumber: { fontSize: 20, fontWeight: "700" },
+  dayMonth: { fontSize: 9, fontWeight: "700" },
   dateCopy: { flex: 1, gap: 2 },
   underline: { minHeight: 40, paddingVertical: 0 },
   underlineValue: {

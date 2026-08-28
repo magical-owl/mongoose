@@ -3,6 +3,7 @@ import { Animated, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } f
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
+import { SectionLabel } from '@shared/components/SectionLabel';
 import type { Journal } from '@/features/journal/domain/Journal';
 import { useTranslation } from '@/localization/i18n';
 
@@ -53,11 +54,14 @@ export function DiaryJournalSelector({ selectedJournalIds, journals, onChange }:
 
   return (
     <View style={styles.section}>
+      <SectionLabel>
+        {t('entryJournalSection')}
+      </SectionLabel>
       <View style={styles.selectorRow}>
-        <Animated.View style={[styles.inputWrap, { width: inputWidth }]}>
+        <Animated.View style={[styles.inputWrap, { width: inputWidth, backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
           {!journalInput && !isJournalInputFocused ? (
             <View pointerEvents="none" style={styles.placeholderIcon}>
-              <Ionicons name="book-outline" size={18} color={theme.colors.textSecondary} />
+              <Ionicons name="book-outline" size={18} color={theme.colors.tint} />
             </View>
           ) : null}
           <TextInput
@@ -89,7 +93,7 @@ export function DiaryJournalSelector({ selectedJournalIds, journals, onChange }:
               accessibilityRole="button"
               accessibilityLabel={`${t('entryJournalRemoveA11y')} ${journal.title}`}
             >
-              <Text preset="caption" color="tint" style={styles.journalText} numberOfLines={1}>{journal.title}</Text>
+              <Text preset="caption" style={[styles.journalText, { color: theme.colors.tint }]} numberOfLines={1}>{journal.title}</Text>
               <Ionicons name="close" size={13} color={theme.colors.tint} />
             </TouchableOpacity>
           ))}
@@ -97,7 +101,7 @@ export function DiaryJournalSelector({ selectedJournalIds, journals, onChange }:
             <TouchableOpacity
               key={journal.id}
               onPress={() => handleToggleJournal(journal.id)}
-              style={[styles.suggestedJournal, { borderColor: theme.colors.border + '80', backgroundColor: 'transparent' }]}
+              style={[styles.suggestedJournal, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: false }}
               accessibilityLabel={`${t('entryJournalSection')} ${journal.title}`}
@@ -112,17 +116,17 @@ export function DiaryJournalSelector({ selectedJournalIds, journals, onChange }:
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: 4, marginBottom: 4 },
-  selectorRow: { minHeight: 36, flexDirection: 'row', alignItems: 'center', borderRadius: 8, paddingLeft: 0, paddingRight: 0, gap: 2 },
-  inputWrap: { height: 32, justifyContent: 'center', overflow: 'hidden' },
+  section: { marginTop: 6, marginBottom: 8 },
+  selectorRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', borderRadius: 8, paddingLeft: 0, paddingRight: 0, gap: 8 },
+  inputWrap: { height: 34, justifyContent: 'center', overflow: 'hidden', borderWidth: 1, borderRadius: 17 },
   placeholderIcon: { position: 'absolute', alignSelf: 'center' },
   inlineScroll: { flex: 1 },
-  inlineContent: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 5, paddingRight: 4 },
-  selectedJournal: { maxWidth: 132, minHeight: 28, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 14, paddingHorizontal: 8, gap: 4 },
-  journalText: { fontWeight: '700', flexShrink: 1 },
+  inlineContent: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 4 },
+  selectedJournal: { maxWidth: 142, minHeight: 34, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 17, paddingHorizontal: 12, gap: 5 },
+  journalText: { fontSize: 14, lineHeight: 18, fontWeight: '800', flexShrink: 1 },
   input: {
     width: '100%',
-    height: 32,
+    height: 34,
     paddingTop: 0,
     paddingBottom: 0,
     fontSize: 14,
@@ -130,5 +134,5 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     textAlignVertical: 'center',
   },
-  suggestedJournal: { maxWidth: 132, minHeight: 28, borderWidth: 1, borderRadius: 14, paddingHorizontal: 9, alignItems: 'center', justifyContent: 'center' },
+  suggestedJournal: { maxWidth: 142, minHeight: 34, borderWidth: 1, borderRadius: 17, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
 });

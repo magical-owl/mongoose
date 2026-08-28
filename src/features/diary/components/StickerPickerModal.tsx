@@ -25,6 +25,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { Modal } from '@shared/components/Modal';
+import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { Text } from '@shared/components/Text';
 import { useTheme } from '@providers/ThemeProvider';
 import {
@@ -154,9 +155,14 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
             autoCorrect={false}
           />
           {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')} style={styles.clearSearch} accessibilityLabel={t('stickerClearSearchA11y')}>
-              <MaterialCommunityIcons name="close" size={17} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
+            <IconCircleButton
+              icon="close"
+              onPress={() => setSearch('')}
+              accessibilityLabel={t('stickerClearSearchA11y')}
+              size="sm"
+              surface="transparent"
+              iconSize={17}
+            />
           )}
         </View>
       </View>
@@ -238,12 +244,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     padding: 0,
-  },
-  clearSearch: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   tabs: {
     flexDirection: 'row',

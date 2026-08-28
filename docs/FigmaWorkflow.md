@@ -168,27 +168,33 @@ Use the existing Ionicons and Material Community Icons style: simple outline ico
 
 **Header:**
 
-- Cancel/back on the left.
-- Centered “Create Entry”.
-- Favorite, Entry Details, and Save on the right, in that order.
-- If stickers are behind text, show an unstack action before Favorite, Entry Details, and Save.
+- Compact safe-area-aware editor chrome shared with edit mode.
+- Circular cancel/back control on the left.
+- Centered “Create Entry” title.
+- Favorite and Save on the right, with Save as the warm accent pill.
+- If stickers are behind text, show an unstack action before Favorite and Save.
 
 **Writing surface order:**
 
-1. Compact journal selector for existing journals only. Journal creation stays on the Journals screen.
-2. Compact tag selector.
-3. Date picker.
-4. Photo actions in the bottom toolbar. Selected photos enter the writing canvas and use the same move, resize, rotate, delete, and layer controls as stickers.
-5. Title field.
-6. Body editor with placeholder “What’s on your mind today? Write freely...”.
+1. Rounded cover landscape with centered camera action and cover label.
+2. Compact accent date picker row.
+3. Italic editorial title field.
+4. Subtle divider.
+5. Body editor with placeholder “What’s on your mind today? Write freely...” and a generous default writing height.
+6. Mood selector with compact uppercase section label and rounded horizontal chips.
+7. Compact journal selector for existing journals only. Journal creation stays on the Journals screen.
+8. Compact tag selector.
+9. Photo actions in the bottom toolbar. Selected photos enter the writing canvas and use the same move, resize, rotate, delete, and layer controls as stickers.
 
 **Bottom toolbar:**
 
+- Inset rounded footer above the safe area or keyboard.
+- Icons use one neutral inactive treatment.
+- Active formatting is the only accent-highlighted footer state.
 - Formatting actions: bold, italic, heading, bullets, quote, code.
 - Writing template picker.
 - Sticker picker.
 - Word count.
-- Companion selector.
 
 **Entry Details modal:** Optional structured metadata and personal context. Mood uses the manual nine-step mood scale from `-4` through `4`, with Neutral in the center of the range. Mood Weather is a separate personal weather selector. Avoid presenting automated sentiment analysis.
 
@@ -209,10 +215,8 @@ The route uses the same screen for read mode and edit mode.
 
 **Edit mode:**
 
-- Cancel on the left.
-- Centered “Edit Entry”.
-- Favorite, Entry Details, and Save on the right, in that order.
-- Same writing surface order and toolbar as Create Entry.
+- Same shared editor chrome as Create Entry, with Cancel on the left, centered “Edit Entry”, and Favorite plus Save on the right.
+- Same writing surface order and inset rounded toolbar as Create Entry.
 - Saved stickers become interactive: drag, resize, rotate, delete, and move behind/in front of text.
 
 **Delete flow:** Destructive confirmation with explicit irreversible-action copy.

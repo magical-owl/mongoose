@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { AppState, View, TouchableOpacity, StyleSheet } from 'react-native';
+import { AppState, View, StyleSheet } from 'react-native';
+import { AccentPillButton } from './AccentPillButton';
 import { Text } from './Text';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useAppStore } from '@/stores/useAppStore';
@@ -36,9 +37,11 @@ export function AppLockGate({ children }: { readonly children: React.ReactNode }
       <Text style={[styles.icon, { color: theme.colors.text }]}>🔒</Text>
       <Text preset="h2" color="text">{t('lockTitle')}</Text>
       <Text preset="body" color="textSecondary" style={styles.subtitle}>{t('lockMessage')}</Text>
-      <TouchableOpacity onPress={unlock} disabled={isAuthenticating} style={[styles.button, { backgroundColor: theme.colors.tint }]}>
-        <Text preset="label" style={styles.buttonText}>{isAuthenticating ? t('lockAuthenticating') : t('lockUnlockButton')}</Text>
-      </TouchableOpacity>
+      <AccentPillButton
+        label={isAuthenticating ? t('lockAuthenticating') : t('lockUnlockButton')}
+        onPress={() => { void unlock(); }}
+        disabled={isAuthenticating}
+      />
     </View>
   );
 }
@@ -47,6 +50,4 @@ const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   icon: { fontSize: 48, marginBottom: 16 },
   subtitle: { textAlign: 'center', marginTop: 8, marginBottom: 24 },
-  button: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: 8 },
-  buttonText: { color: '#fff' },
 });

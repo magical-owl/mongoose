@@ -34,6 +34,12 @@ export interface RichTextEditorProps {
   readonly onChangeText: (text: string) => void;
   readonly onHeightChange?: (height: number) => void;
   readonly placeholder?: string;
+  readonly textColor?: string;
+  readonly placeholderColor?: string;
+  readonly fontFamily?: string;
+  readonly fontSize?: number;
+  readonly lineHeight?: number;
+  readonly fontWeight?: string;
   readonly minHeight?: number;
   readonly accessibilityLabel?: string;
   readonly showToolbar?: boolean;
@@ -46,6 +52,12 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
       onChangeText,
       onHeightChange,
       placeholder = "What's on your mind today? Write freely…",
+      textColor,
+      placeholderColor,
+      fontFamily,
+      fontSize,
+      lineHeight,
+      fontWeight,
       minHeight = 320,
       showToolbar = false,
     },
@@ -53,6 +65,12 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
   ) => {
     const theme = useTheme();
     const richTextRef = useRef<RichEditor>(null);
+    const editorTextColor = textColor ?? theme.colors.text;
+    const editorPlaceholderColor = placeholderColor ?? theme.colors.textSecondary;
+    const editorFontFamily = fontFamily ?? theme.fontFamily;
+    const editorFontSize = fontSize ?? theme.fontSizes.lg;
+    const editorLineHeight = lineHeight ?? Math.round(theme.fontSizes.lg * 1.45);
+    const editorFontWeight = fontWeight ?? '400';
 
     const applyFormat = useCallback((kind: FormatActionKind) => {
       if (!richTextRef.current) return;
@@ -131,14 +149,15 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
           useContainer={true}
           editorStyle={{
             backgroundColor: 'transparent',
-            color: theme.colors.text,
-            placeholderColor: theme.colors.textSecondary,
+            color: editorTextColor,
+            placeholderColor: editorPlaceholderColor,
             contentCSSText: `
               padding: 0 0 40px 0;
-              font-size: ${theme.fontSizes.lg}px;
-              font-family: ${theme.fontFamily};
-              color: ${theme.colors.text};
-              line-height: ${Math.round(theme.fontSizes.lg * 1.45)}px;
+              font-size: ${editorFontSize}px;
+              font-family: ${editorFontFamily};
+              font-weight: ${editorFontWeight};
+              color: ${editorTextColor};
+              line-height: ${editorLineHeight}px;
               padding-bottom: 40px;
             `,
           }}

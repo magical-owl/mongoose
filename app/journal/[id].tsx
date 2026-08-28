@@ -21,6 +21,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@providers/ThemeProvider";
 import { Text } from "@shared/components/Text";
 import { FAB } from "@shared/components/FAB";
+import { IconCircleButton } from "@shared/components/IconCircleButton";
+import { SectionLabel } from "@shared/components/SectionLabel";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import { useJournals } from "@/features/journal/hooks/useJournals";
 import { getJournalCoverImageSource } from "@/features/journal/domain/JournalBackgrounds";
@@ -558,12 +560,10 @@ export default function JournalEntriesScreen() {
         >
           <View style={styles.drawerHeader}>
             <View />
-            <TouchableOpacity onPress={closeDrawer} style={styles.drawerClose} accessibilityRole="button" accessibilityLabel={t("homeDrawerCloseA11y")}>
-              <Ionicons name="close" size={22} color={theme.colors.text} />
-            </TouchableOpacity>
+            <IconCircleButton icon="close" onPress={closeDrawer} accessibilityLabel={t("homeDrawerCloseA11y")} size="sm" />
           </View>
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text preset="caption" color="textSecondary" style={styles.drawerSectionLabel}>{t("homeHeaderSearch")}</Text>
+            <SectionLabel style={styles.drawerSectionLabel}>{t("homeHeaderSearch")}</SectionLabel>
             <TextInput
               value={search}
               onChangeText={setSearch}
@@ -607,7 +607,7 @@ export default function JournalEntriesScreen() {
                 ))}
               </View>
             )}
-            <Text preset="caption" color="textSecondary" style={styles.drawerSectionLabel}>{t("homeDrawerFilterEntries")}</Text>
+            <SectionLabel style={styles.drawerSectionLabel}>{t("homeDrawerFilterEntries")}</SectionLabel>
             {(["date", "tag", "mood"] as const).map((kind) => {
               const value = kind === "date" ? filterDate : kind === "tag" ? filterTag : filterMood;
               const icon = kind === "date" ? "calendar-outline" : kind === "tag" ? "pricetag-outline" : "heart-outline";
@@ -672,15 +672,11 @@ export default function JournalEntriesScreen() {
         <View style={[styles.fixedHeader, { paddingTop: insets.top + JOURNAL_HEADER_TOP_PADDING, backgroundColor: theme.colors.background }]}>
           <View style={styles.headerRow}>
             <View style={styles.headerSide}>
-              <TouchableOpacity onPress={() => router.replace("/(tabs)")} style={styles.backToJournals} accessibilityRole="button" accessibilityLabel={t("entryBackA11y")}>
-                <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
-              </TouchableOpacity>
+              <IconCircleButton icon="chevron-left" onPress={() => router.replace("/(tabs)")} accessibilityLabel={t("entryBackA11y")} />
             </View>
             <Text preset="label" color="text" numberOfLines={1} style={styles.journalContextTitle}>{journalTitle}</Text>
             <View style={[styles.headerSide, styles.headerSideRight]}>
-              <TouchableOpacity onPress={openDrawer} style={styles.menuButton} accessibilityRole="button" accessibilityLabel={t("homeDrawerOpenA11y")}>
-                <Ionicons name="menu-outline" size={26} color={theme.colors.text} />
-              </TouchableOpacity>
+              <IconCircleButton icon="menu" onPress={openDrawer} accessibilityLabel={t("homeDrawerOpenA11y")} />
             </View>
           </View>
 
@@ -893,7 +889,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
   },
-  backToJournals: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 8 },
   journalContextTitle: { flex: 1, textAlign: "center", fontWeight: "800" },
   headerRow: {
     flexDirection: "row",
@@ -905,7 +900,6 @@ const styles = StyleSheet.create({
   },
   headerSide: { width: 82, flexDirection: "row", alignItems: "center", gap: 6 },
   headerSideRight: { justifyContent: "flex-end" },
-  menuButton: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 8 },
   createFab: {
     position: "absolute",
     right: 20,
@@ -951,7 +945,6 @@ const styles = StyleSheet.create({
   drawerOverlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 40, elevation: 40, backgroundColor: "rgba(0, 0, 0, 0.35)" },
   drawer: { position: "absolute", top: 0, bottom: 0, left: 0, zIndex: 2, paddingHorizontal: 20, borderTopRightRadius: 22, borderBottomRightRadius: 22, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 5, height: 0 }, shadowOpacity: 0.24, shadowRadius: 18, elevation: 18 },
   drawerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 22 },
-  drawerClose: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
   drawerSectionLabel: { fontWeight: "700", letterSpacing: 0.6, marginTop: 18, marginBottom: 8 },
   drawerRow: { minHeight: 52, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth },
   drawerRowText: { flex: 1, marginLeft: 12 },

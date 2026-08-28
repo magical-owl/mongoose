@@ -31,6 +31,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@shared/components/Text';
+import { AccentPillButton } from '@shared/components/AccentPillButton';
+import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { Modal } from '@shared/components/Modal';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
@@ -64,6 +66,23 @@ import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimit
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 import { getStickerBodyPreviewBottom } from '@/features/diary/domain/StickerLayout';
+import {
+  DiaryEntryEditorFooter,
+  DiaryEntryEditorHeader,
+  ENTRY_EDITOR_BODY_DEFAULT_VIEWPORT_RATIO,
+  ENTRY_EDITOR_BODY_EXTRA_STICKER_SPACE,
+  ENTRY_EDITOR_BODY_FONT_SIZE,
+  ENTRY_EDITOR_BODY_LINE_HEIGHT,
+  ENTRY_EDITOR_BODY_MIN_HEIGHT,
+  ENTRY_EDITOR_COVER_TOP_GAP,
+  ENTRY_EDITOR_HEADER_BOTTOM_PADDING,
+  ENTRY_EDITOR_HEADER_BUTTON_HEIGHT,
+  ENTRY_EDITOR_HEADER_TOP_OFFSET,
+  ENTRY_EDITOR_TOOLBAR_HEIGHT,
+  diaryEntryEditorChromeStyles,
+  getEntryEditorCoverHeight,
+  getEntryEditorHorizontalPadding,
+} from '@/features/diary/components/DiaryEntryEditorChrome';
 
 function countWords(text: string): number {
   const clean = text.replace(/[*#`>•\-_]/g, '').trim();
@@ -91,14 +110,14 @@ const STICKER_PLACEMENT_SIZE = 96;
 const TEXT_STICKER_PLACEMENT_WIDTH = 160;
 const PHOTO_STICKER_PLACEMENT_WIDTH = 148;
 const VISIBLE_STICKER_STAGGER = 18;
-const ENTRY_HEADER_TOP_OFFSET = 4;
-const ENTRY_HEADER_BUTTON_HEIGHT = 38;
-const ENTRY_HEADER_BOTTOM_PADDING = 6;
-const ENTRY_COVER_TOP_GAP = 10;
+const ENTRY_HEADER_TOP_OFFSET = ENTRY_EDITOR_HEADER_TOP_OFFSET;
+const ENTRY_HEADER_BUTTON_HEIGHT = ENTRY_EDITOR_HEADER_BUTTON_HEIGHT;
+const ENTRY_HEADER_BOTTOM_PADDING = ENTRY_EDITOR_HEADER_BOTTOM_PADDING;
+const ENTRY_COVER_TOP_GAP = ENTRY_EDITOR_COVER_TOP_GAP;
 const ENTRY_VIEW_COVER_BOTTOM_GAP = 18;
-const ENTRY_BODY_MIN_HEIGHT = 14;
-const ENTRY_BODY_DEFAULT_VIEWPORT_RATIO = 0.02125;
-const ENTRY_BODY_EXTRA_STICKER_SPACE = 6;
+const ENTRY_BODY_MIN_HEIGHT = ENTRY_EDITOR_BODY_MIN_HEIGHT;
+const ENTRY_BODY_DEFAULT_VIEWPORT_RATIO = ENTRY_EDITOR_BODY_DEFAULT_VIEWPORT_RATIO;
+const ENTRY_BODY_EXTRA_STICKER_SPACE = ENTRY_EDITOR_BODY_EXTRA_STICKER_SPACE;
 
 export default function EntryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -455,11 +474,9 @@ export default function EntryDetailScreen() {
     return (
       <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
         <View style={[styles.header, { paddingTop: insets.top + 4, borderBottomColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
-          <TouchableOpacity onPress={navigateBack} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryBackA11y')}>
-            <MaterialCommunityIcons name="chevron-left" size={24} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
+          <IconCircleButton icon="chevron-left" onPress={navigateBack} accessibilityLabel={t('entryBackA11y')} />
           <View style={{ flex: 1 }} />
-          <View style={styles.headerBtn} />
+          <View style={styles.headerBtnPlaceholder} />
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Text preset="body" color="textSecondary">{t('entryNotFound')}</Text>
@@ -481,7 +498,7 @@ export default function EntryDetailScreen() {
     <View style={onCover ? styles.coverMetaLeft : styles.entryMetaRow}>
       {entry.manualMood ? (
         <View style={[styles.moodBadge, onCover && styles.coverMoodBadge, { backgroundColor: moodTone + (onCover ? '80' : '18'), borderColor: moodTone + (onCover ? 'CC' : '') }]}>
-          <Text preset="caption" style={[styles.moodBadgeText, { color: onCover ? '#fff' : moodTone }]}>
+          <Text preset="caption" style={[styles.moodBadgeText, { color: onCover ? theme.colors.stickerControlText : moodTone }]}>
             {manualMoodLabel(entry.manualMood, t)}
           </Text>
         </View>
@@ -489,7 +506,11 @@ export default function EntryDetailScreen() {
       <View style={onCover ? styles.coverTagRow : styles.tagRow}>
         {entry.tags.map((tag) => (
           <View key={tag} style={onCover ? styles.coverTagBadge : undefined}>
-            <Text preset="caption" color={onCover ? undefined : 'textSecondary'} style={onCover ? styles.coverTagText : undefined}>
+            <Text
+              preset="caption"
+              color={onCover ? undefined : 'textSecondary'}
+              style={onCover ? [styles.coverTagText, { color: theme.colors.stickerControlText }] : undefined}
+            >
               #{tag}
             </Text>
           </View>
@@ -498,8 +519,9 @@ export default function EntryDetailScreen() {
     </View>
   );
 
-  const TOOLBAR_H = 56;
-  const coverExpandedHeight = Math.min(184, Math.max(120, (windowWidth - theme.spacing.lg * 2) / 1.9));
+  const TOOLBAR_H = ENTRY_EDITOR_TOOLBAR_HEIGHT;
+  const entryHorizontalPadding = getEntryEditorHorizontalPadding(windowWidth);
+  const coverExpandedHeight = getEntryEditorCoverHeight(windowWidth, entryHorizontalPadding);
   const showBodyStickerBounds = isEditing && (showStickerPicker || showStickerBounds || isStickerDragging);
   const stickerCanvasBottom = displayStickers.length > 0
     ? Math.max(...displayStickers.map((sticker) => getStickerBodyPreviewBottom(sticker)))
@@ -518,85 +540,104 @@ export default function EntryDetailScreen() {
   const headerOverlayHeight = headerOnlyHeight
     + (hasCoverHeader ? ENTRY_COVER_TOP_GAP + coverExpandedHeight : 0)
     + (!isEditing && hasViewCoverPhoto ? ENTRY_VIEW_COVER_BOTTOM_GAP : 0);
-  const coverTopOffset = headerOnlyHeight;
+  const coverTopOffset = headerOnlyHeight + ENTRY_COVER_TOP_GAP;
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <View
-        style={[
-          styles.header,
-          {
-            paddingTop: insets.top + ENTRY_HEADER_TOP_OFFSET,
-            backgroundColor: theme.colors.background,
-            borderBottomColor: theme.colors.border,
-          },
-        ]}
-      >
-        {isEditing ? (
-          <>
-            <TouchableOpacity onPress={handleCancelEdit} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryCancelEditingA11y')}>
-              <MaterialCommunityIcons name="close" size={22} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-            <Text preset="label" color="text" style={{ fontWeight: '600' }}>{t('entryEditTitle')}</Text>
-            <View style={styles.headerActions}>
+      {isEditing ? (
+        <DiaryEntryEditorHeader
+          topInset={insets.top}
+          horizontalPadding={entryHorizontalPadding}
+          title={t('entryEditTitle')}
+          left={(
+            <IconCircleButton
+              icon="close-circle-outline"
+              onPress={handleCancelEdit}
+              accessibilityLabel={t('entryCancelEditingA11y')}
+              iconSize={25}
+            />
+          )}
+          actions={(
+            <>
               {editStickers.some((sticker) => sticker.behindText) && (
-                <TouchableOpacity
+                <IconCircleButton
+                  icon="layers"
                   onPress={() => setEditStickers((current) => current.map((sticker) => ({ ...sticker, behindText: false })))}
                   style={styles.headerIcon}
-                  accessibilityRole="button"
                   accessibilityLabel={t('entryBringStickersForwardA11y')}
-                >
-                  <MaterialCommunityIcons name="layers" size={20} color={theme.colors.textSecondary} />
-                </TouchableOpacity>
+                  iconSize={20}
+                  size="sm"
+                />
               )}
-              <TouchableOpacity onPress={() => setEditFavorite((current) => !current)} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={editFavorite ? t('entryRemoveFavoriteA11y') : t('entryAddFavoriteA11y')}>
-                <MaterialCommunityIcons name={editFavorite ? 'star' : 'star-outline'} size={21} color={theme.colors.warning} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleSaveEdit} disabled={isSaving} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entrySaveChangesA11y')}>
-                <MaterialCommunityIcons name="content-save-outline" size={22} color={isSaving ? theme.colors.textSecondary : theme.colors.tint} />
-              </TouchableOpacity>
-            </View>
-          </>
-        ) : (
+              <IconCircleButton
+                icon={editFavorite ? 'star' : 'star-outline'}
+                onPress={() => setEditFavorite((current) => !current)}
+                accessibilityLabel={editFavorite ? t('entryRemoveFavoriteA11y') : t('entryAddFavoriteA11y')}
+                active={editFavorite}
+                tone="warning"
+                iconSize={24}
+              />
+              <AccentPillButton
+                onPress={handleSaveEdit}
+                disabled={isSaving}
+                label={isSaving ? t('entrySaving') : t('entrySave')}
+                accessibilityLabel={t('entrySaveChangesA11y')}
+              />
+            </>
+          )}
+        />
+      ) : (
+        <View
+          style={[
+            styles.header,
+            {
+              paddingTop: insets.top + 4,
+              backgroundColor: theme.colors.background,
+              borderBottomColor: theme.colors.border,
+            },
+          ]}
+        >
           <>
-            <TouchableOpacity onPress={navigateBack} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryBackA11y')}>
-              <MaterialCommunityIcons name="chevron-left" size={24} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
+            <IconCircleButton icon="chevron-left" onPress={navigateBack} accessibilityLabel={t('entryBackA11y')} />
             <View style={styles.headerDateSpacer} />
             <View style={styles.headerActions}>
-              <TouchableOpacity onPress={handleStartEdit} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryEditA11y')}>
-                <MaterialCommunityIcons name="pencil-outline" size={21} color={theme.colors.tint} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleDelete} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel={t('entryDeleteA11y')}>
-                <MaterialCommunityIcons name="trash-can-outline" size={21} color={theme.colors.error} />
-              </TouchableOpacity>
+              <IconCircleButton icon="pencil-outline" onPress={handleStartEdit} accessibilityLabel={t('entryEditA11y')} />
+              <IconCircleButton icon="trash-can-outline" onPress={handleDelete} accessibilityLabel={t('entryDeleteA11y')} destructive />
             </View>
           </>
-        )}
-      </View>
+        </View>
+      )}
 
 
       {isEditing || hasViewCoverPhoto ? (
-        <View style={[styles.coverHeader, { top: coverTopOffset, backgroundColor: theme.colors.background }]}>
+        <View style={[styles.coverHeader, { top: coverTopOffset, paddingHorizontal: entryHorizontalPadding, backgroundColor: theme.colors.background }]}>
           {isEditing ? (
             <DiaryCoverPhotoPicker
               photo={editCoverPhoto}
+              variant="entryHero"
+              height={coverExpandedHeight}
               onTakePhoto={() => handleCoverPhotoPickerResult('camera')}
               onChoosePhoto={() => handleCoverPhotoPickerResult('library')}
               onRemovePhoto={() => setEditCoverPhoto(undefined)}
               scrollY={coverScrollY}
             />
           ) : (
-            <DiaryCoverPhotoPicker photo={entry.coverPhoto} editable={false} scrollY={coverScrollY}>
+            <DiaryCoverPhotoPicker
+              photo={entry.coverPhoto}
+              editable={false}
+              variant="entryHero"
+              height={coverExpandedHeight}
+              scrollY={coverScrollY}
+            >
               <View style={styles.coverEntryOverlay}>
-                <Text preset="h2" numberOfLines={2} style={styles.coverTitle}>
+                <Text preset="h2" numberOfLines={2} style={[styles.coverTitle, { color: theme.colors.stickerControlText }]}>
                   {entry.title}
                 </Text>
                 <View style={styles.coverMetaRow}>
                   {renderViewMoodAndTags(true)}
-                  <Text preset="caption" numberOfLines={1} style={styles.coverDateTime}>
+                  <Text preset="caption" numberOfLines={1} style={[styles.coverDateTime, { color: theme.colors.stickerControlText }]}>
                     {viewDateTime}
                   </Text>
                 </View>
@@ -621,7 +662,7 @@ export default function EntryDetailScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             {
-              paddingHorizontal: theme.spacing.lg,
+              paddingHorizontal: isEditing ? entryHorizontalPadding : theme.spacing.lg,
               minHeight: windowHeight + (hasCoverHeader ? coverExpandedHeight : 0),
               paddingTop: headerOverlayHeight,
               paddingBottom: TOOLBAR_H + theme.spacing.xl,
@@ -642,18 +683,18 @@ export default function EntryDetailScreen() {
             {isEditing ? (
               /* ── Edit mode ──────────────────────────────────────────────── */
               <>
-                <DiaryDatePicker value={editDate} onChange={setEditDate} maximumDate={new Date()} />
+                <DiaryDatePicker value={editDate} onChange={setEditDate} maximumDate={new Date()} variant="entryHero" />
                 <NativeTextInput
                   value={editTitle}
                   onChangeText={setEditTitle}
                   placeholder={t('entryTitlePlaceholder')}
-                  placeholderTextColor={theme.colors.textSecondary}
+                  placeholderTextColor={theme.colors.textTertiary}
                   style={[styles.titleInput, { color: theme.colors.text }]}
                   multiline
                   returnKeyType="next"
                   accessibilityLabel={t('entryTitleA11y')}
                 />
-                <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+                <View style={[styles.divider, { backgroundColor: theme.colors.borderLight }]} />
                 <View
                   style={[
                     styles.bodyStickerCanvas,
@@ -690,6 +731,10 @@ export default function EntryDetailScreen() {
                       onChangeText={setEditContent}
                       onHeightChange={(height) => setBodyContentHeight(Math.max(ENTRY_BODY_MIN_HEIGHT, height))}
                       placeholder={t('entryEditContentPlaceholder')}
+                      placeholderColor={theme.colors.textTertiary}
+                      fontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
+                      lineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
+                      fontWeight="600"
                       minHeight={bodyCanvasHeight}
                       showToolbar={false}
                       accessibilityLabel={t('entryContentA11y')}
@@ -792,18 +837,7 @@ export default function EntryDetailScreen() {
       </KeyboardAvoidingView>
 
       {!isEditing && (
-        <View
-          style={[
-            styles.floatingBar,
-            {
-              bottom: 0,
-              backgroundColor: theme.colors.background,
-              borderTopColor: theme.colors.border,
-              paddingBottom: insets.bottom,
-            },
-          ]}
-        >
-          <View style={styles.toolbarLeft}>
+        <DiaryEntryEditorFooter bottom={insets.bottom + 12}>
             <TouchableOpacity
               style={styles.viewFooterButton}
               onPress={() => setShowReflections(true)}
@@ -817,121 +851,89 @@ export default function EntryDetailScreen() {
               </Text>
               {entry.reflections.length > 0 ? (
                 <View style={[styles.reflectionCountBadge, { backgroundColor: theme.colors.tint }]}>
-                  <Text preset="caption" style={styles.reflectionCountText}>{entry.reflections.length}</Text>
+                  <Text preset="caption" style={[styles.reflectionCountText, { color: theme.colors.background }]}>{entry.reflections.length}</Text>
                 </View>
               ) : null}
             </TouchableOpacity>
-          </View>
-        </View>
+        </DiaryEntryEditorFooter>
       )}
 
       {/* ── Floating bottom toolbar (edit mode only) ────────────────────── */}
       {isEditing && (
-        <View
-          style={[
-            styles.floatingBar,
-            {
-              bottom: keyboardHeight,
-              backgroundColor: theme.colors.background,
-              borderTopColor: theme.colors.border,
-              paddingBottom: keyboardHeight > 0 ? 0 : insets.bottom,
-            },
-          ]}
+        <DiaryEntryEditorFooter
+          bottom={keyboardHeight > 0 ? keyboardHeight + 8 : insets.bottom + 12}
+          wordCount={wordCount}
         >
-          <View style={styles.toolbarLeft}>
             <View style={styles.formattingStack}>
               <RichTextFormattingDrawer
                 visible={showFormattingTools}
                 items={FORMAT_ITEMS}
                 onSelect={(kind) => editorRef.current?.applyFormat(kind)}
               />
-              <TouchableOpacity
-                style={[styles.toolbarIcon, showFormattingTools && { backgroundColor: theme.colors.tint + '18' }]}
+              <IconCircleButton
+                icon="format-text"
+                size="sm"
+                active={showFormattingTools}
+                surface="transparent"
                 onPress={() => {
                   setShowFormattingTools((current) => !current);
                 }}
-                activeOpacity={0.6}
                 accessibilityLabel={showFormattingTools ? t('entryHideFormattingA11y') : t('entryShowFormattingA11y')}
-                accessibilityRole="button"
-              >
-                <MaterialCommunityIcons name="format-text" size={22} color={showFormattingTools ? theme.colors.tint : theme.colors.text} />
-              </TouchableOpacity>
+              />
             </View>
-            <View style={[styles.barDivider, { backgroundColor: theme.colors.border }]} />
-            <TouchableOpacity
-              style={styles.toolbarIcon}
+            <View style={[diaryEntryEditorChromeStyles.toolbarDivider, { backgroundColor: theme.colors.border }]} />
+            <IconCircleButton
+              icon="file-document-edit-outline"
+              size="sm"
+              surface="transparent"
               onPress={() => setShowTemplatePicker(true)}
-              activeOpacity={0.6}
               accessibilityLabel={t('entryChooseTemplateA11y')}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons name="file-document-edit-outline" size={22} color={theme.colors.tint} />
-            </TouchableOpacity>
-            <View style={[styles.toolbarGroup, { backgroundColor: theme.colors.surface, borderColor: theme.colors.borderLight }]}>
-              <TouchableOpacity
-                style={styles.toolbarIcon}
+            />
+            <View style={[diaryEntryEditorChromeStyles.toolbarGroup, { backgroundColor: theme.colors.background, borderColor: theme.colors.borderLight }]}>
+              <IconCircleButton
+                icon="camera-outline"
+                size="sm"
+                surface="transparent"
                 onPress={() => handlePhotoPickerResult('camera')}
-                activeOpacity={0.6}
                 accessibilityLabel={t('entryTakePhotoA11y')}
-                accessibilityRole="button"
-              >
-                <MaterialCommunityIcons name="camera-outline" size={22} color={theme.colors.tint} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.toolbarIcon}
+              />
+              <IconCircleButton
+                icon="image-outline"
+                size="sm"
+                surface="transparent"
                 onPress={() => handlePhotoPickerResult('library')}
-                activeOpacity={0.6}
                 accessibilityLabel={t('entryChoosePhotoA11y')}
-                accessibilityRole="button"
-              >
-                <MaterialCommunityIcons name="image-outline" size={22} color={theme.colors.tint} />
-              </TouchableOpacity>
+              />
             </View>
-            <View style={[styles.toolbarGroup, { backgroundColor: theme.colors.surface, borderColor: theme.colors.borderLight }]}>
-              <TouchableOpacity
-                style={styles.toolbarIcon}
+            <View style={[diaryEntryEditorChromeStyles.toolbarGroup, { backgroundColor: theme.colors.background, borderColor: theme.colors.borderLight }]}>
+              <IconCircleButton
+                icon="format-textbox"
+                size="sm"
+                surface="transparent"
                 onPress={handleAddTextSticker}
-                activeOpacity={0.6}
                 accessibilityLabel={t('entryAddTextStickerA11y')}
-                accessibilityRole="button"
-              >
-                <MaterialCommunityIcons name="format-textbox" size={22} color={theme.colors.tint} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.toolbarIcon}
+              />
+              <IconCircleButton
+                icon="sticker-outline"
+                size="sm"
+                surface="transparent"
                 onPress={() => {
                   setShowStickerPicker(true);
                   revealStickerBounds();
                 }}
-                activeOpacity={0.6}
                 accessibilityLabel={`${t('entryAddStickerA11y')} ${editStickers.length} ${t('entryStickerPlacedA11y')}`}
-                accessibilityRole="button"
-              >
-                <MaterialCommunityIcons name="sticker-outline" size={22} color={theme.colors.tint} />
-              </TouchableOpacity>
+              />
             </View>
             {keyboardHeight > 0 ? (
-              <TouchableOpacity
-                style={styles.toolbarIcon}
+              <IconCircleButton
+                icon="keyboard-close"
+                size="sm"
+                surface="transparent"
                 onPress={dismissEntryKeyboard}
-                activeOpacity={0.6}
                 accessibilityLabel={t('entryDismissKeyboardA11y')}
-                accessibilityRole="button"
-              >
-                <MaterialCommunityIcons name="keyboard-close" size={22} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
+              />
             ) : null}
-          </View>
-
-          {/* Right: word count */}
-          <View style={styles.toolbarRight}>
-            {wordCount > 0 && (
-              <Text preset="caption" style={[styles.wordCount, { color: theme.colors.textSecondary }]}> 
-                {wordCount}w
-              </Text>
-              )}
-          </View>
-        </View>
+        </DiaryEntryEditorFooter>
       )}
 
       <StickerPickerModal
@@ -1018,7 +1020,7 @@ export default function EntryDetailScreen() {
             accessibilityRole="button"
             accessibilityLabel={t('reflectionAddA11y')}
           >
-            <MaterialCommunityIcons name="plus" size={18} color={reflectionText.trim() && !isSavingReflection ? '#fff' : theme.colors.textSecondary} />
+            <MaterialCommunityIcons name="plus" size={18} color={reflectionText.trim() && !isSavingReflection ? theme.colors.background : theme.colors.textSecondary} />
           </TouchableOpacity>
           </View>
         </View>
@@ -1050,7 +1052,7 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
+  headerBtnPlaceholder: { width: 44, height: 44 },
   headerDateSpacer: { flex: 1 },
   coverHeader: {
     position: 'absolute',
@@ -1087,21 +1089,22 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   titleInput: {
-    fontSize: 26,
-    fontWeight: '700',
-    lineHeight: 34,
+    fontSize: 30,
+    fontStyle: 'italic',
+    fontWeight: '600',
+    lineHeight: 40,
     padding: 0,
-    marginBottom: 12,
+    marginBottom: 2,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    marginBottom: 8,
+    marginBottom: 18,
   },
   belowBodyPickers: {
     marginTop: 8,
     paddingTop: 0,
   },
-  headerActions: { minWidth: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
+  headerActions: { minWidth: 98, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 10 },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   tag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
@@ -1116,12 +1119,10 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
   },
   coverDateTime: {
-    color: '#fff',
     fontWeight: '700',
     flexShrink: 0,
   },
   coverTitle: {
-    color: '#fff',
     fontSize: 28,
     fontWeight: '800',
     lineHeight: 34,
@@ -1161,7 +1162,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.28)',
   },
   coverTagText: {
-    color: '#fff',
     fontWeight: '700',
   },
   moodBadge: {
@@ -1226,58 +1226,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  reflectionCountText: { color: '#fff', fontSize: 11, lineHeight: 22, fontWeight: '700', textAlign: 'center', includeFontPadding: false },
-  floatingBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 3000,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 20,
-  },
-  toolbarLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
+  reflectionCountText: { fontSize: 11, lineHeight: 22, fontWeight: '700', textAlign: 'center', includeFontPadding: false },
   formattingStack: {
     position: 'relative',
-  },
-  toolbarGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 8,
-  },
-  toolbarIcon: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-  },
-  barDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 22,
-    marginHorizontal: 4,
-  },
-  toolbarRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 'auto',
-    paddingLeft: 8,
-  },
-  wordCount: {
-    fontSize: 11,
-    fontVariant: ['tabular-nums'],
   },
 });

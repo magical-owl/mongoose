@@ -23,6 +23,8 @@ import { useTheme } from '@/providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { Icon, type IconProps } from '@shared/components/Icon';
 import { Modal } from '@shared/components/Modal';
+import { AccentPillButton } from '@shared/components/AccentPillButton';
+import { SectionLabel } from '@shared/components/SectionLabel';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
@@ -402,7 +404,7 @@ export default function SettingsScreen() {
         <View style={styles.optionsContainer}>
           {settingsSections.map((section) => (
             <View key={section.id} style={styles.optionSection}>
-              <Text preset="caption" color="textSecondary" style={styles.optionSectionTitle}>{section.title}</Text>
+              <SectionLabel style={styles.optionSectionTitle}>{section.title}</SectionLabel>
               <View style={[styles.optionGroup, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
                 {section.options.map((option, index) => (
                   <TouchableOpacity
@@ -465,14 +467,12 @@ export default function SettingsScreen() {
             value={theme.isDark}
             onValueChange={(value) => theme.setThemeMode(value ? 'dark' : 'light')}
             trackColor={{ false: theme.colors.border, true: theme.colors.tint }}
-            thumbColor="#fff"
+            thumbColor={theme.colors.card}
           />
         </View>
 
         <View style={{ paddingTop: 16 }}>
-          <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
-            {t('settingsThemeModeSection')}
-          </Text>
+          <SectionLabel style={styles.displaySectionLabel}>{t('settingsThemeModeSection')}</SectionLabel>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
             {(['light', 'dark', 'system'] as const).map((m) => {
               const active = theme.mode === m;
@@ -511,9 +511,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={{ paddingTop: 20 }}>
-          <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
-            {t('settingsColorThemeSection')}
-          </Text>
+          <SectionLabel style={styles.displaySectionLabel}>{t('settingsColorThemeSection')}</SectionLabel>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
             {(Object.keys(colorThemes) as ColorTheme[]).map((colorThemeKey) => {
               const active = theme.colorTheme === colorThemeKey;
@@ -547,9 +545,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={{ paddingTop: 20 }}>
-          <Text preset="caption" color="textSecondary" style={{ fontWeight: '700', marginBottom: 10 }}>
-            {t('settingsAccentColorSection')}
-          </Text>
+          <SectionLabel style={styles.displaySectionLabel}>{t('settingsAccentColorSection')}</SectionLabel>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
             {(['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet', 'teal', 'coral', 'rose', 'plum', 'mint', 'slate'] as AccentColor[]).map((color) => {
               const active = theme.accentColor === color;
@@ -577,7 +573,7 @@ export default function SettingsScreen() {
         title={t('displayModalTitle')}
         accessibilityLabel={t('settingsDisplayA11y')}
       >
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsCalendarDateFormatSection')}</Text>
+        <SectionLabel style={styles.displaySectionLabel}>{t('settingsCalendarDateFormatSection')}</SectionLabel>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
           {([
             ['month-day-year', 'Aug 16, 2026'],
@@ -596,7 +592,7 @@ export default function SettingsScreen() {
           ))}
         </ScrollView>
 
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsWeekStartsOnSection')}</Text>
+        <SectionLabel style={styles.displaySectionLabel}>{t('settingsWeekStartsOnSection')}</SectionLabel>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
           {([[0, t('settingsWeekStartsSunday')], [1, t('settingsWeekStartsMonday')]] as const).map(([value, label]) => (
             <TouchableOpacity
@@ -611,7 +607,7 @@ export default function SettingsScreen() {
           ))}
         </ScrollView>
 
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsTimeFormatSection')}</Text>
+        <SectionLabel style={styles.displaySectionLabel}>{t('settingsTimeFormatSection')}</SectionLabel>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
           {([['24-hour', '24-hour'], ['12-hour', '12-hour (AM/PM)']] as const satisfies (readonly [TimeFormat, string])[]).map(([value, label]) => (
             <TouchableOpacity
@@ -634,7 +630,7 @@ export default function SettingsScreen() {
         title={t('settingsFontsModalTitle')}
         accessibilityLabel={t('settingsFontsA11y')}
       >
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsGlobalFontSizeSection')}</Text>
+        <SectionLabel style={styles.displaySectionLabel}>{t('settingsGlobalFontSizeSection')}</SectionLabel>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
           {([['small', t('settingsFontSmall')], ['default', t('settingsFontDefault')], ['large', t('settingsFontLarge')]] as const satisfies (readonly [FontScale, string])[]).map(([value, label]) => (
             <TouchableOpacity
@@ -650,7 +646,7 @@ export default function SettingsScreen() {
         </ScrollView>
         <Text preset="caption" color="textSecondary" style={styles.displayHint}>{t('settingsGlobalFontSizeHint')}</Text>
 
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('settingsFontFamilySection')}</Text>
+        <SectionLabel style={styles.displaySectionLabel}>{t('settingsFontFamilySection')}</SectionLabel>
         <View style={styles.fontOptionList}>
           {appFontOptions.map((option) => {
             const active = activeFontFamily === option.value;
@@ -702,7 +698,7 @@ export default function SettingsScreen() {
         title={t('languageModalTitle')}
         accessibilityLabel={t('settingsLanguageTitle')}
       >
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>{t('displayLanguageSection')}</Text>
+        <SectionLabel style={styles.displaySectionLabel}>{t('displayLanguageSection')}</SectionLabel>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
           {APP_LANGUAGES.map(({ value, nativeLabel }) => (
             <TouchableOpacity
@@ -725,9 +721,7 @@ export default function SettingsScreen() {
         accessibilityLabel={t('settingsFreeTierTitle')}
       >
         <View style={styles.limitSectionHeader}>
-          <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>
-            {t('premiumStatusLabel')}
-          </Text>
+          <SectionLabel style={styles.displaySectionLabel}>{t('premiumStatusLabel')}</SectionLabel>
           <Text preset="caption" color="textSecondary" style={styles.limitSectionDescriptor}>
             {t('premiumStatusDescriptor')}
           </Text>
@@ -742,9 +736,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.limitSectionHeader}>
-          <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>
-            {t('freeTierExhaustedSection')}
-          </Text>
+          <SectionLabel style={styles.displaySectionLabel}>{t('freeTierExhaustedSection')}</SectionLabel>
           <Text preset="caption" color="textSecondary" style={styles.limitSectionDescriptor}>
             {t('freeTierExhaustedDate')}
           </Text>
@@ -759,9 +751,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.limitSectionHeader}>
-          <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>
-            {t('freeTierResetSection')}
-          </Text>
+          <SectionLabel style={styles.displaySectionLabel}>{t('freeTierResetSection')}</SectionLabel>
           <Text preset="caption" color="textSecondary" style={styles.limitSectionDescriptor}>
             {t('freeTierNextResetDateTime')}
           </Text>
@@ -776,9 +766,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.limitSectionHeader}>
-          <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>
-            {t('freeTierTimeLeftSection')}
-          </Text>
+          <SectionLabel style={styles.displaySectionLabel}>{t('freeTierTimeLeftSection')}</SectionLabel>
           <Text preset="caption" color="textSecondary" style={styles.limitSectionDescriptor}>
             {t('freeTierTimeLeftDescriptor')}
           </Text>
@@ -792,9 +780,7 @@ export default function SettingsScreen() {
           <Icon name={isPro ? 'infinite-outline' : 'timer-outline'} size={24} color="tint" />
         </View>
 
-        <Text preset="caption" color="textSecondary" style={styles.displaySectionLabel}>
-          {t('freeTierCurrentLimitsSection')}
-        </Text>
+        <SectionLabel style={styles.displaySectionLabel}>{t('freeTierCurrentLimitsSection')}</SectionLabel>
         <View style={styles.limitRows}>
           <View style={[styles.limitRow, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
             <Text preset="body" color="text" style={styles.limitRowLabel}>{t('freeTierEntriesLimit')}</Text>
@@ -841,7 +827,7 @@ export default function SettingsScreen() {
               <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>{t('settingsBiometricLockTitle')}</Text>
               <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>{t('settingsBiometricLockHint')}</Text>
             </View>
-            <Switch value={biometricLockEnabled} onValueChange={handleBiometricToggle} trackColor={{ false: theme.colors.border, true: theme.colors.tint }} thumbColor="#fff" />
+            <Switch value={biometricLockEnabled} onValueChange={handleBiometricToggle} trackColor={{ false: theme.colors.border, true: theme.colors.tint }} thumbColor={theme.colors.card} />
           </View>
         </View>
       </Modal>
@@ -921,14 +907,12 @@ export default function SettingsScreen() {
                   </View>
                 </View>
                 <View style={styles.recoveryActions}>
-                  <TouchableOpacity
+                  <AccentPillButton
+                    label={t('settingsRecoveryBinRestoreAction')}
                     onPress={() => { void handleRestoreDeletedEntry(entry.id); }}
-                    style={[styles.recoveryButton, { borderColor: theme.colors.tint }]}
-                    accessibilityRole="button"
                     accessibilityLabel={`${t('settingsRecoveryBinRestoreAction')} ${entry.title}`}
-                  >
-                    <Text preset="caption" style={[styles.recoveryButtonText, { color: theme.colors.tint }]}>{t('settingsRecoveryBinRestoreAction')}</Text>
-                  </TouchableOpacity>
+                    style={styles.recoveryRestoreButton}
+                  />
                   <TouchableOpacity
                     onPress={() => handlePermanentlyDeleteEntry(entry.id)}
                     style={[styles.recoveryButton, { borderColor: theme.colors.error }]}
@@ -1117,6 +1101,7 @@ const styles = StyleSheet.create({
   recoveryButtonText: {
     fontWeight: '800',
   },
+  recoveryRestoreButton: { height: 34, minWidth: 96, borderRadius: 17 },
   displaySectionLabel: { fontWeight: '700', marginTop: 12, marginBottom: 8 },
   displayOption: {
     alignSelf: 'flex-start',

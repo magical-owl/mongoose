@@ -3,6 +3,7 @@ import { Animated, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } f
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
+import { SectionLabel } from '@shared/components/SectionLabel';
 import { useTranslation } from '@/localization/i18n';
 import { normalizeDiaryTag, normalizeDiaryTags, toggleDiaryTagSelection } from '@/features/diary/services/DiaryTagService';
 
@@ -53,11 +54,14 @@ export function DiaryTagSelector({ selectedTags, availableTags, onChange }: Diar
 
   return (
     <View style={styles.section}>
+      <SectionLabel>
+        {t('entryTagsSection')}
+      </SectionLabel>
       <View style={styles.selectorRow}>
-        <Animated.View style={[styles.inputWrap, { width: inputWidth }]}>
+        <Animated.View style={[styles.inputWrap, { width: inputWidth, backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
           {!tagInput && !isTagInputFocused ? (
             <View pointerEvents="none" style={styles.placeholderIcon}>
-              <Ionicons name="pricetag-outline" size={18} color={theme.colors.textSecondary} />
+              <Ionicons name="pricetag-outline" size={18} color={theme.colors.tint} />
             </View>
           ) : null}
           <TextInput
@@ -78,11 +82,17 @@ export function DiaryTagSelector({ selectedTags, availableTags, onChange }: Diar
         <TouchableOpacity
           onPress={handleAddTag}
           disabled={!canAddTag}
-          style={[styles.addButton, { backgroundColor: canAddTag ? theme.colors.tint : 'transparent' }]}
+          style={[
+            styles.addButton,
+            {
+              backgroundColor: canAddTag ? theme.colors.tint : theme.colors.surface,
+              borderColor: canAddTag ? theme.colors.tint : theme.colors.border,
+            },
+          ]}
           accessibilityRole="button"
           accessibilityLabel={t('entryTagAddA11y')}
         >
-          <Ionicons name="add" size={18} color={canAddTag ? '#fff' : theme.colors.textSecondary} />
+          <Ionicons name="add" size={18} color={canAddTag ? theme.colors.background : theme.colors.textSecondary} />
         </TouchableOpacity>
         <ScrollView
           horizontal
@@ -99,7 +109,7 @@ export function DiaryTagSelector({ selectedTags, availableTags, onChange }: Diar
               accessibilityRole="button"
               accessibilityLabel={`${t('entryTagRemoveA11y')} ${tag}`}
             >
-              <Text preset="caption" color="tint" style={styles.tagText}>#{tag}</Text>
+              <Text preset="caption" style={[styles.tagText, { color: theme.colors.tint }]}>#{tag}</Text>
               <Ionicons name="close" size={13} color={theme.colors.tint} />
             </TouchableOpacity>
           ))}
@@ -107,7 +117,7 @@ export function DiaryTagSelector({ selectedTags, availableTags, onChange }: Diar
             <TouchableOpacity
               key={tag}
               onPress={() => handleToggleTag(tag)}
-              style={[styles.suggestedTag, { borderColor: theme.colors.border + '80', backgroundColor: 'transparent' }]}
+              style={[styles.suggestedTag, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: false }}
             >
@@ -121,17 +131,17 @@ export function DiaryTagSelector({ selectedTags, availableTags, onChange }: Diar
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: 4, marginBottom: 4 },
-  selectorRow: { minHeight: 36, flexDirection: 'row', alignItems: 'center', borderRadius: 8, paddingLeft: 0, paddingRight: 0, gap: 2 },
-  inputWrap: { height: 32, justifyContent: 'center', overflow: 'hidden' },
+  section: { marginTop: 6, marginBottom: 8 },
+  selectorRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', borderRadius: 8, paddingLeft: 0, paddingRight: 0, gap: 8 },
+  inputWrap: { height: 34, justifyContent: 'center', overflow: 'hidden', borderWidth: 1, borderRadius: 17 },
   placeholderIcon: { position: 'absolute', alignSelf: 'center' },
   inlineScroll: { flex: 1 },
-  inlineContent: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 5, paddingRight: 4 },
-  selectedTag: { minHeight: 28, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 14, paddingHorizontal: 8, gap: 4 },
-  tagText: { fontWeight: '700' },
+  inlineContent: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 4 },
+  selectedTag: { minHeight: 34, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 17, paddingHorizontal: 12, gap: 5 },
+  tagText: { fontSize: 14, lineHeight: 18, fontWeight: '800' },
   input: {
     width: '100%',
-    height: 32,
+    height: 34,
     paddingTop: 0,
     paddingBottom: 0,
     fontSize: 14,
@@ -139,6 +149,6 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     textAlignVertical: 'center',
   },
-  addButton: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  suggestedTag: { minHeight: 28, borderWidth: 1, borderRadius: 14, paddingHorizontal: 9, alignItems: 'center', justifyContent: 'center' },
+  addButton: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  suggestedTag: { minHeight: 34, borderWidth: 1, borderRadius: 17, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
 });

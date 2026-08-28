@@ -14,6 +14,8 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
+import { AccentPillButton } from '@shared/components/AccentPillButton';
+import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useAppStore } from '@/stores/useAppStore';
 import { DiaryTimelineList } from '@/features/diary/components/DiaryTimelineList';
@@ -241,14 +243,14 @@ export default function CalendarScreen() {
         <View style={styles.headerNavRow}>
           <View style={styles.calendarNavRegion}>
             <View style={styles.calendarPeriodRow}>
-              <TouchableOpacity
+              <IconCircleButton
+                icon="chevron-left"
                 onPress={handlePrevMonth}
-                style={styles.periodPickerButton}
                 accessibilityLabel={t('calendarPreviousMonthA11y')}
-                accessibilityRole="button"
-              >
-                <Ionicons name="chevron-back" size={20} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
+                size="sm"
+                surface="transparent"
+                iconSize={20}
+              />
               <TouchableOpacity
                 onPress={() => { setPickerYear(year); setShowMonthPicker(true); }}
                 style={styles.calendarPeriodValueButton}
@@ -259,20 +261,18 @@ export default function CalendarScreen() {
                   {monthLabel} {year}
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity
+              <IconCircleButton
+                icon="chevron-right"
                 onPress={handleNextMonth}
-                style={styles.periodPickerButton}
                 accessibilityLabel={t('calendarNextMonthA11y')}
-                accessibilityRole="button"
-              >
-                <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
+                size="sm"
+                surface="transparent"
+                iconSize={20}
+              />
             </View>
           </View>
 
-          <TouchableOpacity onPress={handleJumpToToday} style={[styles.todayButton, { borderColor: theme.colors.border }]} accessibilityRole="button" accessibilityLabel={t('calendarJumpTodayA11y')}>
-            <Text preset="caption" color="tint">{t('calendarToday')}</Text>
-          </TouchableOpacity>
+          <AccentPillButton label={t('calendarToday')} onPress={handleJumpToToday} accessibilityLabel={t('calendarJumpTodayA11y')} style={styles.todayButton} />
         </View>
         <Animated.View style={[styles.calendarCollapseWrap, { height: calendarHeight, opacity: calendarOpacity }]}>
           {calendarCard}
@@ -319,14 +319,12 @@ export default function CalendarScreen() {
           <Pressable style={[styles.monthPicker, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={(event) => event.stopPropagation()}>
             <View style={styles.pickerHeader}>
               <Text preset="h2" color="text">{t('calendarChooseMonth')}</Text>
-              <TouchableOpacity onPress={() => setShowMonthPicker(false)} accessibilityRole="button" accessibilityLabel={t('calendarCloseMonthPickerA11y')}>
-                <Ionicons name="close" size={22} color={theme.colors.text} />
-              </TouchableOpacity>
+              <IconCircleButton icon="close" onPress={() => setShowMonthPicker(false)} accessibilityLabel={t('calendarCloseMonthPickerA11y')} size="sm" />
             </View>
             <View style={styles.yearRow}>
-              <TouchableOpacity onPress={() => setPickerYear((value) => value - 1)} accessibilityRole="button" accessibilityLabel={t('insightsPreviousYearA11y')}><Ionicons name="chevron-back" size={20} color={theme.colors.text} /></TouchableOpacity>
+              <IconCircleButton icon="chevron-left" onPress={() => setPickerYear((value) => value - 1)} accessibilityLabel={t('insightsPreviousYearA11y')} size="sm" />
               <Text preset="label" color="text">{pickerYear}</Text>
-              <TouchableOpacity onPress={() => setPickerYear((value) => value + 1)} accessibilityRole="button" accessibilityLabel={t('insightsNextYearA11y')}><Ionicons name="chevron-forward" size={20} color={theme.colors.text} /></TouchableOpacity>
+              <IconCircleButton icon="chevron-right" onPress={() => setPickerYear((value) => value + 1)} accessibilityLabel={t('insightsNextYearA11y')} size="sm" />
             </View>
             <View style={styles.monthGrid}>
               {Array.from({ length: 12 }, (_, index) => index).map((monthIndex) => {
@@ -366,19 +364,12 @@ const styles = StyleSheet.create({
   headerNavRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 8 },
   calendarCollapseWrap: { overflow: 'hidden', marginTop: 10 },
   calendarNavRegion: { flex: 1, alignItems: 'center', minWidth: 0 },
-  todayButton: { flexShrink: 0, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
+  todayButton: { flexShrink: 0, minWidth: 72 },
   calendarCard: {
     borderWidth: 1,
     borderRadius: 14,
     padding: 10,
     marginBottom: 15,
-  },
-  periodPickerButton: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
   },
   calendarPeriodRow: {
     width: '82%',
@@ -478,10 +469,6 @@ const styles = StyleSheet.create({
   },
   moodIndicator: {
     marginLeft: 8,
-  },
-  moodEmoji: {
-    fontSize: 13,
-    color: '#fff',
   },
   emptyText: {
     fontSize: 14,

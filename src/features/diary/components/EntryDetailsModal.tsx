@@ -1,6 +1,7 @@
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
+import { IconCircleButton } from '@shared/components/IconCircleButton';
+import { SectionLabel } from '@shared/components/SectionLabel';
 import { Text } from '@shared/components/Text';
 import { Modal } from '@shared/components/Modal';
 import { MANUAL_MOOD_OPTIONS, MANUAL_MOOD_WEATHER_OPTIONS, type ManualMood, type ManualMoodWeather, type SensoryDetails, type WritingMode } from '@/features/diary/domain/DiaryEntry';
@@ -46,10 +47,15 @@ export function EntryDetailsModal({ visible, onDismiss, values, journals, onChan
       <Modal visible={visible} onDismiss={onDismiss} title={t('entryDetailsTitle')} accessibilityLabel={t('entryDetailsTitle')}>
         <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.labelRow}>
-            <Text preset="caption" color="textSecondary" style={styles.label}>{t('entryMoodSection')}</Text>
-            <TouchableOpacity onPress={() => Alert.alert(t('entryMoodHelpTitle'), t('entryMoodHelpMessage'))} accessibilityRole="button" accessibilityLabel={t('entryMoodHelpA11y')}>
-              <Ionicons name="information-circle-outline" size={17} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
+            <SectionLabel style={styles.label}>{t('entryMoodSection')}</SectionLabel>
+            <IconCircleButton
+              icon="information-outline"
+              onPress={() => Alert.alert(t('entryMoodHelpTitle'), t('entryMoodHelpMessage'))}
+              accessibilityLabel={t('entryMoodHelpA11y')}
+              size="sm"
+              surface="transparent"
+              iconSize={17}
+            />
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
             {moods.map((item) => {
@@ -72,7 +78,7 @@ export function EntryDetailsModal({ visible, onDismiss, values, journals, onChan
           </ScrollView>
           {journals.length > 0 ? (
             <>
-              <Text preset="caption" color="textSecondary" style={styles.label}>{t('entryJournalSection')}</Text>
+              <SectionLabel style={styles.label}>{t('entryJournalSection')}</SectionLabel>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
                 {journals.map((journal) => {
                   const selected = values.journalIds.includes(journal.id);
@@ -98,10 +104,15 @@ export function EntryDetailsModal({ visible, onDismiss, values, journals, onChan
             </>
           ) : null}
           <View style={styles.labelRow}>
-            <Text preset="caption" color="textSecondary" style={styles.label}>{t('entryMoodWeatherSection')}</Text>
-            <TouchableOpacity onPress={() => Alert.alert(t('entryMoodWeatherHelpTitle'), t('entryMoodWeatherHelpMessage'))} accessibilityRole="button" accessibilityLabel={t('entryMoodWeatherHelpA11y')}>
-              <Ionicons name="information-circle-outline" size={17} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
+            <SectionLabel style={styles.label}>{t('entryMoodWeatherSection')}</SectionLabel>
+            <IconCircleButton
+              icon="information-outline"
+              onPress={() => Alert.alert(t('entryMoodWeatherHelpTitle'), t('entryMoodWeatherHelpMessage'))}
+              accessibilityLabel={t('entryMoodWeatherHelpA11y')}
+              size="sm"
+              surface="transparent"
+              iconSize={17}
+            />
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
             {weather.map((item) => {

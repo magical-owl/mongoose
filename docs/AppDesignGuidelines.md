@@ -72,6 +72,16 @@ Implementation rules:
 - The formatting toolbar should stay reachable above the keyboard.
 - Sticker drag, selection, layering, and scrolling must not fight each other.
 
+#### Diary Composer Pattern
+
+- Create and edit entry forms share the same visual chrome through `src/features/diary/components/DiaryEntryEditorChrome.tsx`.
+- The composer header uses a compact safe-area-aware row: circular close/back control on the left, centered route title, favorite and save controls on the right, with stable dimensions so the title does not jump.
+- The cover image is a rounded landscape block below the header with an explicit gap. Empty cover state uses a centered camera action and label; selected covers keep the same rounded frame.
+- Date, title, and body use an editorial writing hierarchy: compact accent date row, italic serif-like title treatment, subtle divider, and a generous body editor area.
+- Mood, journal, and tag controls sit below the body as compact horizontal sections with uppercase labels, rounded surface chips, and warning-accent selected states.
+- The editor footer is an inset rounded toolbar above the safe area or keyboard. Footer icons use one neutral inactive treatment; active formatting is the only accent-highlighted state.
+- Keep new composer controls token-driven and componentized. Use `IconCircleButton`, `AccentPillButton`, `InsetFloatingToolbar`, and `SectionLabel` for matching controls elsewhere in the app. Do not reintroduce separate create/edit styling for header, cover sizing, body sizing, or footer layout.
+
 ### Settings
 
 - Settings should be grouped by user intent: Display, Writing, Privacy and Security, Data, Subscription, About.
