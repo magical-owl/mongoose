@@ -51,7 +51,7 @@ const JOURNAL_COVER_COLLAPSED_HEIGHT = 60;
 const JOURNAL_COVER_COLLAPSE_DISTANCE = 120;
 const JOURNAL_HEADER_TOP_PADDING = 16;
 const JOURNAL_HEADER_ROW_HEIGHT = 38;
-const JOURNAL_HEADER_GAP = 10;
+const JOURNAL_HEADER_GAP = 14;
 const JOURNAL_HEADER_BOTTOM_GAP = 14;
 const JOURNAL_VIEW_PILL_HEIGHT = 36;
 
@@ -500,8 +500,8 @@ export default function JournalEntriesScreen() {
         styles.viewModePill,
         hasJournalCover && styles.viewModePillOnCover,
         {
-          backgroundColor: hasJournalCover ? "rgba(0, 0, 0, 0.42)" : theme.colors.surface,
-          borderColor: hasJournalCover ? "rgba(255, 255, 255, 0.28)" : theme.colors.border,
+          backgroundColor: hasJournalCover ? "rgba(0, 0, 0, 0.56)" : theme.colors.surface,
+          borderColor: hasJournalCover ? theme.colors.stickerControlText + "40" : theme.colors.border,
         },
       ]}
     >
@@ -520,7 +520,7 @@ export default function JournalEntriesScreen() {
               preset="caption"
               style={[
                 styles.viewModeButtonText,
-                { color: selected || hasJournalCover ? "#fff" : theme.colors.textSecondary },
+                { color: selected || hasJournalCover ? theme.colors.stickerControlText : theme.colors.textSecondary },
               ]}
               numberOfLines={1}
             >
@@ -700,10 +700,10 @@ export default function JournalEntriesScreen() {
               />
               {viewModePill}
               <Animated.View style={[styles.journalCoverContextOverlay, { opacity: journalCoverOverlayOpacity }]}>
-                <Text preset="label" numberOfLines={2} style={styles.journalCoverContextTitle}>
+                <Text preset="label" numberOfLines={2} style={[styles.journalCoverContextTitle, { color: theme.colors.stickerControlText }]}>
                   {journalTitle}
                 </Text>
-                <Text preset="caption" numberOfLines={1} style={styles.journalCoverContextMeta}>
+                <Text preset="caption" numberOfLines={1} style={[styles.journalCoverContextMeta, { color: theme.colors.stickerControlText }]}>
                   {filteredEntries.length === 1 ? t("journalEntryCountOne") : t("journalEntryCountMany").replace("{count}", String(filteredEntries.length))}
                 </Text>
               </Animated.View>
@@ -736,11 +736,17 @@ export default function JournalEntriesScreen() {
 
           {/* Entries List */}
           {filteredEntries.length === 0 ? (
-            <Text
-              style={[styles.emptyText, { color: theme.colors.textSecondary }]}
-            >
-              {search.trim() ? t("homeNoMatchingEntries") : t("homeNoEntriesYet")}
-            </Text>
+            <View style={[styles.emptyPanel, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+              <View style={[styles.emptyIconHalo, { backgroundColor: theme.colors.tint + "16" }]}>
+                <Ionicons name={search.trim() ? "search-outline" : "pencil-outline"} size={26} color={theme.colors.tint} />
+              </View>
+              <Text preset="label" color="text" style={styles.emptyPrompt}>
+                {search.trim() ? t("homeNoMatchingEntries") : t("homeEmptyPrompt")}
+              </Text>
+              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                {search.trim() ? t("homeSearchPlaceholder") : t("homeNoEntriesYet")}
+              </Text>
+            </View>
           ) : (
             <DiaryTimelineList
               groupedEntries={groupedEntries}
@@ -877,16 +883,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 9,
-    backgroundColor: "rgba(0, 0, 0, 0.42)",
+    backgroundColor: "rgba(0, 0, 0, 0.52)",
   },
   journalCoverContextTitle: {
-    color: "#fff",
     fontWeight: "800",
     lineHeight: 20,
     marginBottom: 2,
   },
   journalCoverContextMeta: {
-    color: "#fff",
     fontWeight: "700",
   },
   journalContextTitle: { flex: 1, textAlign: "center", fontWeight: "800" },
@@ -1033,8 +1037,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  emptyText: {
-    marginTop: 10,
-    fontSize: 15,
-  },
+  emptyPanel: { minHeight: 220, borderWidth: 1, borderRadius: 8, alignItems: "center", justifyContent: "center", padding: 24 },
+  emptyIconHalo: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center", marginBottom: 16 },
+  emptyPrompt: { fontWeight: "800", marginBottom: 6, textAlign: "center" },
+  emptyText: { fontSize: 15, textAlign: "center" },
 });

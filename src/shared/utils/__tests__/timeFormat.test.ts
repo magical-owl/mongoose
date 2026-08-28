@@ -1,4 +1,14 @@
-import { formatDisplayMonthDayTime, formatDisplayMonthDayYearTime, formatDisplayTime } from '@/shared/utils/timeFormat';
+import { formatDisplayMonthDayTime, formatDisplayMonthDayYearTime, formatDisplayTime, formatFriendlyTimestamp } from '@/shared/utils/timeFormat';
+
+const friendlyLabels = {
+  today: 'Today',
+  yesterday: 'Yesterday',
+  todayAt: 'Today at {time}',
+  yesterdayAt: 'Yesterday at {time}',
+  justNow: 'Just now',
+  minutesAgo: '{count}m ago',
+  hoursAgo: '{count}h ago',
+};
 
 describe('formatDisplayTime', () => {
   it('supports both display formats', () => {
@@ -33,5 +43,32 @@ describe('formatDisplayMonthDayYearTime', () => {
 
   it('returns an empty value for invalid timestamps', () => {
     expect(formatDisplayMonthDayYearTime('invalid', '24-hour')).toBe('');
+  });
+});
+
+describe('formatFriendlyTimestamp', () => {
+  it('formats very recent timestamps as relative text', () => {
+    const now = new Date(2026, 7, 29, 10, 0, 0);
+
+    expect(formatFriendlyTimestamp(new Date(2026, 7, 29, 9, 59, 30).toISOString(), '12-hour', friendlyLabels, now)).toBe('Just now');
+    expect(formatFriendlyTimestamp(new Date(2026, 7, 29, 9, 42, 0).toISOString(), '12-hour', friendlyLabels, now)).toBe('18m ago');
+    expect(formatFriendlyTimestamp(new Date(2026, 7, 29, 8, 0, 0).toISOString(), '12-hour', friendlyLabels, now)).toBe('2h ago');
+  });
+
+  it('formats same-day and previous-day timestamps with friendly day labels', () => {
+    const now = new Date(2026, 7, 29, 10, 0, 0);
+
+    expect(formatFriendlyTimestamp(new Date(2026, 7, 29, 2, 15, 0).toISOString(), '12-hour', friendlyLabels, now)).toMatch(/^Today at .*2:15/i);
+    expect(formatFriendlyTimestamp(new Date(2026, 7, 28, 21, 15, 0).toISOString(), '12-hour', friendlyLabels, now)).toMatch(/^Yesterday at .*9:15/i);
+  });
+
+  it('falls back to month/day time for older timestamps', () => {
+    const now = new Date(2026, 7, 29, 10, 0, 0);
+
+    expect(formatFriendlyTimestamp(new Date(2026, 7, 20, 9, 30, 0).toISOString(), '24-hour', friendlyLabels, now)).toMatch(/Aug 20.*9:30/i);
+  });
+
+  it('returns an empty value for invalid timestamps', () => {
+    expect(formatFriendlyTimestamp('invalid', '24-hour', friendlyLabels)).toBe('');
   });
 });

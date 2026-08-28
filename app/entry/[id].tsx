@@ -57,7 +57,7 @@ import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
-import { formatDisplayMonthDayTime } from '@shared/utils/timeFormat';
+import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import { manualMoodLabel, premiumPaywallTitle, useTranslation } from '@/localization/i18n';
@@ -126,7 +126,7 @@ export default function EntryDetailScreen() {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const t = useTranslation();
-  const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection } = useDiary();
+  const { entries, isLoading, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection } = useDiary();
   const { journals } = useJournals();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -479,7 +479,7 @@ export default function EntryDetailScreen() {
           <View style={styles.headerBtnPlaceholder} />
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text preset="body" color="textSecondary">{t('entryNotFound')}</Text>
+          <Text preset="body" color="textSecondary">{isLoading ? t('commonLoading') : t('entryNotFound')}</Text>
         </View>
       </View>
     );
@@ -493,7 +493,16 @@ export default function EntryDetailScreen() {
   const wordCount = countWords(isEditing ? editContent : entry.content);
   const moodTone = getManualMoodColor(entry.manualMood, theme.colors);
   const hasViewCoverPhoto = Boolean(entry.coverPhoto);
-  const viewDateTime = formatDisplayMonthDayTime(entry.createdAt, timeFormat);
+  const friendlyTimestampLabels = {
+    today: t('timeToday'),
+    yesterday: t('timeYesterday'),
+    todayAt: t('timeTodayAt'),
+    yesterdayAt: t('timeYesterdayAt'),
+    justNow: t('timeJustNow'),
+    minutesAgo: t('timeMinutesAgoShort'),
+    hoursAgo: t('timeHoursAgoShort'),
+  };
+  const viewDateTime = formatFriendlyTimestamp(entry.createdAt, timeFormat, friendlyTimestampLabels);
   const renderViewMoodAndTags = (onCover: boolean) => (
     <View style={onCover ? styles.coverMetaLeft : styles.entryMetaRow}>
       {entry.manualMood ? (
@@ -978,7 +987,7 @@ export default function EntryDetailScreen() {
               <View key={reflection.id} style={styles.reflectionItem}>
                 <View style={styles.reflectionHeader}>
                   <Text preset="caption" color="textTertiary">
-                    {formatDisplayMonthDayTime(reflection.createdAt, timeFormat)}
+                    {formatFriendlyTimestamp(reflection.createdAt, timeFormat, friendlyTimestampLabels)}
                   </Text>
                   <TouchableOpacity onPress={() => handleDeleteReflection(reflection.id)} accessibilityRole="button" accessibilityLabel={t('reflectionDeleteA11y')}>
                     <Text preset="caption" color="textSecondary">{t('entryDelete')}</Text>
