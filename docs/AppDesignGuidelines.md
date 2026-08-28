@@ -82,6 +82,7 @@ Implementation rules:
 - Date, title, and body use an editorial writing hierarchy: compact accent date row, italic serif-like title treatment, subtle divider, and a generous body editor area.
 - Mood, journal, and tag controls sit below the body as compact horizontal sections with uppercase labels, rounded surface chips, and warning-accent selected states.
 - The editor footer is an inset rounded toolbar above the safe area or keyboard. Footer icons use one neutral inactive treatment; active formatting is the only accent-highlighted state.
+- Composer scroll content must reserve the footer height, footer bottom offset, safe-area inset, and a trailing gap so mood, journal, and tag controls are fully visible at the bottom of the scroll.
 - Keep new composer controls token-driven and componentized. Use `IconCircleButton`, `AccentPillButton`, `InsetFloatingToolbar`, and `SectionLabel` for matching controls elsewhere in the app. Do not reintroduce separate create/edit styling for header, cover sizing, body sizing, or footer layout.
 
 ### Settings

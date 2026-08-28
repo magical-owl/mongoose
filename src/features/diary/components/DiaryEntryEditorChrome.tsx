@@ -12,6 +12,7 @@ export const ENTRY_EDITOR_BODY_MIN_HEIGHT = 220;
 export const ENTRY_EDITOR_BODY_DEFAULT_VIEWPORT_RATIO = 0.32;
 export const ENTRY_EDITOR_BODY_EXTRA_STICKER_SPACE = 6;
 export const ENTRY_EDITOR_TOOLBAR_HEIGHT = 56;
+export const ENTRY_EDITOR_FOOTER_BOTTOM_OFFSET = 12;
 export const ENTRY_EDITOR_BODY_FONT_SIZE = 20;
 export const ENTRY_EDITOR_BODY_LINE_HEIGHT = 31;
 
@@ -21,6 +22,10 @@ export function getEntryEditorHorizontalPadding(windowWidth: number): number {
 
 export function getEntryEditorCoverHeight(windowWidth: number, horizontalPadding: number): number {
   return Math.min(150, Math.max(104, (windowWidth - horizontalPadding * 2) / 2.45));
+}
+
+export function getEntryEditorScrollBottomPadding(bottomInset: number, spacingAfterFooter: number): number {
+  return ENTRY_EDITOR_TOOLBAR_HEIGHT + bottomInset + ENTRY_EDITOR_FOOTER_BOTTOM_OFFSET + spacingAfterFooter;
 }
 
 interface DiaryEntryEditorHeaderProps {

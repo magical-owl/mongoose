@@ -69,6 +69,8 @@ import {
   diaryEntryEditorChromeStyles,
   getEntryEditorCoverHeight,
   getEntryEditorHorizontalPadding,
+  getEntryEditorScrollBottomPadding,
+  ENTRY_EDITOR_FOOTER_BOTTOM_OFFSET,
 } from '@/features/diary/components/DiaryEntryEditorChrome';
 
 // Word count helper (strips markdown syntax)
@@ -539,7 +541,7 @@ export default function CreateEntryScreen() {
               paddingHorizontal: entryHorizontalPadding,
               minHeight: windowHeight + coverExpandedHeight,
               paddingTop: headerOverlayHeight,
-              paddingBottom: TOOLBAR_H + theme.spacing.xl,
+              paddingBottom: getEntryEditorScrollBottomPadding(insets.bottom, theme.spacing.xl),
             },
           ]}
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -647,7 +649,7 @@ export default function CreateEntryScreen() {
 
       {/* ── Floating bottom toolbar ──────────────────────────────────────── */}
       <DiaryEntryEditorFooter
-        bottom={keyboardHeight > 0 ? keyboardHeight + 8 : insets.bottom + 12}
+        bottom={keyboardHeight > 0 ? keyboardHeight + 8 : insets.bottom + ENTRY_EDITOR_FOOTER_BOTTOM_OFFSET}
         wordCount={wordCount}
       >
           <View style={styles.formattingStack}>

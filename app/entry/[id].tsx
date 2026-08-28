@@ -84,6 +84,8 @@ import {
   diaryEntryEditorChromeStyles,
   getEntryEditorCoverHeight,
   getEntryEditorHorizontalPadding,
+  getEntryEditorScrollBottomPadding,
+  ENTRY_EDITOR_FOOTER_BOTTOM_OFFSET,
 } from '@/features/diary/components/DiaryEntryEditorChrome';
 
 function countWords(text: string): number {
@@ -677,7 +679,7 @@ export default function EntryDetailScreen() {
               paddingHorizontal: isEditing ? entryHorizontalPadding : theme.spacing.lg,
               minHeight: windowHeight + (hasCoverHeader ? coverExpandedHeight : 0),
               paddingTop: headerOverlayHeight,
-              paddingBottom: TOOLBAR_H + theme.spacing.xl,
+              paddingBottom: getEntryEditorScrollBottomPadding(insets.bottom, theme.spacing.xl),
             },
           ]}
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -849,7 +851,7 @@ export default function EntryDetailScreen() {
       </KeyboardAvoidingView>
 
       {!isEditing && (
-        <DiaryEntryEditorFooter bottom={insets.bottom + 12}>
+        <DiaryEntryEditorFooter bottom={insets.bottom + ENTRY_EDITOR_FOOTER_BOTTOM_OFFSET}>
             <TouchableOpacity
               style={styles.viewFooterButton}
               onPress={() => setShowReflections(true)}
@@ -873,7 +875,7 @@ export default function EntryDetailScreen() {
       {/* ── Floating bottom toolbar (edit mode only) ────────────────────── */}
       {isEditing && (
         <DiaryEntryEditorFooter
-          bottom={keyboardHeight > 0 ? keyboardHeight + 8 : insets.bottom + 12}
+          bottom={keyboardHeight > 0 ? keyboardHeight + 8 : insets.bottom + ENTRY_EDITOR_FOOTER_BOTTOM_OFFSET}
           wordCount={wordCount}
         >
             <View style={styles.formattingStack}>
