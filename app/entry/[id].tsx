@@ -36,6 +36,8 @@ import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { Modal } from '@shared/components/Modal';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
+import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
+import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import { RichTextEditor, type RichTextEditorHandle } from '@shared/components/RichTextEditor';
 import { MarkdownText } from '@shared/components/MarkdownText';
 import { DiaryEntry, DiaryPhoto, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
@@ -128,6 +130,7 @@ export default function EntryDetailScreen() {
   const t = useTranslation();
   const { entries, isLoading, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection } = useDiary();
   const { journals } = useJournals();
+  const { profile } = useProfileForm();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const timeFormat = useAppStore((state) => state.timeFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
@@ -983,19 +986,22 @@ export default function EntryDetailScreen() {
               <Text preset="bodySmall" color="textSecondary" style={styles.reflectionsEmpty}>{t('noReflections')}</Text>
             ) : (
               <View style={styles.reflectionsList}>
-            {entry.reflections.map((reflection) => (
-              <View key={reflection.id} style={styles.reflectionItem}>
-                <View style={styles.reflectionHeader}>
-                  <Text preset="caption" color="textTertiary">
-                    {formatFriendlyTimestamp(reflection.createdAt, timeFormat, friendlyTimestampLabels)}
-                  </Text>
-                  <TouchableOpacity onPress={() => handleDeleteReflection(reflection.id)} accessibilityRole="button" accessibilityLabel={t('reflectionDeleteA11y')}>
-                    <Text preset="caption" color="textSecondary">{t('entryDelete')}</Text>
-                  </TouchableOpacity>
-                </View>
-                <Text preset="bodySmall" color="text" style={styles.reflectionText}>{reflection.text}</Text>
-              </View>
-            ))}
+                {entry.reflections.map((reflection) => (
+                  <View key={reflection.id} style={styles.reflectionRow}>
+                    <ProfileAvatar profile={profile} size={24} accessibilityLabel={t('profileAvatarA11y')} />
+                    <View style={[styles.reflectionItem, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+                      <View style={styles.reflectionHeader}>
+                        <Text preset="caption" color="textTertiary">
+                          {formatFriendlyTimestamp(reflection.createdAt, timeFormat, friendlyTimestampLabels)}
+                        </Text>
+                        <TouchableOpacity onPress={() => handleDeleteReflection(reflection.id)} accessibilityRole="button" accessibilityLabel={t('reflectionDeleteA11y')}>
+                          <Text preset="caption" color="textSecondary">{t('entryDelete')}</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <Text preset="bodySmall" color="text" style={styles.reflectionText}>{reflection.text}</Text>
+                    </View>
+                  </View>
+                ))}
               </View>
             )}
           </ScrollView>
@@ -1184,9 +1190,18 @@ const styles = StyleSheet.create({
   reflectionsScroll: { maxHeight: 440 },
   reflectionsScrollContent: { paddingBottom: 12 },
   reflectionsEmpty: { marginBottom: 12 },
-  reflectionsList: { gap: 6, marginTop: 4, marginBottom: 12 },
+  reflectionsList: { gap: 8, marginTop: 4, marginBottom: 12 },
+  reflectionRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
   reflectionItem: {
-    paddingVertical: 1,
+    flex: 1,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
   },
   reflectionHeader: {
     flexDirection: 'row',

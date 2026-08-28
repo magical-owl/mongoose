@@ -61,6 +61,7 @@ export class ProfileRepository implements IProfileRepository {
       displayName: record.displayName,
       email: record.email,
       bio: record.bio,
+      avatarUri: record.avatarUri,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     };

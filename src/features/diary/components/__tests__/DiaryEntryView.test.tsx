@@ -34,19 +34,26 @@ const baseEntry: DiaryEntry = {
   reflections: [],
 };
 
+const profile = {
+  displayName: 'Sarah Meadow',
+  avatarUri: undefined,
+};
+
 describe('DiaryEntryView', () => {
   it('renders card view as a separated tappable surface', async () => {
     const { getByTestId } = await renderWithProviders(
-      <DiaryEntryView entry={baseEntry} mode="detailed" onPress={jest.fn()} />,
+      <DiaryEntryView entry={baseEntry} mode="detailed" profile={profile} onPress={jest.fn()} />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
     const style = StyleSheet.flatten(getByTestId('entry-card').props.style);
+    const avatarStyle = StyleSheet.flatten(getByTestId('entry-card-avatar').props.style);
     const moodStyle = StyleSheet.flatten(getByTestId('entry-card-mood').props.style);
 
     expect(style.borderRadius).toBe(8);
     expect(style.marginBottom).toBe(14);
     expect(style.backgroundColor).toBe(palette.gray800);
+    expect(avatarStyle.width).toBe(22);
     expect(moodStyle.flexDirection).toBe('row');
     expect(moodStyle.gap).toBe(5);
   });
@@ -65,16 +72,20 @@ describe('DiaryEntryView', () => {
     };
 
     const { getByTestId } = await renderWithProviders(
-      <DiaryEntryView entry={entryWithReflection} mode="timeline" onPress={jest.fn()} />,
+      <DiaryEntryView entry={entryWithReflection} mode="timeline" profile={profile} onPress={jest.fn()} />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
     const spineStyle = StyleSheet.flatten(getByTestId('entry-timeline-spine').props.style);
+    const avatarStyle = StyleSheet.flatten(getByTestId('entry-timeline-avatar').props.style);
+    const reflectionAvatarStyle = StyleSheet.flatten(getByTestId('entry-reflection-avatar').props.style);
     const moodStyle = StyleSheet.flatten(getByTestId('entry-timeline-mood').props.style);
     const reflectionsStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflections').props.style);
     const reflectionItemStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflection-item').props.style);
 
     expect(spineStyle.width).toBe(1);
+    expect(avatarStyle.width).toBe(22);
+    expect(reflectionAvatarStyle.width).toBe(24);
     expect(moodStyle.flexDirection).toBe('row');
     expect(moodStyle.gap).toBe(5);
     expect(reflectionsStyle.borderLeftWidth).toBe(1);
@@ -84,12 +95,15 @@ describe('DiaryEntryView', () => {
 
   it('renders feed view without cover using the shared mood indicator', async () => {
     const { getByTestId } = await renderWithProviders(
-      <DiaryEntryView entry={baseEntry} mode="feed" onPress={jest.fn()} />,
+      <DiaryEntryView entry={baseEntry} mode="feed" profile={profile} onPress={jest.fn()} />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
     const moodStyle = StyleSheet.flatten(getByTestId('entry-feed-mood').props.style);
+    const authorAvatarStyle = StyleSheet.flatten(getByTestId('entry-feed-author-avatar').props.style);
 
+    expect(getByTestId('entry-feed-author-row')).toBeTruthy();
+    expect(authorAvatarStyle.width).toBe(32);
     expect(moodStyle.flexDirection).toBe('row');
     expect(moodStyle.gap).toBe(5);
   });
@@ -118,6 +132,7 @@ describe('DiaryEntryView', () => {
       <DiaryEntryView
         entry={entryWithCoverAndReflection}
         mode="feed"
+        profile={profile}
         onPress={jest.fn()}
         onAddReflection={jest.fn().mockResolvedValue(true)}
       />,

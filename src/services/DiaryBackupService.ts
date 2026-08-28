@@ -160,8 +160,9 @@ function isProfile(value: unknown): value is Profile {
   if (!isRecord(value)) return false;
   return typeof value.id === 'string'
     && typeof value.displayName === 'string'
-    && typeof value.email === 'string'
-    && typeof value.bio === 'string'
+    && (value.email === undefined || typeof value.email === 'string')
+    && (value.bio === undefined || typeof value.bio === 'string')
+    && (value.avatarUri === undefined || typeof value.avatarUri === 'string')
     && typeof value.createdAt === 'string'
     && typeof value.updatedAt === 'string';
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,10 +12,14 @@ import { APP_LANGUAGES, appText, useTranslation, type TranslationKey } from '@/l
 import { useAppStore, type FontScale, type TimeFormat } from '@/stores/useAppStore';
 import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
 import { accentColors, type AccentColor } from '@/theme/accents';
+import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
+import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
+import { chooseDiaryPhotos } from '@/features/diary/services/DiaryPhotoPickerService';
+import { profilePhotoService } from '@/features/profile/services/ProfilePhotoService';
 
-type OnboardingStep = 0 | 1 | 2;
+type OnboardingStep = 0 | 1 | 2 | 3;
 
-const ONBOARDING_STEP_COUNT = 3;
+const ONBOARDING_STEP_COUNT = 4;
 
 const THEME_MODE_OPTIONS: readonly { readonly value: ThemeMode; readonly label: TranslationKey }[] = [
   { value: 'dark', label: 'settingsThemeDark' },
@@ -65,6 +69,10 @@ export default function OnboardingScreen(): React.JSX.Element {
   const theme = useTheme();
   const t = useTranslation();
   const [step, setStep] = useState<OnboardingStep>(0);
+  const [profileName, setProfileName] = useState('');
+  const [profileAvatarUri, setProfileAvatarUri] = useState<string | undefined>(undefined);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const { saveProfile } = useProfileForm();
   const isOnboarded = useAppStore((state) => state.isOnboarded);
   const appLanguage = useAppStore((state) => state.appLanguage);
   const themeMode = useAppStore((state) => state.themeMode);
@@ -89,8 +97,54 @@ export default function OnboardingScreen(): React.JSX.Element {
     router.replace('/entry/new');
   };
 
+  const handleChooseProfilePhoto = async () => {
+    const result = await chooseDiaryPhotos();
+    if (!result.success) {
+      if (result.error === 'native-module-missing') {
+        Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
+      } else {
+        Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage'));
+      }
+      return;
+    }
+    const asset = result.assets[0];
+    if (!asset) return;
+    try {
+      const importedUri = await profilePhotoService.importAsset(asset);
+      setProfileAvatarUri(importedUri);
+    } catch {
+      Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
+    }
+  };
+
+  const saveOnboardingProfile = async (): Promise<boolean> => {
+    const trimmedName = profileName.trim();
+    if (!trimmedName && !profileAvatarUri) return true;
+    if (trimmedName.length < 2) {
+      Alert.alert(t('settingsProfileInvalidTitle'), t('settingsProfileInvalidMessage'));
+      return false;
+    }
+    setIsSavingProfile(true);
+    const result = await saveProfile({
+      displayName: trimmedName,
+      avatarUri: profileAvatarUri,
+    });
+    setIsSavingProfile(false);
+    if (!result.success) {
+      Alert.alert(t('entryErrorTitle'), result.error.message);
+      return false;
+    }
+    return true;
+  };
+
   const goNext = () => {
-    if (step === 2) {
+    if (step === 1) {
+      void (async () => {
+        if (await saveOnboardingProfile()) setStep(2);
+      })();
+      return;
+    }
+    if (step === 3) {
       completeOnboarding();
       return;
     }
@@ -105,7 +159,9 @@ export default function OnboardingScreen(): React.JSX.Element {
     ? t('onboardingGetStarted')
     : step === 1
       ? t('onboardingContinue')
-      : t('onboardingStart');
+      : step === 2
+        ? t('onboardingContinue')
+        : t('onboardingStart');
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background, paddingTop: insets.top + 14 }]}>
@@ -192,6 +248,47 @@ export default function OnboardingScreen(): React.JSX.Element {
         )}
 
         {step === 1 && (
+          <View>
+            <Text preset="h1" color="text" style={styles.stepTitle}>
+              {t('onboardingProfileTitle')}
+            </Text>
+            <Text preset="body" color="textSecondary" style={styles.stepSubtitle}>
+              {t('onboardingProfileSubtitle')}
+            </Text>
+
+            <View style={[styles.profilePanel, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+              <TouchableOpacity
+                onPress={() => { void handleChooseProfilePhoto(); }}
+                activeOpacity={0.72}
+                style={styles.profilePhotoButton}
+                accessibilityRole="button"
+                accessibilityLabel={t('settingsProfilePhotoA11y')}
+              >
+                <ProfileAvatar
+                  profile={{ displayName: profileName, avatarUri: profileAvatarUri }}
+                  size={72}
+                  accessibilityLabel={t('profileAvatarA11y')}
+                />
+                <Text preset="caption" color="tint" style={styles.profilePhotoText}>
+                  {profileAvatarUri ? t('settingsProfileChangePhoto') : t('settingsProfileAddPhoto')}
+                </Text>
+              </TouchableOpacity>
+              <SectionLabel style={styles.profileInputLabel}>{t('settingsProfileNameLabel')}</SectionLabel>
+              <TextInput
+                value={profileName}
+                onChangeText={setProfileName}
+                placeholder={t('settingsProfileNamePlaceholder')}
+                placeholderTextColor={theme.colors.textSecondary}
+                style={[styles.profileInput, { borderColor: theme.colors.border, backgroundColor: theme.colors.card, color: theme.colors.text }]}
+                autoCapitalize="words"
+                returnKeyType="done"
+                accessibilityLabel={t('settingsProfileNameLabel')}
+              />
+            </View>
+          </View>
+        )}
+
+        {step === 2 && (
           <View>
             <Text preset="h1" color="text" style={styles.stepTitle}>
               {t('onboardingSetupTitle')}
@@ -333,7 +430,7 @@ export default function OnboardingScreen(): React.JSX.Element {
           </View>
         )}
 
-        {step === 2 && (
+        {step === 3 && (
           <View style={styles.readyStep}>
             <View style={[styles.readyHeroMark, { borderColor: `${theme.colors.tint}42`, backgroundColor: `${theme.colors.tint}16` }]}>
               <Ionicons name="checkmark" size={32} color={theme.colors.tint} />
@@ -387,6 +484,7 @@ export default function OnboardingScreen(): React.JSX.Element {
           label={buttonLabel}
           onPress={goNext}
           accessibilityLabel={buttonLabel}
+          disabled={isSavingProfile}
           trailingIcon="arrow-right"
           style={styles.startButton}
         />
@@ -562,6 +660,29 @@ const styles = StyleSheet.create({
   setupHint: {
     marginTop: 8,
     lineHeight: 18,
+  },
+  profilePanel: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+  },
+  profilePhotoButton: {
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 18,
+  },
+  profilePhotoText: {
+    fontWeight: '800',
+  },
+  profileInputLabel: {
+    marginBottom: 8,
+  },
+  profileInput: {
+    minHeight: 50,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
   },
   readyStep: {
     paddingTop: 56,

@@ -47,6 +47,7 @@ Already reusable:
 - `DiaryEntryView`: Card, Timeline, and Feed entry presentations used by Home.
 - `CalendarEntryView`: Calendar-specific compact activity rows used by Calendar.
 - `DiaryEntryEditorChrome`: shared create/edit composer header, footer, cover sizing, body sizing, and editor spacing constants.
+- `ProfileAvatar`: shared profile image/initials fallback used by onboarding, settings, journal headers, feed author rows, card/timeline rows, and reflection threads.
 - `DiaryDatePicker`, `EntryDetailsModal`, `StickerPickerModal`, `TemplatePickerModal`, and `CompanionPickerModal`.
 - Shared typography, modal, input, button, feedback components, `IconCircleButton`, `AccentPillButton`, `InsetFloatingToolbar`, and `SectionLabel`.
 

@@ -6,6 +6,7 @@ import { Text } from '@shared/components/Text';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import type { CalendarDateFormat, EntryHierarchyMode } from '@/stores/useAppStore';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import type { Profile } from '@/features/profile/domain/Profile';
 import { DiaryEntryView, type DiaryEntryViewMode } from './DiaryEntryView';
 
 const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
@@ -13,6 +14,7 @@ const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
 interface DiaryTimelineListProps {
   readonly groupedEntries: readonly (readonly [string, readonly DiaryEntry[]])[];
   readonly mode: DiaryEntryViewMode;
+  readonly profile?: Pick<Profile, 'displayName' | 'avatarUri'> | null;
   readonly calendarDateFormat: CalendarDateFormat;
   readonly entryHierarchyMode?: EntryHierarchyMode;
   readonly collapsible?: boolean;
@@ -42,6 +44,7 @@ function formatTimelineMonth(value: string): string {
 export function DiaryTimelineList({
   groupedEntries,
   mode,
+  profile,
   calendarDateFormat,
   entryHierarchyMode = 'date',
   collapsible = true,
@@ -147,6 +150,7 @@ export function DiaryTimelineList({
                     <DiaryEntryView
                       entry={entry}
                       mode={mode}
+                      profile={profile}
                       onPress={() => onEntryPress(entry)}
                       onAddReflection={onAddReflection}
                       onReflectionInputFocus={onReflectionInputFocus}

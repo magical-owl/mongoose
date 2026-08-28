@@ -54,6 +54,7 @@ Implementation rules:
 
 - Use icon buttons for back, close, save, edit, delete, menu, options, and create actions.
 - Keep left and right header clusters stable across related screens.
+- When profile access sits beside menu access, place the profile avatar first and the menu button second so identity and navigation remain separate.
 - Avoid text buttons when a familiar icon exists and the accessible label can describe the action.
 - Header bottom spacing should be compact; use a hairline divider only when it improves orientation.
 
@@ -62,6 +63,7 @@ Implementation rules:
 - Card view can use compact bordered cards.
 - Timeline view should be unframed and scannable.
 - Feed view can show richer content and sticker previews.
+- User identity should be compact and contextual: 32 px avatar rows for feed authorship, 24 px avatars for reflection threads, and 20-24 px avatars in dense card/timeline rows.
 - Empty states should be short and action-oriented.
 - Filters should use current diary data, not only free-text inputs.
 
@@ -95,6 +97,7 @@ Implementation rules:
 - Components own layout, visual states, accessibility labels, and typed callbacks.
 - Prefer Ionicons or Material Community Icons already used in the app.
 - Keep card radius at 8 px or less unless a platform-native sheet/modal requires otherwise.
+- Use `ProfileAvatar` for profile pictures and initials fallback instead of duplicating avatar sizing, border, or fallback logic.
 
 ## Accessibility Checklist
 

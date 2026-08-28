@@ -25,6 +25,7 @@ import { Icon, type IconProps } from '@shared/components/Icon';
 import { Modal } from '@shared/components/Modal';
 import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { SectionLabel } from '@shared/components/SectionLabel';
+import { ProfileEditorForm } from '@/features/profile/components/ProfileEditorForm';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
@@ -103,6 +104,7 @@ export default function SettingsScreen() {
 
   // Modals
   const [showAppearanceModal, setShowAppearanceModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showDataModal, setShowDataModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showRecoveryBinModal, setShowRecoveryBinModal] = useState(false);
@@ -203,6 +205,7 @@ export default function SettingsScreen() {
                 displayName: imported.profile.displayName,
                 email: imported.profile.email,
                 bio: imported.profile.bio,
+                avatarUri: imported.profile.avatarUri,
               });
             }
             if (imported.journalExtras) await replaceJournalExtras(imported.journalExtras);
@@ -274,11 +277,22 @@ export default function SettingsScreen() {
     router.replace('/onboarding');
   };
 
+  const handleOpenProfileModal = () => {
+    setShowProfileModal(true);
+  };
+
   const settingsSections: SettingsSection[] = [
     {
       id: 'preferences',
       title: t('settingsPreferencesSection'),
       options: [
+        {
+          id: 'profile',
+          title: t('settingsProfileTitle'),
+          subtitle: t('settingsProfileSubtitle'),
+          icon: 'person-circle-outline',
+          onPress: handleOpenProfileModal,
+        },
         {
           id: 'appearance',
           title: t('settingsAppearanceTitle'),
@@ -447,6 +461,19 @@ export default function SettingsScreen() {
       </ScrollView>
 
       {/* ── 1. Appearance Modal ───────────────────────────────────────────── */}
+      <Modal
+        visible={showProfileModal}
+        onDismiss={() => setShowProfileModal(false)}
+        title={t('settingsProfileTitle')}
+        accessibilityLabel={t('settingsProfileTitle')}
+      >
+        <ProfileEditorForm
+          key={profile?.updatedAt ?? 'empty-profile'}
+          profile={profile}
+          onSaved={() => setShowProfileModal(false)}
+        />
+      </Modal>
+
       <Modal
         visible={showAppearanceModal}
         onDismiss={() => setShowAppearanceModal(false)}

@@ -34,6 +34,7 @@ describe('ProfileRepository', () => {
       displayName: 'Updated User',
       email: 'updated@example.com',
       bio: 'Updated bio',
+      avatarUri: 'file:///avatar.jpg',
     });
     const current = await repository.getCurrent();
 
@@ -45,6 +46,7 @@ describe('ProfileRepository', () => {
         displayName: 'Updated User',
         email: 'updated@example.com',
         bio: 'Updated bio',
+        avatarUri: 'file:///avatar.jpg',
       },
     });
   });

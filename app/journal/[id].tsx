@@ -25,6 +25,8 @@ import { IconCircleButton } from "@shared/components/IconCircleButton";
 import { SectionLabel } from "@shared/components/SectionLabel";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import { useJournals } from "@/features/journal/hooks/useJournals";
+import { useProfileForm } from "@/features/profile/hooks/useProfileForm";
+import { ProfileAvatar } from "@/features/profile/components/ProfileAvatar";
 import { getJournalCoverImageSource } from "@/features/journal/domain/JournalBackgrounds";
 import { stripHtml } from "@shared/utils/html";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
@@ -79,6 +81,7 @@ export default function JournalEntriesScreen() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { entries, isLoading, refresh, addReflection } = useDiary();
   const { journals, refresh: refreshJournals } = useJournals();
+  const { profile } = useProfileForm();
   const { isPro } = useSubscription();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const isOnboarded = useAppStore((state) => state.isOnboarded);
@@ -676,6 +679,13 @@ export default function JournalEntriesScreen() {
             </View>
             <Text preset="label" color="text" numberOfLines={1} style={styles.journalContextTitle}>{journalTitle}</Text>
             <View style={[styles.headerSide, styles.headerSideRight]}>
+              <ProfileAvatar
+                profile={profile}
+                size={32}
+                onPress={() => router.push("/profile/edit")}
+                accessibilityLabel={t("settingsProfileTitle")}
+                testID="journal-header-profile-avatar"
+              />
               <IconCircleButton icon="menu" onPress={openDrawer} accessibilityLabel={t("homeDrawerOpenA11y")} />
             </View>
           </View>
@@ -751,6 +761,7 @@ export default function JournalEntriesScreen() {
             <DiaryTimelineList
               groupedEntries={groupedEntries}
               mode={viewMode}
+              profile={profile}
               calendarDateFormat={calendarDateFormat}
               entryHierarchyMode={entryHierarchyMode}
               collapsedYears={collapsedYears}
