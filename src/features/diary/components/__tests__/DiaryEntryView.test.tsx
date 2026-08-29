@@ -50,12 +50,22 @@ describe('DiaryEntryView', () => {
     const avatarStyle = StyleSheet.flatten(getByTestId('entry-card-avatar').props.style);
     const moodStyle = StyleSheet.flatten(getByTestId('entry-card-mood').props.style);
 
+    expect(getByTestId('entry-card-date-column')).toBeTruthy();
     expect(style.borderRadius).toBe(8);
     expect(style.marginBottom).toBe(14);
     expect(style.backgroundColor).toBe(palette.gray800);
     expect(avatarStyle.width).toBe(22);
     expect(moodStyle.flexDirection).toBe('row');
     expect(moodStyle.gap).toBe(5);
+  });
+
+  it('can hide the card date column when a visible date group already labels the entries', async () => {
+    const { queryByTestId } = await renderWithProviders(
+      <DiaryEntryView entry={baseEntry} mode="detailed" profile={profile} showDateColumn={false} onPress={jest.fn()} />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(queryByTestId('entry-card-date-column')).toBeNull();
   });
 
   it('renders timeline view with a spine and threaded reflections', async () => {
@@ -95,15 +105,23 @@ describe('DiaryEntryView', () => {
 
   it('renders feed view without cover using the shared mood indicator', async () => {
     const { getByTestId } = await renderWithProviders(
-      <DiaryEntryView entry={baseEntry} mode="feed" profile={profile} onPress={jest.fn()} />,
+      <DiaryEntryView
+        entry={baseEntry}
+        mode="feed"
+        profile={profile}
+        onPress={jest.fn()}
+      />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
     const moodStyle = StyleSheet.flatten(getByTestId('entry-feed-mood').props.style);
     const authorAvatarStyle = StyleSheet.flatten(getByTestId('entry-feed-author-avatar').props.style);
+    const authorRowStyle = StyleSheet.flatten(getByTestId('entry-feed-author-row').props.style);
 
     expect(getByTestId('entry-feed-author-row')).toBeTruthy();
     expect(authorAvatarStyle.width).toBe(32);
+    expect(authorRowStyle.borderWidth).toBeUndefined();
+    expect(authorRowStyle.backgroundColor).toBeUndefined();
     expect(moodStyle.flexDirection).toBe('row');
     expect(moodStyle.gap).toBe(5);
   });
@@ -143,6 +161,7 @@ describe('DiaryEntryView', () => {
     const reflectionPanelStyle = StyleSheet.flatten(getByTestId('entry-feed-reflection-panel').props.style);
     const reflectionInputStyle = StyleSheet.flatten(getByTestId('entry-feed-reflection-input').props.style);
     const bottomScrimStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-bottom-scrim').props.style);
+    const authorRowStyle = StyleSheet.flatten(getByTestId('entry-feed-author-row').props.style);
 
     const coverMoodStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-mood').props.style);
 
@@ -153,6 +172,8 @@ describe('DiaryEntryView', () => {
     expect(reflectionPanelStyle.borderRadius).toBe(8);
     expect(reflectionPanelStyle.backgroundColor).toBe(palette.gray800);
     expect(reflectionInputStyle.marginLeft).toBe(0);
-    expect(bottomScrimStyle.opacity).toBe(0.56);
+    expect(authorRowStyle.borderWidth).toBeUndefined();
+    expect(bottomScrimStyle.opacity).toBe(0.36);
+    expect(bottomScrimStyle.height).toBe('54%');
   });
 });

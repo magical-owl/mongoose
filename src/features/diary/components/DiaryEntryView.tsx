@@ -34,6 +34,7 @@ interface DiaryEntryViewProps {
   readonly onAddReflection?: (entryId: string, text: string) => Promise<boolean>;
   readonly onReflectionSummaryPress?: (entryId: string) => void;
   readonly onReflectionInputFocus?: (entryId: string) => void;
+  readonly showDateColumn?: boolean;
 }
 
 function CoverPhotoPreview({ entry, style }: { readonly entry: DiaryEntry; readonly style: object }): React.JSX.Element | null {
@@ -105,7 +106,16 @@ function MoodDot({ color }: { readonly color: string }): React.JSX.Element {
   return <View style={[styles.moodDot, { backgroundColor: color }]} />;
 }
 
-export function DiaryEntryView({ entry, mode, profile, onPress, onAddReflection, onReflectionSummaryPress, onReflectionInputFocus }: DiaryEntryViewProps): React.JSX.Element {
+export function DiaryEntryView({
+  entry,
+  mode,
+  profile,
+  onPress,
+  onAddReflection,
+  onReflectionSummaryPress,
+  onReflectionInputFocus,
+  showDateColumn = true,
+}: DiaryEntryViewProps): React.JSX.Element {
   const theme = useTheme();
   const { width: windowWidth } = useWindowDimensions();
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -304,7 +314,7 @@ export function DiaryEntryView({ entry, mode, profile, onPress, onAddReflection,
       </View>
     );
     const feedAuthorRow = (
-      <View style={[styles.feedAuthorRow, { borderColor: theme.colors.border, backgroundColor: theme.colors.card }]} testID="entry-feed-author-row">
+      <View style={styles.feedAuthorRow} testID="entry-feed-author-row">
         <ProfileAvatar
           profile={profile}
           size={32}
@@ -358,7 +368,6 @@ export function DiaryEntryView({ entry, mode, profile, onPress, onAddReflection,
               </View>
             </ImageBackground>
           ) : null}
-          {entry.coverPhoto ? feedAuthorRow : null}
           <View
             onLayout={(event) => setFeedCanvasWidth(event.nativeEvent.layout.width)}
             style={[
@@ -387,10 +396,10 @@ export function DiaryEntryView({ entry, mode, profile, onPress, onAddReflection,
                     </Text>
                   </View>
                   {feedMetaContent}
-                  {feedAuthorRow}
                 </>
               )}
               <View style={[styles.feedContentPanel, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]} testID="entry-feed-content-panel">
+                {feedAuthorRow}
                 <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>{entry.content}</MarkdownText>
               </View>
             </View>
@@ -488,10 +497,12 @@ export function DiaryEntryView({ entry, mode, profile, onPress, onAddReflection,
       {entry.coverPhoto ? <CoverPhotoPreview entry={entry} style={styles.cardHeroCoverPhoto} /> : null}
       <View style={styles.cardInner}>
         <View style={[styles.cardRail, { backgroundColor: hasMood ? moodTone : theme.colors.tint }]} />
-        <View style={styles.cardDateColumn}>
-          <Text preset="caption" color="textSecondary" style={styles.cardWeekday}>{cardDate.weekday}</Text>
-          <Text style={[styles.cardDay, { color: theme.colors.text }]}>{cardDate.day}</Text>
-        </View>
+        {showDateColumn ? (
+          <View style={styles.cardDateColumn} testID="entry-card-date-column">
+            <Text preset="caption" color="textSecondary" style={styles.cardWeekday}>{cardDate.weekday}</Text>
+            <Text style={[styles.cardDay, { color: theme.colors.text }]}>{cardDate.day}</Text>
+          </View>
+        ) : null}
         <View style={styles.cardContentColumn}>
           <View style={styles.cardHeader}>
             <View style={styles.cardTitleBlock}>
@@ -555,14 +566,14 @@ const styles = StyleSheet.create({
   feedTitle: { flex: 1, fontWeight: '700' },
   feedCoverHeader: { minHeight: 168, justifyContent: 'flex-end', marginBottom: 12, overflow: 'hidden' },
   feedCoverHeaderImage: { borderRadius: 8 },
-  feedCoverScrim: { ...StyleSheet.absoluteFill, borderRadius: 8, opacity: 0.46 },
-  feedCoverBottomScrim: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '72%', borderBottomLeftRadius: 8, borderBottomRightRadius: 8, opacity: 0.56 },
+  feedCoverScrim: { ...StyleSheet.absoluteFill, borderRadius: 8, opacity: 0.28 },
+  feedCoverBottomScrim: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '54%', borderBottomLeftRadius: 8, borderBottomRightRadius: 8, opacity: 0.36 },
   feedCoverContent: { paddingHorizontal: 14, paddingTop: 42, paddingBottom: 12 },
   feedCoverTitle: { marginBottom: 10 },
   feedCoverMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   feedCoverMetaText: { fontWeight: '700' },
   feedCoverMoodMeta: { maxWidth: 112 },
-  feedAuthorRow: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 12 },
+  feedAuthorRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   feedAuthorCopy: { flex: 1, minWidth: 0 },
   feedAuthorName: { fontWeight: '800' },
   feedContent: { fontSize: 16, lineHeight: 24 },

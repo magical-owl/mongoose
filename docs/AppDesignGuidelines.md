@@ -63,6 +63,9 @@ Implementation rules:
 - Card view can use compact bordered cards.
 - Timeline view should be unframed and scannable.
 - Feed view can show richer content and sticker previews.
+- Keep the journal banner immersive. Do not collapse or hide the journal cover on scroll unless a later design decision explicitly changes that behavior.
+- Feed cover title overlays should use the lightest scrim that keeps text readable, and author name/time should live with the diary body rather than as a separate card between cover and content.
+- When entries are grouped under visible date headers, card rows should not repeat the same date rail.
 - User identity should be compact and contextual: 32 px avatar rows for feed authorship, 24 px avatars for reflection threads, and 20-24 px avatars in dense card/timeline rows.
 - Empty states should be short and action-oriented.
 - Filters should use current diary data, not only free-text inputs.

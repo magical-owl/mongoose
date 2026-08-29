@@ -152,6 +152,7 @@ export function DiaryTimelineList({
                       mode={mode}
                       profile={profile}
                       onPress={() => onEntryPress(entry)}
+                      showDateColumn={!(mode === 'detailed' && isDateVisible)}
                       onAddReflection={onAddReflection}
                       onReflectionInputFocus={onReflectionInputFocus}
                       onReflectionSummaryPress={onReflectionSummaryPress}
