@@ -440,13 +440,19 @@ export default function EntryDetailScreen() {
 
   const handleDelete = async () => {
     if (!entry) return;
-    Alert.alert(t('entryDeleteTitle'), t('entryDeleteMessage'), [
-      { text: t('entryCancel'), style: 'cancel' },
-      {
-        text: t('entryDelete'), style: 'destructive',
-        onPress: async () => { await deleteDiaryEntry(entry.id); navigateBack(); },
-      },
-    ]);
+    dismissEntryKeyboard();
+    setShowFormattingTools(false);
+    setShowReflections(false);
+    setTimeout(() => {
+      Alert.alert(t('entryDeleteTitle'), t('entryDeleteMessage'), [
+        { text: t('entryCancel'), style: 'cancel' },
+        {
+          text: t('entryDelete'),
+          style: 'destructive',
+          onPress: async () => { await deleteDiaryEntry(entry.id); navigateBack(); },
+        },
+      ]);
+    }, 80);
   };
 
   const handleAddReflection = async () => {
