@@ -339,6 +339,7 @@ export function DiaryEntryView({
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={onPress}
+          style={entry.coverPhoto ? [styles.feedMergedEntrySurface, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }] : undefined}
         >
           {entry.coverPhoto ? (
             <ImageBackground
@@ -348,7 +349,7 @@ export function DiaryEntryView({
               resizeMode="cover"
             >
               <View style={[styles.feedCoverScrim, { backgroundColor: theme.colors.overlay }]} />
-              <View style={[styles.feedCoverBottomScrim, { backgroundColor: theme.colors.background }]} testID="entry-feed-cover-bottom-scrim" />
+              <View style={[styles.feedCoverBottomScrim, { backgroundColor: theme.colors.card }]} testID="entry-feed-cover-bottom-scrim" />
               <View style={styles.feedCoverContent}>
                 <Text
                   style={[
@@ -398,7 +399,17 @@ export function DiaryEntryView({
                   {feedMetaContent}
                 </>
               )}
-              <View style={[styles.feedContentPanel, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]} testID="entry-feed-content-panel">
+              <View
+                style={[
+                  styles.feedContentPanel,
+                  entry.coverPhoto && styles.feedContentPanelMerged,
+                  {
+                    backgroundColor: entry.coverPhoto ? 'transparent' : theme.colors.card,
+                    borderColor: entry.coverPhoto ? 'transparent' : theme.colors.border,
+                  },
+                ]}
+                testID="entry-feed-content-panel"
+              >
                 {feedAuthorRow}
                 <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>{entry.content}</MarkdownText>
               </View>
@@ -555,6 +566,7 @@ const styles = StyleSheet.create({
   reflectionSummaryButton: { minHeight: 28, maxWidth: 142, flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 14, paddingHorizontal: 9 },
   reflectionSummary: { flexShrink: 0, fontWeight: '700' },
   feedCard: { padding: 16, marginBottom: 18 },
+  feedMergedEntrySurface: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, overflow: 'hidden' },
   feedCanvas: { position: 'relative', overflow: 'visible' },
   feedTextLayer: { position: 'relative', zIndex: 2 },
   feedSticker: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
@@ -564,10 +576,10 @@ const styles = StyleSheet.create({
   feedStickerEmoji: { fontSize: 48, lineHeight: 60, includeFontPadding: true, textAlign: 'center' },
   feedTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 10 },
   feedTitle: { flex: 1, fontWeight: '700' },
-  feedCoverHeader: { minHeight: 168, justifyContent: 'flex-end', marginBottom: 12, overflow: 'hidden' },
-  feedCoverHeaderImage: { borderRadius: 8 },
-  feedCoverScrim: { ...StyleSheet.absoluteFill, borderRadius: 8, opacity: 0.28 },
-  feedCoverBottomScrim: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '54%', borderBottomLeftRadius: 8, borderBottomRightRadius: 8, opacity: 0.36 },
+  feedCoverHeader: { minHeight: 168, justifyContent: 'flex-end', overflow: 'hidden' },
+  feedCoverHeaderImage: { borderTopLeftRadius: 8, borderTopRightRadius: 8 },
+  feedCoverScrim: { ...StyleSheet.absoluteFill, opacity: 0.28 },
+  feedCoverBottomScrim: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '54%', opacity: 0.36 },
   feedCoverContent: { paddingHorizontal: 14, paddingTop: 42, paddingBottom: 12 },
   feedCoverTitle: { marginBottom: 10 },
   feedCoverMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
@@ -578,6 +590,7 @@ const styles = StyleSheet.create({
   feedAuthorName: { fontWeight: '800' },
   feedContent: { fontSize: 16, lineHeight: 24 },
   feedContentPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12 },
+  feedContentPanelMerged: { borderWidth: 0, borderRadius: 0, paddingTop: 14 },
   feedMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
   feedMetaLeft: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
   feedSectionLabel: { marginBottom: 8, fontWeight: '800', textTransform: 'uppercase' },

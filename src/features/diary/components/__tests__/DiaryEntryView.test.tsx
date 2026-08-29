@@ -167,8 +167,9 @@ describe('DiaryEntryView', () => {
 
     expect(coverMoodStyle.flexDirection).toBe('row');
     expect(coverMoodStyle.gap).toBe(5);
-    expect(contentPanelStyle.borderRadius).toBe(8);
-    expect(contentPanelStyle.backgroundColor).toBe(palette.gray800);
+    expect(contentPanelStyle.borderRadius).toBe(0);
+    expect(contentPanelStyle.borderWidth).toBe(0);
+    expect(contentPanelStyle.backgroundColor).toBe('transparent');
     expect(reflectionPanelStyle.borderRadius).toBe(8);
     expect(reflectionPanelStyle.backgroundColor).toBe(palette.gray800);
     expect(reflectionInputStyle.marginLeft).toBe(0);
