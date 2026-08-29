@@ -46,11 +46,11 @@ const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
 const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const ALL_ENTRIES_JOURNAL_ID = "all";
 const UNASSIGNED_JOURNAL_ID = "unassigned";
-const JOURNAL_COVER_EXPANDED_HEIGHT = 184;
-const JOURNAL_COVER_COLLAPSED_HEIGHT = 60;
+const JOURNAL_COVER_EXPANDED_HEIGHT = 270;
+const JOURNAL_COVER_COLLAPSED_EXTRA_HEIGHT = 12;
 const JOURNAL_COVER_COLLAPSE_DISTANCE = 120;
 const JOURNAL_HEADER_TOP_PADDING = 16;
-const JOURNAL_HEADER_ROW_HEIGHT = 38;
+const JOURNAL_HEADER_ROW_HEIGHT = 44;
 const JOURNAL_HEADER_GAP = 14;
 const JOURNAL_HEADER_BOTTOM_GAP = 14;
 const JOURNAL_VIEW_PILL_HEIGHT = 36;
@@ -428,9 +428,13 @@ export default function JournalEntriesScreen() {
   }, [filteredEntries]);
 
   const hasJournalCover = Boolean(journalCoverImageSource);
+  const coverHeaderFloorHeight = insets.top
+    + JOURNAL_HEADER_TOP_PADDING
+    + JOURNAL_HEADER_ROW_HEIGHT
+    + JOURNAL_COVER_COLLAPSED_EXTRA_HEIGHT;
   const journalCoverHeight = scrollY.interpolate({
     inputRange: [0, JOURNAL_COVER_COLLAPSE_DISTANCE],
-    outputRange: [JOURNAL_COVER_EXPANDED_HEIGHT, JOURNAL_COVER_COLLAPSED_HEIGHT],
+    outputRange: [JOURNAL_COVER_EXPANDED_HEIGHT, coverHeaderFloorHeight],
     extrapolate: "clamp",
   });
   const journalCoverOverlayOpacity = scrollY.interpolate({
@@ -438,24 +442,29 @@ export default function JournalEntriesScreen() {
     outputRange: [1, 0],
     extrapolate: "clamp",
   });
-  const expandedHeaderHeight = insets.top
-    + JOURNAL_HEADER_TOP_PADDING
-    + JOURNAL_HEADER_ROW_HEIGHT
-    + JOURNAL_HEADER_GAP
-    + (hasJournalCover ? JOURNAL_COVER_EXPANDED_HEIGHT : JOURNAL_VIEW_PILL_HEIGHT)
-    + JOURNAL_HEADER_BOTTOM_GAP;
-  const collapsedHeaderHeight = insets.top
-    + JOURNAL_HEADER_TOP_PADDING
-    + JOURNAL_HEADER_ROW_HEIGHT
-    + JOURNAL_HEADER_GAP
-    + (hasJournalCover ? JOURNAL_COVER_COLLAPSED_HEIGHT : JOURNAL_VIEW_PILL_HEIGHT)
-    + JOURNAL_HEADER_BOTTOM_GAP;
+  const expandedHeaderHeight = hasJournalCover
+    ? JOURNAL_COVER_EXPANDED_HEIGHT + JOURNAL_HEADER_BOTTOM_GAP
+    : insets.top
+      + JOURNAL_HEADER_TOP_PADDING
+      + JOURNAL_HEADER_ROW_HEIGHT
+      + JOURNAL_HEADER_GAP
+      + JOURNAL_VIEW_PILL_HEIGHT
+      + JOURNAL_HEADER_BOTTOM_GAP;
+  const collapsedHeaderHeight = hasJournalCover
+    ? coverHeaderFloorHeight + JOURNAL_HEADER_BOTTOM_GAP
+    : insets.top
+      + JOURNAL_HEADER_TOP_PADDING
+      + JOURNAL_HEADER_ROW_HEIGHT
+      + JOURNAL_HEADER_GAP
+      + JOURNAL_VIEW_PILL_HEIGHT
+      + JOURNAL_HEADER_BOTTOM_GAP;
 
   const viewModePill = (
     <View
       style={[
         styles.viewModePill,
         hasJournalCover && styles.viewModePillOnCover,
+        hasJournalCover && { marginTop: insets.top + JOURNAL_HEADER_TOP_PADDING + JOURNAL_HEADER_ROW_HEIGHT + 14 },
         {
           backgroundColor: hasJournalCover ? "rgba(0, 0, 0, 0.56)" : theme.colors.surface,
           borderColor: hasJournalCover ? theme.colors.stickerControlText + "40" : theme.colors.border,
@@ -609,28 +618,12 @@ export default function JournalEntriesScreen() {
           </ScrollView>
       </SlidingDrawer>
       <View style={styles.contentPane}>
-        <View style={[styles.fixedHeader, { paddingTop: insets.top + JOURNAL_HEADER_TOP_PADDING, backgroundColor: theme.colors.background }]}>
-          <View style={styles.headerRow}>
-            <View style={styles.headerSide}>
-              <IconCircleButton icon="chevron-left" onPress={navigateBack} accessibilityLabel={t("entryBackA11y")} />
-            </View>
-            <View style={styles.headerTitleSpacer} />
-            <View style={[styles.headerSide, styles.headerSideRight]}>
-              <IconCircleButton
-                icon="plus"
-                onPress={() => {
-                  if (journalId === ALL_ENTRIES_JOURNAL_ID) {
-                    router.push("/entry/new");
-                    return;
-                  }
-                  router.push({ pathname: "/entry/new", params: { journalId } });
-                }}
-                accessibilityLabel={t("entryCreateTitle")}
-              />
-              <IconCircleButton icon="menu" onPress={openDrawer} accessibilityLabel={t("homeDrawerOpenA11y")} />
-            </View>
-          </View>
-
+        <View
+          style={[
+            styles.fixedHeader,
+            hasJournalCover ? styles.fixedHeaderWithCover : { paddingTop: insets.top + JOURNAL_HEADER_TOP_PADDING, backgroundColor: theme.colors.background },
+          ]}
+        >
           {journalCoverImageSource ? (
             <Animated.View
               style={[
@@ -660,6 +653,33 @@ export default function JournalEntriesScreen() {
               </Animated.View>
             </Animated.View>
           ) : viewModePill}
+          <View
+            style={[
+              styles.headerRow,
+              hasJournalCover && styles.headerRowOnCover,
+              hasJournalCover && { paddingTop: insets.top + JOURNAL_HEADER_TOP_PADDING },
+            ]}
+          >
+            <View style={styles.headerSide}>
+              <IconCircleButton icon="chevron-left" onPress={navigateBack} accessibilityLabel={t("entryBackA11y")} surface={hasJournalCover ? "overlay" : "surface"} />
+            </View>
+            <View style={styles.headerTitleSpacer} />
+            <View style={[styles.headerSide, styles.headerSideRight]}>
+              <IconCircleButton
+                icon="plus"
+                onPress={() => {
+                  if (journalId === ALL_ENTRIES_JOURNAL_ID) {
+                    router.push("/entry/new");
+                    return;
+                  }
+                  router.push({ pathname: "/entry/new", params: { journalId } });
+                }}
+                accessibilityLabel={t("entryCreateTitle")}
+                surface={hasJournalCover ? "overlay" : "surface"}
+              />
+              <IconCircleButton icon="menu" onPress={openDrawer} accessibilityLabel={t("homeDrawerOpenA11y")} surface={hasJournalCover ? "overlay" : "surface"} />
+            </View>
+          </View>
         </View>
         {isLoading ? null : (
         <ScrollView
@@ -669,7 +689,7 @@ export default function JournalEntriesScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             {
-              minHeight: windowHeight + (hasJournalCover ? JOURNAL_COVER_EXPANDED_HEIGHT - JOURNAL_COVER_COLLAPSED_HEIGHT : 0),
+              minHeight: windowHeight + (hasJournalCover ? JOURNAL_COVER_EXPANDED_HEIGHT - coverHeaderFloorHeight : 0),
               paddingTop: expandedHeaderHeight,
               paddingBottom: insets.bottom + 32 + keyboardHeight + collapsedHeaderHeight,
             },
@@ -780,14 +800,17 @@ const styles = StyleSheet.create({
     elevation: 30,
     paddingHorizontal: 20,
   },
+  fixedHeaderWithCover: {
+    paddingHorizontal: 0,
+    backgroundColor: "transparent",
+  },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 4,
   },
   journalCoverContext: {
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 14,
+    borderBottomWidth: 1,
+    borderRadius: 0,
     overflow: "hidden",
   },
   journalCoverImage: {
@@ -801,9 +824,9 @@ const styles = StyleSheet.create({
   },
   journalCoverContextOverlay: {
     position: "absolute",
-    left: 10,
-    right: 10,
-    bottom: 10,
+    left: 20,
+    right: 20,
+    bottom: 18,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -826,6 +849,16 @@ const styles = StyleSheet.create({
     marginBottom: JOURNAL_HEADER_GAP,
     gap: 8,
   },
+  headerRowOnCover: {
+    position: "absolute",
+    top: 0,
+    left: 20,
+    right: 20,
+    zIndex: 3,
+    height: undefined,
+    minHeight: JOURNAL_HEADER_ROW_HEIGHT,
+    marginBottom: 0,
+  },
   headerSide: { width: 82, flexDirection: "row", alignItems: "center", gap: 6 },
   headerSideRight: { justifyContent: "flex-end" },
   viewModePill: {
@@ -838,7 +871,6 @@ const styles = StyleSheet.create({
     marginBottom: JOURNAL_HEADER_BOTTOM_GAP,
   },
   viewModePillOnCover: {
-    marginTop: 12,
     marginBottom: 12,
     zIndex: 2,
   },
