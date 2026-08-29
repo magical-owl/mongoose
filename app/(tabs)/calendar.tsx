@@ -24,6 +24,7 @@ import { appLockService } from '@/services/AppLockService';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import type { ManualMood } from '@/features/diary/domain/DiaryEntry';
 import { useTranslation } from '@/localization/i18n';
+import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 
 const CALENDAR_COLLAPSED_HEIGHT = 0;
 const CALENDAR_HEADER_TOP_PADDING = 16;
@@ -51,13 +52,19 @@ export default function CalendarScreen() {
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
   const touchStartX = useRef<number | null>(null);
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const {
+    scrollRef,
+    scrollY,
+    handleScroll,
+    resetScrollCollapse,
+  } = useScrollCollapse();
 
   useFocusEffect(
     useCallback(() => {
+      resetScrollCollapse();
       refresh();
       setSelectedCalendarDate(selectedDateStr);
-    }, [refresh, selectedDateStr, setSelectedCalendarDate])
+    }, [refresh, resetScrollCollapse, selectedDateStr, setSelectedCalendarDate])
   );
 
   const handleSelectDate = (dateStr: string) => {
@@ -282,9 +289,8 @@ export default function CalendarScreen() {
       </View>
       {isLoading ? null : (
         <ScrollView
-          onScroll={(event) => {
-            scrollY.setValue(event.nativeEvent.contentOffset.y);
-          }}
+          ref={scrollRef}
+          onScroll={handleScroll}
           scrollEventThrottle={16}
           contentContainerStyle={[
             styles.container,
