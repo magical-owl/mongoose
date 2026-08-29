@@ -113,8 +113,9 @@ export function DiaryTimelineList({
             )}
             {!isYearCollapsed && !isMonthCollapsed ? (
               <View
-                style={[styles.dateGroup, !isDateVisible && styles.flatDateGroup]}
+                style={[styles.dateGroup, mode === 'feed' && styles.feedDateGroup, !isDateVisible && styles.flatDateGroup]}
                 onLayout={(event) => onDateGroupLayout?.(date, event.nativeEvent.layout.y)}
+                testID={mode === 'feed' ? 'entry-feed-date-group' : undefined}
               >
                 {isDateVisible ? (
                   <TouchableOpacity
@@ -172,6 +173,9 @@ const styles = StyleSheet.create({
   dateGroup: {
     marginBottom: 6,
     marginLeft: HIERARCHY_INDENT.year,
+  },
+  feedDateGroup: {
+    marginLeft: 0,
   },
   flatDateGroup: {
     marginLeft: HIERARCHY_INDENT.year,

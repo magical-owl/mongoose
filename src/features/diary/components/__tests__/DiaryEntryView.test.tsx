@@ -159,6 +159,7 @@ describe('DiaryEntryView', () => {
 
     const contentPanelStyle = StyleSheet.flatten(getByTestId('entry-feed-content-panel').props.style);
     const reflectionPanelStyle = StyleSheet.flatten(getByTestId('entry-feed-reflection-panel').props.style);
+    const feedReflectionsStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflections').props.style);
     const reflectionInputStyle = StyleSheet.flatten(getByTestId('entry-feed-reflection-input').props.style);
     const bottomScrimStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-bottom-scrim').props.style);
     const authorRowStyle = StyleSheet.flatten(getByTestId('entry-feed-author-row').props.style);
@@ -172,6 +173,8 @@ describe('DiaryEntryView', () => {
     expect(contentPanelStyle.backgroundColor).toBe('transparent');
     expect(reflectionPanelStyle.borderRadius).toBe(8);
     expect(reflectionPanelStyle.backgroundColor).toBe(palette.gray800);
+    expect(feedReflectionsStyle.borderLeftWidth).toBe(0);
+    expect(feedReflectionsStyle.paddingLeft).toBe(0);
     expect(reflectionInputStyle.marginLeft).toBe(0);
     expect(authorRowStyle.borderWidth).toBeUndefined();
     expect(bottomScrimStyle.opacity).toBe(0.36);

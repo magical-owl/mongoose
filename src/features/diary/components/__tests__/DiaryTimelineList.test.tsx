@@ -1,6 +1,7 @@
 import { DiaryTimelineList } from '@/features/diary/components/DiaryTimelineList';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { renderWithProviders } from '@tests/helpers';
+import { StyleSheet } from 'react-native';
 
 function createEntry(id: string, title: string, date: string): DiaryEntry {
   return {
@@ -50,5 +51,22 @@ describe('DiaryTimelineList', () => {
 
     expect(getByText(/Aug 29, 2026/)).toBeTruthy();
     expect(queryByTestId('entry-card-date-column')).toBeNull();
+  });
+
+  it('keeps feed entries aligned to the screen content width', async () => {
+    const { getByTestId } = await renderWithProviders(
+      <DiaryTimelineList
+        groupedEntries={[[firstEntry.date, [firstEntry]]]}
+        mode="feed"
+        calendarDateFormat="month-day-year"
+        entryHierarchyMode="date"
+        onEntryPress={jest.fn()}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    const dateGroupStyle = StyleSheet.flatten(getByTestId('entry-feed-date-group').props.style);
+
+    expect(dateGroupStyle.marginLeft).toBe(0);
   });
 });
