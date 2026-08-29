@@ -8,6 +8,8 @@ import { Text } from '@shared/components/Text';
 import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { SectionLabel } from '@shared/components/SectionLabel';
+import { AppFooterNavigation } from '@shared/components/AppFooterNavigation';
+import { SlidingDrawer } from '@shared/components/SlidingDrawer';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { isDiaryEntryVisible } from '@/features/diary/services/DiaryEntryVisibility';
@@ -15,7 +17,7 @@ import { PaywallModal } from '@/shared/components/PaywallModal';
 import { useSubscription } from '@/features/subscription/hooks/useSubscription';
 import { useAppStore } from '@/stores/useAppStore';
 import { APP_IDENTITY } from '@/config/appIdentity';
-import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
+import { premiumPaywallTitle, useTranslation, type TranslationKey } from '@/localization/i18n';
 import type { Journal } from '@/features/journal/domain/Journal';
 import { BUILTIN_JOURNAL_BACKGROUNDS, getJournalCoverImageSource } from '@/features/journal/domain/JournalBackgrounds';
 import { chooseDiaryPhotos } from '@/features/diary/services/DiaryPhotoPickerService';
@@ -42,11 +44,11 @@ const ALL_ENTRIES_JOURNAL_ID = 'all';
 const UNASSIGNED_JOURNAL_ID = 'unassigned';
 const JOURNAL_GRID_GAP = 12;
 const JOURNAL_GRID_HORIZONTAL_PADDING = 40;
-const journalColumnOptions: readonly { readonly count: JournalColumnCount; readonly label: string }[] = [
-  { count: 1, label: '12' },
-  { count: 2, label: '6 6' },
-  { count: 3, label: '4 4 4' },
-  { count: 4, label: '3 3 3 3' },
+const journalColumnOptions: readonly { readonly count: JournalColumnCount; readonly labelKey: TranslationKey }[] = [
+  { count: 1, labelKey: 'journalLayoutSingle' },
+  { count: 2, labelKey: 'journalLayoutTwoColumn' },
+  { count: 3, labelKey: 'journalLayoutThreeColumn' },
+  { count: 4, labelKey: 'journalLayoutFourColumn' },
 ];
 
 function getNextJournalColumnCount(count: JournalColumnCount): JournalColumnCount {
@@ -54,13 +56,6 @@ function getNextJournalColumnCount(count: JournalColumnCount): JournalColumnCoun
   if (count === 2) return 3;
   if (count === 3) return 4;
   return 1;
-}
-
-function getJournalLayoutMaterialIcon(count: JournalColumnCount): React.ComponentProps<typeof IconCircleButton>['icon'] {
-  if (count === 1) return 'square-outline';
-  if (count === 2) return 'view-grid-outline';
-  if (count === 3) return 'apps';
-  return 'dialpad';
 }
 
 function isSyntheticJournalId(journalId: string): journalId is SyntheticJournalId {
@@ -99,6 +94,7 @@ export default function JournalsScreen(): React.JSX.Element {
   const [openJournalOptionsId, setOpenJournalOptionsId] = useState<string | null>(null);
   const [coverPickerJournal, setCoverPickerJournal] = useState<JournalHomeItem | null>(null);
   const [journalSearchQuery, setJournalSearchQuery] = useState('');
+  const [showJournalMenu, setShowJournalMenu] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const premiumPromptShownThisSession = useRef(false);
 
@@ -146,6 +142,9 @@ export default function JournalsScreen(): React.JSX.Element {
     markPremiumPromptDismissed(new Date().toISOString());
     setShowPremiumModal(false);
   }, [markPremiumPromptDismissed]);
+  const closeJournalMenu = useCallback(() => {
+    setShowJournalMenu(false);
+  }, []);
 
   const visibleEntries = useMemo(() => entries.filter((entry) => isDiaryEntryVisible(entry)), [entries]);
   const journalCardWidth = useMemo(() => {
@@ -384,6 +383,7 @@ export default function JournalsScreen(): React.JSX.Element {
     (count: number) => count === 1 ? t('journalEntryLabelOne') : t('journalEntryLabelMany'),
     [t],
   );
+  const activeJournalColumnLabel = t(journalColumnOptions.find((option) => option.count === journalColumnCount)?.labelKey ?? 'journalLayoutTwoColumn');
 
   const renderJournalOptions = (journal: JournalHomeItem) => {
     const isOpen = openJournalOptionsId === journal.id;
@@ -471,47 +471,17 @@ export default function JournalsScreen(): React.JSX.Element {
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
         <View style={styles.titleRow}>
-          <View style={[styles.headerSearchBar, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
-            <Ionicons name="search-outline" size={18} color={theme.colors.textSecondary} />
-            <TextInput
-              value={journalSearchQuery}
-              onChangeText={setJournalSearchQuery}
-              placeholder={t('journalSearchPlaceholder')}
-              placeholderTextColor={theme.colors.textSecondary}
-              style={[styles.headerSearchInput, { color: theme.colors.text }]}
-              returnKeyType="search"
-              accessibilityLabel={t('homeHeaderSearch')}
+          <View style={styles.headerSide}>
+            <IconCircleButton
+              icon="menu"
+              onPress={() => setShowJournalMenu(true)}
+              accessibilityLabel={t('homeDrawerOpenA11y')}
             />
-            {journalSearchQuery ? (
-              <IconCircleButton
-                icon="close-circle"
-                size="sm"
-                surface="transparent"
-                onPress={() => setJournalSearchQuery('')}
-                accessibilityLabel={t('homeHeaderCloseSearch')}
-                iconSize={18}
-              />
-            ) : null}
           </View>
-          <View style={styles.headerActions}>
-            <IconCircleButton
-              icon={getJournalLayoutMaterialIcon(journalColumnCount)}
-              onPress={() => {
-                setOpenJournalOptionsId(null);
-                setJournalColumnCount(getNextJournalColumnCount(journalColumnCount));
-              }}
-              accessibilityLabel={`${t('journalLayoutA11y')}: ${journalColumnOptions.find((option) => option.count === journalColumnCount)?.label ?? '6 6'}`}
-              iconSize={22}
-            />
-            <IconCircleButton
-              icon={showPermanentJournals ? 'book-multiple-outline' : 'book-multiple'}
-              onPress={() => setShowPermanentJournals(!showPermanentJournals)}
-              accessibilityLabel={t('journalTogglePermanentGroupsA11y')}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: showPermanentJournals }}
-              active={showPermanentJournals}
-              iconSize={23}
-            />
+          <Text preset="label" color="text" numberOfLines={1} style={styles.headerTitle}>
+            {t('journalsTitle')}
+          </Text>
+          <View style={[styles.headerSide, styles.headerSideRight]}>
             <IconCircleButton
               icon="plus"
               onPress={() => setShowCreateModal(true)}
@@ -616,6 +586,7 @@ export default function JournalsScreen(): React.JSX.Element {
           </View>
         )}
       </ScrollView>
+      <AppFooterNavigation activeItem="journal" bottom={insets.bottom + 12} />
 
       <PaywallModal
         visible={showPremiumModal}
@@ -631,6 +602,89 @@ export default function JournalsScreen(): React.JSX.Element {
           t('premiumPaywallFeatureOffline'),
         ]}
       />
+
+      <SlidingDrawer
+        visible={showJournalMenu}
+        onClose={closeJournalMenu}
+        accessibilityCloseLabel={t('homeDrawerCloseA11y')}
+        drawerStyle={[styles.drawer, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}
+        testID="journal-sliding-drawer"
+      >
+            <View style={styles.drawerHeader}>
+              <Text preset="h2" color="text" style={styles.drawerTitle}>{t('homeHeaderOptions')}</Text>
+              <IconCircleButton icon="close" onPress={closeJournalMenu} accessibilityLabel={t('homeDrawerCloseA11y')} size="sm" />
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <SectionLabel style={styles.drawerSectionLabel}>{t('homeHeaderSearch')}</SectionLabel>
+              <View style={[styles.drawerSearchBar, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+                <Ionicons name="search-outline" size={18} color={theme.colors.textSecondary} />
+                <TextInput
+                  value={journalSearchQuery}
+                  onChangeText={setJournalSearchQuery}
+                  placeholder={t('journalSearchPlaceholder')}
+                  placeholderTextColor={theme.colors.textSecondary}
+                  style={[styles.drawerSearchInput, { color: theme.colors.text }]}
+                  returnKeyType="search"
+                  accessibilityLabel={t('homeHeaderSearch')}
+                />
+                {journalSearchQuery ? (
+                  <IconCircleButton
+                    icon="close-circle"
+                    size="sm"
+                    surface="transparent"
+                    onPress={() => setJournalSearchQuery('')}
+                    accessibilityLabel={t('homeHeaderCloseSearch')}
+                    iconSize={18}
+                  />
+                ) : null}
+              </View>
+              <SectionLabel style={styles.drawerSectionLabel}>{t('journalsTitle')}</SectionLabel>
+              <TouchableOpacity
+                onPress={() => {
+                  setOpenJournalOptionsId(null);
+                  setJournalColumnCount(getNextJournalColumnCount(journalColumnCount));
+                }}
+                style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]}
+                accessibilityRole="button"
+                accessibilityLabel={`${t('journalLayoutA11y')}: ${activeJournalColumnLabel}`}
+              >
+                <Ionicons name="grid-outline" size={20} color={theme.colors.textSecondary} />
+                <View style={styles.drawerRowCopy}>
+                  <Text preset="bodySmall" color="text" style={styles.drawerRowTitle}>{t('journalLayoutA11y')}</Text>
+                  <Text preset="caption" color="textSecondary">{activeJournalColumnLabel}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setShowPermanentJournals(!showPermanentJournals)}
+                style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: showPermanentJournals }}
+                accessibilityLabel={t('journalTogglePermanentGroupsA11y')}
+              >
+                <Ionicons name="book-outline" size={20} color={showPermanentJournals ? theme.colors.tint : theme.colors.textSecondary} />
+                <View style={styles.drawerRowCopy}>
+                  <Text preset="bodySmall" color="text" style={styles.drawerRowTitle}>{t('journalTogglePermanentGroupsA11y')}</Text>
+                </View>
+                <Ionicons name={showPermanentJournals ? 'checkbox' : 'square-outline'} size={20} color={showPermanentJournals ? theme.colors.tint : theme.colors.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  closeJournalMenu();
+                  router.push('/(tabs)/settings');
+                }}
+                style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]}
+                accessibilityRole="button"
+                accessibilityLabel={t('settingsTitle')}
+              >
+                <Ionicons name="settings-outline" size={20} color={theme.colors.textSecondary} />
+                <View style={styles.drawerRowCopy}>
+                  <Text preset="bodySmall" color="text" style={styles.drawerRowTitle}>{t('settingsTitle')}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            </ScrollView>
+      </SlidingDrawer>
 
       <Modal visible={Boolean(coverPickerJournal)} animationType="fade" transparent onRequestClose={() => setCoverPickerJournal(null)}>
         <View style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}>
@@ -756,6 +810,9 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  headerSide: { width: 44, flexDirection: 'row', alignItems: 'center' },
+  headerSideRight: { justifyContent: 'flex-end' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, lineHeight: 22, fontWeight: '800' },
   headerSearchBar: {
     flex: 1,
     minHeight: 38,
@@ -776,6 +833,39 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  drawer: {
+    paddingHorizontal: 20,
+  },
+  drawerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 20 },
+  drawerTitle: { fontWeight: '800' },
+  drawerSectionLabel: { marginTop: 18, marginBottom: 8, fontWeight: '800' },
+  drawerSearchBar: {
+    minHeight: 44,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingLeft: 10,
+    paddingRight: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  drawerSearchInput: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 8,
+    fontSize: 15,
+    lineHeight: 19,
+    fontWeight: '600',
+  },
+  drawerRow: {
+    minHeight: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  drawerRowCopy: { flex: 1, minWidth: 0 },
+  drawerRowTitle: { fontWeight: '700' },
   content: { paddingHorizontal: 20, paddingTop: 12 },
   journalCoverGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: JOURNAL_GRID_GAP },
   journalCoverCard: { position: 'relative', borderWidth: 1, borderRadius: 8 },

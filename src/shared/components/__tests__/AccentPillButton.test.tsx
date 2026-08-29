@@ -34,4 +34,15 @@ describe('AccentPillButton', () => {
 
     expect(style.backgroundColor).toBe(accentColors.blue.dark);
   });
+
+  it('supports overriding label text metrics', async () => {
+    const { getByText } = await renderWithProviders(
+      <AccentPillButton label="Today" labelStyle={{ fontSize: 14, lineHeight: 17 }} />,
+    );
+
+    const style = StyleSheet.flatten(getByText('Today').props.style);
+
+    expect(style.fontSize).toBe(14);
+    expect(style.lineHeight).toBe(17);
+  });
 });

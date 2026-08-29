@@ -1,14 +1,7 @@
-import { View } from 'react-native';
-import { Redirect, Tabs, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/providers/ThemeProvider';
-import { useTranslation } from '@/localization/i18n';
+import { Redirect, Tabs } from 'expo-router';
 import { useAppStore } from '@/stores/useAppStore';
 
 export default function TabLayout() {
-  const { colors, isDark } = useTheme();
-  const router = useRouter();
-  const t = useTranslation();
   const isOnboarded = useAppStore((state) => state.isOnboarded);
 
   if (!isOnboarded) {
@@ -18,78 +11,30 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.tint,
-        tabBarInactiveTintColor: colors.tabIconDefault,
-        tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: colors.border,
-          height: 60,
-          paddingBottom: 6,
-        },
+        tabBarStyle: { display: 'none' },
         headerShown: false,
       }}
     >
       <Tabs.Screen
         name="index"
-        options={{
-          title: t('tabsHome'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="journal-outline" size={size} color={color} />
-          ),
-        }}
+        options={{}}
       />
 
       <Tabs.Screen
         name="calendar"
-        options={{
-          title: t('tabsCalendar'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" size={size} color={color} />
-          ),
-        }}
+        options={{}}
       />
 
       <Tabs.Screen
         name="create"
         options={{
-          title: '',
-          tabBarIcon: () => (
-            <View
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: colors.tint,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 8,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 3 },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 5,
-              }}
-            >
-              <Ionicons name="add" size={28} color={isDark ? colors.background : colors.card} />
-            </View>
-          ),
-        }}
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault();
-            router.push('/entry/new');
-          },
+          href: null,
         }}
       />
 
       <Tabs.Screen
         name="insights"
-        options={{
-          title: t('tabsInsights'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="stats-chart-outline" size={size} color={color} />
-          ),
-        }}
+        options={{}}
       />
 
       <Tabs.Screen
@@ -103,10 +48,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: t('tabsSettings'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
-          ),
+          href: null,
         }}
       />
 

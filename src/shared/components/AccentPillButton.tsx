@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, type GestureResponderEvent, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, TouchableOpacity, type GestureResponderEvent, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
@@ -14,6 +14,7 @@ interface AccentPillButtonProps {
   readonly iconSize?: number;
   readonly disabled?: boolean;
   readonly style?: StyleProp<ViewStyle>;
+  readonly labelStyle?: StyleProp<TextStyle>;
   readonly testID?: string;
 }
 
@@ -26,6 +27,7 @@ export function AccentPillButton({
   iconSize = 18,
   disabled = false,
   style,
+  labelStyle,
   testID,
 }: AccentPillButtonProps): React.JSX.Element {
   const theme = useTheme();
@@ -47,7 +49,7 @@ export function AccentPillButton({
       ]}
     >
       {leadingIcon ? <MaterialCommunityIcons name={leadingIcon} size={iconSize} color={foregroundColor} /> : null}
-      <Text preset="button" style={[styles.label, { color: foregroundColor }]}>
+      <Text preset="button" style={[styles.label, { color: foregroundColor }, labelStyle]} numberOfLines={1}>
         {label}
       </Text>
       {trailingIcon ? <MaterialCommunityIcons name={trailingIcon} size={iconSize} color={foregroundColor} /> : null}

@@ -3,13 +3,11 @@ import {
   Animated,
   Image,
   Keyboard,
-  PanResponder,
   View,
   ScrollView,
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  Pressable,
   Alert,
   UIManager,
   findNodeHandle,
@@ -20,13 +18,12 @@ import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@providers/ThemeProvider";
 import { Text } from "@shared/components/Text";
-import { FAB } from "@shared/components/FAB";
 import { IconCircleButton } from "@shared/components/IconCircleButton";
 import { SectionLabel } from "@shared/components/SectionLabel";
+import { SlidingDrawer } from "@shared/components/SlidingDrawer";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import { useJournals } from "@/features/journal/hooks/useJournals";
 import { useProfileForm } from "@/features/profile/hooks/useProfileForm";
-import { ProfileAvatar } from "@/features/profile/components/ProfileAvatar";
 import { getJournalCoverImageSource } from "@/features/journal/domain/JournalBackgrounds";
 import { stripHtml } from "@shared/utils/html";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
@@ -79,7 +76,7 @@ export default function JournalEntriesScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useTranslation();
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight } = useWindowDimensions();
   const { entries, isLoading, refresh, addReflection } = useDiary();
   const { journals, refresh: refreshJournals } = useJournals();
   const { profile } = useProfileForm();
@@ -111,12 +108,7 @@ export default function JournalEntriesScreen() {
     "date" | "tag" | "mood" | "hierarchy" | null
   >(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isDrawerMounted, setIsDrawerMounted] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const drawerWidth = Math.min(windowWidth * 0.86, 380);
-  const drawerProgress = useRef(new Animated.Value(0)).current;
-  const drawerProgressValue = useRef(0);
-  const drawerDragStart = useRef(0);
   const entryLayoutY = useRef(new Map<string, number>());
   const dateGroupLayoutY = useRef(new Map<string, number>());
   const entryDateById = useRef(new Map<string, string>());
@@ -180,15 +172,6 @@ export default function JournalEntriesScreen() {
   );
 
   useEffect(() => {
-    const listenerId = drawerProgress.addListener(({ value }) => {
-      drawerProgressValue.current = value;
-    });
-    return () => {
-      drawerProgress.removeListener(listenerId);
-    };
-  }, [drawerProgress]);
-
-  useEffect(() => {
     if (!isOnboarded || isPro || showPremiumModal) return;
 
     const now = Date.now();
@@ -231,53 +214,15 @@ export default function JournalEntriesScreen() {
   }, []);
 
   const openDrawer = useCallback(() => {
-    setIsDrawerMounted(true);
     setIsDrawerOpen(true);
   }, []);
-
-  useEffect(() => {
-    Animated.timing(drawerProgress, {
-      toValue: isDrawerOpen ? 1 : 0,
-      duration: 220,
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished && !isDrawerOpen) {
-        setIsDrawerMounted(false);
-      }
-    });
-  }, [drawerProgress, isDrawerOpen]);
-
-  const drawerPanResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gesture) =>
-          isDrawerMounted &&
-          Math.abs(gesture.dx) > 8 &&
-          Math.abs(gesture.dx) > Math.abs(gesture.dy),
-        onPanResponderGrant: () => {
-          drawerProgress.stopAnimation((value) => {
-            drawerDragStart.current = value;
-          });
-        },
-        onPanResponderMove: (_, gesture) => {
-          const nextProgress = Math.max(
-            0,
-            Math.min(1, drawerDragStart.current + gesture.dx / drawerWidth),
-          );
-          drawerProgress.setValue(nextProgress);
-        },
-        onPanResponderRelease: (_, gesture) => {
-          const shouldOpen =
-            gesture.vx > 0.35 ||
-            (gesture.vx >= -0.35 && drawerProgressValue.current > 0.5);
-          setIsDrawerOpen(shouldOpen);
-        },
-        onPanResponderTerminate: () => {
-          setIsDrawerOpen(drawerProgressValue.current > 0.5);
-        },
-      }),
-    [drawerProgress, drawerWidth, isDrawerMounted],
-  );
+  const navigateBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace("/(tabs)");
+  }, [router]);
 
   const [viewModeIndex, setViewModeIndex] = useState(() => {
     const selectedIndex = selectableViewModes.findIndex((mode) => mode === homeViewMode);
@@ -537,33 +482,16 @@ export default function JournalEntriesScreen() {
   );
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      {...drawerPanResponder.panHandlers}
-    >
-      {isDrawerMounted && (
-        <Animated.View
-          pointerEvents={isDrawerOpen ? "auto" : "none"}
-          style={[
-            styles.drawer,
-            {
-              width: drawerWidth,
-              backgroundColor: theme.colors.background,
-              paddingTop: insets.top + 12,
-              paddingBottom: insets.bottom + 16,
-              transform: [
-                {
-                  translateX: drawerProgress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-drawerWidth, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SlidingDrawer
+        visible={isDrawerOpen}
+        onClose={closeDrawer}
+        accessibilityCloseLabel={t("homeDrawerCloseA11y")}
+        drawerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }}
+        testID="journal-entry-list-drawer"
+      >
           <View style={styles.drawerHeader}>
-            <View />
+            <Text preset="h3" color="text" style={styles.drawerTitle}>Options</Text>
             <IconCircleButton icon="close" onPress={closeDrawer} accessibilityLabel={t("homeDrawerCloseA11y")} size="sm" />
           </View>
           <ScrollView showsVerticalScrollIndicator={false}>
@@ -656,38 +584,27 @@ export default function JournalEntriesScreen() {
               <Text preset="bodySmall" color="tint">{t("homeClearAllFilters")}</Text>
             </TouchableOpacity>
           </ScrollView>
-        </Animated.View>
-      )}
-      <Animated.View
-        style={[
-          styles.contentPane,
-          {
-            transform: [
-              {
-                translateX: drawerProgress.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, drawerWidth],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
+      </SlidingDrawer>
+      <View style={styles.contentPane}>
         <View style={[styles.fixedHeader, { paddingTop: insets.top + JOURNAL_HEADER_TOP_PADDING, backgroundColor: theme.colors.background }]}>
           <View style={styles.headerRow}>
             <View style={styles.headerSide}>
-              <IconCircleButton icon="chevron-left" onPress={() => router.replace("/(tabs)")} accessibilityLabel={t("entryBackA11y")} />
+              <IconCircleButton icon="chevron-left" onPress={navigateBack} accessibilityLabel={t("entryBackA11y")} />
             </View>
-            <Text preset="label" color="text" numberOfLines={1} style={styles.journalContextTitle}>{journalTitle}</Text>
+            <View style={styles.headerTitleSpacer} />
             <View style={[styles.headerSide, styles.headerSideRight]}>
-              <ProfileAvatar
-                profile={profile}
-                size={32}
-                onPress={() => router.push("/profile/edit")}
-                accessibilityLabel={t("settingsProfileTitle")}
-                testID="journal-header-profile-avatar"
-              />
               <IconCircleButton icon="menu" onPress={openDrawer} accessibilityLabel={t("homeDrawerOpenA11y")} />
+              <IconCircleButton
+                icon="plus"
+                onPress={() => {
+                  if (journalId === ALL_ENTRIES_JOURNAL_ID) {
+                    router.push("/entry/new");
+                    return;
+                  }
+                  router.push({ pathname: "/entry/new", params: { journalId } });
+                }}
+                accessibilityLabel={t("entryCreateTitle")}
+              />
             </View>
           </View>
 
@@ -731,7 +648,7 @@ export default function JournalEntriesScreen() {
             {
               minHeight: windowHeight + (hasJournalCover ? JOURNAL_COVER_EXPANDED_HEIGHT - JOURNAL_COVER_COLLAPSED_HEIGHT : 0),
               paddingTop: expandedHeaderHeight,
-              paddingBottom: insets.bottom + 124 + keyboardHeight + collapsedHeaderHeight,
+              paddingBottom: insets.bottom + 32 + keyboardHeight + collapsedHeaderHeight,
             },
           ]}
           keyboardDismissMode="on-drag"
@@ -803,35 +720,7 @@ export default function JournalEntriesScreen() {
           )}
         </ScrollView>
         )}
-        <FAB
-          icon="add"
-          onPress={() => {
-            if (journalId === ALL_ENTRIES_JOURNAL_ID) {
-              router.push("/entry/new");
-              return;
-            }
-            router.push({ pathname: "/entry/new", params: { journalId } });
-          }}
-          accessibilityLabel={t("entryCreateTitle")}
-          style={[styles.createFab, { bottom: insets.bottom + 20 }]}
-        />
-        {isDrawerMounted && (
-          <Animated.View
-            pointerEvents={isDrawerOpen ? "auto" : "none"}
-            style={[
-              styles.drawerOverlay,
-              {
-                opacity: drawerProgress.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 1],
-                }),
-              },
-            ]}
-          >
-            <Pressable style={StyleSheet.absoluteFill} onPress={closeDrawer} accessibilityLabel={t("homeDrawerCloseA11y")} />
-          </Animated.View>
-        )}
-      </Animated.View>
+      </View>
       <PaywallModal
         visible={showPremiumModal}
         onClose={closePremiumModal}
@@ -905,7 +794,7 @@ const styles = StyleSheet.create({
   journalCoverContextMeta: {
     fontWeight: "700",
   },
-  journalContextTitle: { flex: 1, textAlign: "center", fontWeight: "800" },
+  headerTitleSpacer: { flex: 1 },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -916,12 +805,6 @@ const styles = StyleSheet.create({
   },
   headerSide: { width: 82, flexDirection: "row", alignItems: "center", gap: 6 },
   headerSideRight: { justifyContent: "flex-end" },
-  createFab: {
-    position: "absolute",
-    right: 20,
-    zIndex: 35,
-    elevation: 35,
-  },
   viewModePill: {
     alignSelf: "center",
     flexDirection: "row",
@@ -958,9 +841,8 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlignVertical: "center",
   },
-  drawerOverlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 40, elevation: 40, backgroundColor: "rgba(0, 0, 0, 0.35)" },
-  drawer: { position: "absolute", top: 0, bottom: 0, left: 0, zIndex: 2, paddingHorizontal: 20, borderTopRightRadius: 22, borderBottomRightRadius: 22, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 5, height: 0 }, shadowOpacity: 0.24, shadowRadius: 18, elevation: 18 },
   drawerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 22 },
+  drawerTitle: { fontWeight: "800" },
   drawerSectionLabel: { fontWeight: "700", letterSpacing: 0.6, marginTop: 18, marginBottom: 8 },
   drawerRow: { minHeight: 52, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth },
   drawerRowText: { flex: 1, marginLeft: 12 },

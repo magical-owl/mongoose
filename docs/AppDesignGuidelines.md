@@ -67,6 +67,8 @@ Implementation rules:
 - Collapsible calendar chrome should reset to visible when the calendar tab regains focus.
 - Calendar content should keep rendering during background refreshes; avoid returning an empty screen while stored entries reload.
 - Journal detail/list screens should render from cached entries and route-provided journal metadata while repositories refresh in the background.
+- Screen headers should keep primary navigation and one primary screen action visible, while secondary controls live in that screen's burger menu with Settings available from the same menu.
+- Burger-menu surfaces should use the shared `SlidingDrawer` component so drawer animation, overlay dismissal, and swipe-to-close behavior stay consistent across screens.
 - Feed cover title overlays should use the lightest scrim that keeps text readable, and author name/time should live with the diary body rather than as a separate card between cover and content.
 - When entries are grouped under visible date headers, card rows should not repeat the same date rail.
 - User identity should be compact and contextual: 32 px avatar rows for feed authorship, 24 px avatars for reflection threads, and 20-24 px avatars in dense card/timeline rows.

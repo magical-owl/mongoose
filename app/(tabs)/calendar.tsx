@@ -16,6 +16,8 @@ import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
+import { AppFooterNavigation } from '@shared/components/AppFooterNavigation';
+import { SlidingDrawer } from '@shared/components/SlidingDrawer';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { useAppStore } from '@/stores/useAppStore';
@@ -50,6 +52,7 @@ export default function CalendarScreen() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   });
   const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [showCalendarMenu, setShowCalendarMenu] = useState(false);
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
   const touchStartX = useRef<number | null>(null);
   const {
@@ -108,6 +111,9 @@ export default function CalendarScreen() {
     setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1));
     handleSelectDate(todayKey);
   };
+  const closeCalendarMenu = useCallback(() => {
+    setShowCalendarMenu(false);
+  }, []);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -115,7 +121,7 @@ export default function CalendarScreen() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfWeek = (new Date(year, month, 1).getDay() - calendarFirstDay + 7) % 7;
   const calendarWeekRows = Math.ceil((firstDayOfWeek + daysInMonth) / 7);
-  const calendarExpandedHeight = 58 + calendarWeekRows * 46;
+  const calendarExpandedHeight = 104 + calendarWeekRows * 46;
   const expandedHeaderHeight = insets.top + CALENDAR_HEADER_TOP_PADDING + CALENDAR_NAV_HEIGHT + CALENDAR_HEADER_GAP + calendarExpandedHeight + CALENDAR_BOTTOM_GAP;
   const collapsedHeaderHeight = insets.top + CALENDAR_HEADER_TOP_PADDING + CALENDAR_NAV_HEIGHT + CALENDAR_BOTTOM_GAP;
 
@@ -169,6 +175,36 @@ export default function CalendarScreen() {
       onTouchStart={(event) => { touchStartX.current = event.nativeEvent.pageX; }}
       onTouchEnd={(event) => handleSwipe(event.nativeEvent.pageX)}
     >
+      <View style={styles.calendarControlsRow}>
+        <View style={styles.calendarPeriodRow}>
+          <IconCircleButton
+            icon="chevron-left"
+            onPress={handlePrevMonth}
+            accessibilityLabel={t('calendarPreviousMonthA11y')}
+            size="sm"
+            surface="transparent"
+            iconSize={20}
+          />
+          <TouchableOpacity
+            onPress={() => { setPickerYear(year); setShowMonthPicker(true); }}
+            style={styles.calendarPeriodValueButton}
+            accessibilityRole="button"
+            accessibilityLabel={t('calendarChooseMonthYearA11y')}
+          >
+            <Text preset="label" color="text" style={styles.calendarPeriodValue} numberOfLines={1}>
+              {monthLabel} {year}
+            </Text>
+          </TouchableOpacity>
+          <IconCircleButton
+            icon="chevron-right"
+            onPress={handleNextMonth}
+            accessibilityLabel={t('calendarNextMonthA11y')}
+            size="sm"
+            surface="transparent"
+            iconSize={20}
+          />
+        </View>
+      </View>
       <View style={styles.gridRow}>
         {(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].slice(calendarFirstDay).concat(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].slice(0, calendarFirstDay))).map((d) => (
           <Text key={d} style={[styles.gridCellHeader, { color: theme.colors.textSecondary }]}>
@@ -250,38 +286,23 @@ export default function CalendarScreen() {
     <View style={[styles.outerContainer, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.fixedHeader, { paddingTop: insets.top + CALENDAR_HEADER_TOP_PADDING, backgroundColor: theme.colors.background }]}>
         <View style={styles.headerNavRow}>
-          <View style={styles.calendarNavRegion}>
-            <View style={styles.calendarPeriodRow}>
-              <IconCircleButton
-                icon="chevron-left"
-                onPress={handlePrevMonth}
-                accessibilityLabel={t('calendarPreviousMonthA11y')}
-                size="sm"
-                surface="transparent"
-                iconSize={20}
-              />
-              <TouchableOpacity
-                onPress={() => { setPickerYear(year); setShowMonthPicker(true); }}
-                style={styles.calendarPeriodValueButton}
-                accessibilityRole="button"
-                accessibilityLabel={t('calendarChooseMonthYearA11y')}
-              >
-                <Text preset="label" color="text" style={styles.calendarPeriodValue} numberOfLines={1}>
-                  {monthLabel} {year}
-                </Text>
-              </TouchableOpacity>
-              <IconCircleButton
-                icon="chevron-right"
-                onPress={handleNextMonth}
-                accessibilityLabel={t('calendarNextMonthA11y')}
-                size="sm"
-                surface="transparent"
-                iconSize={20}
-              />
-            </View>
+          <View style={styles.headerSide}>
+            <IconCircleButton
+              icon="menu"
+              onPress={() => setShowCalendarMenu(true)}
+              accessibilityLabel={t('homeDrawerOpenA11y')}
+            />
           </View>
-
-          <AccentPillButton label={t('calendarToday')} onPress={handleJumpToToday} accessibilityLabel={t('calendarJumpTodayA11y')} style={styles.todayButton} />
+          <Text preset="label" color="text" numberOfLines={1} style={styles.headerTitle}>{t('calendarTitle')}</Text>
+          <View style={[styles.headerSide, styles.headerSideRight]}>
+            <AccentPillButton
+              label={t('calendarToday')}
+              onPress={handleJumpToToday}
+              accessibilityLabel={t('calendarJumpTodayA11y')}
+              style={styles.todayButton}
+              labelStyle={styles.todayButtonText}
+            />
+          </View>
         </View>
         <Animated.View style={[styles.calendarCollapseWrap, { height: calendarHeight, opacity: calendarOpacity }]}>
           {calendarCard}
@@ -321,6 +342,34 @@ export default function CalendarScreen() {
           />
         )}
       </ScrollView>
+      <SlidingDrawer
+        visible={showCalendarMenu}
+        onClose={closeCalendarMenu}
+        accessibilityCloseLabel={t('homeDrawerCloseA11y')}
+        drawerStyle={[styles.drawer, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}
+        testID="calendar-sliding-drawer"
+      >
+        <View style={styles.drawerHeader}>
+          <Text preset="h2" color="text" style={styles.drawerTitle}>{t('homeHeaderOptions')}</Text>
+          <IconCircleButton icon="close" onPress={closeCalendarMenu} accessibilityLabel={t('homeDrawerCloseA11y')} size="sm" />
+        </View>
+        <TouchableOpacity
+          onPress={() => {
+            closeCalendarMenu();
+            router.push('/(tabs)/settings');
+          }}
+          style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]}
+          accessibilityRole="button"
+          accessibilityLabel={t('settingsTitle')}
+        >
+          <Ionicons name="settings-outline" size={20} color={theme.colors.textSecondary} />
+          <View style={styles.drawerRowCopy}>
+            <Text preset="bodySmall" color="text" style={styles.drawerRowTitle}>{t('settingsTitle')}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
+        </TouchableOpacity>
+      </SlidingDrawer>
+      <AppFooterNavigation activeItem="calendar" bottom={insets.bottom + 12} />
       <NativeModal visible={showMonthPicker} transparent animationType="fade" onRequestClose={() => setShowMonthPicker(false)}>
         <Pressable style={styles.pickerBackdrop} onPress={() => setShowMonthPicker(false)}>
           <Pressable style={[styles.monthPicker, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={(event) => event.stopPropagation()}>
@@ -368,19 +417,42 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
   },
-  headerNavRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerNavRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerSide: { width: 44, flexDirection: 'row', alignItems: 'center' },
+  headerSideRight: { width: 96, justifyContent: 'flex-end' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, lineHeight: 22, fontWeight: '800' },
   calendarCollapseWrap: { overflow: 'hidden', marginTop: 10 },
-  calendarNavRegion: { flex: 1, alignItems: 'center', minWidth: 0 },
-  todayButton: { flexShrink: 0, minWidth: 72 },
+  todayButton: {
+    minWidth: 92,
+    height: 44,
+    borderRadius: 22,
+    paddingHorizontal: 18,
+    paddingVertical: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  todayButtonText: {
+    fontSize: 16,
+    lineHeight: 19,
+    fontWeight: '800',
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
   calendarCard: {
     borderWidth: 1,
     borderRadius: 14,
     padding: 10,
     marginBottom: 15,
   },
+  calendarControlsRow: {
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
   calendarPeriodRow: {
-    width: '82%',
-    maxWidth: 260,
+    flex: 1,
     minHeight: 38,
     flexDirection: 'row',
     alignItems: 'center',
@@ -397,6 +469,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
+  drawer: {
+    paddingHorizontal: 20,
+  },
+  drawerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 20 },
+  drawerTitle: { fontWeight: '800' },
+  drawerRow: {
+    minHeight: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  drawerRowCopy: { flex: 1, minWidth: 0 },
+  drawerRowTitle: { fontWeight: '700' },
   gridRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

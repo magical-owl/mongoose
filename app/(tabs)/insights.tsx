@@ -1,10 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { Image, View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@providers/ThemeProvider";
 import { Text } from "@shared/components/Text";
+import { AppFooterNavigation } from "@shared/components/AppFooterNavigation";
+import { IconCircleButton } from "@shared/components/IconCircleButton";
+import { SlidingDrawer } from "@shared/components/SlidingDrawer";
 import { stripHtml } from "@shared/utils/html";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
@@ -76,12 +79,14 @@ function formatWeekRange(start: Date, end: Date): string {
 }
 
 export default function InsightsScreen() {
+  const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { entries, refresh } = useDiary();
   const calendarFirstDay = useAppStore((state) => state.calendarFirstDay);
   const [range, setRange] = useState<InsightsRange>("month");
+  const [showInsightsMenu, setShowInsightsMenu] = useState(false);
   const [periodDate, setPeriodDate] = useState(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12);
@@ -113,6 +118,9 @@ export default function InsightsScreen() {
       return new Date(current.getTime() + amount * 7 * DAY_MS);
     });
   }, [range]);
+  const closeInsightsMenu = useCallback(() => {
+    setShowInsightsMenu(false);
+  }, []);
 
   const stats = useMemo(() => {
     const rangeStart =
@@ -249,6 +257,13 @@ export default function InsightsScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 20, backgroundColor: theme.colors.background }]}>
         <View style={styles.headerControlsRow}>
+          <View style={styles.headerSide}>
+            <IconCircleButton
+              icon="menu"
+              onPress={() => setShowInsightsMenu(true)}
+              accessibilityLabel={t("homeDrawerOpenA11y")}
+            />
+          </View>
           <View style={styles.insightsNavRegion}>
             <View style={styles.periodPickerRow}>
               <TouchableOpacity
@@ -456,6 +471,34 @@ export default function InsightsScreen() {
           )}
         </View>
       </ScrollView>
+      <SlidingDrawer
+        visible={showInsightsMenu}
+        onClose={closeInsightsMenu}
+        accessibilityCloseLabel={t("homeDrawerCloseA11y")}
+        drawerStyle={[styles.drawer, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}
+        testID="insights-sliding-drawer"
+      >
+        <View style={styles.drawerHeader}>
+          <Text preset="h2" color="text" style={styles.drawerTitle}>{t("homeHeaderOptions")}</Text>
+          <IconCircleButton icon="close" onPress={closeInsightsMenu} accessibilityLabel={t("homeDrawerCloseA11y")} size="sm" />
+        </View>
+        <TouchableOpacity
+          onPress={() => {
+            closeInsightsMenu();
+            router.push("/(tabs)/settings");
+          }}
+          style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]}
+          accessibilityRole="button"
+          accessibilityLabel={t("settingsTitle")}
+        >
+          <Ionicons name="settings-outline" size={20} color={theme.colors.textSecondary} />
+          <View style={styles.drawerRowCopy}>
+            <Text preset="bodySmall" color="text" style={styles.drawerRowTitle}>{t("settingsTitle")}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
+        </TouchableOpacity>
+      </SlidingDrawer>
+      <AppFooterNavigation activeItem="insights" bottom={insets.bottom + 12} />
     </View>
   );
 }
@@ -464,6 +507,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
   headerControlsRow: { minHeight: 38, flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+  headerSide: { width: 44, flexDirection: "row", alignItems: "center" },
   insightsNavRegion: { flex: 1, alignItems: "center", minWidth: 0 },
   headerIcon: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 8 },
   headerRefreshButton: { flexShrink: 0 },
@@ -505,6 +549,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
   },
+  drawer: {
+    paddingHorizontal: 20,
+  },
+  drawerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 20 },
+  drawerTitle: { fontWeight: "800" },
+  drawerRow: {
+    minHeight: 54,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  drawerRowCopy: { flex: 1, minWidth: 0 },
+  drawerRowTitle: { fontWeight: "700" },
   numbersList: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 12, marginBottom: 24 },
   numberCard: {
     minHeight: 96,
