@@ -565,7 +565,7 @@ export default function JournalsScreen(): React.JSX.Element {
               return (
               <TouchableOpacity
                 key={journal.id}
-                onPress={() => router.push({ pathname: '/journal/[id]', params: { id: journal.id } })}
+                onPress={() => router.push({ pathname: '/journal/[id]', params: { id: journal.id, title: journal.title } })}
                 style={[
                   styles.journalCoverCard,
                   openJournalOptionsId === journal.id && styles.journalCardRaised,

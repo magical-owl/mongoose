@@ -65,6 +65,8 @@ Implementation rules:
 - Feed view can show richer content and sticker previews.
 - Keep the journal banner immersive. Do not collapse or hide the journal cover on scroll unless a later design decision explicitly changes that behavior.
 - Collapsible calendar chrome should reset to visible when the calendar tab regains focus.
+- Calendar content should keep rendering during background refreshes; avoid returning an empty screen while stored entries reload.
+- Journal detail/list screens should render from cached entries and route-provided journal metadata while repositories refresh in the background.
 - Feed cover title overlays should use the lightest scrim that keeps text readable, and author name/time should live with the diary body rather than as a separate card between cover and content.
 - When entries are grouped under visible date headers, card rows should not repeat the same date rail.
 - User identity should be compact and contextual: 32 px avatar rows for feed authorship, 24 px avatars for reflection threads, and 20-24 px avatars in dense card/timeline rows.

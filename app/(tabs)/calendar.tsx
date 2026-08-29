@@ -38,7 +38,7 @@ export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { height: windowHeight } = useWindowDimensions();
-  const { entries, isLoading, refresh } = useDiary();
+  const { entries, refresh } = useDiary();
   const { profile } = useProfileForm();
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
@@ -287,42 +287,40 @@ export default function CalendarScreen() {
           {calendarCard}
         </Animated.View>
       </View>
-      {isLoading ? null : (
-        <ScrollView
-          ref={scrollRef}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          contentContainerStyle={[
-            styles.container,
-            {
-              minHeight: windowHeight + calendarExpandedHeight,
-              paddingTop: expandedHeaderHeight,
-              paddingBottom: insets.bottom + 80 + collapsedHeaderHeight,
-            },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          {selectedDayEntries.length === 0 ? (
-            <View style={[styles.emptyState, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-              <Ionicons name="book-outline" size={28} color={theme.colors.textSecondary} />
-              <Text preset="bodySmall" color="textSecondary" style={styles.emptyStateText}>{t('calendarNoEntriesOnDate')}</Text>
-            </View>
-          ) : (
-            <DiaryTimelineList
-              groupedEntries={selectedDayGroupedEntries}
-              mode="timeline"
-              profile={profile}
-              calendarDateFormat={calendarDateFormat}
-              entryHierarchyMode="date"
-              collapsible={false}
-              onEntryPress={async (entry) => {
-                if (entry.isLockbox && !(await appLockService.authenticate())) return;
-                router.push(`/entry/${entry.id}`);
-              }}
-            />
-          )}
-        </ScrollView>
-      )}
+      <ScrollView
+        ref={scrollRef}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={[
+          styles.container,
+          {
+            minHeight: windowHeight + calendarExpandedHeight,
+            paddingTop: expandedHeaderHeight,
+            paddingBottom: insets.bottom + 80 + collapsedHeaderHeight,
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {selectedDayEntries.length === 0 ? (
+          <View style={[styles.emptyState, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <Ionicons name="book-outline" size={28} color={theme.colors.textSecondary} />
+            <Text preset="bodySmall" color="textSecondary" style={styles.emptyStateText}>{t('calendarNoEntriesOnDate')}</Text>
+          </View>
+        ) : (
+          <DiaryTimelineList
+            groupedEntries={selectedDayGroupedEntries}
+            mode="timeline"
+            profile={profile}
+            calendarDateFormat={calendarDateFormat}
+            entryHierarchyMode="date"
+            collapsible={false}
+            onEntryPress={async (entry) => {
+              if (entry.isLockbox && !(await appLockService.authenticate())) return;
+              router.push(`/entry/${entry.id}`);
+            }}
+          />
+        )}
+      </ScrollView>
       <NativeModal visible={showMonthPicker} transparent animationType="fade" onRequestClose={() => setShowMonthPicker(false)}>
         <Pressable style={styles.pickerBackdrop} onPress={() => setShowMonthPicker(false)}>
           <Pressable style={[styles.monthPicker, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={(event) => event.stopPropagation()}>

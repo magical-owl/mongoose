@@ -1,19 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { diaryService } from '../services/DiaryService';
 import { DiaryEntry } from '../domain/DiaryEntry';
+import { getCachedDiaryEntries, setCachedDiaryEntries } from '../services/DiaryEntryCache';
 import { useAppStore } from '@/stores/useAppStore';
 
 export function useDiary() {
-  const [entries, setEntries] = useState<DiaryEntry[]>([]);
-  const [deletedEntries, setDeletedEntries] = useState<DiaryEntry[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const cachedDiaryEntries = getCachedDiaryEntries();
+  const [entries, setEntries] = useState<DiaryEntry[]>(() => cachedDiaryEntries.entries ?? []);
+  const [deletedEntries, setDeletedEntries] = useState<DiaryEntry[]>(() => cachedDiaryEntries.deletedEntries ?? []);
+  const [isLoading, setIsLoading] = useState<boolean>(
+    () => cachedDiaryEntries.entries === null || cachedDiaryEntries.deletedEntries === null
+  );
   const [error, setError] = useState<string | null>(null);
 
   const selectedCompanion = useAppStore((state) => state.selectedCompanion);
   const setSelectedCompanion = useAppStore((state) => state.setSelectedCompanion);
 
   const fetchEntries = useCallback(async () => {
-    setIsLoading(true);
     const entriesResult = await diaryService.getEntries();
     const deletedEntriesResult = await diaryService.getDeletedEntries();
     if (!entriesResult.success) {
@@ -26,6 +29,7 @@ export function useDiary() {
       setIsLoading(false);
       return;
     }
+    setCachedDiaryEntries(entriesResult.data, deletedEntriesResult.data);
     setEntries(entriesResult.data);
     setDeletedEntries(deletedEntriesResult.data);
     setError(null);

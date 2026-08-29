@@ -73,8 +73,9 @@ function capitalizeFilterLabel(value: string): string {
 
 export default function JournalEntriesScreen() {
   const router = useRouter();
-  const { id: journalIdParam } = useLocalSearchParams<{ id?: string }>();
+  const { id: journalIdParam, title: titleParam } = useLocalSearchParams<{ id?: string; title?: string }>();
   const journalId = typeof journalIdParam === "string" ? journalIdParam : "";
+  const routeJournalTitle = typeof titleParam === "string" ? titleParam : "";
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useTranslation();
@@ -142,7 +143,7 @@ export default function JournalEntriesScreen() {
     ? t("journalAllEntriesTitle")
     : journalId === UNASSIGNED_JOURNAL_ID
       ? t("journalUnassignedTitle")
-      : selectedJournal?.title ?? t("journalFallbackTitle");
+      : selectedJournal?.title ?? (routeJournalTitle || t("journalFallbackTitle"));
   const syntheticJournalCover = journalId === ALL_ENTRIES_JOURNAL_ID
     ? syntheticJournalCovers.all
     : journalId === UNASSIGNED_JOURNAL_ID

@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Journal } from '../domain/Journal';
+import { getCachedJournals, setCachedJournals } from '../services/JournalCache';
 import { journalService } from '../services/JournalService';
 
 export function useJournals() {
-  const [journals, setJournals] = useState<Journal[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedJournals = getCachedJournals();
+  const [journals, setJournals] = useState<Journal[]>(() => cachedJournals ?? []);
+  const [isLoading, setIsLoading] = useState(() => cachedJournals === null);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    setIsLoading(true);
     const result = await journalService.getJournals();
     if (result.success) {
+      setCachedJournals(result.data);
       setJournals(result.data);
       setError(null);
     } else {
@@ -24,6 +26,7 @@ export function useJournals() {
     void journalService.getJournals().then((result) => {
       if (!active) return;
       if (result.success) {
+        setCachedJournals(result.data);
         setJournals(result.data);
         setError(null);
       } else {
