@@ -5,17 +5,30 @@ import {
   PanResponder,
   Pressable,
   StyleSheet,
+  TouchableOpacity,
+  View,
   useWindowDimensions,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
+import { Avatar } from './Avatar';
+import { IconCircleButton } from './IconCircleButton';
+import { Text } from './Text';
+
+interface SlidingDrawerProfile {
+  readonly displayName: string;
+  readonly avatarUri?: string | null;
+}
 
 interface SlidingDrawerProps {
   readonly visible: boolean;
   readonly onClose: () => void;
   readonly children: ReactNode;
   readonly accessibilityCloseLabel: string;
+  readonly profile?: SlidingDrawerProfile | null;
+  readonly onProfilePress?: () => void;
+  readonly profileAccessibilityLabel?: string;
   readonly width?: number;
   readonly drawerStyle?: StyleProp<ViewStyle>;
   readonly overlayStyle?: StyleProp<ViewStyle>;
@@ -27,6 +40,9 @@ export function SlidingDrawer({
   onClose,
   children,
   accessibilityCloseLabel,
+  profile,
+  onProfilePress,
+  profileAccessibilityLabel,
   width,
   drawerStyle,
   overlayStyle,
@@ -137,6 +153,37 @@ export function SlidingDrawer({
             drawerStyle,
           ]}
         >
+          {profile ? (
+            <View style={[styles.profileRow, { borderBottomColor: theme.colors.border }]}>
+              <TouchableOpacity
+                activeOpacity={onProfilePress ? 0.72 : 1}
+                disabled={!onProfilePress}
+                onPress={onProfilePress}
+                accessibilityRole={onProfilePress ? 'button' : 'image'}
+                accessibilityLabel={profileAccessibilityLabel ?? profile.displayName}
+                style={styles.profileButton}
+                testID={testID ? `${testID}-profile` : undefined}
+              >
+                <Avatar
+                  source={profile.avatarUri ? { uri: profile.avatarUri } : null}
+                  name={profile.displayName}
+                  size="sm"
+                  accessibilityLabel={profileAccessibilityLabel ?? profile.displayName}
+                  testID={testID ? `${testID}-profile-avatar` : undefined}
+                />
+                <Text preset="label" color="text" numberOfLines={1} style={styles.profileName}>
+                  {profile.displayName}
+                </Text>
+              </TouchableOpacity>
+              <IconCircleButton
+                icon="close"
+                onPress={onClose}
+                accessibilityLabel={accessibilityCloseLabel}
+                size="sm"
+                testID={testID ? `${testID}-close` : undefined}
+              />
+            </View>
+          ) : null}
           {children}
         </Animated.View>
       </Animated.View>
@@ -157,5 +204,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.24,
     shadowRadius: 18,
     elevation: 18,
+  },
+  profileRow: {
+    minHeight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    marginBottom: 18,
+  },
+  profileButton: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  profileName: {
+    flex: 1,
+    fontWeight: '800',
   },
 });

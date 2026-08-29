@@ -14,6 +14,8 @@ import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
 import { findStickerItem } from "@/features/diary/domain/Sticker";
 import { normalizeDiaryTags } from "@/features/diary/services/DiaryTagService";
+import { useProfileForm } from "@/features/profile/hooks/useProfileForm";
+import { resolveImportedProfilePhotoUri } from "@/features/profile/services/ProfilePhotoService";
 import { useAppStore } from "@/stores/useAppStore";
 import { manualMoodLabel, type TranslationKey, useTranslation } from "@/localization/i18n";
 
@@ -84,6 +86,7 @@ export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { entries, refresh } = useDiary();
+  const { profile } = useProfileForm();
   const calendarFirstDay = useAppStore((state) => state.calendarFirstDay);
   const [range, setRange] = useState<InsightsRange>("month");
   const [showInsightsMenu, setShowInsightsMenu] = useState(false);
@@ -121,6 +124,13 @@ export default function InsightsScreen() {
   const closeInsightsMenu = useCallback(() => {
     setShowInsightsMenu(false);
   }, []);
+  const drawerProfile = useMemo(
+    () => ({
+      displayName: profile?.displayName.trim() || t("profileFallbackName"),
+      avatarUri: profile?.avatarUri ? resolveImportedProfilePhotoUri(profile.avatarUri) : undefined,
+    }),
+    [profile, t],
+  );
 
   const stats = useMemo(() => {
     const rangeStart =
@@ -475,13 +485,15 @@ export default function InsightsScreen() {
         visible={showInsightsMenu}
         onClose={closeInsightsMenu}
         accessibilityCloseLabel={t("homeDrawerCloseA11y")}
+        profile={drawerProfile}
+        onProfilePress={() => {
+          closeInsightsMenu();
+          router.push("/profile/edit");
+        }}
+        profileAccessibilityLabel={t("settingsProfileTitle")}
         drawerStyle={[styles.drawer, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}
         testID="insights-sliding-drawer"
       >
-        <View style={styles.drawerHeader}>
-          <Text preset="h2" color="text" style={styles.drawerTitle}>{t("homeHeaderOptions")}</Text>
-          <IconCircleButton icon="close" onPress={closeInsightsMenu} accessibilityLabel={t("homeDrawerCloseA11y")} size="sm" />
-        </View>
         <TouchableOpacity
           onPress={() => {
             closeInsightsMenu();
@@ -552,8 +564,6 @@ const styles = StyleSheet.create({
   drawer: {
     paddingHorizontal: 20,
   },
-  drawerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 20 },
-  drawerTitle: { fontWeight: "800" },
   drawerRow: {
     minHeight: 54,
     flexDirection: "row",

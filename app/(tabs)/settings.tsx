@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { Icon, type IconProps } from '@shared/components/Icon';
+import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { Modal } from '@shared/components/Modal';
 import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { SectionLabel } from '@shared/components/SectionLabel';
@@ -138,6 +139,13 @@ export default function SettingsScreen() {
   const timeLeftMinutes = Math.floor((timeLeftUntilResetMs % 3_600_000) / 60_000);
   const timeLeftSeconds = Math.floor((timeLeftUntilResetMs % 60_000) / 1000);
   const timeLeftUntilResetText = `${String(timeLeftHours).padStart(2, '0')}:${String(timeLeftMinutes).padStart(2, '0')}:${String(timeLeftSeconds).padStart(2, '0')}`;
+  const navigateBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(tabs)');
+  }, [router]);
 
   useEffect(() => {
     if (!showFreeTierModal || isPro) return undefined;
@@ -404,9 +412,15 @@ export default function SettingsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          {t('settingsTitle')}
-        </Text>
+        <View style={styles.headerRow}>
+          <View style={styles.headerSide}>
+            <IconCircleButton icon="chevron-left" onPress={navigateBack} accessibilityLabel={t('entryBackA11y')} />
+          </View>
+          <Text numberOfLines={1} style={[styles.title, { color: theme.colors.text }]}>
+            {t('settingsTitle')}
+          </Text>
+          <View style={styles.headerSide} />
+        </View>
       </View>
       <ScrollView
         contentContainerStyle={{
@@ -992,10 +1006,25 @@ const styles = StyleSheet.create({
     elevation: 30,
     paddingHorizontal: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
+  headerRow: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 16,
+    gap: 8,
+  },
+  headerSide: {
+    width: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  title: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: '800',
   },
   optionsContainer: {
     flex: 1,

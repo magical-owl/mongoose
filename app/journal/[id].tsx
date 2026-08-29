@@ -24,6 +24,7 @@ import { SlidingDrawer } from "@shared/components/SlidingDrawer";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import { useJournals } from "@/features/journal/hooks/useJournals";
 import { useProfileForm } from "@/features/profile/hooks/useProfileForm";
+import { resolveImportedProfilePhotoUri } from "@/features/profile/services/ProfilePhotoService";
 import { getJournalCoverImageSource } from "@/features/journal/domain/JournalBackgrounds";
 import { stripHtml } from "@shared/utils/html";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
@@ -143,6 +144,13 @@ export default function JournalEntriesScreen() {
       : undefined;
   const journalCoverImageUri = selectedJournal?.coverImageUri ?? syntheticJournalCover?.coverImageUri;
   const journalCoverImageSource = getJournalCoverImageSource(journalCoverImageUri);
+  const drawerProfile = useMemo(
+    () => ({
+      displayName: profile?.displayName.trim() || t("profileFallbackName"),
+      avatarUri: profile?.avatarUri ? resolveImportedProfilePhotoUri(profile.avatarUri) : undefined,
+    }),
+    [profile, t],
+  );
 
   const filterOptions = useMemo(
     () => ({
@@ -487,13 +495,15 @@ export default function JournalEntriesScreen() {
         visible={isDrawerOpen}
         onClose={closeDrawer}
         accessibilityCloseLabel={t("homeDrawerCloseA11y")}
+        profile={drawerProfile}
+        onProfilePress={() => {
+          closeDrawer();
+          router.push("/profile/edit");
+        }}
+        profileAccessibilityLabel={t("settingsProfileTitle")}
         drawerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }}
         testID="journal-entry-list-drawer"
       >
-          <View style={styles.drawerHeader}>
-            <Text preset="h3" color="text" style={styles.drawerTitle}>Options</Text>
-            <IconCircleButton icon="close" onPress={closeDrawer} accessibilityLabel={t("homeDrawerCloseA11y")} size="sm" />
-          </View>
           <ScrollView showsVerticalScrollIndicator={false}>
             <SectionLabel style={styles.drawerSectionLabel}>{t("homeHeaderSearch")}</SectionLabel>
             <TextInput
@@ -583,6 +593,19 @@ export default function JournalEntriesScreen() {
             <TouchableOpacity onPress={() => { setFilterDate(""); setFilterTag(""); setFilterMood(""); setFavoritesOnly(false); }} style={styles.clearFilters} accessibilityRole="button">
               <Text preset="bodySmall" color="tint">{t("homeClearAllFilters")}</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                closeDrawer();
+                router.push("/(tabs)/settings");
+              }}
+              style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel={t("settingsTitle")}
+            >
+              <Ionicons name="settings-outline" size={20} color={theme.colors.textSecondary} />
+              <Text preset="bodySmall" color="text" style={styles.drawerRowText}>{t("settingsTitle")}</Text>
+              <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
           </ScrollView>
       </SlidingDrawer>
       <View style={styles.contentPane}>
@@ -593,7 +616,6 @@ export default function JournalEntriesScreen() {
             </View>
             <View style={styles.headerTitleSpacer} />
             <View style={[styles.headerSide, styles.headerSideRight]}>
-              <IconCircleButton icon="menu" onPress={openDrawer} accessibilityLabel={t("homeDrawerOpenA11y")} />
               <IconCircleButton
                 icon="plus"
                 onPress={() => {
@@ -605,6 +627,7 @@ export default function JournalEntriesScreen() {
                 }}
                 accessibilityLabel={t("entryCreateTitle")}
               />
+              <IconCircleButton icon="menu" onPress={openDrawer} accessibilityLabel={t("homeDrawerOpenA11y")} />
             </View>
           </View>
 
@@ -841,8 +864,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlignVertical: "center",
   },
-  drawerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 22 },
-  drawerTitle: { fontWeight: "800" },
   drawerSectionLabel: { fontWeight: "700", letterSpacing: 0.6, marginTop: 18, marginBottom: 8 },
   drawerRow: { minHeight: 52, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth },
   drawerRowText: { flex: 1, marginLeft: 12 },

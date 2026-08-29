@@ -12,6 +12,8 @@ import { AppFooterNavigation } from '@shared/components/AppFooterNavigation';
 import { SlidingDrawer } from '@shared/components/SlidingDrawer';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
+import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
+import { resolveImportedProfilePhotoUri } from '@/features/profile/services/ProfilePhotoService';
 import { isDiaryEntryVisible } from '@/features/diary/services/DiaryEntryVisibility';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { useSubscription } from '@/features/subscription/hooks/useSubscription';
@@ -70,6 +72,7 @@ export default function JournalsScreen(): React.JSX.Element {
   const t = useTranslation();
   const { entries, refresh: refreshEntries } = useDiary();
   const { journals, refresh: refreshJournals, createJournal, saveJournal, deleteJournal } = useJournals();
+  const { profile } = useProfileForm();
   const { isPro } = useSubscription();
   const isOnboarded = useAppStore((state) => state.isOnboarded);
   const premiumOnboardingPromptShown = useAppStore((state) => state.premiumOnboardingPromptShown);
@@ -200,6 +203,13 @@ export default function JournalsScreen(): React.JSX.Element {
     if (!query) return journalItems;
     return journalItems.filter((journal) => journal.title.toLocaleLowerCase().includes(query));
   }, [journalItems, journalSearchQuery]);
+  const drawerProfile = useMemo(
+    () => ({
+      displayName: profile?.displayName.trim() || t('profileFallbackName'),
+      avatarUri: profile?.avatarUri ? resolveImportedProfilePhotoUri(profile.avatarUri) : undefined,
+    }),
+    [profile, t],
+  );
 
   const handleCreateJournal = async () => {
     const trimmed = journalTitle.trim();
@@ -607,13 +617,15 @@ export default function JournalsScreen(): React.JSX.Element {
         visible={showJournalMenu}
         onClose={closeJournalMenu}
         accessibilityCloseLabel={t('homeDrawerCloseA11y')}
+        profile={drawerProfile}
+        onProfilePress={() => {
+          closeJournalMenu();
+          router.push('/profile/edit');
+        }}
+        profileAccessibilityLabel={t('settingsProfileTitle')}
         drawerStyle={[styles.drawer, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}
         testID="journal-sliding-drawer"
       >
-            <View style={styles.drawerHeader}>
-              <Text preset="h2" color="text" style={styles.drawerTitle}>{t('homeHeaderOptions')}</Text>
-              <IconCircleButton icon="close" onPress={closeJournalMenu} accessibilityLabel={t('homeDrawerCloseA11y')} size="sm" />
-            </View>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <SectionLabel style={styles.drawerSectionLabel}>{t('homeHeaderSearch')}</SectionLabel>
               <View style={[styles.drawerSearchBar, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
@@ -836,8 +848,6 @@ const styles = StyleSheet.create({
   drawer: {
     paddingHorizontal: 20,
   },
-  drawerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 20 },
-  drawerTitle: { fontWeight: '800' },
   drawerSectionLabel: { marginTop: 18, marginBottom: 8, fontWeight: '800' },
   drawerSearchBar: {
     minHeight: 44,

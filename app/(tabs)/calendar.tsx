@@ -20,6 +20,7 @@ import { AppFooterNavigation } from '@shared/components/AppFooterNavigation';
 import { SlidingDrawer } from '@shared/components/SlidingDrawer';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
+import { resolveImportedProfilePhotoUri } from '@/features/profile/services/ProfilePhotoService';
 import { useAppStore } from '@/stores/useAppStore';
 import { DiaryTimelineList } from '@/features/diary/components/DiaryTimelineList';
 import { appLockService } from '@/services/AppLockService';
@@ -150,6 +151,13 @@ export default function CalendarScreen() {
   const selectedDayGroupedEntries = useMemo(
     () => [[selectedDateStr, selectedDayEntries] as const],
     [selectedDateStr, selectedDayEntries],
+  );
+  const drawerProfile = useMemo(
+    () => ({
+      displayName: profile?.displayName.trim() || t('profileFallbackName'),
+      avatarUri: profile?.avatarUri ? resolveImportedProfilePhotoUri(profile.avatarUri) : undefined,
+    }),
+    [profile, t],
   );
 
   const moodColor = (mood: string) => {
@@ -346,13 +354,15 @@ export default function CalendarScreen() {
         visible={showCalendarMenu}
         onClose={closeCalendarMenu}
         accessibilityCloseLabel={t('homeDrawerCloseA11y')}
+        profile={drawerProfile}
+        onProfilePress={() => {
+          closeCalendarMenu();
+          router.push('/profile/edit');
+        }}
+        profileAccessibilityLabel={t('settingsProfileTitle')}
         drawerStyle={[styles.drawer, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}
         testID="calendar-sliding-drawer"
       >
-        <View style={styles.drawerHeader}>
-          <Text preset="h2" color="text" style={styles.drawerTitle}>{t('homeHeaderOptions')}</Text>
-          <IconCircleButton icon="close" onPress={closeCalendarMenu} accessibilityLabel={t('homeDrawerCloseA11y')} size="sm" />
-        </View>
         <TouchableOpacity
           onPress={() => {
             closeCalendarMenu();
@@ -472,8 +482,6 @@ const styles = StyleSheet.create({
   drawer: {
     paddingHorizontal: 20,
   },
-  drawerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 20 },
-  drawerTitle: { fontWeight: '800' },
   drawerRow: {
     minHeight: 54,
     flexDirection: 'row',
