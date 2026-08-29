@@ -22,6 +22,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   Keyboard,
+  Pressable,
   TextInput as NativeTextInput,
   StyleSheet,
   useWindowDimensions,
@@ -190,6 +191,9 @@ export default function EntryDetailScreen() {
     width: 0,
     height: ENTRY_BODY_MIN_HEIGHT,
   });
+  const closeFormattingTools = useCallback(() => {
+    setShowFormattingTools(false);
+  }, []);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = editContent
@@ -205,9 +209,12 @@ export default function EntryDetailScreen() {
 
   useEffect(() => {
     const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => setKeyboardHeight(e.endCoordinates.height));
-    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardHeight(0));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => {
+      setKeyboardHeight(0);
+      closeFormattingTools();
+    });
     return () => { show.remove(); hide.remove(); };
-  }, []);
+  }, [closeFormattingTools]);
 
   useEffect(() => () => {
     if (stickerBoundsTimer.current) clearTimeout(stickerBoundsTimer.current);
@@ -686,9 +693,13 @@ export default function EntryDetailScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           onScroll={handleEditorScroll}
-          onScrollBeginDrag={handleEditorScrollBeginDrag}
+          onScrollBeginDrag={() => {
+            closeFormattingTools();
+            handleEditorScrollBeginDrag();
+          }}
           scrollEventThrottle={16}
           onStartShouldSetResponderCapture={() => {
+            closeFormattingTools();
             dismissEntryKeyboard();
             return false;
           }}
@@ -848,6 +859,14 @@ export default function EntryDetailScreen() {
             )}
           </View>
         </ScrollView>
+        {isEditing && showFormattingTools ? (
+          <Pressable
+            accessibilityLabel={t('entryHideFormattingA11y')}
+            accessibilityRole="button"
+            onPress={closeFormattingTools}
+            style={styles.formattingDismissLayer}
+          />
+        ) : null}
       </KeyboardAvoidingView>
 
       {!isEditing && (
@@ -1104,6 +1123,11 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 2,
     elevation: 2,
+  },
+  formattingDismissLayer: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 2500,
+    elevation: 19,
   },
   titleInput: {
     fontSize: 30,

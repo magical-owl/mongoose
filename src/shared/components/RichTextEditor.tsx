@@ -17,6 +17,7 @@ import {
   actions,
 } from 'react-native-pell-rich-editor';
 import { useTheme } from '@providers/ThemeProvider';
+import { normalizeHtmlContent } from '@/shared/utils/html';
 
 export type FormatActionKind = 'bold' | 'italic' | 'heading' | 'bullet' | 'quote' | 'code' | 'align-left' | 'align-center' | 'align-right' | 'align-justify';
 
@@ -142,7 +143,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
         <RichEditor
           ref={richTextRef}
           initialContentHTML={value || ''}
-          onChange={onChangeText}
+          onChange={(html) => onChangeText(normalizeHtmlContent(html))}
           onHeightChange={onHeightChange}
           styleWithCSS={true}
           placeholder={placeholder}

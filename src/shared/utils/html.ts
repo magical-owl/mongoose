@@ -28,3 +28,11 @@ export function stripHtml(html: string): string {
   // 5. Normalize whitespace
   return text.replace(/\s+/g, ' ').trim();
 }
+
+export function isHtmlContentBlank(html: string): boolean {
+  return stripHtml(html).length === 0;
+}
+
+export function normalizeHtmlContent(html: string): string {
+  return isHtmlContentBlank(html) ? '' : html;
+}

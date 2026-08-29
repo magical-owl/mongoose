@@ -79,9 +79,10 @@ Implementation rules:
 - Create and edit entry forms share the same visual chrome through `src/features/diary/components/DiaryEntryEditorChrome.tsx`.
 - The composer header uses a compact safe-area-aware row: circular close/back control on the left, centered route title, favorite and save controls on the right, with stable dimensions so the title does not jump.
 - The cover image is a rounded landscape block below the header with an explicit gap. Empty cover state uses a centered camera action and label; selected covers keep the same rounded frame.
-- Date, title, and body use an editorial writing hierarchy: compact accent date row, italic serif-like title treatment, subtle divider, and a generous body editor area.
+- Date, title, and body use an editorial writing hierarchy: compact accent date row, italic serif-like title treatment, subtle divider, and a body editor area that leaves mood, journal, and tag controls reachable in the first compose view.
 - Mood, journal, and tag controls sit below the body as compact horizontal sections with uppercase labels, rounded surface chips, and warning-accent selected states.
 - The editor footer is an inset rounded toolbar above the safe area or keyboard. Footer icons use one neutral inactive treatment; active formatting is the only accent-highlighted state. Related inactive icon pairs may sit together for spacing, but should not use colored group wells.
+- Expanded formatting controls should collapse when the user taps the writing surface, starts scrolling, or dismisses the keyboard.
 - Composer scroll content must reserve the footer height, footer bottom offset, safe-area inset, and a trailing gap so mood, journal, and tag controls are fully visible at the bottom of the scroll.
 - Keep new composer controls token-driven and componentized. Use `IconCircleButton`, `AccentPillButton`, `InsetFloatingToolbar`, and `SectionLabel` for matching controls elsewhere in the app. Do not reintroduce separate create/edit styling for header, cover sizing, body sizing, or footer layout.
 

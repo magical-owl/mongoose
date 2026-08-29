@@ -16,6 +16,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   Keyboard,
+  Pressable,
   TextInput as NativeTextInput,
   StyleSheet,
   useWindowDimensions,
@@ -255,13 +256,19 @@ export default function CreateEntryScreen() {
   };
   const [isSaving, setIsSaving] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const closeFormattingTools = useCallback(() => {
+    setShowFormattingTools(false);
+  }, []);
 
   // Track keyboard height to float toolbar above it
   useEffect(() => {
     const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => setKeyboardHeight(e.endCoordinates.height));
-    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardHeight(0));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => {
+      setKeyboardHeight(0);
+      closeFormattingTools();
+    });
     return () => { show.remove(); hide.remove(); };
-  }, []);
+  }, [closeFormattingTools]);
 
   const wordCount = countWords(content);
   const availableTags = useMemo(() => normalizeDiaryTags(entries.flatMap((entry) => entry.tags)), [entries]);
@@ -547,9 +554,13 @@ export default function CreateEntryScreen() {
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           keyboardShouldPersistTaps="handled"
           onScroll={handleEditorScroll}
-          onScrollBeginDrag={handleEditorScrollBeginDrag}
+          onScrollBeginDrag={() => {
+            closeFormattingTools();
+            handleEditorScrollBeginDrag();
+          }}
           scrollEventThrottle={16}
           onStartShouldSetResponderCapture={() => {
+            closeFormattingTools();
             dismissEntryKeyboard();
             return false;
           }}
@@ -645,6 +656,14 @@ export default function CreateEntryScreen() {
             </View>
           </View>
         </ScrollView>
+        {showFormattingTools ? (
+          <Pressable
+            accessibilityLabel={t('entryHideFormattingA11y')}
+            accessibilityRole="button"
+            onPress={closeFormattingTools}
+            style={styles.formattingDismissLayer}
+          />
+        ) : null}
       </KeyboardAvoidingView>
 
       {/* ── Floating bottom toolbar ──────────────────────────────────────── */}
@@ -809,6 +828,11 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 2,
     elevation: 2,
+  },
+  formattingDismissLayer: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 2500,
+    elevation: 19,
   },
   titleInput: {
     fontSize: 30,

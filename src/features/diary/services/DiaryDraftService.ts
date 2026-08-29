@@ -1,5 +1,6 @@
 import { secureStorage, type ISecureStorageDataSource } from '@/database/SecureStorageDataSource';
 import { secureStorageKeys } from '@/constants/secureStorageKeys';
+import { normalizeHtmlContent } from '@/shared/utils/html';
 import type { CompanionType } from '../domain/Companion';
 import type { PlacedSticker } from '../domain/Sticker';
 import type { DiaryPhoto, ManualMood, ManualMoodWeather, SensoryDetails, WritingMode } from '../domain/DiaryEntry';
@@ -33,7 +34,17 @@ export class DiaryDraftService {
       const parsed: unknown = JSON.parse(raw);
       if (!isDraft(parsed)) return null;
       const legacyDraft = parsed as Partial<DiaryDraft>;
-      return { photos: [], tags: [], manualMood: 'neutral', manualMoodWeather: 'neutral', writingMode: 'free-write', sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' }, isLockbox: false, ...legacyDraft } as DiaryDraft;
+      return {
+        photos: [],
+        tags: [],
+        manualMood: 'neutral',
+        manualMoodWeather: 'neutral',
+        writingMode: 'free-write',
+        sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' },
+        isLockbox: false,
+        ...legacyDraft,
+        content: normalizeHtmlContent(legacyDraft.content ?? ''),
+      } as DiaryDraft;
     } catch {
       return null;
     }
@@ -42,7 +53,7 @@ export class DiaryDraftService {
   public async save(draft: Omit<DiaryDraft, 'savedAt'>): Promise<void> {
     await this.storage.setItem(
       secureStorageKeys.diaryDraft,
-      JSON.stringify({ ...draft, savedAt: new Date().toISOString() })
+      JSON.stringify({ ...draft, content: normalizeHtmlContent(draft.content), savedAt: new Date().toISOString() })
     );
   }
 
