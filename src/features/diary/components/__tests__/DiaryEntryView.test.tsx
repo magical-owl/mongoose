@@ -52,7 +52,9 @@ describe('DiaryEntryView', () => {
 
     expect(getByTestId('entry-card-date-column')).toBeTruthy();
     expect(style.borderRadius).toBe(8);
-    expect(style.marginBottom).toBe(14);
+    expect(style.marginBottom).toBe(0);
+    expect(style.marginHorizontal).toBe(-20);
+    expect(typeof style.width).toBe('number');
     expect(style.backgroundColor).toBe(palette.gray800);
     expect(avatarStyle.width).toBe(22);
     expect(moodStyle.flexDirection).toBe('row');
@@ -71,6 +73,13 @@ describe('DiaryEntryView', () => {
   it('renders timeline view with a spine and threaded reflections', async () => {
     const entryWithReflection: DiaryEntry = {
       ...baseEntry,
+      coverPhoto: {
+        id: '33333333-3333-4333-8333-333333333333',
+        uri: 'file:///timeline-cover.jpg',
+        width: 1200,
+        height: 800,
+        createdAt: '2026-08-29T01:50:00.000Z',
+      },
       reflections: [
         {
           id: '22222222-2222-4222-8222-222222222222',
@@ -82,28 +91,46 @@ describe('DiaryEntryView', () => {
     };
 
     const { getByTestId } = await renderWithProviders(
-      <DiaryEntryView entry={entryWithReflection} mode="timeline" profile={profile} onPress={jest.fn()} />,
+      <DiaryEntryView
+        entry={entryWithReflection}
+        mode="timeline"
+        profile={profile}
+        onPress={jest.fn()}
+        onAddReflection={jest.fn().mockResolvedValue(true)}
+      />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
     const spineStyle = StyleSheet.flatten(getByTestId('entry-timeline-spine').props.style);
+    const timelineStyle = StyleSheet.flatten(getByTestId('entry-timeline').props.style);
     const avatarStyle = StyleSheet.flatten(getByTestId('entry-timeline-avatar').props.style);
     const reflectionAvatarStyle = StyleSheet.flatten(getByTestId('entry-reflection-avatar').props.style);
     const moodStyle = StyleSheet.flatten(getByTestId('entry-timeline-mood').props.style);
     const reflectionsStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflections').props.style);
+    const reflectionSectionStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflection-section').props.style);
+    const reflectionInputStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflection-input').props.style);
     const reflectionItemStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflection-item').props.style);
+    const coverStyle = StyleSheet.flatten(getByTestId('entry-timeline-cover-photo').props.style);
 
     expect(spineStyle.width).toBe(1);
+    expect(spineStyle.left).toBe(26);
+    expect(timelineStyle.marginHorizontal).toBe(-20);
+    expect(typeof timelineStyle.width).toBe('number');
     expect(avatarStyle.width).toBe(22);
     expect(reflectionAvatarStyle.width).toBe(24);
     expect(moodStyle.flexDirection).toBe('row');
     expect(moodStyle.gap).toBe(5);
     expect(reflectionsStyle.borderLeftWidth).toBe(1);
+    expect(reflectionsStyle.marginTop).toBe(0);
     expect(reflectionsStyle.borderLeftColor).toBe(`${accentColors.blue.dark}88`);
+    expect(reflectionSectionStyle.marginRight).toBe(0);
+    expect(reflectionInputStyle.marginTop).toBe(10);
     expect(reflectionItemStyle.borderRadius).toBe(8);
+    expect(coverStyle.width).toBe('100%');
+    expect(coverStyle.borderRadius).toBe(0);
   });
 
-  it('renders feed view without cover using the shared mood indicator', async () => {
+  it('renders feed view without cover using the entry-detail mood and width pattern', async () => {
     const { getByTestId } = await renderWithProviders(
       <DiaryEntryView
         entry={baseEntry}
@@ -117,13 +144,18 @@ describe('DiaryEntryView', () => {
     const moodStyle = StyleSheet.flatten(getByTestId('entry-feed-mood').props.style);
     const authorAvatarStyle = StyleSheet.flatten(getByTestId('entry-feed-author-avatar').props.style);
     const authorRowStyle = StyleSheet.flatten(getByTestId('entry-feed-author-row').props.style);
+    const feedCardStyle = StyleSheet.flatten(getByTestId('entry-feed-card').props.style);
 
     expect(getByTestId('entry-feed-author-row')).toBeTruthy();
     expect(authorAvatarStyle.width).toBe(32);
     expect(authorRowStyle.borderWidth).toBeUndefined();
     expect(authorRowStyle.backgroundColor).toBeUndefined();
-    expect(moodStyle.flexDirection).toBe('row');
-    expect(moodStyle.gap).toBe(5);
+    expect(moodStyle.borderRadius).toBe(14);
+    expect(moodStyle.borderWidth).toBe(1);
+    expect(feedCardStyle.paddingVertical).toBe(0);
+    expect(feedCardStyle.marginBottom).toBe(0);
+    expect(feedCardStyle.marginHorizontal).toBe(-20);
+    expect(typeof feedCardStyle.width).toBe('number');
   });
 
   it('renders feed view with stronger cover and reflection structure', async () => {
@@ -163,20 +195,30 @@ describe('DiaryEntryView', () => {
     const reflectionInputStyle = StyleSheet.flatten(getByTestId('entry-feed-reflection-input').props.style);
     const bottomScrimStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-bottom-scrim').props.style);
     const authorRowStyle = StyleSheet.flatten(getByTestId('entry-feed-author-row').props.style);
+    const feedCardStyle = StyleSheet.flatten(getByTestId('entry-feed-card').props.style);
 
     const coverMoodStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-mood').props.style);
 
-    expect(coverMoodStyle.flexDirection).toBe('row');
-    expect(coverMoodStyle.gap).toBe(5);
+    expect(coverMoodStyle.borderRadius).toBe(14);
+    expect(coverMoodStyle.borderWidth).toBe(1);
     expect(contentPanelStyle.borderRadius).toBe(0);
     expect(contentPanelStyle.borderWidth).toBe(0);
     expect(contentPanelStyle.backgroundColor).toBe('transparent');
-    expect(reflectionPanelStyle.borderRadius).toBe(8);
+    expect(contentPanelStyle.paddingHorizontal).toBe(20);
+    expect(contentPanelStyle.paddingTop).toBe(0);
+    expect(reflectionPanelStyle.borderRadius).toBe(0);
+    expect(reflectionPanelStyle.marginTop).toBe(0);
+    expect(reflectionPanelStyle.marginHorizontal).toBe(0);
     expect(reflectionPanelStyle.backgroundColor).toBe(palette.gray800);
     expect(feedReflectionsStyle.borderLeftWidth).toBe(0);
     expect(feedReflectionsStyle.paddingLeft).toBe(0);
     expect(reflectionInputStyle.marginLeft).toBe(0);
+    expect(reflectionInputStyle.marginTop).toBe(10);
     expect(authorRowStyle.borderWidth).toBeUndefined();
+    expect(feedCardStyle.paddingVertical).toBe(0);
+    expect(feedCardStyle.marginBottom).toBe(0);
+    expect(feedCardStyle.marginHorizontal).toBe(-20);
+    expect(typeof feedCardStyle.width).toBe('number');
     expect(bottomScrimStyle.opacity).toBe(0.36);
     expect(bottomScrimStyle.height).toBe('54%');
   });

@@ -443,7 +443,7 @@ export default function JournalEntriesScreen() {
     extrapolate: "clamp",
   });
   const expandedHeaderHeight = hasJournalCover
-    ? JOURNAL_COVER_EXPANDED_HEIGHT + JOURNAL_HEADER_BOTTOM_GAP
+    ? JOURNAL_COVER_EXPANDED_HEIGHT
     : insets.top
       + JOURNAL_HEADER_TOP_PADDING
       + JOURNAL_HEADER_ROW_HEIGHT
