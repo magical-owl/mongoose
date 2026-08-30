@@ -150,7 +150,7 @@ const initialState: Pick<
   syntheticJournalCovers: {},
   homeViewModes: { detailed: true, timeline: true, feed: true },
   homeViewMode: 'timeline',
-  entryHierarchyMode: 'year-month-date',
+  entryHierarchyMode: 'none',
   appLanguage: 'en',
   premiumOnboardingPromptShown: false,
   premiumPromptDismissedAt: null,
