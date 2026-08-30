@@ -58,7 +58,7 @@ import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSe
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
 import { DiaryCoverPhotoPicker } from '@/features/diary/components/DiaryCoverPhotoPicker';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
-import { chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
+import { chooseDiaryPhoto, chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
@@ -416,7 +416,7 @@ export default function EntryDetailScreen() {
   }, [getVisibleStickerPosition, revealStickerBounds, t]);
 
   const handleCoverPhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
-    const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhotos();
+    const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhoto();
     if (!result.success) {
       if (result.error === 'native-module-missing') {
         Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));

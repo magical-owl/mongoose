@@ -193,7 +193,6 @@ describe('DiaryEntryView', () => {
     const reflectionPanelStyle = StyleSheet.flatten(getByTestId('entry-feed-reflection-panel').props.style);
     const feedReflectionsStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflections').props.style);
     const reflectionInputStyle = StyleSheet.flatten(getByTestId('entry-feed-reflection-input').props.style);
-    const bottomScrimStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-bottom-scrim').props.style);
     const authorRowStyle = StyleSheet.flatten(getByTestId('entry-feed-author-row').props.style);
     const feedCardStyle = StyleSheet.flatten(getByTestId('entry-feed-card').props.style);
 
@@ -219,7 +218,5 @@ describe('DiaryEntryView', () => {
     expect(feedCardStyle.marginBottom).toBe(0);
     expect(feedCardStyle.marginHorizontal).toBe(-20);
     expect(typeof feedCardStyle.width).toBe('number');
-    expect(bottomScrimStyle.opacity).toBe(0.36);
-    expect(bottomScrimStyle.height).toBe('54%');
   });
 });

@@ -14,7 +14,7 @@ import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
 import { accentColors, type AccentColor } from '@/theme/accents';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
-import { chooseDiaryPhotos } from '@/features/diary/services/DiaryPhotoPickerService';
+import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { profilePhotoService } from '@/features/profile/services/ProfilePhotoService';
 
 type OnboardingStep = 0 | 1 | 2 | 3;
@@ -98,7 +98,7 @@ export default function OnboardingScreen(): React.JSX.Element {
   };
 
   const handleChooseProfilePhoto = async () => {
-    const result = await chooseDiaryPhotos();
+    const result = await chooseDiaryPhoto();
     if (!result.success) {
       if (result.error === 'native-module-missing') {
         Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));

@@ -378,7 +378,6 @@ export function DiaryEntryView({
               resizeMode="cover"
             >
               <View style={[styles.feedCoverScrim, { backgroundColor: theme.colors.overlay }]} />
-              <View style={[styles.feedCoverBottomScrim, { backgroundColor: theme.colors.card }]} testID="entry-feed-cover-bottom-scrim" />
               <View style={styles.feedCoverContent}>
                 <Text
                   style={[
@@ -608,9 +607,8 @@ const styles = StyleSheet.create({
   feedCoverHeader: { minHeight: 168, justifyContent: 'flex-end', overflow: 'hidden' },
   feedCoverHeaderImage: { borderRadius: 0 },
   feedCoverScrim: { ...StyleSheet.absoluteFill, opacity: 0.28 },
-  feedCoverBottomScrim: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '54%', opacity: 0.36 },
   feedCoverContent: { paddingHorizontal: 20, paddingTop: 42, paddingBottom: 12 },
-  feedCoverTitle: { marginBottom: 10 },
+  feedCoverTitle: { marginBottom: 8 },
   feedCoverMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   feedCoverMetaText: { fontWeight: '700' },
   feedAuthorRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },

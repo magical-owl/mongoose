@@ -22,7 +22,7 @@ import { APP_IDENTITY } from '@/config/appIdentity';
 import { premiumPaywallTitle, useTranslation, type TranslationKey } from '@/localization/i18n';
 import type { Journal } from '@/features/journal/domain/Journal';
 import { BUILTIN_JOURNAL_BACKGROUNDS, getJournalCoverImageSource } from '@/features/journal/domain/JournalBackgrounds';
-import { chooseDiaryPhotos } from '@/features/diary/services/DiaryPhotoPickerService';
+import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import type { JournalColumnCount, SyntheticJournalId } from '@/stores/useAppStore';
 
@@ -297,7 +297,7 @@ export default function JournalsScreen(): React.JSX.Element {
     const journal = coverPickerJournal;
     if (!journal) return;
     void (async () => {
-      const result = await chooseDiaryPhotos();
+      const result = await chooseDiaryPhoto();
       if (!result.success) {
         if (result.error === 'native-module-missing') {
           Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));

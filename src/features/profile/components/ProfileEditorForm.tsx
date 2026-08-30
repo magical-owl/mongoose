@@ -4,7 +4,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { SectionLabel } from '@shared/components/SectionLabel';
 import { Text } from '@shared/components/Text';
-import { chooseDiaryPhotos } from '@/features/diary/services/DiaryPhotoPickerService';
+import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import type { Profile } from '@/features/profile/domain/Profile';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { profilePhotoService } from '@/features/profile/services/ProfilePhotoService';
@@ -24,7 +24,7 @@ export function ProfileEditorForm({ profile, onSaved }: ProfileEditorFormProps):
   const [profileAvatarUri, setProfileAvatarUri] = useState<string | undefined>(profile?.avatarUri);
 
   const handleChooseProfilePhoto = async () => {
-    const result = await chooseDiaryPhotos();
+    const result = await chooseDiaryPhoto();
     if (!result.success) {
       if (result.error === 'native-module-missing') {
         Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
