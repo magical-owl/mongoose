@@ -42,7 +42,7 @@ import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import { RichTextEditor, type RichTextEditorHandle } from '@shared/components/RichTextEditor';
 import { MarkdownText } from '@shared/components/MarkdownText';
-import { DiaryEntry, DiaryPhoto, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
+import { DiaryEntry, DiaryPhoto, ManualMood, ManualMoodWeather, WritingMode, getEntryManualMoods, getPrimaryManualMood, normalizeManualMoods } from '@/features/diary/domain/DiaryEntry';
 import type { CompanionType } from '@/features/diary/domain/Companion';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
@@ -163,7 +163,7 @@ export default function EntryDetailScreen() {
   const [editStickers, setEditStickers] = useState<PlacedSticker[]>([]);
   const [editCoverPhoto, setEditCoverPhoto] = useState<DiaryPhoto | undefined>();
   const [editMoodWeather, setEditMoodWeather] = useState<ManualMoodWeather>('neutral');
-  const [editMood, setEditMood] = useState<ManualMood>('neutral');
+  const [editMoods, setEditMoods] = useState<ManualMood[]>(['neutral']);
   const [editWritingMode, setEditWritingMode] = useState<WritingMode>('free-write');
   const [editLocation, setEditLocation] = useState('');
   const [editSounds, setEditSounds] = useState('');
@@ -248,7 +248,7 @@ export default function EntryDetailScreen() {
         setEditFavorite(found.isFavorite);
         setEditJournalIds(found.journalIds ?? found.collectionIds);
         setEditTags(normalizeDiaryTags(found.tags));
-        setEditMood(found.manualMood ?? 'neutral'); setEditMoodWeather(found.manualMoodWeather); setEditWritingMode(found.writingMode); setEditLocation(found.sensory.locationLabel); setEditSounds(found.sensory.sounds); setEditSmells(found.sensory.smells); setEditEnergy(String(found.sensory.energyLevel)); setEditBody(found.sensory.bodyState); setEditLockbox(found.isLockbox); setEditUnlockAt(found.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(found.expiresAt ?? '');
+        setEditMoods(getEntryManualMoods(found)); setEditMoodWeather(found.manualMoodWeather); setEditWritingMode(found.writingMode); setEditLocation(found.sensory.locationLabel); setEditSounds(found.sensory.sounds); setEditSmells(found.sensory.smells); setEditEnergy(String(found.sensory.energyLevel)); setEditBody(found.sensory.bodyState); setEditLockbox(found.isLockbox); setEditUnlockAt(found.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(found.expiresAt ?? '');
       }
     }, 0);
     return () => clearTimeout(timer);
@@ -271,7 +271,7 @@ export default function EntryDetailScreen() {
     setEditFavorite(entry.isFavorite);
     setEditJournalIds(entry.journalIds ?? entry.collectionIds);
     setEditTags(normalizeDiaryTags(entry.tags));
-    setEditMood(entry.manualMood ?? 'neutral'); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
+    setEditMoods(getEntryManualMoods(entry)); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(true);
   };
 
@@ -287,7 +287,7 @@ export default function EntryDetailScreen() {
     setEditFavorite(entry.isFavorite);
     setEditJournalIds(entry.journalIds ?? entry.collectionIds);
     setEditTags(normalizeDiaryTags(entry.tags));
-    setEditMood(entry.manualMood ?? 'neutral'); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
+    setEditMoods(getEntryManualMoods(entry)); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
     setIsEditing(false);
   };
 
@@ -309,7 +309,8 @@ export default function EntryDetailScreen() {
       collectionIds: editJournalIds,
       journalIds: editJournalIds,
       manualMoodWeather: editMoodWeather,
-      manualMood: editMood,
+      manualMood: getPrimaryManualMood(editMoods),
+      manualMoods: editMoods,
       writingMode: editWritingMode,
       sensory: { locationLabel: editLocation, sounds: editSounds, smells: editSmells, energyLevel: Math.min(10, Math.max(1, Number(editEnergy) || 5)), bodyState: editBody },
       isLockbox: editLockbox,
@@ -513,7 +514,9 @@ export default function EntryDetailScreen() {
   const behindDisplayStickers = displayStickers.filter((sticker) => sticker.behindText);
   const foregroundDisplayStickers = displayStickers.filter((sticker) => !sticker.behindText);
   const wordCount = countWords(isEditing ? editContent : entry.content);
-  const moodTone = getManualMoodColor(entry.manualMood, theme.colors);
+  const viewMoods = getEntryManualMoods(entry);
+  const primaryViewMood = getPrimaryManualMood(viewMoods);
+  const moodTone = getManualMoodColor(primaryViewMood, theme.colors);
   const hasViewCoverPhoto = Boolean(entry.coverPhoto);
   const friendlyTimestampLabels = {
     today: t('timeToday'),
@@ -527,10 +530,10 @@ export default function EntryDetailScreen() {
   const viewDateTime = formatFriendlyTimestamp(entry.createdAt, timeFormat, friendlyTimestampLabels);
   const renderViewMoodAndTags = (onCover: boolean) => (
     <View style={onCover ? styles.coverMetaLeft : styles.entryMetaRow}>
-      {entry.manualMood ? (
+      {viewMoods.length > 0 ? (
         <View style={[styles.moodBadge, onCover && styles.coverMoodBadge, { backgroundColor: moodTone + (onCover ? '80' : '18'), borderColor: moodTone + (onCover ? 'CC' : '') }]}>
           <Text preset="caption" style={[styles.moodBadgeText, { color: onCover ? theme.colors.stickerControlText : moodTone }]}>
-            {manualMoodLabel(entry.manualMood, t)}
+            {viewMoods.map((mood) => manualMoodLabel(mood, t)).join(' · ')}
           </Text>
         </View>
       ) : null}
@@ -821,7 +824,7 @@ export default function EntryDetailScreen() {
                   ))}
                 </View>
                 <View style={styles.belowBodyPickers}>
-                  <ManualMoodPicker value={editMood} onChange={setEditMood} />
+                  <ManualMoodPicker values={editMoods} onChangeValues={setEditMoods} multiple />
                   <DiaryJournalSelector
                     selectedJournalIds={editJournalIds}
                     journals={journals}
@@ -1107,9 +1110,9 @@ export default function EntryDetailScreen() {
       <EntryDetailsModal
         visible={showEntryDetails}
         onDismiss={() => setShowEntryDetails(false)}
-        values={{ manualMood: editMood, manualMoodWeather: editMoodWeather, journalIds: editJournalIds, writingMode: editWritingMode, sensory: { locationLabel: editLocation, sounds: editSounds, smells: editSmells, energyLevel: Number(editEnergy) || 5, bodyState: editBody }, isLockbox: editLockbox, timeCapsuleUnlockAt: editUnlockAt, expiresAt: editExpiresAt }}
+        values={{ manualMood: getPrimaryManualMood(editMoods), manualMoods: editMoods, manualMoodWeather: editMoodWeather, journalIds: editJournalIds, writingMode: editWritingMode, sensory: { locationLabel: editLocation, sounds: editSounds, smells: editSmells, energyLevel: Number(editEnergy) || 5, bodyState: editBody }, isLockbox: editLockbox, timeCapsuleUnlockAt: editUnlockAt, expiresAt: editExpiresAt }}
         journals={journals}
-        onChange={(next) => { if (next.manualMood) setEditMood(next.manualMood); if (next.manualMoodWeather) setEditMoodWeather(next.manualMoodWeather); if (next.journalIds) setEditJournalIds([...next.journalIds]); if (next.writingMode) setEditWritingMode(next.writingMode); if (next.sensory) { setEditLocation(next.sensory.locationLabel); setEditSounds(next.sensory.sounds); setEditSmells(next.sensory.smells); setEditEnergy(String(next.sensory.energyLevel)); setEditBody(next.sensory.bodyState); } if (next.isLockbox !== undefined) setEditLockbox(next.isLockbox); if (next.timeCapsuleUnlockAt !== undefined) setEditUnlockAt(next.timeCapsuleUnlockAt); if (next.expiresAt !== undefined) setEditExpiresAt(next.expiresAt); }}
+        onChange={(next) => { if (next.manualMoods) setEditMoods([...next.manualMoods]); else if (next.manualMood) setEditMoods(normalizeManualMoods(undefined, next.manualMood)); if (next.manualMoodWeather) setEditMoodWeather(next.manualMoodWeather); if (next.journalIds) setEditJournalIds([...next.journalIds]); if (next.writingMode) setEditWritingMode(next.writingMode); if (next.sensory) { setEditLocation(next.sensory.locationLabel); setEditSounds(next.sensory.sounds); setEditSmells(next.sensory.smells); setEditEnergy(String(next.sensory.energyLevel)); setEditBody(next.sensory.bodyState); } if (next.isLockbox !== undefined) setEditLockbox(next.isLockbox); if (next.timeCapsuleUnlockAt !== undefined) setEditUnlockAt(next.timeCapsuleUnlockAt); if (next.expiresAt !== undefined) setEditExpiresAt(next.expiresAt); }}
       />
     </View>
   );

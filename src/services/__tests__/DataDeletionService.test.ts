@@ -35,6 +35,7 @@ describe('DataDeletionService', () => {
       createdAt: '2026-08-29T00:00:00.000Z',
       updatedAt: '2026-08-29T00:00:00.000Z',
       manualMoodWeather: 'neutral',
+      manualMoods: ['neutral'],
       writingMode: 'free-write',
       sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' },
       isLockbox: false,

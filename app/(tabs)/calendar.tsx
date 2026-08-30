@@ -25,7 +25,7 @@ import { useAppStore } from '@/stores/useAppStore';
 import { DiaryTimelineList } from '@/features/diary/components/DiaryTimelineList';
 import { appLockService } from '@/services/AppLockService';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
-import type { ManualMood } from '@/features/diary/domain/DiaryEntry';
+import { getEntryManualMoods, type ManualMood } from '@/features/diary/domain/DiaryEntry';
 import { useTranslation } from '@/localization/i18n';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 
@@ -234,7 +234,7 @@ export default function CalendarScreen() {
           const isSelected = dateStr === selectedDateStr;
           const dayEntries = entryDateMap.get(dateStr) || [];
           const hasEntries = dayEntries.length > 0;
-          const moodKeys = Array.from(new Set(dayEntries.flatMap((entry) => entry.manualMood ? [entry.manualMood] : []))).slice(0, 3);
+          const moodKeys = Array.from(new Set(dayEntries.flatMap((entry) => getEntryManualMoods(entry)))).slice(0, 3);
           const hasFavorite = dayEntries.some((entry) => entry.isFavorite);
 
           return (

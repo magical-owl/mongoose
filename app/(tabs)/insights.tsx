@@ -10,7 +10,7 @@ import { IconCircleButton } from "@shared/components/IconCircleButton";
 import { SlidingDrawer } from "@shared/components/SlidingDrawer";
 import { stripHtml } from "@shared/utils/html";
 import { useDiary } from "@/features/diary/hooks/useDiary";
-import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
+import { getEntryManualMoods, type ManualMood } from "@/features/diary/domain/DiaryEntry";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
 import { findStickerItem } from "@/features/diary/domain/Sticker";
 import { normalizeDiaryTags } from "@/features/diary/services/DiaryTagService";
@@ -164,7 +164,9 @@ export default function InsightsScreen() {
       wordTotal += countWords(entry.content);
       stickerTotal += entry.stickers.length;
       reflectionTotal += entry.reflections.length;
-      if (entry.manualMood) moodCounts.set(entry.manualMood, (moodCounts.get(entry.manualMood) ?? 0) + 1);
+      getEntryManualMoods(entry).forEach((mood) => {
+        moodCounts.set(mood, (moodCounts.get(mood) ?? 0) + 1);
+      });
       entry.stickers.forEach((sticker) => {
         stickerCounts.set(sticker.stickerId, (stickerCounts.get(sticker.stickerId) ?? 0) + 1);
       });

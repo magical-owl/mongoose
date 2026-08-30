@@ -29,6 +29,7 @@ function createDraft(content: string): DiaryDraft {
     tags: [],
     manualMoodWeather: 'neutral',
     manualMood: 'neutral',
+    manualMoods: ['neutral'],
     writingMode: 'free-write',
     sensory: {
       locationLabel: '',

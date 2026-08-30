@@ -30,7 +30,7 @@ import { RichTextEditor, type RichTextEditorHandle } from '@shared/components/Ri
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { useAppStore } from '@/stores/useAppStore';
-import { DiaryEntry, DiaryPhoto, ManualMood, ManualMoodWeather, WritingMode } from '@/features/diary/domain/DiaryEntry';
+import { DiaryEntry, DiaryPhoto, ManualMood, ManualMoodWeather, WritingMode, getPrimaryManualMood, normalizeManualMoods } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { StickerPickerModal } from '@/features/diary/components/StickerPickerModal';
@@ -153,7 +153,7 @@ export default function CreateEntryScreen() {
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showFormattingTools, setShowFormattingTools] = useState(false);
   const [manualMoodWeather, setManualMoodWeather] = useState<ManualMoodWeather>('neutral');
-  const [manualMood, setManualMood] = useState<ManualMood>('neutral');
+  const [manualMoods, setManualMoods] = useState<ManualMood[]>(['neutral']);
   const [writingMode, setWritingMode] = useState<WritingMode>('free-write');
   const [locationLabel, setLocationLabel] = useState('');
   const [sounds, setSounds] = useState('');
@@ -192,7 +192,7 @@ export default function CreateEntryScreen() {
       setStickers([...draft.stickers, ...draft.photos.map((photo, index) => createPlacedPhotoSticker(photo, draft.stickers.length + index))]);
       setSelectedTags(normalizeDiaryTags(draft.tags));
       setManualMoodWeather(draft.manualMoodWeather);
-      setManualMood(draft.manualMood ?? 'neutral');
+      setManualMoods(normalizeManualMoods(draft.manualMoods, draft.manualMood ?? 'neutral'));
       setWritingMode(draft.writingMode);
       setLocationLabel(draft.sensory.locationLabel);
       setSounds(draft.sensory.sounds);
@@ -224,14 +224,17 @@ export default function CreateEntryScreen() {
         coverPhoto,
         photos: [],
         tags: selectedTags,
-        manualMood, manualMoodWeather, writingMode,
+        manualMood: getPrimaryManualMood(manualMoods),
+        manualMoods,
+        manualMoodWeather,
+        writingMode,
         sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState },
         isLockbox, timeCapsuleUnlockAt: timeCapsuleUnlockAt ? new Date(timeCapsuleUnlockAt).toISOString() : undefined,
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
       });
     }, 700);
     return () => clearTimeout(timer);
-  }, [title, content, isoDate, stickers, coverPhoto, selectedTags, manualMood, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
+  }, [title, content, isoDate, stickers, coverPhoto, selectedTags, manualMoods, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
 
   useEffect(() => () => {
     if (stickerBoundsTimer.current) clearTimeout(stickerBoundsTimer.current);
@@ -423,7 +426,8 @@ export default function CreateEntryScreen() {
       isFavorite,
       tags: selectedTags,
       manualMoodWeather,
-      manualMood,
+      manualMood: getPrimaryManualMood(manualMoods),
+      manualMoods,
       writingMode,
       sensory: { locationLabel, sounds, smells, energyLevel: Math.min(10, Math.max(1, Number(energyLevel) || 5)), bodyState },
       isLockbox,
@@ -656,7 +660,7 @@ export default function CreateEntryScreen() {
               ))}
             </View>
             <View style={styles.belowBodyPickers}>
-              <ManualMoodPicker value={manualMood} onChange={setManualMood} />
+              <ManualMoodPicker values={manualMoods} onChangeValues={setManualMoods} multiple />
               <DiaryJournalSelector
                 selectedJournalIds={selectedJournalIds}
                 journals={journals}
@@ -776,10 +780,11 @@ export default function CreateEntryScreen() {
       <EntryDetailsModal
         visible={showEntryDetails}
         onDismiss={() => setShowEntryDetails(false)}
-        values={{ manualMood, manualMoodWeather, journalIds: selectedJournalIds, writingMode, sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState }, isLockbox, timeCapsuleUnlockAt, expiresAt }}
+        values={{ manualMood: getPrimaryManualMood(manualMoods), manualMoods, manualMoodWeather, journalIds: selectedJournalIds, writingMode, sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState }, isLockbox, timeCapsuleUnlockAt, expiresAt }}
         journals={journals}
         onChange={(next) => {
-          if (next.manualMood) setManualMood(next.manualMood);
+          if (next.manualMoods) setManualMoods([...next.manualMoods]);
+          else if (next.manualMood) setManualMoods(normalizeManualMoods(undefined, next.manualMood));
           if (next.manualMoodWeather) setManualMoodWeather(next.manualMoodWeather);
           if (next.journalIds) setSelectedJournalIds([...next.journalIds]);
           if (next.writingMode) setWritingMode(next.writingMode);

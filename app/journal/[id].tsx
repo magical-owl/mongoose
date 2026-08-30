@@ -36,7 +36,7 @@ import { useScrollCollapse } from "@/shared/hooks/useScrollCollapse";
 import { useSubscription } from "@/features/subscription/hooks/useSubscription";
 import { APP_IDENTITY } from "@/config/appIdentity";
 import type { EntryHierarchyMode, HomeViewMode } from "@/stores/useAppStore";
-import type { ManualMood } from "@/features/diary/domain/DiaryEntry";
+import { getEntryManualMoods, type ManualMood } from "@/features/diary/domain/DiaryEntry";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
 import { homeFilterAllLabel, homeFilterKindLabel, homeViewModeLabel, manualMoodLabel, premiumPaywallTitle, useTranslation } from "@/localization/i18n";
 
@@ -158,11 +158,7 @@ export default function JournalEntriesScreen() {
       tag: Array.from(new Set(journalEntries.flatMap((entry) => entry.tags))).sort(),
       mood: Array.from(
         new Set(
-          journalEntries.flatMap((entry) =>
-            entry.manualMood
-              ? [entry.manualMood]
-              : [],
-          ),
+          journalEntries.flatMap((entry) => getEntryManualMoods(entry)),
         ),
       ).sort(),
     }),
@@ -399,9 +395,7 @@ export default function JournalEntriesScreen() {
             tag.toLowerCase().includes(filterTag.toLowerCase()),
           )) &&
         (!filterMood ||
-          (e.manualMood
-            ? e.manualMood === filterMood.toLowerCase()
-            : false)) &&
+          getEntryManualMoods(e).includes(filterMood.toLowerCase() as ManualMood)) &&
         (!favoritesOnly || e.isFavorite),
     );
   }, [

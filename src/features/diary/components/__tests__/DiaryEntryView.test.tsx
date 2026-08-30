@@ -19,6 +19,7 @@ const baseEntry: DiaryEntry = {
   updatedAt: '2026-08-29T01:58:00.000Z',
   manualMoodWeather: 'neutral',
   manualMood: 'calm',
+  manualMoods: ['calm'],
   writingMode: 'free-write',
   isLockbox: false,
   sensory: {

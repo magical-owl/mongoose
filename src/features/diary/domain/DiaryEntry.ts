@@ -52,6 +52,40 @@ export function getManualMoodScore(mood: ManualMood | undefined): number {
   return mood ? MANUAL_MOOD_SCORES[mood] : 0;
 }
 
+export function normalizeManualMoods(
+  moods?: readonly ManualMood[],
+  fallbackMood?: ManualMood,
+): ManualMood[] {
+  const source = moods && moods.length > 0 ? moods : fallbackMood ? [fallbackMood] : [];
+  const unique = Array.from(new Set(source));
+  if (unique.length > 1) return unique.filter((mood) => mood !== 'neutral');
+  return unique;
+}
+
+export function getPrimaryManualMood(moods?: readonly ManualMood[]): ManualMood | undefined {
+  return moods?.[0];
+}
+
+export function toggleManualMoodSelection(
+  selectedMoods: readonly ManualMood[],
+  mood: ManualMood,
+): ManualMood[] {
+  if (mood === 'neutral') return ['neutral'];
+
+  const withoutNeutral = selectedMoods.filter((selected) => selected !== 'neutral');
+  const next = withoutNeutral.includes(mood)
+    ? withoutNeutral.filter((selected) => selected !== mood)
+    : [...withoutNeutral, mood];
+  return next.length > 0 ? next : ['neutral'];
+}
+
+export function getEntryManualMoods(entry: {
+  readonly manualMoods?: readonly ManualMood[];
+  readonly manualMood?: ManualMood;
+}): ManualMood[] {
+  return normalizeManualMoods(entry.manualMoods, entry.manualMood);
+}
+
 export const WritingModeSchema = z.enum(['free-write', 'one-line', 'five-minute', 'gratitude', 'travel', 'dream', 'evening-review']);
 export type WritingMode = z.infer<typeof WritingModeSchema>;
 
@@ -97,6 +131,8 @@ export const DiaryEntrySchema = z.object({
   manualMoodWeather: ManualMoodWeatherSchema.default('neutral'),
   /** Optional for backwards compatibility with entries created before manual mood selection. */
   manualMood: ManualMoodSchema.optional(),
+  /** Canonical multi-select mood values. `manualMood` remains as the primary mood for legacy readers. */
+  manualMoods: z.array(ManualMoodSchema).default([]),
   writingMode: WritingModeSchema.default('free-write'),
   sensory: SensoryDetailsSchema.default({ locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' }),
   timeCapsuleUnlockAt: z.string().datetime().optional(),

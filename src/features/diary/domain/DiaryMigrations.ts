@@ -1,6 +1,6 @@
-import { DiaryEntry, DiaryEntrySchema } from './DiaryEntry';
+import { DiaryEntry, DiaryEntrySchema, getEntryManualMoods, getPrimaryManualMood } from './DiaryEntry';
 
-export const CURRENT_DIARY_SCHEMA_VERSION = 4;
+export const CURRENT_DIARY_SCHEMA_VERSION = 5;
 
 export interface DiaryStorageEnvelope {
   readonly version: number;
@@ -28,7 +28,9 @@ export function migrateDiaryStorage(raw: unknown): DiaryStorageEnvelope {
 function parseEntries(items: unknown[]): DiaryEntry[] {
   return items.flatMap((item) => {
     const result = DiaryEntrySchema.safeParse(item);
-    return result.success ? [result.data] : [];
+    if (!result.success) return [];
+    const manualMoods = getEntryManualMoods(result.data);
+    return [{ ...result.data, manualMood: getPrimaryManualMood(manualMoods), manualMoods }];
   });
 }
 

@@ -4,7 +4,7 @@ import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { SectionLabel } from '@shared/components/SectionLabel';
 import { Text } from '@shared/components/Text';
 import { Modal } from '@shared/components/Modal';
-import { MANUAL_MOOD_OPTIONS, MANUAL_MOOD_WEATHER_OPTIONS, type ManualMood, type ManualMoodWeather, type SensoryDetails, type WritingMode } from '@/features/diary/domain/DiaryEntry';
+import { MANUAL_MOOD_OPTIONS, MANUAL_MOOD_WEATHER_OPTIONS, normalizeManualMoods, toggleManualMoodSelection, type ManualMood, type ManualMoodWeather, type SensoryDetails, type WritingMode } from '@/features/diary/domain/DiaryEntry';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import type { Journal } from '@/features/journal/domain/Journal';
 import { manualMoodLabel, manualMoodWeatherLabel, useTranslation } from '@/localization/i18n';
@@ -12,6 +12,7 @@ import { manualMoodLabel, manualMoodWeatherLabel, useTranslation } from '@/local
 export interface EntryDetailsValues {
   manualMoodWeather: ManualMoodWeather;
   manualMood?: ManualMood;
+  manualMoods?: readonly ManualMood[];
   journalIds: readonly string[];
   writingMode: WritingMode;
   sensory: SensoryDetails;
@@ -34,6 +35,7 @@ const moods: readonly ManualMood[] = MANUAL_MOOD_OPTIONS;
 export function EntryDetailsModal({ visible, onDismiss, values, journals, onChange }: Props) {
   const theme = useTheme();
   const t = useTranslation();
+  const selectedMoods = normalizeManualMoods(values.manualMoods, values.manualMood);
   const toggleJournal = (journalId: string) => {
     onChange({
       journalIds: values.journalIds.includes(journalId)
@@ -59,16 +61,16 @@ export function EntryDetailsModal({ visible, onDismiss, values, journals, onChan
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
             {moods.map((item) => {
-              const selected = values.manualMood === item;
+              const selected = selectedMoods.includes(item);
               const color = getManualMoodColor(item, theme.colors);
               const label = manualMoodLabel(item, t);
               return (
                 <TouchableOpacity
                   key={item}
-                  onPress={() => onChange({ manualMood: item })}
+                  onPress={() => onChange({ manualMoods: toggleManualMoodSelection(selectedMoods, item) })}
                   style={[styles.choice, { borderColor: selected ? color : theme.colors.border, backgroundColor: selected ? color + '20' : 'transparent' }]}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected }}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: selected }}
                   accessibilityLabel={`${label} ${t('moodEmotionA11y')}${selected ? `, ${t('moodSelectedA11y')}` : ''}`}
                 >
                   <Text preset="caption" style={{ color }}>{label}</Text>

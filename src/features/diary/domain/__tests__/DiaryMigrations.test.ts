@@ -36,4 +36,18 @@ describe('Diary migrations', () => {
     const result = migrateDiaryStorage([entry]);
     expect(result.entries[0]?.photos).toEqual([]);
   });
+
+  it('derives manualMoods from legacy manualMood values', () => {
+    const result = migrateDiaryStorage([{ ...entry, manualMood: 'happy' }]);
+
+    expect(result.entries[0]?.manualMood).toBe('happy');
+    expect(result.entries[0]?.manualMoods).toEqual(['happy']);
+  });
+
+  it('keeps neutral exclusive when migrating multi-mood values', () => {
+    const result = migrateDiaryStorage([{ ...entry, manualMood: 'neutral', manualMoods: ['neutral', 'calm', 'grateful'] }]);
+
+    expect(result.entries[0]?.manualMood).toBe('calm');
+    expect(result.entries[0]?.manualMoods).toEqual(['calm', 'grateful']);
+  });
 });

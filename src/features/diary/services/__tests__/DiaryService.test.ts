@@ -56,6 +56,7 @@ describe('DiaryService', () => {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     manualMoodWeather: 'calm',
+    manualMoods: [],
     writingMode: 'free-write',
     sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' },
     isLockbox: false,

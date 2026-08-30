@@ -18,6 +18,7 @@ function createEntry(id: string, title: string, date: string): DiaryEntry {
     updatedAt: `${date}T01:00:00.000Z`,
     manualMoodWeather: 'neutral',
     manualMood: 'neutral',
+    manualMoods: ['neutral'],
     writingMode: 'free-write',
     isLockbox: false,
     sensory: {

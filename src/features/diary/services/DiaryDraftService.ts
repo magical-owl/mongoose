@@ -3,7 +3,7 @@ import { secureStorageKeys } from '@/constants/secureStorageKeys';
 import { normalizeHtmlContent } from '@/shared/utils/html';
 import type { CompanionType } from '../domain/Companion';
 import type { PlacedSticker } from '../domain/Sticker';
-import type { DiaryPhoto, ManualMood, ManualMoodWeather, SensoryDetails, WritingMode } from '../domain/DiaryEntry';
+import { getPrimaryManualMood, normalizeManualMoods, type DiaryPhoto, type ManualMood, type ManualMoodWeather, type SensoryDetails, type WritingMode } from '../domain/DiaryEntry';
 
 export interface DiaryDraft {
   readonly title: string;
@@ -16,6 +16,7 @@ export interface DiaryDraft {
   readonly tags: string[];
   readonly manualMoodWeather: ManualMoodWeather;
   readonly manualMood?: ManualMood;
+  readonly manualMoods?: readonly ManualMood[];
   readonly writingMode: WritingMode;
   readonly sensory: SensoryDetails;
   readonly isLockbox: boolean;
@@ -34,15 +35,17 @@ export class DiaryDraftService {
       const parsed: unknown = JSON.parse(raw);
       if (!isDraft(parsed)) return null;
       const legacyDraft = parsed as Partial<DiaryDraft>;
+      const manualMoods = normalizeManualMoods(legacyDraft.manualMoods, legacyDraft.manualMood ?? 'neutral');
       return {
         photos: [],
         tags: [],
-        manualMood: 'neutral',
         manualMoodWeather: 'neutral',
         writingMode: 'free-write',
         sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' },
         isLockbox: false,
         ...legacyDraft,
+        manualMood: getPrimaryManualMood(manualMoods),
+        manualMoods,
         content: normalizeHtmlContent(legacyDraft.content ?? ''),
       } as DiaryDraft;
     } catch {

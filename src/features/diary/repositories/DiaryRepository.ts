@@ -7,7 +7,7 @@ import {
 } from '@/database/SecureStorageDataSource';
 import { secureStorageKeys } from '@/constants/secureStorageKeys';
 import { IDiaryRepository } from './IDiaryRepository';
-import { DiaryEntry, DiaryEntrySchema } from '../domain/DiaryEntry';
+import { DiaryEntry, DiaryEntrySchema, getEntryManualMoods, getPrimaryManualMood } from '../domain/DiaryEntry';
 import { CURRENT_DIARY_SCHEMA_VERSION, migrateDiaryStorage, type DiaryStorageEnvelope } from '../domain/DiaryMigrations';
 
 export class DiaryRepository implements IDiaryRepository {
@@ -58,6 +58,15 @@ export class DiaryRepository implements IDiaryRepository {
 
   private sortEntriesByDateDesc(entries: DiaryEntry[]): DiaryEntry[] {
     return entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  private normalizeEntryMoods(entry: DiaryEntry): DiaryEntry {
+    const manualMoods = getEntryManualMoods(entry);
+    return {
+      ...entry,
+      manualMood: getPrimaryManualMood(manualMoods),
+      manualMoods,
+    };
   }
 
   public async getAll(): Promise<Result<DiaryEntry[]>> {
@@ -126,7 +135,7 @@ export class DiaryRepository implements IDiaryRepository {
   public async save(entry: DiaryEntry): Promise<Result<DiaryEntry>> {
     try {
       await this.ensureLoaded();
-      const validated = DiaryEntrySchema.parse(entry);
+      const validated = this.normalizeEntryMoods(DiaryEntrySchema.parse(entry));
       this.memoryStore.set(validated.id, validated);
       await this.persist();
       return success(validated);
@@ -152,7 +161,7 @@ export class DiaryRepository implements IDiaryRepository {
       if (entry.deletedAt) return success(true);
       const now = new Date().toISOString();
       const deleted: DiaryEntry = { ...entry, deletedAt: now, updatedAt: now };
-      this.memoryStore.set(id, DiaryEntrySchema.parse(deleted));
+      this.memoryStore.set(id, this.normalizeEntryMoods(DiaryEntrySchema.parse(deleted)));
       await this.persist();
       return success(true);
     } catch (error) {
@@ -168,7 +177,7 @@ export class DiaryRepository implements IDiaryRepository {
       await this.ensureLoaded();
       const entry = this.memoryStore.get(id);
       if (!entry) return success(null);
-      const restored = DiaryEntrySchema.parse({ ...entry, deletedAt: undefined, updatedAt: new Date().toISOString() });
+      const restored = this.normalizeEntryMoods(DiaryEntrySchema.parse({ ...entry, deletedAt: undefined, updatedAt: new Date().toISOString() }));
       this.memoryStore.set(id, restored);
       await this.persist();
       return success(restored);
