@@ -120,6 +120,7 @@ const ENTRY_HEADER_TOP_OFFSET = ENTRY_EDITOR_HEADER_TOP_OFFSET;
 const ENTRY_HEADER_BUTTON_HEIGHT = ENTRY_EDITOR_HEADER_BUTTON_HEIGHT;
 const ENTRY_HEADER_BOTTOM_PADDING = ENTRY_EDITOR_HEADER_BOTTOM_PADDING;
 const ENTRY_COVER_TOP_GAP = ENTRY_EDITOR_COVER_TOP_GAP;
+const ENTRY_EDIT_COVER_BOTTOM_GAP = 6;
 const ENTRY_VIEW_COVER_BOTTOM_GAP = 18;
 const ENTRY_VIEW_COVER_EXPANDED_HEIGHT = 270;
 const ENTRY_VIEW_COVER_COLLAPSED_EXTRA_HEIGHT = 12;
@@ -551,7 +552,10 @@ export default function EntryDetailScreen() {
 
   const TOOLBAR_H = ENTRY_EDITOR_TOOLBAR_HEIGHT;
   const entryHorizontalPadding = getEntryEditorHorizontalPadding(windowWidth);
-  const editCoverExpandedHeight = getEntryEditorCoverHeight(windowWidth, entryHorizontalPadding);
+  const hasEditCoverPhoto = Boolean(editCoverPhoto);
+  const editCoverExpandedHeight = hasEditCoverPhoto
+    ? ENTRY_VIEW_COVER_EXPANDED_HEIGHT
+    : getEntryEditorCoverHeight(windowWidth, entryHorizontalPadding);
   const headerOnlyHeight = insets.top
     + ENTRY_HEADER_TOP_OFFSET
     + ENTRY_HEADER_BUTTON_HEIGHT
@@ -578,11 +582,13 @@ export default function EntryDetailScreen() {
     stickerCanvasBottom + ENTRY_BODY_EXTRA_STICKER_SPACE,
   );
   const headerOverlayHeight = isEditing
-    ? headerOnlyHeight + ENTRY_COVER_TOP_GAP + editCoverExpandedHeight
+    ? hasEditCoverPhoto
+      ? editCoverExpandedHeight + ENTRY_EDIT_COVER_BOTTOM_GAP
+      : headerOnlyHeight + ENTRY_COVER_TOP_GAP + editCoverExpandedHeight
     : hasViewCoverPhoto
       ? ENTRY_VIEW_COVER_EXPANDED_HEIGHT + ENTRY_VIEW_COVER_BOTTOM_GAP
       : headerOnlyHeight;
-  const coverTopOffset = headerOnlyHeight + ENTRY_COVER_TOP_GAP;
+  const coverTopOffset = hasEditCoverPhoto ? 0 : headerOnlyHeight + ENTRY_COVER_TOP_GAP;
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
@@ -593,12 +599,14 @@ export default function EntryDetailScreen() {
           topInset={insets.top}
           horizontalPadding={entryHorizontalPadding}
           title={t('entryEditTitle')}
+          onCover={hasEditCoverPhoto}
           left={(
             <IconCircleButton
               icon="close-circle-outline"
               onPress={handleCancelEdit}
               accessibilityLabel={t('entryCancelEditingA11y')}
               iconSize={25}
+              surface={hasEditCoverPhoto ? 'overlay' : 'surface'}
             />
           )}
           actions={(
@@ -620,6 +628,7 @@ export default function EntryDetailScreen() {
                 active={editFavorite}
                 tone="warning"
                 iconSize={24}
+                surface={hasEditCoverPhoto ? 'overlay' : 'surface'}
               />
               <AccentPillButton
                 onPress={handleSaveEdit}
@@ -659,7 +668,9 @@ export default function EntryDetailScreen() {
           style={[
             styles.coverHeader,
             isEditing
-              ? { top: coverTopOffset, paddingHorizontal: entryHorizontalPadding, backgroundColor: theme.colors.background }
+              ? hasEditCoverPhoto
+                ? styles.coverHeaderFullBleed
+                : { top: coverTopOffset, paddingHorizontal: entryHorizontalPadding, backgroundColor: theme.colors.background }
               : styles.coverHeaderFullBleed,
           ]}
         >
@@ -672,6 +683,7 @@ export default function EntryDetailScreen() {
               onChoosePhoto={() => handleCoverPhotoPickerResult('library')}
               onRemovePhoto={() => setEditCoverPhoto(undefined)}
               scrollY={coverScrollY}
+              containerStyle={hasEditCoverPhoto ? styles.viewCoverPicker : undefined}
             />
           ) : (
             <Animated.View style={[styles.viewCoverClip, { height: viewCoverHeight }]}>

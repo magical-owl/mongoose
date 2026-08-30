@@ -1,4 +1,5 @@
 import {
+  DiaryEntryEditorFooter,
   ENTRY_EDITOR_BODY_DEFAULT_VIEWPORT_RATIO,
   ENTRY_EDITOR_BODY_MIN_HEIGHT,
   ENTRY_EDITOR_FOOTER_BOTTOM_OFFSET,
@@ -6,7 +7,9 @@ import {
   diaryEntryEditorChromeStyles,
   getEntryEditorScrollBottomPadding,
 } from '@/features/diary/components/DiaryEntryEditorChrome';
-import { StyleSheet } from 'react-native';
+import React, { type ComponentProps } from 'react';
+import { StyleSheet, Text } from 'react-native';
+import { renderWithProviders } from '@tests/helpers';
 
 describe('DiaryEntryEditorChrome', () => {
   it('keeps the default body height compact enough for metadata controls to remain visible', () => {
@@ -27,5 +30,24 @@ describe('DiaryEntryEditorChrome', () => {
     expect(plainGroup.backgroundColor).toBeUndefined();
     expect(plainGroup.borderColor).toBeUndefined();
     expect(plainGroup.borderWidth).toBeUndefined();
+  });
+
+  it('renders the floating footer with a translucent surface', async () => {
+    const footerProps: Omit<ComponentProps<typeof DiaryEntryEditorFooter>, 'children'> = {
+      bottom: 12,
+      testID: 'entry-editor-footer',
+    };
+
+    const { getByTestId } = await renderWithProviders(
+      React.createElement(
+        DiaryEntryEditorFooter,
+        footerProps,
+        React.createElement(Text, null, 'Tools'),
+      ),
+    );
+
+    const footerStyle = StyleSheet.flatten(getByTestId('entry-editor-footer').props.style) as Record<string, unknown>;
+
+    expect(footerStyle.backgroundColor).toEqual(expect.stringMatching(/E6$/));
   });
 });

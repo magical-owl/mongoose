@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { useTheme } from "@providers/ThemeProvider";
 import { Text } from "@shared/components/Text";
 import {
@@ -51,6 +51,7 @@ interface DiaryEntryEditorHeaderProps {
   readonly title: string;
   readonly left: ReactNode;
   readonly actions: ReactNode;
+  readonly onCover?: boolean;
 }
 
 export function DiaryEntryEditorHeader({
@@ -59,6 +60,7 @@ export function DiaryEntryEditorHeader({
   title,
   left,
   actions,
+  onCover = false,
 }: DiaryEntryEditorHeaderProps): React.JSX.Element {
   const theme = useTheme();
 
@@ -69,14 +71,14 @@ export function DiaryEntryEditorHeader({
         {
           paddingTop: topInset + ENTRY_EDITOR_HEADER_TOP_OFFSET,
           paddingHorizontal: horizontalPadding,
-          backgroundColor: theme.colors.background,
+          backgroundColor: onCover ? "transparent" : theme.colors.background,
         },
       ]}
     >
       <View style={styles.headerLeftSlot}>{left}</View>
       <Text
         preset="h3"
-        color="text"
+        color={onCover ? theme.colors.stickerControlText : "text"}
         style={styles.headerTitle}
         numberOfLines={1}
       >
@@ -89,20 +91,25 @@ export function DiaryEntryEditorHeader({
 
 interface DiaryEntryEditorFooterProps {
   readonly bottom: number;
-  readonly children: ReactNode;
+  readonly children?: ReactNode;
   readonly wordCount?: number;
+  readonly style?: StyleProp<ViewStyle>;
+  readonly testID?: string;
 }
 
 export function DiaryEntryEditorFooter({
   bottom,
   children,
   wordCount,
+  style,
+  testID,
 }: DiaryEntryEditorFooterProps): React.JSX.Element {
   const theme = useTheme();
 
   return (
     <InsetFloatingToolbar
       bottom={bottom}
+      testID={testID}
       trailing={
         wordCount ? (
           <Text
@@ -113,6 +120,7 @@ export function DiaryEntryEditorFooter({
           </Text>
         ) : undefined
       }
+      style={[{ backgroundColor: theme.colors.surface + "E6" }, style]}
     >
       {children}
     </InsetFloatingToolbar>

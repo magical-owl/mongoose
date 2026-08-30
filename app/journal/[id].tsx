@@ -641,12 +641,16 @@ export default function JournalEntriesScreen() {
                 accessibilityLabel={journalTitle}
               />
               <Animated.View style={[styles.journalCoverContextOverlay, { opacity: journalCoverOverlayOpacity }]}>
-                <Text preset="label" numberOfLines={2} style={[styles.journalCoverContextTitle, { color: theme.colors.stickerControlText }]}>
-                  {journalTitle}
-                </Text>
-                <Text preset="caption" numberOfLines={1} style={[styles.journalCoverContextMeta, { color: theme.colors.stickerControlText }]}>
-                  {filteredEntries.length === 1 ? t("journalEntryCountOne") : t("journalEntryCountMany").replace("{count}", String(filteredEntries.length))}
-                </Text>
+                <View style={styles.journalCoverContextTitleBadge}>
+                  <Text preset="label" numberOfLines={1} style={[styles.journalCoverContextTitle, { color: theme.colors.stickerControlText }]}>
+                    {journalTitle}
+                  </Text>
+                </View>
+                <View style={styles.journalCoverContextMetaBadge}>
+                  <Text preset="caption" numberOfLines={1} style={[styles.journalCoverContextMeta, { color: theme.colors.stickerControlText }]}>
+                    {filteredEntries.length === 1 ? t("journalEntryCountOne") : t("journalEntryCountMany").replace("{count}", String(filteredEntries.length))}
+                  </Text>
+                </View>
               </Animated.View>
             </Animated.View>
           ) : null}
@@ -824,6 +828,21 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     bottom: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  journalCoverContextTitleBadge: {
+    flex: 1,
+    minWidth: 0,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    backgroundColor: "rgba(0, 0, 0, 0.52)",
+  },
+  journalCoverContextMetaBadge: {
+    flexShrink: 0,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -832,7 +851,6 @@ const styles = StyleSheet.create({
   journalCoverContextTitle: {
     fontWeight: "800",
     lineHeight: 20,
-    marginBottom: 2,
   },
   journalCoverContextMeta: {
     fontWeight: "700",
