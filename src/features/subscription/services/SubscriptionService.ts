@@ -1,7 +1,7 @@
 import { success, failure } from '@shared/utils/result';
 import type { Result } from '@shared/types/architecture';
 import { CustomerEntitlement, SubscriptionPackage } from '../domain/Subscription';
-import { useSubscriptionStore, DEFAULT_SUBSCRIPTION_PACKAGES } from '@stores/useSubscriptionStore';
+import { DEFAULT_SUBSCRIPTION_PACKAGES } from '../domain/SubscriptionCatalog';
 import type { ISubscriptionPaymentGateway } from './ISubscriptionPaymentGateway';
 import { developmentSubscriptionPaymentGateway } from './DevelopmentSubscriptionPaymentGateway';
 import type { ISubscriptionEntitlementRepository } from '../repositories/ISubscriptionEntitlementRepository';
@@ -36,7 +36,6 @@ export class SubscriptionService {
             return saveResult;
           }
 
-          useSubscriptionStore.getState().setEntitlement(saveResult.data);
           return success(saveResult.data);
         }
 
@@ -46,7 +45,6 @@ export class SubscriptionService {
         }
 
         const freeEntitlement = createFreeEntitlement();
-        useSubscriptionStore.getState().setEntitlement(freeEntitlement);
         return success(freeEntitlement);
       }
 
@@ -57,7 +55,6 @@ export class SubscriptionService {
 
       const entitlement: CustomerEntitlement = storedEntitlementResult.data ?? createFreeEntitlement();
 
-      useSubscriptionStore.getState().setEntitlement(entitlement);
       return success(entitlement);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to initialize subscriptions';
@@ -73,16 +70,10 @@ export class SubscriptionService {
    */
   public async getPackages(): Promise<Result<SubscriptionPackage[]>> {
     try {
-      const packages = useSubscriptionStore.getState().packages;
-      const fallbackPackages = packages.length > 0 ? packages : DEFAULT_SUBSCRIPTION_PACKAGES;
       if (this.paymentGateway.getPackages) {
-        const result = await this.paymentGateway.getPackages(fallbackPackages);
-        if (result.success) {
-          useSubscriptionStore.getState().setPackages(result.data);
-        }
-        return result;
+        return await this.paymentGateway.getPackages(DEFAULT_SUBSCRIPTION_PACKAGES);
       }
-      return success(fallbackPackages);
+      return success(DEFAULT_SUBSCRIPTION_PACKAGES);
     } catch {
       return success(DEFAULT_SUBSCRIPTION_PACKAGES);
     }
@@ -104,7 +95,6 @@ export class SubscriptionService {
       return saveResult;
     }
 
-    useSubscriptionStore.getState().setEntitlement(saveResult.data);
     return success(saveResult.data);
   }
 
@@ -134,7 +124,6 @@ export class SubscriptionService {
       });
     }
 
-    useSubscriptionStore.getState().setEntitlement(entitlementResult.data);
     return success(entitlementResult.data);
   }
 
@@ -154,7 +143,6 @@ export class SubscriptionService {
       willRenew: false,
     };
 
-    useSubscriptionStore.getState().setEntitlement(entitlement);
     return success(entitlement);
   }
 }

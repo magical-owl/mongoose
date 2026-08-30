@@ -1,5 +1,7 @@
 # Navigation — Agent Instructions (Expo Router)
 
+Start with [`agents/03-expo-engineer.md`](03-expo-engineer.md), the relevant workflow in [`agents/workflows/`](workflows/), and [`agents/compliance-gates.md`](compliance-gates.md). Use this file as the detailed navigation reference.
+
 ## File-Based Routing
 
 - **Use Expo Router's file-based routing.** Every file in `app/` automatically becomes a route. The file path maps to the URL path.

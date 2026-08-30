@@ -9,7 +9,30 @@ Meadow is a production-grade Expo application platform built with Feature-First 
 Meadow is designed to be cloned or copied as a starter template repository when building new applications. When an AI agent or developer is instructed to create a new app using Meadow:
 1. **Clone / Duplicate Repository**: Treat Meadow as the source template (via GitHub Template or `cp -r meadow my-new-app`).
 2. **Initialize App Identity**: Run `npm run init-app -- --name "MyAppName" --slug "myapp" --bundle "com.mycompany.myapp"` to automatically update `app.json` and `package.json`.
-3. **Follow New App Blueprint**: Strictly execute the sequence in [`agents/new-app.md`](file:///Users/louise/Desktop/meadow/agents/new-app.md) to configure theme tokens (`@theme`), feature layering (`src/features/`), compliance guardrails, and EAS deployment.
+3. **Follow New App Blueprint**: Strictly execute the sequence in [`agents/new-app.md`](agents/new-app.md) to configure theme tokens (`@theme`), feature layering (`src/features/`), compliance guardrails, and EAS deployment.
+
+## Agent Operating Model
+
+Agents must begin with [`agents/00-orchestrator.md`](agents/00-orchestrator.md) for non-trivial work. The orchestrator classifies the request, selects the smallest relevant specialist guide set, and identifies required reviews.
+
+Specialist guides:
+
+- Product requirements: [`agents/01-product-manager.md`](agents/01-product-manager.md)
+- UX/UI and accessibility: [`agents/02-design-agent.md`](agents/02-design-agent.md)
+- Expo and React Native implementation: [`agents/03-expo-engineer.md`](agents/03-expo-engineer.md)
+- Data, storage, services, repositories, and cache: [`agents/04-data-architecture.md`](agents/04-data-architecture.md)
+- Code review: [`agents/05-code-reviewer.md`](agents/05-code-reviewer.md)
+- QA and regression testing: [`agents/06-qa-engineer.md`](agents/06-qa-engineer.md)
+- Security and privacy risk review: [`agents/07-security-privacy-reviewer.md`](agents/07-security-privacy-reviewer.md)
+- Release gatekeeping: [`agents/08-release-gatekeeper.md`](agents/08-release-gatekeeper.md)
+- Localization review: [`agents/09-localization-reviewer.md`](agents/09-localization-reviewer.md)
+- Performance review: [`agents/10-performance-specialist.md`](agents/10-performance-specialist.md)
+- Monetization and store commerce review: [`agents/11-monetization-store-commerce-reviewer.md`](agents/11-monetization-store-commerce-reviewer.md)
+- AI prompt evaluation: [`agents/12-ai-prompt-evaluator.md`](agents/12-ai-prompt-evaluator.md)
+
+Topic files under [`agents/`](agents/) and product documents under [`docs/`](docs/) remain authoritative references. Do not make every task load every reference. Select only what is relevant to the requested work.
+
+Agents may identify, analyze, recommend, implement, test, and document. They must not claim that legal, security, privacy, IP, or store compliance is guaranteed. High-risk or uncertain findings must be escalated to the human owner.
 
 ## Architecture
 
@@ -94,7 +117,7 @@ All modules and agents building on Meadow (Diary, Journal, Finance, Habit Tracke
 ### 6. Legal, Trademark & Intellectual Property (IP) Compliance
 - **Trademark Clearance**: Verify app names and branding against trademark databases (e.g. USPTO TESS) to prevent trademark infringement.
 - **Asset Licensing**: All fonts, icons, and media must have verified commercial-use licenses (OFL Google Fonts, `@expo/vector-icons`, royalty-free assets). Never use unlicensed images or graphics.
-- **Public Legal Links**: Maintain live, publicly hosted Privacy Policy and Terms of Use (EULA) URLs (using [`COMPLIANCE/PRIVACY.md`](file:///Users/louise/Desktop/meadow/COMPLIANCE/PRIVACY.md)).
+- **Public Legal Links**: Maintain live, publicly hosted Privacy Policy and Terms of Use (EULA) URLs using the repository compliance documents when present.
 - **User Content Moderation (Guideline 1.2)**: If apps include public user-generated content or social sharing, implement a mandatory "Block / Report User" mechanism and standard EULA terms.
 
 ### 7. Accessibility (a11y) & Offline Resilience
@@ -126,7 +149,8 @@ All modules and agents building on Meadow (Diary, Journal, Finance, Habit Tracke
 
 - Full Documentation: See `/docs/`
 - AI Agent Instructions: See `/agents/`
-- **New App Starter Guide**: See [`agents/new-app.md`](file:///Users/louise/Desktop/meadow/agents/new-app.md) when initializing a new app or feature on Meadow platform.
+- **Agent Orchestrator**: See [`agents/00-orchestrator.md`](agents/00-orchestrator.md) before non-trivial implementation, review, QA, security, privacy, or release work.
+- **New App Starter Guide**: See [`agents/new-app.md`](agents/new-app.md) when initializing a new app or feature on Meadow platform.
 
 
 ## Expo SDK 57

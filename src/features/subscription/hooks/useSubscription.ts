@@ -12,6 +12,8 @@ export function useSubscription() {
   const error = useSubscriptionStore((state) => state.error);
   const setLoading = useSubscriptionStore((state) => state.setLoading);
   const setError = useSubscriptionStore((state) => state.setError);
+  const setEntitlement = useSubscriptionStore((state) => state.setEntitlement);
+  const setPackages = useSubscriptionStore((state) => state.setPackages);
 
   useEffect(() => {
     let isMounted = true;
@@ -24,9 +26,13 @@ export function useSubscription() {
         setLoading(false);
         return;
       }
+      setEntitlement(entitlementResult.data);
 
       const packageResult = await subscriptionService.getPackages();
       if (!isMounted) return;
+      if (packageResult.success) {
+        setPackages(packageResult.data);
+      }
       setError(packageResult.success ? null : packageResult.error.message);
       setLoading(false);
     };
@@ -34,31 +40,40 @@ export function useSubscription() {
     return () => {
       isMounted = false;
     };
-  }, [setError, setLoading]);
+  }, [setEntitlement, setError, setLoading, setPackages]);
 
   const purchasePackage = useCallback(async (pkg: SubscriptionPackage) => {
     setLoading(true);
     const result = await subscriptionService.purchasePackage(pkg);
+    if (result.success) {
+      setEntitlement(result.data);
+    }
     setError(result.success ? null : result.error.message);
     setLoading(false);
     return result;
-  }, [setError, setLoading]);
+  }, [setEntitlement, setError, setLoading]);
 
   const restorePurchases = useCallback(async () => {
     setLoading(true);
     const result = await subscriptionService.restorePurchases();
+    if (result.success) {
+      setEntitlement(result.data);
+    }
     setError(result.success ? null : result.error.message);
     setLoading(false);
     return result;
-  }, [setError, setLoading]);
+  }, [setEntitlement, setError, setLoading]);
 
   const revertToFree = useCallback(async () => {
     setLoading(true);
     const result = await subscriptionService.revertToFree();
+    if (result.success) {
+      setEntitlement(result.data);
+    }
     setError(result.success ? null : result.error.message);
     setLoading(false);
     return result;
-  }, [setError, setLoading]);
+  }, [setEntitlement, setError, setLoading]);
 
   return {
     isPro,

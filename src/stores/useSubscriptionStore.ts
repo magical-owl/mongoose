@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { CustomerEntitlement, SubscriptionPackage, SubscriptionTier } from '../features/subscription/domain/Subscription';
-import { APP_IDENTITY } from '@/config/appIdentity';
+import { DEFAULT_SUBSCRIPTION_PACKAGES } from '@/features/subscription/domain/SubscriptionCatalog';
 
 interface SubscriptionStoreState {
   isPro: boolean;
@@ -17,20 +17,6 @@ interface SubscriptionStoreState {
   setError: (error: string | null) => void;
   reset: () => void;
 }
-
-// Default development package. Production billing can replace this catalog.
-export const DEFAULT_SUBSCRIPTION_PACKAGES: SubscriptionPackage[] = [
-  {
-    id: 'pro_lifetime',
-    productId: APP_IDENTITY.premiumLifetimeProductId,
-    tier: 'pro_lifetime',
-    title: APP_IDENTITY.premiumName,
-    priceString: '$9.99 once',
-    priceNumber: 9.99,
-    period: 'lifetime',
-    badge: 'ONE-TIME PAYMENT',
-  },
-];
 
 export const useSubscriptionStore = create<SubscriptionStoreState>((set) => ({
   isPro: false,
@@ -62,3 +48,5 @@ export const useSubscriptionStore = create<SubscriptionStoreState>((set) => ({
       error: null,
     }),
 }));
+
+export { DEFAULT_SUBSCRIPTION_PACKAGES };

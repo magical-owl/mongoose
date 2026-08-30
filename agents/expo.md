@@ -1,5 +1,7 @@
 # Expo — Agent Instructions
 
+Start with [`agents/03-expo-engineer.md`](03-expo-engineer.md), the relevant workflow in [`agents/workflows/`](workflows/), and [`agents/compliance-gates.md`](compliance-gates.md). Use this file as the detailed Expo implementation reference.
+
 ## Package Management
 
 - **Always use `npx expo install`** instead of `npm install` or `yarn add` for installing packages. `expo install` automatically selects versions compatible with the current Expo SDK version.
@@ -21,7 +23,7 @@
 
 ## SDK Compatibility
 
-- **Pin the Expo SDK version** in `package.json` (e.g., `"expo": "~52.0.0"`). Minor updates are safe; major version bumps require testing all config plugins and native modules.
+- **Pin the Expo SDK version** in `package.json` (e.g., `"expo": "~57.0.0"` for Expo SDK 57). Minor updates are safe; major version bumps require testing all config plugins and native modules.
 - **Before upgrading the Expo SDK**, consult the upgrade guide at `https://docs.expo.dev/workflow/upgrading-expo-sdk/`. Run `npx expo install --fix` after upgrading.
 - **Run `npx expo-doctor`** after any SDK upgrade to detect compatibility issues.
 - **Keep `expo-updates`** configured for OTA update support. Set `expo.updates.url` to the update server endpoint and `expo.updates.enabled` appropriately per environment.

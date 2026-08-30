@@ -1,6 +1,7 @@
 import { SubscriptionService } from '../SubscriptionService';
 import { UnavailableSubscriptionPaymentGateway } from '../UnavailableSubscriptionPaymentGateway';
-import { useSubscriptionStore, DEFAULT_SUBSCRIPTION_PACKAGES } from '@stores/useSubscriptionStore';
+import { useSubscriptionStore } from '@stores/useSubscriptionStore';
+import { DEFAULT_SUBSCRIPTION_PACKAGES } from '../../domain/SubscriptionCatalog';
 import type { ISubscriptionEntitlementRepository } from '../../repositories/ISubscriptionEntitlementRepository';
 import type { CustomerEntitlement } from '../../domain/Subscription';
 import { failure, success } from '@/shared/utils/result';
@@ -85,7 +86,11 @@ describe('SubscriptionService', () => {
       expect(result.data.activeTier).toBe('pro_lifetime');
       expect(result.data.expirationDate).toBeUndefined();
     }
-    expect(useSubscriptionStore.getState().isPro).toBe(true);
+    const storedEntitlementResult = await entitlementRepository.get();
+    expect(storedEntitlementResult.success).toBe(true);
+    if (storedEntitlementResult.success) {
+      expect(storedEntitlementResult.data?.isPro).toBe(true);
+    }
   });
 
   it('grants development lifetime Premium without an expiration date', async () => {
@@ -113,7 +118,11 @@ describe('SubscriptionService', () => {
     if (restoreResult.success) {
       expect(restoreResult.data.activeTier).toBe('pro_lifetime');
     }
-    expect(useSubscriptionStore.getState().isPro).toBe(true);
+    const storedEntitlementResult = await entitlementRepository.get();
+    expect(storedEntitlementResult.success).toBe(true);
+    if (storedEntitlementResult.success) {
+      expect(storedEntitlementResult.data?.isPro).toBe(true);
+    }
   });
 
   it('reverts a development premium purchase back to the free tier', async () => {
@@ -129,8 +138,6 @@ describe('SubscriptionService', () => {
       expect(revertResult.data.activeTier).toBe('free');
       expect(revertResult.data.willRenew).toBe(false);
     }
-    expect(useSubscriptionStore.getState().isPro).toBe(false);
-    expect(useSubscriptionStore.getState().activeTier).toBe('free');
     const storedEntitlementResult = await entitlementRepository.get();
     expect(storedEntitlementResult.success).toBe(true);
     if (storedEntitlementResult.success) {
@@ -164,7 +171,11 @@ describe('SubscriptionService', () => {
     if (!restoreResult.success) {
       expect(restoreResult.error.code).toBe('NO_PURCHASES_TO_RESTORE');
     }
-    expect(useSubscriptionStore.getState().isPro).toBe(false);
+    const storedEntitlementResult = await entitlementRepository.get();
+    expect(storedEntitlementResult.success).toBe(true);
+    if (storedEntitlementResult.success) {
+      expect(storedEntitlementResult.data).toBeNull();
+    }
   });
 
   it('initializes from the native current entitlement when available', async () => {
@@ -185,7 +196,11 @@ describe('SubscriptionService', () => {
     if (result.success) {
       expect(result.data).toEqual(entitlement);
     }
-    expect(useSubscriptionStore.getState().isPro).toBe(true);
+    const storedEntitlementResult = await entitlementRepository.get();
+    expect(storedEntitlementResult.success).toBe(true);
+    if (storedEntitlementResult.success) {
+      expect(storedEntitlementResult.data).toEqual(entitlement);
+    }
   });
 
   it('clears stored premium access when native current entitlement is missing', async () => {

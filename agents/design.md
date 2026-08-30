@@ -1,4 +1,6 @@
-# Design Agent Skill
+# Design Reference
+
+Start with [`agents/02-design-agent.md`](02-design-agent.md), [`agents/compliance-gates.md`](compliance-gates.md), and the relevant workflow before using this file. This document is the detailed UI implementation reference.
 
 Use this skill when creating, redesigning, or reviewing app UI in Mongoose.
 

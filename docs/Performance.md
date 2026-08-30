@@ -141,7 +141,7 @@ export const ItemCard: React.FC<ItemCardProps> = React.memo(
 - Do not use `useCallback` for callbacks that are only used in the same component.
 - Avoid creating new objects/arrays in render (inline styles, anonymous functions).
 
-## FlatList / FlashList Virtualization
+## FlatList Virtualization
 
 ### FlatList Configuration
 
@@ -196,68 +196,9 @@ function getItemLayout(_data: unknown[] | null, index: number) {
 }
 ```
 
-### FlashList (Shopify)
+### When FlatList Is Not Enough
 
-FlashList is a drop-in replacement for FlatList with significantly better performance.
-
-```bash
-npm install @shopify/flash-list
-```
-
-```tsx
-// src/components/OptimizedFlashList.tsx
-import React, { useCallback } from 'react';
-import { FlashList } from '@shopify/flash-list';
-
-interface OptimizedFlashListProps<T> {
-  data: T[];
-  renderItem: (item: T, index: number) => React.ReactElement;
-  keyExtractor: (item: T) => string;
-  estimatedItemSize: number;
-}
-
-export function OptimizedFlashList<T>({
-  data,
-  renderItem,
-  keyExtractor,
-  estimatedItemSize,
-}: OptimizedFlashListProps<T>) {
-  const renderItemCallback = useCallback(
-    ({ item, index }: { item: T; index: number }) => renderItem(item, index),
-    [renderItem]
-  );
-
-  return (
-    <FlashList
-      data={data}
-      renderItem={renderItemCallback}
-      keyExtractor={keyExtractor}
-      estimatedItemSize={estimatedItemSize}  // Required for FlashList
-      estimatedListSize={{ height: 800, width: 400 }}
-      
-      // Performance props
-      overrideItemLayout={getItemLayout}
-      drawDistance={500}                     // Pre-render distance in px
-      
-      // Recycling
-      recycleItems={true}                    // Recycle item views
-    />
-  );
-}
-```
-
-### When to Use FlashList vs FlatList
-
-| Criteria | FlatList | FlashList |
-|----------|----------|-----------|
-| List size < 50 items | ✓ | ✓ |
-| List size 50-500 items | ✓ | ✓ (preferred) |
-| List size > 500 items | ✗ | ✓ |
-| Dynamic item heights | ✓ (slower) | ✓ (faster) |
-| Horizontal lists | ✓ | ✓ |
-| Grid layouts | ✓ | ✓ |
-| Sticky headers | ✓ | ✓ |
-| Estimated item size unknown | ✓ | ✗ (requires estimate) |
+Start with `FlatList` because it is already part of React Native. If profiling shows `FlatList` cannot meet the required performance target, run `agents/dependency-review.md` before adding a replacement list library.
 
 ### Virtualization Best Practices
 
@@ -277,7 +218,7 @@ export function OptimizedFlashList<T>({
 // src/components/CachedImage.tsx
 import React, { useState } from 'react';
 import { Image, View, ActivityIndicator, StyleSheet } from 'react-native';
-import { ImageStyle } from 'react-native-fast-image';
+import type { ImageStyle } from 'react-native';
 
 // Use expo-image for built-in caching
 import { Image as ExpoImage } from 'expo-image';
@@ -352,7 +293,7 @@ export function useOptimizedImageSize(
 - [ ] Resize images to display dimensions (never load 4000px images for 200px containers).
 - [ ] Use WebP format where supported (Expo handles fallback).
 - [ ] Implement progressive loading with blurhash or thumbnail placeholders.
-- [ ] Use `expo-image` or `react-native-fast-image` for disk caching.
+- [ ] Use Expo-compatible image tooling and existing project dependencies for disk caching.
 - [ ] Set `priority` on images (high for hero images, low for off-screen).
 - [ ] Preload critical images with `Image.prefetch()`.
 - [ ] Lazy-load images below the fold.

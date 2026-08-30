@@ -1,5 +1,7 @@
 # AI Agent Localization Instructions
 
+Start with [`agents/09-localization-reviewer.md`](09-localization-reviewer.md), the relevant workflow in [`agents/workflows/`](workflows/), and [`agents/compliance-gates.md`](compliance-gates.md). Use this file as the detailed localization reference.
+
 ## Translation File Rule
 
 When adding a new feature, renaming a feature, changing a user-facing label, or adding any new UI text, update `src/localization/i18n.ts` in the same change.
@@ -20,4 +22,3 @@ Before finishing any feature or UI text change:
 - Confirm `src/localization/i18n.ts` includes matching keys for `en` and `ja`.
 - Confirm TypeScript still accepts `TranslationKey`.
 - Run focused lint/typecheck for touched localization and UI files.
-

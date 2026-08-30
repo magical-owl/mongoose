@@ -83,7 +83,7 @@ When initializing an app handling confidential user data (journals, financial re
 5. **Legal, Trademark & Asset Compliance**:
    - Verify app name against trademark databases (e.g. USPTO TESS) to prevent brand infringement.
    - Ensure all icons, fonts, and assets have commercial-use clearance (OFL Google Fonts, `@expo/vector-icons`).
-   - Host public Privacy Policy and Terms of Use (EULA) links before release (using [`COMPLIANCE/PRIVACY.md`](file:///Users/louise/Desktop/meadow/COMPLIANCE/PRIVACY.md)).
+   - Host public Privacy Policy and Terms of Use (EULA) links before release using the repository compliance documents when present.
    - Implement user reporting/blocking tools if the app includes public content (Guideline 1.2).
 
 

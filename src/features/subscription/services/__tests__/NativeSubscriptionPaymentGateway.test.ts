@@ -1,6 +1,6 @@
 import type { Product, ProductIOS, Purchase } from 'expo-iap';
 import { NativeSubscriptionPaymentGateway, type NativeIapClient } from '../NativeSubscriptionPaymentGateway';
-import { DEFAULT_SUBSCRIPTION_PACKAGES } from '@/stores/useSubscriptionStore';
+import { DEFAULT_SUBSCRIPTION_PACKAGES } from '../../domain/SubscriptionCatalog';
 
 class MockNativeIapClient implements NativeIapClient {
   public connected = false;

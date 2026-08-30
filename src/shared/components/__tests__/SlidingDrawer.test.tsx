@@ -1,9 +1,25 @@
-import { fireEvent } from '@testing-library/react-native';
+import { act, fireEvent, waitFor } from '@testing-library/react-native';
 import { SlidingDrawer } from '../SlidingDrawer';
 import { renderWithProviders } from '@tests/helpers';
-import { Text } from 'react-native';
+import { Animated, Text } from 'react-native';
 
 describe('SlidingDrawer', () => {
+  beforeEach(() => {
+    const animation = {
+      start: (callback?: (result: { finished: boolean }) => void) => {
+        callback?.({ finished: true });
+      },
+      stop: jest.fn(),
+      reset: jest.fn(),
+    };
+    jest.spyOn(Animated, 'timing').mockReturnValue(animation as unknown as Animated.CompositeAnimation);
+    jest.spyOn(Animated, 'spring').mockReturnValue(animation as unknown as Animated.CompositeAnimation);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('renders drawer content when visible', async () => {
     const { getByTestId, getByText } = await renderWithProviders(
       <SlidingDrawer
@@ -53,8 +69,14 @@ describe('SlidingDrawer', () => {
       </SlidingDrawer>,
     );
 
-    fireEvent.press(getByTestId('drawer-profile'));
-    fireEvent.press(getByTestId('drawer-close'));
+    await waitFor(() => expect(getByTestId('drawer-profile')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent.press(getByTestId('drawer-profile'));
+    });
+    await act(async () => {
+      fireEvent.press(getByTestId('drawer-close'));
+    });
 
     expect(getByText('Sarah Meadow')).toBeTruthy();
     expect(handleProfilePress).toHaveBeenCalledTimes(1);

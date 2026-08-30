@@ -2,7 +2,6 @@ import type { Result } from '@/shared/types/architecture';
 import { failure, success } from '@/shared/utils/result';
 import { generateUUID } from '@/shared/utils/uuid';
 import { FREE_PLAN_LIMITS, countAddedStickers, getLocalDateKey, validateDiaryEntryPlanLimits } from '@/features/subscription/services/PlanLimitService';
-import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
 import { DiaryEntry, DiaryReflection } from '../domain/DiaryEntry';
 import { IDiaryRepository } from '../repositories/IDiaryRepository';
 import { diaryRepository } from '../repositories/DiaryRepository';
@@ -29,8 +28,8 @@ export class DiaryService {
     return await this.repo.getById(id);
   }
 
-  public async saveEntry(entry: DiaryEntry): Promise<Result<DiaryEntry>> {
-    const isPro = useSubscriptionStore.getState().isPro;
+  public async saveEntry(entry: DiaryEntry, options: { readonly isPro?: boolean } = {}): Promise<Result<DiaryEntry>> {
+    const isPro = options.isPro ?? false;
     const deviceDateKey = getLocalDateKey(new Date());
 
     const entriesResult = await this.repo.getAll();

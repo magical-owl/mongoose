@@ -1,5 +1,7 @@
 # AI Agent & Developer Release Instructions
 
+Start with [`agents/08-release-gatekeeper.md`](08-release-gatekeeper.md), [`agents/workflows/release.md`](workflows/release.md), and [`agents/compliance-gates.md`](compliance-gates.md). Use this file as the detailed release reference.
+
 ## 🚀 Master Setup & App Store Release Checklist
 
 Use this step-by-step checklist to guide your app from local development to TestFlight staging and final App Store deployment:
@@ -139,7 +141,7 @@ Before submitting a sensitive app (Diary, Journal, Finance, Habit Tracker, AI Co
   eas submit --platform ios --profile production --build-id <EAS_BUILD_ID> --non-interactive
   ```
 - After submission, verify in App Store Connect:
-  1. Open App Store Connect → My Apps → Meadow → TestFlight.
+  1. Open App Store Connect → My Apps → Mongoose → TestFlight.
   2. Confirm the build appears in the "iOS" section.
   3. Complete "Export Compliance" if prompted (answering "No" to "Does your app use encryption?" unless cryptographic features are used).
   4. Add the build to the "External Testers" group if beta testing is needed.
@@ -150,7 +152,7 @@ Before submitting a sensitive app (Diary, Journal, Finance, Habit Tracker, AI Co
 
 ## App Store Connect Metadata
 
-- Open App Store Connect → My Apps → Meadow → App Store → App Information.
+- Open App Store Connect → My Apps → Mongoose → App Store → App Information.
 - Update the following fields if they changed:
   - **Version**: Match `package.json` version.
   - **Primary Language**: (keep as configured).

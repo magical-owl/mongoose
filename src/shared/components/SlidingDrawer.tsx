@@ -66,20 +66,14 @@ export function SlidingDrawer({
   }, [progress]);
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (visible) {
-      timer = setTimeout(() => setMounted(true), 0);
-    }
     Animated.timing(progress, {
       toValue: visible ? 1 : 0,
       duration: 220,
       useNativeDriver: true,
     }).start(({ finished }) => {
-      if (finished && !visible) setMounted(false);
+      if (!finished) return;
+      setMounted(visible);
     });
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
   }, [progress, visible]);
 
   const panResponder = useMemo(
@@ -113,7 +107,7 @@ export function SlidingDrawer({
     [drawerWidth, mounted, onClose, progress],
   );
 
-  if (!mounted) return null;
+  if (!visible && !mounted) return null;
 
   return (
     <Modal visible={mounted} animationType="none" transparent onRequestClose={onClose}>

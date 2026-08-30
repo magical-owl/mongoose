@@ -1,5 +1,7 @@
 # AI Agent Service Instructions
 
+Start with [`agents/04-data-architecture.md`](04-data-architecture.md), the relevant workflow in [`agents/workflows/`](workflows/), and [`agents/compliance-gates.md`](compliance-gates.md). Use this file as the detailed service-layer reference.
+
 ## Implement Business Logic in Services, Not in Hooks or Components
 - All business logic must live in service classes/functions, never in React hooks, custom hooks, or UI components.
 - Services receive inputs, apply domain rules, call repositories, and return results.

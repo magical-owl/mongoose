@@ -1,6 +1,6 @@
 # Componentization & Reuse Rules
 
-Meadow is a reusable template. UI should be designed so a future app can replace a domain feature without copying screen-sized implementations.
+Mongoose inherits Meadow's reusable template architecture. UI should be designed so a future app can replace a domain feature without copying screen-sized implementations.
 
 ## Extraction Rule
 
@@ -40,7 +40,7 @@ Components must not access repositories, storage, APIs, or route params directly
 
 Use a typed public interface and export only the intended API. Keep feature internals private unless another feature has a documented presentation-level dependency.
 
-## Current Meadow Extraction Map
+## Current Mongoose Extraction Map
 
 Already reusable:
 

@@ -1,5 +1,7 @@
 # State Management — Agent Instructions (Zustand + TanStack Query)
 
+Start with [`agents/03-expo-engineer.md`](03-expo-engineer.md), [`agents/04-data-architecture.md`](04-data-architecture.md) when persisted state is involved, the relevant workflow in [`agents/workflows/`](workflows/), and [`agents/compliance-gates.md`](compliance-gates.md). Use this file as the detailed state management reference.
+
 ## When to Use Each
 
 - **Use TanStack Query (React Query) for all server state.** This includes data fetched from APIs, database queries, authentication sessions, and any other data that originates from or is persisted on a server.
@@ -46,8 +48,8 @@ type AuthStore = AuthState & AuthActions;
 
 ## Persistence Patterns
 
-- **Use Zustand's `persist` middleware** for state that must survive app restarts (auth tokens, onboarding completion, user preferences).
-- **Use `AsyncStorage` (via `zustand/middleware`'s `createJSONStorage`)** as the storage engine for React Native. Never use `localStorage` in a React Native context.
+- **Use Zustand's `persist` middleware** only for non-sensitive state that must survive app restarts, such as onboarding completion and user preferences.
+- **Use the existing approved storage adapter for persisted Zustand state.** Never persist auth tokens, journal text, profile details, notes, financial records, or other sensitive user content in AsyncStorage or plain MMKV.
 - **Do not persist server state.** TanStack Query handles its own cache persistence via `gcTime`. If offline support is needed, use TanStack Query's `persistQueryClient` plugin instead.
 - **Partial persistence:** Use the `partialize` option in the persist middleware to only persist specific fields. Never persist computed/derived state.
 - **Version persisted state** using the `version` option. Provide a `migrate` function to handle schema changes between app versions.

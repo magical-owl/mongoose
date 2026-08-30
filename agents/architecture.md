@@ -1,8 +1,10 @@
-# AI Agent Architecture Instructions
+# AI Agent Architecture Reference
+
+Start with [`agents/00-orchestrator.md`](00-orchestrator.md) and the relevant workflow in [`agents/workflows/`](workflows/) before using this file. This document is the detailed architecture reference for implementation and review.
 
 ## Overview
 
-Meadow uses **Feature-First + Clean Architecture**. Every feature is self-contained within `src/features/<feature-name>/` and follows a strict layered structure. The architecture enforces unidirectional dependency: **Presentation → Hooks → Services → Repositories → Data Sources**.
+Mongoose inherits Meadow's **Feature-First + Clean Architecture**. Every feature is self-contained within `src/features/<feature-name>/` when practical and follows a strict layered structure. The architecture enforces unidirectional dependency: **Presentation → Hooks → Services → Repositories → Data Sources**.
 
 ## Layer Responsibilities
 
@@ -16,7 +18,7 @@ Meadow uses **Feature-First + Clean Architecture**. Every feature is self-contai
   - No `useEffect` for data fetching — that belongs in hooks.
   - No Zustand stores imported directly — use hooks to access state.
   - No `fetch`, `axios`, or API calls — delegate to hooks → services.
-- **File naming:** `*.screen.tsx`, `*.component.tsx`, `*.ui.tsx` for atomic design system components.
+- **File naming:** Expo Router route files live in `app/`. Feature screens and extracted components should use existing local naming conventions rather than inventing a parallel convention.
 
 ### Componentization Requirement
 
@@ -89,7 +91,7 @@ Screen → Hook → Service → Repository → Data Source (API/DB/AI)
 
 ```
 src/features/<feature>/
-├── screens/          # Screen components (thin, delegates to hooks)
+├── screens/          # Optional screen components (thin, delegates to hooks)
 │   └── <Feature>Screen.tsx
 ├── components/       # Feature-specific UI components
 │   └── <Feature>Card.tsx

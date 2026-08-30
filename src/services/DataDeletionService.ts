@@ -1,6 +1,4 @@
 import { localDataService } from './LocalDataService';
-import { useAppStore } from '@/stores/useAppStore';
-import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
 import { secureStorage, type ISecureStorageDataSource } from '@/database/SecureStorageDataSource';
 import { managedSecureStorageKeys } from '@/constants/secureStorageKeys';
 import { clearCachedDiaryEntries } from '@/features/diary/services/DiaryEntryCache';
@@ -24,8 +22,6 @@ export class DataDeletionService {
     await Promise.all(managedSecureStorageKeys.map((key) => this.storage.removeItem(key)));
     clearCachedDiaryEntries();
     clearCachedJournals();
-    useSubscriptionStore.getState().reset();
-    useAppStore.getState().reset();
   }
 }
 

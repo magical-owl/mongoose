@@ -16,6 +16,7 @@ import { QueryProvider } from './QueryProvider';
 import { NetworkProvider } from './NetworkProvider';
 import { assertValidConfig } from '@/config/ConfigService';
 import { subscriptionService } from '@/features/subscription/services/SubscriptionService';
+import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
 
 /**
  * App providers composition.
@@ -28,10 +29,17 @@ export function AppProviders({
   readonly children: React.ReactNode;
 }): React.JSX.Element {
   assertValidConfig();
+  const setEntitlement = useSubscriptionStore((state) => state.setEntitlement);
 
   useEffect(() => {
-    void subscriptionService.initialize();
-  }, []);
+    const initializeSubscription = async () => {
+      const result = await subscriptionService.initialize();
+      if (result.success) {
+        setEntitlement(result.data);
+      }
+    };
+    void initializeSubscription();
+  }, [setEntitlement]);
 
   return (
     <ThemeProvider>

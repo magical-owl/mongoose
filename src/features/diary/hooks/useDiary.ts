@@ -3,6 +3,7 @@ import { diaryService } from '../services/DiaryService';
 import { DiaryEntry } from '../domain/DiaryEntry';
 import { getCachedDiaryEntries, setCachedDiaryEntries } from '../services/DiaryEntryCache';
 import { useAppStore } from '@/stores/useAppStore';
+import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
 
 export function useDiary() {
   const cachedDiaryEntries = getCachedDiaryEntries();
@@ -15,6 +16,7 @@ export function useDiary() {
 
   const selectedCompanion = useAppStore((state) => state.selectedCompanion);
   const setSelectedCompanion = useAppStore((state) => state.setSelectedCompanion);
+  const isPro = useSubscriptionStore((state) => state.isPro);
 
   const fetchEntries = useCallback(async () => {
     const entriesResult = await diaryService.getEntries();
@@ -44,7 +46,7 @@ export function useDiary() {
   }, [fetchEntries]);
 
   const saveEntry = async (entry: DiaryEntry) => {
-    const result = await diaryService.saveEntry(entry);
+    const result = await diaryService.saveEntry(entry, { isPro });
     if (result.success) {
       await fetchEntries();
     }

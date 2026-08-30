@@ -1,5 +1,7 @@
 # AI Agent Repository Instructions
 
+Start with [`agents/04-data-architecture.md`](04-data-architecture.md), [`agents/workflows/data-change.md`](workflows/data-change.md), and [`agents/compliance-gates.md`](compliance-gates.md). Use this file as the detailed repository reference.
+
 ## Always Implement IRepository Interface
 - Every data repository must implement a well-defined `IRepository<T>` interface.
 - The interface should declare standard CRUD operations: `getById`, `getAll`, `create`, `update`, `delete`.

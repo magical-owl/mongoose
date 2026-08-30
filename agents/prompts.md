@@ -1,6 +1,15 @@
 # AI Agent Prompt Library
 
-This file contains reusable prompts for AI coding agents working on the Meadow project. Each prompt is structured as a complete instruction block that can be copied and adapted for specific tasks.
+This file contains reusable prompts for AI coding agents working on the Mongoose project. Each prompt is structured as a complete instruction block that can be copied and adapted for specific tasks.
+
+Before using any prompt here:
+
+1. Start with [`agents/00-orchestrator.md`](00-orchestrator.md).
+2. Select the relevant workflow from [`agents/workflows/`](workflows/).
+3. Apply [`agents/compliance-gates.md`](compliance-gates.md).
+4. Finish with [`agents/review-checklist.md`](review-checklist.md).
+
+Copied prompts must not bypass the role guides, compliance gate matrix, or final review checklist.
 
 ---
 
@@ -21,10 +30,10 @@ This file contains reusable prompts for AI coding agents working on the Meadow p
 ### Evaluate a Proposed Architecture Change
 
 ```
-You are reviewing a proposed architecture change for the Meadow project.
+You are reviewing a proposed architecture change for the Mongoose project.
 
 Context:
-- Current architecture: Layered (Repository → Service → Store → Component) with expo-router for navigation.
+- Current architecture: Layered (Presentation → Hooks → Services → Repositories → Data Sources) with expo-router for navigation.
 - Each layer has a specific responsibility: repositories handle data access, services handle business logic, stores handle client state, components handle UI.
 - Dependencies flow inward: components depend on stores/services, services depend on repositories.
 - Cross-cutting concerns (auth, logging, error handling) are handled at the infrastructure layer.
@@ -46,13 +55,13 @@ Provide a clear recommendation: APPROVE, APPROVE WITH CHANGES, or REJECT. If REJ
 ### Design a New Feature Module
 
 ```
-You are designing a new feature module for the Meadow project.
+You are designing a new feature module for the Mongoose project.
 
 Feature: [DESCRIBE FEATURE]
 Location: `src/features/<feature-name>/`
 
 Requirements:
-- Follow the project's layered architecture: Repository → Service → Store → Component.
+- Follow the project's layered architecture: Presentation → Hooks → Services → Repositories → Data Sources.
 - All feature files should be colocated under `src/features/<feature-name>/`.
 - Shared/ reusable components go in `src/shared/components/`.
 
@@ -66,13 +75,13 @@ Define the following:
 
 4. **Store (store.ts)**: Create a Zustand store for client-side state. Keep only serializable state. Use selectors for derived data. Do NOT put side effects (API calls) in store actions — those belong in the service layer.
 
-5. **Screen(s) (screens/)**: Create the UI screens. Use `react-hook-form` with Zod resolvers for forms. Use `FlatList`/`FlashList` for lists. Handle all states: loading, empty, error, success.
+5. **Screen(s) (screens/)**: Create the UI screens. Use `react-hook-form` with Zod resolvers for forms. Use `FlatList` for large lists. Handle all states: loading, empty, error, success.
 
 6. **Navigation**: Define the route(s) using expo-router file-based routing under `app/`.
 
 7. **Tests (__tests__/)**: Create tests for repository (mocked Axios), service (mocked repository), store (state transitions), and components (rendering, interactions).
 
-Output the complete file contents for each of the above. Ensure all imports use the project's path aliases.
+Output the changed files or proposed file plan. Ensure imports use the project's path aliases.
 ```
 
 ---
@@ -82,7 +91,7 @@ Output the complete file contents for each of the above. Ensure all imports use 
 ### Implement a New Screen
 
 ```
-You are implementing a new screen for the Meadow project.
+You are implementing a new screen for the Mongoose project.
 
 Screen: [SCREEN NAME]
 Route: [FILE PATH under app/]
@@ -107,13 +116,13 @@ Instructions:
 6. Ensure all touchable elements have `accessibilityLabel`.
 7. Add tests for the screen's repository, service, store, and components.
 
-Output the complete code for all files.
+Output the changed files or implementation plan.
 ```
 
 ### Add an API Endpoint Integration
 
 ```
-You are adding integration for a new API endpoint in the Meadow project.
+You are adding integration for a new API endpoint in the Mongoose project.
 
 Endpoint: [METHOD] /api/v1/[PATH]
 Response shape: [DESCRIBE RESPONSE]
@@ -130,13 +139,13 @@ Instructions:
 8. Add retry logic consideration: should this endpoint retry on failure? (Typically only GET endpoints should retry; mutating endpoints should not unless specified.)
 9. Add tests: mock Axios, test success and error responses.
 
-Output the complete repository code and tests.
+Output the changed repository code and tests.
 ```
 
 ### Add Form Validation with Zod
 
 ```
-You are adding form validation for a feature in the Meadow project.
+You are adding form validation for a feature in the Mongoose project.
 
 Feature: [FEATURE NAME]
 Form fields: [LIST FIELDS WITH TYPES AND VALIDATION RULES]
@@ -177,7 +186,7 @@ Output the schema definition and the form component code.
 ### Write Unit Tests for a Repository
 
 ```
-You are writing unit tests for a repository in the Meadow project.
+You are writing unit tests for a repository in the Mongoose project.
 
 Repository: [REPOSITORY PATH]
 API endpoint(s): [ENDPOINTS]
@@ -219,13 +228,13 @@ describe('MyRepository', () => {
 });
 ```
 
-Output the complete test file.
+Output the changed test file.
 ```
 
 ### Write Unit Tests for a Service
 
 ```
-You are writing unit tests for a service in the Meadow project.
+You are writing unit tests for a service in the Mongoose project.
 
 Service: [SERVICE PATH]
 Repository dependencies: [LIST DEPENDENT REPOSITORIES]
@@ -241,13 +250,13 @@ Instructions:
 4. Verify that business logic (transformations, calculations, filtering) produces the correct output.
 5. Use dependency injection: create the service with mock repositories in the test setup.
 
-Output the complete test file.
+Output the changed test file.
 ```
 
 ### Write Component Tests
 
 ```
-You are writing component tests for the Meadow project.
+You are writing component tests for the Mongoose project.
 
 Component: [COMPONENT PATH]
 Props: [PROPS TYPE DEFINITION]
@@ -273,7 +282,7 @@ Instructions:
 6. Use `React.memo` wrapped components may need `rerender` from the testing library.
 7. Do not test internal implementation details (state values, method calls on the component instance).
 
-Output the complete test file.
+Output the changed test file.
 ```
 
 ---
@@ -283,7 +292,7 @@ Output the complete test file.
 ### Update Architecture Documentation
 
 ```
-You are updating the architecture documentation for the Meadow project.
+You are updating the architecture documentation for the Mongoose project.
 
 Change: [DESCRIBE THE ARCHITECTURE CHANGE]
 Affected files: `docs/Architecture.md`, `docs/FolderStructure.md`, and potentially `docs/<others>.md`
@@ -304,7 +313,7 @@ Output the updated file contents for each affected documentation file.
 ### Write a README for a Feature Module
 
 ```
-You are writing a README for a feature module in the Meadow project.
+You are writing a README for a feature module in the Mongoose project.
 
 Feature: [FEATURE NAME]
 Path: `src/features/<feature-name>/`
@@ -321,13 +330,13 @@ Include the following sections in `README.md` inside the feature folder:
 8. **Accessibility**: Any accessibility considerations specific to this feature.
 9. **Known Limitations**: Any known issues, edge cases not handled, or planned improvements.
 
-Output the complete README content.
+Output the README content or patch summary.
 ```
 
 ### Generate API Documentation from Zod Schemas
 
 ```
-You are generating API documentation from Zod schemas for the Meadow project.
+You are generating API documentation from Zod schemas for the Mongoose project.
 
 Source files: [LIST FILES CONTAINING ZOD SCHEMAS]
 Output: Markdown documentation describing the API request/response contracts.
@@ -354,7 +363,7 @@ Output the documentation in Markdown format, organized by domain/endpoint.
 ### Review a Pull Request
 
 ```
-You are reviewing a pull request for the Meadow project.
+You are reviewing a pull request for the Mongoose project.
 
 PR: [PR URL or DESCRIPTION]
 Changed files: [LIST OF FILES]
@@ -381,7 +390,7 @@ Provide a final recommendation: APPROVE, APPROVE WITH MINOR CHANGES (list them),
 ### Security-Focused Code Review
 
 ```
-You are performing a security-focused review of code changes for the Meadow project.
+You are performing a security-focused review of code changes for the Mongoose project.
 
 PR/Changes: [DESCRIPTION]
 Changed files: [LIST OF FILES]
@@ -412,7 +421,7 @@ Provide an overall security rating: PASS, PASS WITH CAVEATS, or FAIL.
 ### Extract a Component from a Screen
 
 ```
-You are extracting a reusable component from an existing screen in the Meadow project.
+You are extracting a reusable component from an existing screen in the Mongoose project.
 
 Source screen: [SCREEN PATH]
 Component to extract: [COMPONENT DESCRIPTION]
@@ -437,7 +446,7 @@ Output the new component file, the updated screen file, and the test file.
 ### Migrate from AsyncStorage to SecureStore
 
 ```
-You are migrating sensitive data storage from AsyncStorage to SecureStore for the Meadow project.
+You are migrating sensitive data storage from AsyncStorage to SecureStore for the Mongoose project.
 
 Files to scan: [DIRECTORY or GLOB PATTERN]
 
@@ -467,7 +476,7 @@ Output the diff or list of changed files.
 ### Investigate a Crash
 
 ```
-You are investigating a crash in the Meadow project.
+You are investigating a crash in the Mongoose project.
 
 Crash report: [SENTRY/CRASHLYTICS LINK OR STACK TRACE]
 Version: [APP VERSION]
@@ -498,7 +507,7 @@ Output the root cause analysis, the fix code, and the regression test.
 ### Performance Bottleneck Analysis
 
 ```
-You are analyzing a performance bottleneck in the Meadow project.
+You are analyzing a performance bottleneck in the Mongoose project.
 
 Issue: [DESCRIPTION, e.g., "List scroll jank on the home screen"]
 Device/OS: [DEVICE MODEL, OS VERSION]
@@ -508,7 +517,7 @@ Instructions:
 1. Identify the likely cause:
    - Unnecessary re-renders? → Check for inline functions as props, missing `useMemo`/`useCallback`, improper Zustand selectors.
    - Expensive computations in render? → Move to `useMemo` or web worker.
-   - Large lists without virtualization? → Use `FlatList`/`FlashList` with proper config.
+   - Large lists without virtualization? → Use `FlatList` with proper config.
    - Large images? → Optimize image resolution and caching.
    - Excessive bridge traffic? → Move animations to UI thread (Reanimated), avoid `setState` in animation loops.
 2. Apply the fix:

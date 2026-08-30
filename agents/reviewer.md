@@ -1,4 +1,6 @@
-# AI Agent Code Review Instructions
+# Code Review Reference
+
+Start with [`agents/05-code-reviewer.md`](05-code-reviewer.md) and [`agents/compliance-gates.md`](compliance-gates.md) before using this file. This document is the detailed checklist for independent diff review.
 
 ## General Principles
 
@@ -52,7 +54,7 @@
 - Check that all user-facing strings are either hardcoded constants or from a centralized i18n system (not inline magic strings).
 - Verify that components accept and use proper TypeScript types (no `any`, no implicit `any`).
 - Ensure `key` props on mapped elements use stable IDs, not array indices.
-- Confirm that `FlatList`/`FlashList` is used for lists, with `keyExtractor`, `windowSize`, and `getItemLayout` configured.
+- Confirm that `FlatList` is used for large lists, with `keyExtractor`, `windowSize`, and `getItemLayout` configured when dimensions are stable.
 - Check that forms use `react-hook-form` with `zod` validation resolvers.
 - Verify that async operations handle all states: loading, empty, error, success. No unhandled promise rejections.
 - Ensure that navigation params are typed and validated.
@@ -76,7 +78,7 @@
 
 ## Architecture Compliance
 
-- Verify the change follows the layered architecture (Repository → Service → Store → Component).
+- Verify the change follows the layered architecture (Presentation → Hooks → Services → Repositories → Data Sources).
 - Check that dependencies flow inward: components depend on stores and services, services depend on repositories.
 - No circular dependencies. Run `npx madge --circular src/` if unsure.
 - Verify that feature modules are self-contained: all related components, hooks, and types are colocated under `src/features/<feature>/`.
@@ -113,7 +115,7 @@
 - Run through the performance checklist from `agents/performance.md`:
   - [ ] Animations use `react-native-reanimated`, not RN `Animated`.
   - [ ] Styles use `StyleSheet.create()` — no inline styles.
-  - [ ] Lists use `FlatList`/`FlashList` with proper configuration.
+  - [ ] Large lists use `FlatList` with proper configuration.
   - [ ] Images use `expo-image`/`fast-image` with explicit dimensions.
   - [ ] Heavy components are lazy-loaded or code-split.
   - [ ] Re-renders are minimized: `useMemo`, `useCallback`, `React.memo`, Zustand selectors with shallow equality.

@@ -1,4 +1,6 @@
-# AI Agent Security Instructions
+# Security Reference
+
+Start with [`agents/07-security-privacy-reviewer.md`](07-security-privacy-reviewer.md) and [`agents/compliance-gates.md`](compliance-gates.md) before using this file. This document is the detailed security implementation reference.
 
 ## Never Commit Secrets
 - Never hardcode API keys, tokens, passwords, or certificates in source code.

@@ -1,11 +1,13 @@
 # AI Agent Feature Development Instructions
 
+Start with [`agents/00-orchestrator.md`](00-orchestrator.md), [`agents/workflows/new-feature.md`](workflows/new-feature.md), and [`agents/compliance-gates.md`](compliance-gates.md). Use this file as the detailed feature implementation reference.
+
 > **See also:** `docs/CreatingAnApp.md` for the complete human-readable guide with code examples for every layer.
 > **Localization:** Follow `agents/localization.md` whenever adding a feature, renaming a feature, or changing user-facing text.
 
 ## Overview
 
-Building a feature in Meadow follows a **9-step process** that mirrors the layered architecture. Every step produces artifacts (code, tests, documentation) that build on the previous step. Do not skip steps. Do not parallelize — each layer depends on the layer below it.
+Building a feature in Mongoose follows a **9-step process** that mirrors the layered architecture. Every step produces artifacts (code, tests, documentation) that build on the previous step. Do not skip steps. Do not parallelize dependent layer decisions because each layer depends on the layer below it.
 
 ## Step 1: Define the Feature Scope
 
@@ -319,7 +321,7 @@ Create screens and components in `src/features/<feature>/screens/` and `src/feat
 
 ### Componentization Pass
 
-After the first working screen, inspect the JSX for repeated cards, filters, editors, date groups, charts, and view modes. Extract a component when it is reused, has a complete interaction boundary, or is a likely template primitive. The screen must keep route handling, hooks, service calls, and side effects; extracted components should accept typed data and callbacks only. See [`agents/componentization.md`](componentization.md) for the extraction checklist and current Meadow map.
+After the first working screen, inspect the JSX for repeated cards, filters, editors, date groups, charts, and view modes. Extract a component when it is reused, has a complete interaction boundary, or is a likely template primitive. The screen must keep route handling, hooks, service calls, and side effects; extracted components should accept typed data and callbacks only. See [`agents/componentization.md`](componentization.md) for the extraction checklist and current Mongoose map.
 
 ### Example Screen
 

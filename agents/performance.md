@@ -1,5 +1,7 @@
 # AI Agent Performance Instructions
 
+Start with [`agents/03-expo-engineer.md`](03-expo-engineer.md), the relevant workflow in [`agents/workflows/`](workflows/), and [`agents/compliance-gates.md`](compliance-gates.md). Use this file as the detailed performance reference.
+
 ## Use Reanimated for Animations
 - Use `react-native-reanimated` for all animations, not the React Native `Animated` API.
 - Prefer shared values (`useSharedValue`) over state-driven animations to avoid JS thread bottlenecks.
@@ -13,14 +15,14 @@
 - Extract repeated style patterns into shared style constants.
 
 ## Implement List Virtualization
-- Use `FlatList` or `FlashList` for all scrollable lists; never use `ScrollView` for large data sets.
+- Use `FlatList` for large scrollable lists; never use `ScrollView` for large data sets.
 - Provide `keyExtractor` with a unique, stable identifier for every item.
 - Set `getItemLayout` when items have fixed dimensions to skip measurement.
 - Use `windowSize`, `maxToRenderPerBatch`, and `initialNumToRender` to tune rendering windows.
 - Avoid anonymous functions in `renderItem`; define the render function outside the component or wrap with `useCallback`.
 
 ## Optimize Images
-- Use `expo-image` or `react-native-fast-image` for remote images (caching, prefetching, resize).
+- Use Expo-compatible image tooling for remote images, and prefer existing project dependencies before adding new packages.
 - Specify explicit `width` and `height` on all image components to prevent layout shifts.
 - Serve images at the appropriate resolution for the device (use responsive image URLs where possible).
 - Use `placeholder` or blurhash for loading states instead of blank space.

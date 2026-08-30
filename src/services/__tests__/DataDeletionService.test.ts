@@ -8,7 +8,7 @@ import type { Journal } from '@/features/journal/domain/Journal';
 import { DataDeletionService } from '../DataDeletionService';
 
 describe('DataDeletionService', () => {
-  it('clears managed local data, secure storage, photo files, and app stores', async () => {
+  it('clears managed local data, secure storage, photo files, and in-memory caches', async () => {
     const removedKeys: string[] = [];
     const managedLocalData = { clearManagedData: jest.fn().mockResolvedValue(undefined) };
     const storage: ISecureStorageDataSource = {

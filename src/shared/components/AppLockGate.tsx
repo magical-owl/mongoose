@@ -12,21 +12,25 @@ export function AppLockGate({ children }: { readonly children: React.ReactNode }
   const t = useTranslation();
   const enabled = useAppStore((state) => state.biometricLockEnabled);
   const locked = useAppStore((state) => state.isLocked);
+  const setLocked = useAppStore((state) => state.setLocked);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const hasUnlocked = useRef(false);
 
   useEffect(() => {
-    if (enabled && !useAppStore.getState().isLocked) useAppStore.getState().setLocked(true);
+    if (enabled && !useAppStore.getState().isLocked) setLocked(true);
     const subscription = AppState.addEventListener('change', (state) => {
-      if (enabled && state !== 'active') useAppStore.getState().setLocked(true);
+      if (enabled && state !== 'active') setLocked(true);
     });
     return () => subscription.remove();
-  }, [enabled]);
+  }, [enabled, setLocked]);
 
   const unlock = async () => {
     setIsAuthenticating(true);
     const authenticated = await appLockService.authenticate();
-    if (authenticated) hasUnlocked.current = true;
+    if (authenticated) {
+      hasUnlocked.current = true;
+      setLocked(false);
+    }
     setIsAuthenticating(false);
   };
 

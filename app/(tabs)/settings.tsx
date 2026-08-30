@@ -31,6 +31,7 @@ import { PaywallModal } from '@/shared/components/PaywallModal';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { useAppStore, type CalendarDateFormat, type FontScale, type TimeFormat } from '@/stores/useAppStore';
+import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
 import { appLockService } from '@/services/AppLockService';
 import { dataDeletionService } from '@/services/DataDeletionService';
 import { diaryBackupService } from '@/services/DiaryBackupService';
@@ -90,6 +91,10 @@ export default function SettingsScreen() {
   const setFontFamily = useAppStore((state) => state.setFontFamily);
   const setAppLanguage = useAppStore((state) => state.setAppLanguage);
   const setOnboardingStatus = useAppStore((state) => state.setOnboardingStatus);
+  const setBiometricLockEnabled = useAppStore((state) => state.setBiometricLockEnabled);
+  const setLocked = useAppStore((state) => state.setLocked);
+  const resetAppStore = useAppStore((state) => state.reset);
+  const resetSubscriptionStore = useSubscriptionStore((state) => state.reset);
   const { profile, saveProfile } = useProfileForm();
   const { state: journalExtras, replace: replaceJournalExtras } = useJournalExtras();
   const activeLanguage = APP_LANGUAGES.find((language) => language.value === appLanguage) ?? APP_LANGUAGES[0]!;
@@ -229,9 +234,13 @@ export default function SettingsScreen() {
   const handleBiometricToggle = async (enabled: boolean) => {
     if (enabled) {
       const activated = await appLockService.enable();
+      if (activated) {
+        setBiometricLockEnabled(true);
+      }
       if (!activated) Alert.alert(t('settingsBiometricsUnavailableTitle'), t('settingsBiometricsUnavailableMessage'));
     } else {
-      appLockService.disable();
+      setBiometricLockEnabled(false);
+      setLocked(false);
     }
   };
 
@@ -246,6 +255,8 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await dataDeletionService.deleteAll();
+            resetSubscriptionStore();
+            resetAppStore();
             Alert.alert(t('settingsResetDoneTitle'), t('settingsResetDoneMessage'));
           },
         },

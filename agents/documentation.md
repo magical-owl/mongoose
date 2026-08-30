@@ -1,5 +1,7 @@
 # AI Agent Documentation Instructions
 
+Start with [`agents/00-orchestrator.md`](00-orchestrator.md), the relevant workflow in [`agents/workflows/`](workflows/), and [`agents/compliance-gates.md`](compliance-gates.md). Use this file as the detailed documentation reference.
+
 ## Documentation Philosophy
 
 Documentation is code. It is subject to the same review process, the same quality standards, and the same merge requirements as source code. Every PR that changes behavior must update the relevant documentation in the same PR.
@@ -119,7 +121,7 @@ npm run test -- --testPathPattern="<Feature>"
 
 <!-- Links to relevant ADRs. -->
 
-- [ADR-0023: Feature-First Architecture](/docs/adr/0023-feature-first-architecture.md)
+- `ADR-0023: Feature-First Architecture` at `docs/adr/0023-feature-first-architecture.md`
 ```
 
 ## Architecture Decision Records (ADRs)
@@ -147,7 +149,7 @@ npm run test -- --testPathPattern="<Feature>"
 
 [Proposed | Accepted | Deprecated | Superseded]
 
-*Superseded by [ADR-NNNN](NNNN-new-title.md) if applicable.*
+*Superseded by `ADR-NNNN` at `NNNN-new-title.md` if applicable.*
 
 ## Context
 

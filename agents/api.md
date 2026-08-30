@@ -1,5 +1,7 @@
 # AI Agent API Instructions
 
+Start with [`agents/04-data-architecture.md`](04-data-architecture.md), the relevant workflow in [`agents/workflows/`](workflows/), and [`agents/compliance-gates.md`](compliance-gates.md). Use this file as the detailed API integration reference.
+
 ## Use Axios with Interceptors
 - Use Axios as the primary HTTP client for all API requests.
 - Create a singleton Axios instance with a base URL, default headers, and a reasonable timeout.

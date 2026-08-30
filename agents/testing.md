@@ -1,4 +1,6 @@
-# AI Agent Testing Instructions
+# Testing Reference
+
+Start with [`agents/06-qa-engineer.md`](06-qa-engineer.md), [`agents/compliance-gates.md`](compliance-gates.md), and the relevant workflow before using this file. This document is the detailed test strategy reference.
 
 ## Test Types and When to Use Them
 

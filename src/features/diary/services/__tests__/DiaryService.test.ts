@@ -257,17 +257,14 @@ describe('DiaryService', () => {
   });
 
   it('should allow pro users to exceed free daily limits', async () => {
-    useSubscriptionStore.getState().setEntitlement({
-      isPro: true,
-      activeTier: 'pro_monthly',
-      willRenew: true,
-    });
     const date = dateOffset(0);
     await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174301', date, 3));
     await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174302', date));
     await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174303', date));
 
-    const result = await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174304', date, 2));
+    const result = await service.saveEntry(entryForDate('123e4567-e89b-12d3-a456-426614174304', date, 2), {
+      isPro: true,
+    });
 
     expect(result.success).toBe(true);
   });
