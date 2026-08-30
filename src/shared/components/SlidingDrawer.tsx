@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  Animated,
   Modal,
   PanResponder,
   Pressable,
@@ -11,10 +10,21 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import Reanimated, {
+  cancelAnimation,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useTheme } from '@providers/ThemeProvider';
 import { Avatar } from './Avatar';
 import { IconCircleButton } from './IconCircleButton';
 import { Text } from './Text';
+
+const DRAWER_OPEN_DURATION_MS = 220;
+const DRAWER_CLOSE_DURATION_MS = 180;
 
 interface SlidingDrawerProfile {
   readonly displayName: string;
@@ -52,29 +62,39 @@ export function SlidingDrawer({
   const { width: windowWidth } = useWindowDimensions();
   const drawerWidth = width ?? Math.min(windowWidth * 0.86, 380);
   const [mounted, setMounted] = useState(visible);
-  const progress = useRef(new Animated.Value(visible ? 1 : 0)).current;
-  const progressValue = useRef(visible ? 1 : 0);
-  const dragStart = useRef(visible ? 1 : 0);
+  const progress = useSharedValue(0);
+  const dragStart = useRef(0);
 
   useEffect(() => {
-    const listenerId = progress.addListener(({ value }) => {
-      progressValue.current = value;
-    });
-    return () => {
-      progress.removeListener(listenerId);
-    };
-  }, [progress]);
+    cancelAnimation(progress);
 
-  useEffect(() => {
-    Animated.timing(progress, {
-      toValue: visible ? 1 : 0,
-      duration: 220,
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (!finished) return;
-      setMounted(visible);
-    });
-  }, [progress, visible]);
+    if (visible) {
+      const frameId = requestAnimationFrame(() => {
+        setMounted(true);
+      });
+      progress.set(0);
+      progress.set(withTiming(1, { duration: DRAWER_OPEN_DURATION_MS }));
+      return () => {
+        cancelAnimationFrame(frameId);
+      };
+    }
+
+    if (mounted) {
+      progress.set(withTiming(0, { duration: DRAWER_CLOSE_DURATION_MS }, (finished) => {
+        if (finished) runOnJS(setMounted)(false);
+      }));
+    }
+
+    return undefined;
+  }, [mounted, progress, visible]);
+
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: progress.get(),
+  }));
+
+  const drawerAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: -drawerWidth + drawerWidth * progress.get() }],
+  }));
 
   const panResponder = useMemo(
     () =>
@@ -84,50 +104,46 @@ export function SlidingDrawer({
           Math.abs(gesture.dx) > 8 &&
           Math.abs(gesture.dx) > Math.abs(gesture.dy),
         onPanResponderGrant: () => {
-          progress.stopAnimation((value) => {
-            dragStart.current = value;
-          });
+          cancelAnimation(progress);
+          dragStart.current = progress.get();
         },
         onPanResponderMove: (_, gesture) => {
           const nextProgress = Math.max(0, Math.min(1, dragStart.current + gesture.dx / drawerWidth));
-          progress.setValue(nextProgress);
+          progress.set(nextProgress);
         },
         onPanResponderRelease: (_, gesture) => {
           const shouldRemainOpen =
             gesture.vx > 0.35 ||
-            (gesture.vx >= -0.35 && progressValue.current > 0.5);
+            (gesture.vx >= -0.35 && progress.get() > 0.5);
           if (!shouldRemainOpen) onClose();
-          else Animated.spring(progress, { toValue: 1, useNativeDriver: true }).start();
+          else progress.set(withSpring(1));
         },
         onPanResponderTerminate: () => {
-          if (progressValue.current <= 0.5) onClose();
-          else Animated.spring(progress, { toValue: 1, useNativeDriver: true }).start();
+          if (progress.get() <= 0.5) onClose();
+          else progress.set(withSpring(1));
         },
       }),
     [drawerWidth, mounted, onClose, progress],
   );
 
-  if (!visible && !mounted) return null;
+  const shouldRender = visible || mounted;
+
+  if (!shouldRender) return null;
 
   return (
-    <Modal visible={mounted} animationType="none" transparent onRequestClose={onClose}>
-      <Animated.View
+    <Modal visible={shouldRender} animationType="none" transparent onRequestClose={onClose}>
+      <Reanimated.View
         pointerEvents={visible ? 'auto' : 'none'}
         style={[
           styles.overlay,
           { backgroundColor: theme.colors.overlay },
           overlayStyle,
-          {
-            opacity: progress.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, 1],
-            }),
-          },
+          overlayAnimatedStyle,
         ]}
         {...panResponder.panHandlers}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={accessibilityCloseLabel} />
-        <Animated.View
+        <Reanimated.View
           testID={testID}
           style={[
             styles.drawer,
@@ -135,15 +151,8 @@ export function SlidingDrawer({
               width: drawerWidth,
               backgroundColor: theme.colors.background,
               borderColor: theme.colors.border,
-              transform: [
-                {
-                  translateX: progress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-drawerWidth, 0],
-                  }),
-                },
-              ],
             },
+            drawerAnimatedStyle,
             drawerStyle,
           ]}
         >
@@ -179,8 +188,8 @@ export function SlidingDrawer({
             </View>
           ) : null}
           {children}
-        </Animated.View>
-      </Animated.View>
+        </Reanimated.View>
+      </Reanimated.View>
     </Modal>
   );
 }

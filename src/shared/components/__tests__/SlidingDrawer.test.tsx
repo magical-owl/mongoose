@@ -1,23 +1,45 @@
 import { act, fireEvent, waitFor } from '@testing-library/react-native';
+import { Text } from 'react-native';
+import { withTiming } from 'react-native-reanimated';
 import { SlidingDrawer } from '../SlidingDrawer';
 import { renderWithProviders } from '@tests/helpers';
-import { Animated, Text } from 'react-native';
 
-describe('SlidingDrawer', () => {
-  beforeEach(() => {
-    const animation = {
-      start: (callback?: (result: { finished: boolean }) => void) => {
-        callback?.({ finished: true });
-      },
-      stop: jest.fn(),
-      reset: jest.fn(),
-    };
-    jest.spyOn(Animated, 'timing').mockReturnValue(animation as unknown as Animated.CompositeAnimation);
-    jest.spyOn(Animated, 'spring').mockReturnValue(animation as unknown as Animated.CompositeAnimation);
+jest.mock('react-native-reanimated', () => {
+  const { View } = jest.requireActual('react-native');
+  const cancelAnimation = jest.fn();
+  const withSpring = jest.fn((toValue: number) => toValue);
+  const withTiming = jest.fn((
+    toValue: number,
+    _config?: { readonly duration?: number },
+    callback?: (finished: boolean) => void,
+  ) => {
+    callback?.(true);
+    return toValue;
   });
 
+  return {
+    __esModule: true,
+    default: { View },
+    cancelAnimation,
+    runOnJS: (callback: (value: boolean) => void) => callback,
+    useAnimatedStyle: (callback: () => Record<string, unknown>) => callback(),
+    useSharedValue: (initialValue: number) => {
+      let currentValue = initialValue;
+      return {
+        get: () => currentValue,
+        set: (nextValue: number) => {
+          currentValue = nextValue;
+        },
+      };
+    },
+    withSpring,
+    withTiming,
+  };
+});
+
+describe('SlidingDrawer', () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders drawer content when visible', async () => {
@@ -34,6 +56,21 @@ describe('SlidingDrawer', () => {
 
     expect(getByTestId('drawer')).toBeTruthy();
     expect(getByText('Drawer content')).toBeTruthy();
+  });
+
+  it('starts the entrance animation from the left edge', async () => {
+    await renderWithProviders(
+      <SlidingDrawer
+        visible
+        onClose={jest.fn()}
+        accessibilityCloseLabel="Close menu"
+        testID="drawer"
+      >
+        <Text>Drawer content</Text>
+      </SlidingDrawer>,
+    );
+
+    expect(withTiming).toHaveBeenCalledWith(1, { duration: 220 });
   });
 
   it('does not render drawer content when hidden', async () => {
