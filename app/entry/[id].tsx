@@ -15,6 +15,7 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
+  Animated,
   View,
   ScrollView,
   Alert,
@@ -120,6 +121,8 @@ const ENTRY_HEADER_BUTTON_HEIGHT = ENTRY_EDITOR_HEADER_BUTTON_HEIGHT;
 const ENTRY_HEADER_BOTTOM_PADDING = ENTRY_EDITOR_HEADER_BOTTOM_PADDING;
 const ENTRY_COVER_TOP_GAP = ENTRY_EDITOR_COVER_TOP_GAP;
 const ENTRY_VIEW_COVER_BOTTOM_GAP = 18;
+const ENTRY_VIEW_COVER_EXPANDED_HEIGHT = 270;
+const ENTRY_VIEW_COVER_COLLAPSED_EXTRA_HEIGHT = 12;
 const ENTRY_BODY_MIN_HEIGHT = ENTRY_EDITOR_BODY_MIN_HEIGHT;
 const ENTRY_BODY_DEFAULT_VIEWPORT_RATIO = ENTRY_EDITOR_BODY_DEFAULT_VIEWPORT_RATIO;
 const ENTRY_BODY_EXTRA_STICKER_SPACE = ENTRY_EDITOR_BODY_EXTRA_STICKER_SPACE;
@@ -548,7 +551,22 @@ export default function EntryDetailScreen() {
 
   const TOOLBAR_H = ENTRY_EDITOR_TOOLBAR_HEIGHT;
   const entryHorizontalPadding = getEntryEditorHorizontalPadding(windowWidth);
-  const coverExpandedHeight = getEntryEditorCoverHeight(windowWidth, entryHorizontalPadding);
+  const editCoverExpandedHeight = getEntryEditorCoverHeight(windowWidth, entryHorizontalPadding);
+  const headerOnlyHeight = insets.top
+    + ENTRY_HEADER_TOP_OFFSET
+    + ENTRY_HEADER_BUTTON_HEIGHT
+    + ENTRY_HEADER_BOTTOM_PADDING;
+  const viewCoverHeaderFloorHeight = headerOnlyHeight + ENTRY_VIEW_COVER_COLLAPSED_EXTRA_HEIGHT;
+  const viewCoverHeight = coverScrollY.interpolate({
+    inputRange: [0, 120],
+    outputRange: [ENTRY_VIEW_COVER_EXPANDED_HEIGHT, viewCoverHeaderFloorHeight],
+    extrapolate: 'clamp',
+  });
+  const viewCoverOverlayOpacity = coverScrollY.interpolate({
+    inputRange: [0, 78, 120],
+    outputRange: [1, 0.35, 0],
+    extrapolate: 'clamp',
+  });
   const showBodyStickerBounds = isEditing && (showStickerPicker || showStickerBounds || isStickerDragging);
   const stickerCanvasBottom = displayStickers.length > 0
     ? Math.max(...displayStickers.map((sticker) => getStickerBodyPreviewBottom(sticker)))
@@ -559,14 +577,11 @@ export default function EntryDetailScreen() {
     bodyContentHeight + ENTRY_BODY_EXTRA_STICKER_SPACE,
     stickerCanvasBottom + ENTRY_BODY_EXTRA_STICKER_SPACE,
   );
-  const hasCoverHeader = isEditing || hasViewCoverPhoto;
-  const headerOnlyHeight = insets.top
-    + ENTRY_HEADER_TOP_OFFSET
-    + ENTRY_HEADER_BUTTON_HEIGHT
-    + ENTRY_HEADER_BOTTOM_PADDING;
-  const headerOverlayHeight = headerOnlyHeight
-    + (hasCoverHeader ? ENTRY_COVER_TOP_GAP + coverExpandedHeight : 0)
-    + (!isEditing && hasViewCoverPhoto ? ENTRY_VIEW_COVER_BOTTOM_GAP : 0);
+  const headerOverlayHeight = isEditing
+    ? headerOnlyHeight + ENTRY_COVER_TOP_GAP + editCoverExpandedHeight
+    : hasViewCoverPhoto
+      ? ENTRY_VIEW_COVER_EXPANDED_HEIGHT + ENTRY_VIEW_COVER_BOTTOM_GAP
+      : headerOnlyHeight;
   const coverTopOffset = headerOnlyHeight + ENTRY_COVER_TOP_GAP;
 
   return (
@@ -619,19 +634,20 @@ export default function EntryDetailScreen() {
         <View
           style={[
             styles.header,
+            hasViewCoverPhoto && styles.headerOnCover,
             {
               paddingTop: insets.top + 4,
-              backgroundColor: theme.colors.background,
-              borderBottomColor: theme.colors.border,
+              backgroundColor: hasViewCoverPhoto ? 'transparent' : theme.colors.background,
+              borderBottomColor: hasViewCoverPhoto ? 'transparent' : theme.colors.border,
             },
           ]}
         >
           <>
-            <IconCircleButton icon="chevron-left" onPress={navigateBack} accessibilityLabel={t('entryBackA11y')} />
+            <IconCircleButton icon="chevron-left" onPress={navigateBack} accessibilityLabel={t('entryBackA11y')} surface={hasViewCoverPhoto ? 'overlay' : 'surface'} />
             <View style={styles.headerDateSpacer} />
             <View style={styles.headerActions}>
-              <IconCircleButton icon="pencil-outline" onPress={handleStartEdit} accessibilityLabel={t('entryEditA11y')} />
-              <IconCircleButton icon="trash-can-outline" onPress={handleDelete} accessibilityLabel={t('entryDeleteA11y')} destructive />
+              <IconCircleButton icon="pencil-outline" onPress={handleStartEdit} accessibilityLabel={t('entryEditA11y')} surface={hasViewCoverPhoto ? 'overlay' : 'surface'} />
+              <IconCircleButton icon="trash-can-outline" onPress={handleDelete} accessibilityLabel={t('entryDeleteA11y')} destructive surface={hasViewCoverPhoto ? 'overlay' : 'surface'} />
             </View>
           </>
         </View>
@@ -639,37 +655,46 @@ export default function EntryDetailScreen() {
 
 
       {isEditing || hasViewCoverPhoto ? (
-        <View style={[styles.coverHeader, { top: coverTopOffset, paddingHorizontal: entryHorizontalPadding, backgroundColor: theme.colors.background }]}>
+        <View
+          style={[
+            styles.coverHeader,
+            isEditing
+              ? { top: coverTopOffset, paddingHorizontal: entryHorizontalPadding, backgroundColor: theme.colors.background }
+              : styles.coverHeaderFullBleed,
+          ]}
+        >
           {isEditing ? (
             <DiaryCoverPhotoPicker
               photo={editCoverPhoto}
               variant="entryHero"
-              height={coverExpandedHeight}
+              height={editCoverExpandedHeight}
               onTakePhoto={() => handleCoverPhotoPickerResult('camera')}
               onChoosePhoto={() => handleCoverPhotoPickerResult('library')}
               onRemovePhoto={() => setEditCoverPhoto(undefined)}
               scrollY={coverScrollY}
             />
           ) : (
-            <DiaryCoverPhotoPicker
-              photo={entry.coverPhoto}
-              editable={false}
-              variant="entryHero"
-              height={coverExpandedHeight}
-              scrollY={coverScrollY}
-            >
-              <View style={styles.coverEntryOverlay}>
-                <Text preset="h2" numberOfLines={2} style={[styles.coverTitle, { color: theme.colors.stickerControlText }]}>
-                  {entry.title}
-                </Text>
-                <View style={styles.coverMetaRow}>
-                  {renderViewMoodAndTags(true)}
-                  <Text preset="caption" numberOfLines={1} style={[styles.coverDateTime, { color: theme.colors.stickerControlText }]}>
-                    {viewDateTime}
+            <Animated.View style={[styles.viewCoverClip, { height: viewCoverHeight }]}>
+              <DiaryCoverPhotoPicker
+                photo={entry.coverPhoto}
+                editable={false}
+                variant="entryHero"
+                height={ENTRY_VIEW_COVER_EXPANDED_HEIGHT}
+                containerStyle={styles.viewCoverPicker}
+              >
+                <Animated.View style={[styles.coverEntryOverlay, { opacity: viewCoverOverlayOpacity }]}>
+                  <Text preset="h2" numberOfLines={2} style={[styles.coverTitle, { color: theme.colors.stickerControlText }]}>
+                    {entry.title}
                   </Text>
-                </View>
-              </View>
-            </DiaryCoverPhotoPicker>
+                  <View style={styles.coverMetaRow}>
+                    {renderViewMoodAndTags(true)}
+                    <Text preset="caption" numberOfLines={1} style={[styles.coverDateTime, { color: theme.colors.stickerControlText }]}>
+                      {viewDateTime}
+                    </Text>
+                  </View>
+                </Animated.View>
+              </DiaryCoverPhotoPicker>
+            </Animated.View>
           )}
         </View>
       ) : null}
@@ -690,7 +715,7 @@ export default function EntryDetailScreen() {
             styles.scrollContent,
             {
               paddingHorizontal: isEditing ? entryHorizontalPadding : theme.spacing.lg,
-              minHeight: windowHeight + (hasCoverHeader ? coverExpandedHeight : 0),
+              minHeight: windowHeight + (isEditing ? editCoverExpandedHeight : hasViewCoverPhoto ? ENTRY_VIEW_COVER_EXPANDED_HEIGHT - viewCoverHeaderFloorHeight : 0),
               paddingTop: headerOverlayHeight,
               paddingBottom: getEntryEditorScrollBottomPadding(insets.bottom, theme.spacing.xl),
             },
@@ -1094,6 +1119,9 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  headerOnCover: {
+    borderBottomWidth: 0,
+  },
   headerBtnPlaceholder: { width: 44, height: 44 },
   headerDateSpacer: { flex: 1 },
   coverHeader: {
@@ -1104,6 +1132,20 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     zIndex: 29,
     elevation: 29,
+  },
+  coverHeaderFullBleed: {
+    top: 0,
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    backgroundColor: 'transparent',
+  },
+  viewCoverClip: {
+    width: '100%',
+    overflow: 'hidden',
+  },
+  viewCoverPicker: {
+    borderWidth: 0,
+    borderRadius: 0,
   },
   scrollContent: {
     paddingTop: 2,

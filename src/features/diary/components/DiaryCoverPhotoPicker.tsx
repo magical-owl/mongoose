@@ -1,4 +1,4 @@
-import { Animated, Image, StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Animated, Image, StyleSheet, TouchableOpacity, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 import type { ReactNode } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Text } from '@shared/components/Text';
@@ -17,6 +17,7 @@ interface DiaryCoverPhotoPickerProps {
   readonly onRemovePhoto?: () => void;
   readonly scrollY?: Animated.Value;
   readonly children?: ReactNode;
+  readonly containerStyle?: StyleProp<ViewStyle>;
 }
 
 export function DiaryCoverPhotoPicker({
@@ -29,6 +30,7 @@ export function DiaryCoverPhotoPicker({
   onRemovePhoto,
   scrollY,
   children,
+  containerStyle,
 }: DiaryCoverPhotoPickerProps) {
   const theme = useTheme();
   const t = useTranslation();
@@ -70,6 +72,7 @@ export function DiaryCoverPhotoPicker({
           backgroundColor: photo ? theme.colors.surface : theme.colors.inputBackground,
           borderColor: theme.colors.border,
         },
+        containerStyle,
       ]}
       accessibilityRole={editable ? undefined : 'image'}
       accessibilityLabel={photo ? t('entryCoverPhotoA11y') : undefined}
