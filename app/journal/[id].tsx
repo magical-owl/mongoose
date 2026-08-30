@@ -48,7 +48,6 @@ const ALL_ENTRIES_JOURNAL_ID = "all";
 const UNASSIGNED_JOURNAL_ID = "unassigned";
 const JOURNAL_COVER_EXPANDED_HEIGHT = 270;
 const JOURNAL_COVER_COLLAPSED_EXTRA_HEIGHT = 12;
-const JOURNAL_COVER_COLLAPSE_DISTANCE = 120;
 const JOURNAL_HEADER_TOP_PADDING = 16;
 const JOURNAL_HEADER_ROW_HEIGHT = 44;
 const JOURNAL_HEADER_BOTTOM_GAP = 14;
@@ -431,13 +430,17 @@ export default function JournalEntriesScreen() {
     + JOURNAL_HEADER_TOP_PADDING
     + JOURNAL_HEADER_ROW_HEIGHT
     + JOURNAL_COVER_COLLAPSED_EXTRA_HEIGHT;
+  const journalCoverCollapseDistance = Math.max(
+    1,
+    JOURNAL_COVER_EXPANDED_HEIGHT - coverHeaderFloorHeight,
+  );
   const journalCoverHeight = scrollY.interpolate({
-    inputRange: [0, JOURNAL_COVER_COLLAPSE_DISTANCE],
+    inputRange: [0, journalCoverCollapseDistance],
     outputRange: [JOURNAL_COVER_EXPANDED_HEIGHT, coverHeaderFloorHeight],
     extrapolate: "clamp",
   });
   const journalCoverOverlayOpacity = scrollY.interpolate({
-    inputRange: [0, JOURNAL_COVER_COLLAPSE_DISTANCE * 0.65],
+    inputRange: [0, journalCoverCollapseDistance * 0.65],
     outputRange: [1, 0],
     extrapolate: "clamp",
   });
