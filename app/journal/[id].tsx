@@ -51,9 +51,8 @@ const JOURNAL_COVER_COLLAPSED_EXTRA_HEIGHT = 12;
 const JOURNAL_COVER_COLLAPSE_DISTANCE = 120;
 const JOURNAL_HEADER_TOP_PADDING = 16;
 const JOURNAL_HEADER_ROW_HEIGHT = 44;
-const JOURNAL_HEADER_GAP = 14;
 const JOURNAL_HEADER_BOTTOM_GAP = 14;
-const JOURNAL_VIEW_PILL_HEIGHT = 36;
+const JOURNAL_VIEW_PILL_HEIGHT = JOURNAL_HEADER_ROW_HEIGHT;
 
 function hierarchyModeLabel(mode: EntryHierarchyMode): string {
   if (mode === "month-date") return "Month / Date";
@@ -447,24 +446,18 @@ export default function JournalEntriesScreen() {
     : insets.top
       + JOURNAL_HEADER_TOP_PADDING
       + JOURNAL_HEADER_ROW_HEIGHT
-      + JOURNAL_HEADER_GAP
-      + JOURNAL_VIEW_PILL_HEIGHT
       + JOURNAL_HEADER_BOTTOM_GAP;
   const collapsedHeaderHeight = hasJournalCover
     ? coverHeaderFloorHeight + JOURNAL_HEADER_BOTTOM_GAP
     : insets.top
       + JOURNAL_HEADER_TOP_PADDING
       + JOURNAL_HEADER_ROW_HEIGHT
-      + JOURNAL_HEADER_GAP
-      + JOURNAL_VIEW_PILL_HEIGHT
       + JOURNAL_HEADER_BOTTOM_GAP;
 
   const viewModePill = (
     <View
       style={[
         styles.viewModePill,
-        hasJournalCover && styles.viewModePillOnCover,
-        hasJournalCover && { marginTop: insets.top + JOURNAL_HEADER_TOP_PADDING + JOURNAL_HEADER_ROW_HEIGHT + 14 },
         {
           backgroundColor: hasJournalCover ? "rgba(0, 0, 0, 0.56)" : theme.colors.surface,
           borderColor: hasJournalCover ? theme.colors.stickerControlText + "40" : theme.colors.border,
@@ -489,6 +482,8 @@ export default function JournalEntriesScreen() {
                 { color: selected || hasJournalCover ? theme.colors.stickerControlText : theme.colors.textSecondary },
               ]}
               numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
             >
               {homeViewModeLabel(mode, t)}
             </Text>
@@ -642,7 +637,6 @@ export default function JournalEntriesScreen() {
                 accessibilityRole="image"
                 accessibilityLabel={journalTitle}
               />
-              {viewModePill}
               <Animated.View style={[styles.journalCoverContextOverlay, { opacity: journalCoverOverlayOpacity }]}>
                 <Text preset="label" numberOfLines={2} style={[styles.journalCoverContextTitle, { color: theme.colors.stickerControlText }]}>
                   {journalTitle}
@@ -652,7 +646,7 @@ export default function JournalEntriesScreen() {
                 </Text>
               </Animated.View>
             </Animated.View>
-          ) : viewModePill}
+          ) : null}
           <View
             style={[
               styles.headerRow,
@@ -660,10 +654,10 @@ export default function JournalEntriesScreen() {
               hasJournalCover && { paddingTop: insets.top + JOURNAL_HEADER_TOP_PADDING },
             ]}
           >
-            <View style={styles.headerSide}>
+            <View style={[styles.headerSide, styles.headerSideLeft]}>
               <IconCircleButton icon="chevron-left" onPress={navigateBack} accessibilityLabel={t("entryBackA11y")} surface={hasJournalCover ? "overlay" : "surface"} />
             </View>
-            <View style={styles.headerTitleSpacer} />
+            {viewModePill}
             <View style={[styles.headerSide, styles.headerSideRight]}>
               <IconCircleButton
                 icon="plus"
@@ -840,13 +834,12 @@ const styles = StyleSheet.create({
   journalCoverContextMeta: {
     fontWeight: "700",
   },
-  headerTitleSpacer: { flex: 1 },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     height: JOURNAL_HEADER_ROW_HEIGHT,
-    marginBottom: JOURNAL_HEADER_GAP,
+    marginBottom: JOURNAL_HEADER_BOTTOM_GAP,
     gap: 8,
   },
   headerRowOnCover: {
@@ -859,31 +852,34 @@ const styles = StyleSheet.create({
     minHeight: JOURNAL_HEADER_ROW_HEIGHT,
     marginBottom: 0,
   },
-  headerSide: { width: 82, flexDirection: "row", alignItems: "center", gap: 6 },
-  headerSideRight: { justifyContent: "flex-end" },
+  headerSide: { flexDirection: "row", alignItems: "center", gap: 6 },
+  headerSideLeft: { width: 44 },
+  headerSideRight: { width: 94, justifyContent: "flex-end" },
   viewModePill: {
+    flex: 1,
+    minWidth: 0,
+    maxWidth: 260,
     alignSelf: "center",
     flexDirection: "row",
     borderWidth: 1,
-    borderRadius: 18,
-    padding: 2,
-    minHeight: JOURNAL_VIEW_PILL_HEIGHT,
-    marginBottom: JOURNAL_HEADER_BOTTOM_GAP,
-  },
-  viewModePillOnCover: {
-    marginBottom: 12,
-    zIndex: 2,
+    borderRadius: 22,
+    padding: 4,
+    height: JOURNAL_VIEW_PILL_HEIGHT,
+    alignItems: "center",
   },
   viewModeButton: {
-    minWidth: 68,
-    height: 30,
+    flex: 1,
+    minWidth: 0,
+    height: 34,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 15,
-    paddingHorizontal: 12,
+    borderRadius: 17,
+    paddingHorizontal: 8,
   },
   viewModeButtonText: {
     fontWeight: "700",
+    fontSize: 13,
+    lineHeight: 16,
   },
   searchInput: {
     height: 44,
