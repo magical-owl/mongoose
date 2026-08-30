@@ -102,6 +102,8 @@ const ENTRY_HEADER_TOP_OFFSET = ENTRY_EDITOR_HEADER_TOP_OFFSET;
 const ENTRY_HEADER_BUTTON_HEIGHT = ENTRY_EDITOR_HEADER_BUTTON_HEIGHT;
 const ENTRY_HEADER_BOTTOM_PADDING = ENTRY_EDITOR_HEADER_BOTTOM_PADDING;
 const ENTRY_COVER_TOP_GAP = ENTRY_EDITOR_COVER_TOP_GAP;
+const ENTRY_EDIT_COVER_BOTTOM_GAP = 6;
+const ENTRY_VIEW_COVER_EXPANDED_HEIGHT = 270;
 const ENTRY_BODY_MIN_HEIGHT = ENTRY_EDITOR_BODY_MIN_HEIGHT;
 const ENTRY_BODY_DEFAULT_VIEWPORT_RATIO = ENTRY_EDITOR_BODY_DEFAULT_VIEWPORT_RATIO;
 const ENTRY_BODY_EXTRA_STICKER_SPACE = ENTRY_EDITOR_BODY_EXTRA_STICKER_SPACE;
@@ -449,7 +451,10 @@ export default function CreateEntryScreen() {
   // Toolbar height constant used for scroll padding
   const TOOLBAR_H = ENTRY_EDITOR_TOOLBAR_HEIGHT;
   const entryHorizontalPadding = getEntryEditorHorizontalPadding(windowWidth);
-  const coverExpandedHeight = getEntryEditorCoverHeight(windowWidth, entryHorizontalPadding);
+  const hasCreateCoverPhoto = Boolean(coverPhoto);
+  const coverExpandedHeight = hasCreateCoverPhoto
+    ? ENTRY_VIEW_COVER_EXPANDED_HEIGHT
+    : getEntryEditorCoverHeight(windowWidth, entryHorizontalPadding);
   const showBodyStickerBounds = showStickerPicker || showStickerBounds || isStickerDragging;
   const stickerCanvasBottom = stickers.length > 0
     ? Math.max(...stickers.map((sticker) => getStickerBodyPreviewBottom(sticker)))
@@ -460,17 +465,14 @@ export default function CreateEntryScreen() {
     bodyContentHeight + ENTRY_BODY_EXTRA_STICKER_SPACE,
     stickerCanvasBottom + ENTRY_BODY_EXTRA_STICKER_SPACE,
   );
-  const headerOverlayHeight = insets.top
+  const headerOnlyHeight = insets.top
     + ENTRY_HEADER_TOP_OFFSET
     + ENTRY_HEADER_BUTTON_HEIGHT
-    + ENTRY_HEADER_BOTTOM_PADDING
-    + ENTRY_COVER_TOP_GAP
-    + coverExpandedHeight;
-  const coverTopOffset = insets.top
-    + ENTRY_HEADER_TOP_OFFSET
-    + ENTRY_HEADER_BUTTON_HEIGHT
-    + ENTRY_HEADER_BOTTOM_PADDING
-    + ENTRY_COVER_TOP_GAP;
+    + ENTRY_HEADER_BOTTOM_PADDING;
+  const headerOverlayHeight = hasCreateCoverPhoto
+    ? coverExpandedHeight + ENTRY_EDIT_COVER_BOTTOM_GAP
+    : headerOnlyHeight + ENTRY_COVER_TOP_GAP + coverExpandedHeight;
+  const coverTopOffset = hasCreateCoverPhoto ? 0 : headerOnlyHeight + ENTRY_COVER_TOP_GAP;
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
@@ -480,12 +482,14 @@ export default function CreateEntryScreen() {
         topInset={insets.top}
         horizontalPadding={entryHorizontalPadding}
         title={t('entryCreateTitle')}
+        onCover={hasCreateCoverPhoto}
         left={(
           <IconCircleButton
             icon="close-circle-outline"
             onPress={navigateBack}
             accessibilityLabel={t('entryCancelA11y')}
             iconSize={25}
+            surface={hasCreateCoverPhoto ? 'overlay' : 'surface'}
           />
         )}
         actions={(
@@ -498,6 +502,7 @@ export default function CreateEntryScreen() {
             accessibilityLabel={t('entryBringStickersForwardA11y')}
             iconSize={20}
             size="sm"
+            surface={hasCreateCoverPhoto ? 'overlay' : 'surface'}
           />
           )}
 
@@ -508,6 +513,7 @@ export default function CreateEntryScreen() {
             active={isFavorite}
             tone="warning"
             iconSize={24}
+            surface={hasCreateCoverPhoto ? 'overlay' : 'surface'}
           />
 
           <AccentPillButton
@@ -520,7 +526,14 @@ export default function CreateEntryScreen() {
         )}
       />
 
-      <View style={[styles.coverHeader, { top: coverTopOffset, paddingHorizontal: entryHorizontalPadding, backgroundColor: theme.colors.background }]}>
+      <View
+        style={[
+          styles.coverHeader,
+          hasCreateCoverPhoto
+            ? styles.coverHeaderFullBleed
+            : { top: coverTopOffset, paddingHorizontal: entryHorizontalPadding, backgroundColor: theme.colors.background },
+        ]}
+      >
         <DiaryCoverPhotoPicker
           photo={coverPhoto}
           variant="entryHero"
@@ -529,6 +542,7 @@ export default function CreateEntryScreen() {
           onChoosePhoto={() => handleCoverPhotoPickerResult('library')}
           onRemovePhoto={() => setCoverPhoto(undefined)}
           scrollY={coverScrollY}
+          containerStyle={hasCreateCoverPhoto ? styles.viewCoverPicker : undefined}
         />
       </View>
 
@@ -803,6 +817,16 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     zIndex: 29,
     elevation: 29,
+  },
+  coverHeaderFullBleed: {
+    top: 0,
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    backgroundColor: 'transparent',
+  },
+  viewCoverPicker: {
+    borderWidth: 0,
+    borderRadius: 0,
   },
   scrollContent: {
     paddingTop: 2,
