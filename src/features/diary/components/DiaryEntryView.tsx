@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
   timelinePreviewRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   timelineTextPreview: { flex: 1, minWidth: 0 },
   timelineCoverPhoto: { width: 62, height: 48, borderRadius: 6 },
-  timelineHeroCoverPhoto: { width: '100%', height: 138, borderRadius: 0 },
+  timelineHeroCoverPhoto: { width: '100%', height: 138, borderRadius: 0, marginBottom: 10 },
   timelineContent: { fontSize: 14, lineHeight: 20, marginBottom: 5 },
   timelineMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   timelineTags: { flex: 1 },
