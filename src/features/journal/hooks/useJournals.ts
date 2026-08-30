@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Journal } from '../domain/Journal';
 import { getCachedJournals, setCachedJournals } from '../services/JournalCache';
-import { journalService } from '../services/JournalService';
+import { journalService, type CreateJournalInput } from '../services/JournalService';
 
 export function useJournals() {
   const cachedJournals = getCachedJournals();
@@ -39,8 +39,8 @@ export function useJournals() {
     };
   }, []);
 
-  const createJournal = useCallback(async (title: string) => {
-    const result = await journalService.createJournal(title);
+  const createJournal = useCallback(async (input: string | CreateJournalInput) => {
+    const result = await journalService.createJournal(input);
     if (result.success) await refresh();
     return result;
   }, [refresh]);

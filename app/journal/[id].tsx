@@ -1001,7 +1001,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  emptyPanel: { minHeight: 220, borderWidth: 1, borderRadius: 8, alignItems: "center", justifyContent: "center", padding: 24 },
+  emptyPanel: { minHeight: 220, borderWidth: 1, borderRadius: 8, alignItems: "center", justifyContent: "center", marginTop: 16, padding: 24 },
   emptyIconHalo: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center", marginBottom: 16 },
   emptyPrompt: { fontWeight: "800", marginBottom: 6, textAlign: "center" },
   emptyText: { fontSize: 15, textAlign: "center" },

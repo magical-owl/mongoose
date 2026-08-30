@@ -94,7 +94,7 @@ export default function OnboardingScreen(): React.JSX.Element {
 
   const completeOnboarding = () => {
     setOnboardingStatus('completed');
-    router.replace('/entry/new');
+    router.replace('/onboarding/first-journal');
   };
 
   const handleChooseProfilePhoto = async () => {

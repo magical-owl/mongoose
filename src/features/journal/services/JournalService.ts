@@ -5,6 +5,16 @@ import type { Journal } from '../domain/Journal';
 import { journalRepository } from '../repositories/JournalRepository';
 import type { IJournalRepository } from '../repositories/IJournalRepository';
 
+export interface CreateJournalInput {
+  readonly title: string;
+  readonly description?: string;
+  readonly coverImageUri?: string;
+  readonly coverImageWidth?: number;
+  readonly coverImageHeight?: number;
+}
+
+const JOURNAL_DESCRIPTION_MAX_LENGTH = 280;
+
 export class JournalService {
   public constructor(private readonly repository: IJournalRepository = journalRepository) {}
 
@@ -16,15 +26,26 @@ export class JournalService {
     return this.repository.getById(id);
   }
 
-  public async createJournal(title: string): Promise<Result<Journal>> {
-    const trimmed = title.trim();
+  public async createJournal(input: string | CreateJournalInput): Promise<Result<Journal>> {
+    const request = typeof input === 'string' ? { title: input } : input;
+    const trimmed = request.title.trim();
     if (!trimmed) return failure({ code: 'JOURNAL_TITLE_REQUIRED', message: 'Journal title is required.' });
+    const description = request.description?.trim() ?? '';
+    if (description.length > JOURNAL_DESCRIPTION_MAX_LENGTH) {
+      return failure({
+        code: 'JOURNAL_DESCRIPTION_TOO_LONG',
+        message: 'Journal description must be 280 characters or fewer.',
+      });
+    }
     const now = new Date().toISOString();
     return this.repository.save({
       id: generateUUID(),
       title: trimmed,
-      description: '',
+      description,
       color: '#4ECDC4',
+      coverImageUri: request.coverImageUri,
+      coverImageWidth: request.coverImageWidth,
+      coverImageHeight: request.coverImageHeight,
       createdAt: now,
       updatedAt: now,
     });

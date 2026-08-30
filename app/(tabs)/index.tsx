@@ -11,6 +11,7 @@ import { SectionLabel } from '@shared/components/SectionLabel';
 import { AppFooterNavigation } from '@shared/components/AppFooterNavigation';
 import { SlidingDrawer } from '@shared/components/SlidingDrawer';
 import { useDiary } from '@/features/diary/hooks/useDiary';
+import { JournalCreateForm } from '@/features/journal/components/JournalCreateForm';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { resolveImportedProfilePhotoUri } from '@/features/profile/services/ProfilePhotoService';
@@ -24,6 +25,7 @@ import type { Journal } from '@/features/journal/domain/Journal';
 import { BUILTIN_JOURNAL_BACKGROUNDS, getJournalCoverImageSource } from '@/features/journal/domain/JournalBackgrounds';
 import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
+import type { CreateJournalInput } from '@/features/journal/services/JournalService';
 import type { JournalColumnCount, SyntheticJournalId } from '@/stores/useAppStore';
 
 function entryBelongsToJournal(entry: { readonly journalIds?: readonly string[]; readonly collectionIds?: readonly string[] }, journalId: string): boolean {
@@ -33,6 +35,7 @@ function entryBelongsToJournal(entry: { readonly journalIds?: readonly string[];
 interface JournalHomeItem {
   readonly id: string;
   readonly title: string;
+  readonly description?: string;
   readonly count: number;
   readonly canRename: boolean;
   readonly coverImageUri?: string;
@@ -89,8 +92,8 @@ export default function JournalsScreen(): React.JSX.Element {
   const setSyntheticJournalCover = useAppStore((state) => state.setSyntheticJournalCover);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
-  const [journalTitle, setJournalTitle] = useState('');
   const [renameJournalTitle, setRenameJournalTitle] = useState('');
+  const [renameJournalDescription, setRenameJournalDescription] = useState('');
   const [renamingJournal, setRenamingJournal] = useState<Journal | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -165,6 +168,7 @@ export default function JournalsScreen(): React.JSX.Element {
     const assignedItems = journals.map((journal) => ({
       id: journal.id,
       title: journal.title,
+      description: journal.description,
       count: visibleEntries.filter((entry) => entryBelongsToJournal(entry, journal.id)).length,
       canRename: true,
       coverImageUri: journal.coverImageUri,
@@ -213,20 +217,18 @@ export default function JournalsScreen(): React.JSX.Element {
     [profile, t],
   );
 
-  const handleCreateJournal = async () => {
-    const trimmed = journalTitle.trim();
-    if (!trimmed) {
+  const handleCreateJournal = async (input: CreateJournalInput) => {
+    if (!input.title.trim()) {
       Alert.alert(t('journalTitleRequiredTitle'), t('journalTitleRequiredMessage'));
       return;
     }
     setIsCreating(true);
-    const result = await createJournal(trimmed);
+    const result = await createJournal(input);
     setIsCreating(false);
     if (!result.success) {
       Alert.alert(t('entryErrorTitle'), result.error.message);
       return;
     }
-    setJournalTitle('');
     setShowCreateModal(false);
   };
 
@@ -236,6 +238,7 @@ export default function JournalsScreen(): React.JSX.Element {
     setOpenJournalOptionsId(null);
     setRenamingJournal(journal);
     setRenameJournalTitle(journal.title);
+    setRenameJournalDescription(journal.description);
     setShowRenameModal(true);
   }, [journals]);
 
@@ -248,7 +251,7 @@ export default function JournalsScreen(): React.JSX.Element {
     if (!renamingJournal) return;
 
     setIsRenaming(true);
-    const result = await saveJournal({ ...renamingJournal, title: trimmed });
+    const result = await saveJournal({ ...renamingJournal, title: trimmed, description: renameJournalDescription.trim() });
     setIsRenaming(false);
     if (!result.success) {
       Alert.alert(t('entryErrorTitle'), result.error.message);
@@ -257,6 +260,7 @@ export default function JournalsScreen(): React.JSX.Element {
 
     setRenamingJournal(null);
     setRenameJournalTitle('');
+    setRenameJournalDescription('');
     setShowRenameModal(false);
   };
 
@@ -590,6 +594,19 @@ export default function JournalsScreen(): React.JSX.Element {
                     >
                       {journal.title}
                     </Text>
+                    {journal.description && !denseJournalCover ? (
+                      <Text
+                        preset="caption"
+                        color="textSecondary"
+                        numberOfLines={wideJournalCover ? 1 : 2}
+                        style={[
+                          styles.journalCoverDescription,
+                          compactJournalCover && styles.journalCoverDescriptionCompact,
+                        ]}
+                      >
+                        {journal.description}
+                      </Text>
+                    ) : null}
                   </View>
                 </View>
               </TouchableOpacity>
@@ -773,22 +790,16 @@ export default function JournalsScreen(): React.JSX.Element {
         <View style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}>
           <View style={[styles.modalCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
             <Text preset="h2" color="text" style={styles.modalTitle}>{t('journalCreate')}</Text>
-            <TextInput
-              value={journalTitle}
-              onChangeText={setJournalTitle}
-              placeholder={t('journalTitlePlaceholder')}
-              placeholderTextColor={theme.colors.textSecondary}
-              autoFocus
-              style={[styles.modalInput, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontFamily: theme.fontFamily }]}
-              returnKeyType="done"
-              onSubmitEditing={() => { void handleCreateJournal(); }}
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity onPress={() => setShowCreateModal(false)} style={styles.modalAction} disabled={isCreating}>
-                <Text preset="label" color="textSecondary">{t('entryCancel')}</Text>
-              </TouchableOpacity>
-              <AccentPillButton label={t('journalCreate')} onPress={() => { void handleCreateJournal(); }} disabled={isCreating} style={styles.modalActionPrimary} />
-            </View>
+            {showCreateModal ? (
+              <JournalCreateForm
+                submitLabel={t('journalCreate')}
+                savingLabel={t('journalCreating')}
+                isSaving={isCreating}
+                autoFocus
+                onCancel={() => setShowCreateModal(false)}
+                onSubmit={(input) => { void handleCreateJournal(input); }}
+              />
+            ) : null}
           </View>
         </View>
       </Modal>
@@ -804,8 +815,17 @@ export default function JournalsScreen(): React.JSX.Element {
               placeholderTextColor={theme.colors.textSecondary}
               autoFocus
               style={[styles.modalInput, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontFamily: theme.fontFamily }]}
-              returnKeyType="done"
-              onSubmitEditing={() => { void handleRenameJournal(); }}
+              returnKeyType="next"
+            />
+            <TextInput
+              value={renameJournalDescription}
+              onChangeText={setRenameJournalDescription}
+              placeholder={t('journalDescriptionPlaceholder')}
+              placeholderTextColor={theme.colors.textSecondary}
+              multiline
+              maxLength={280}
+              style={[styles.modalDescriptionInput, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontFamily: theme.fontFamily }]}
+              accessibilityLabel={t('journalDescriptionLabel')}
             />
             <View style={styles.modalActions}>
               <TouchableOpacity onPress={() => setShowRenameModal(false)} style={styles.modalAction} disabled={isRenaming}>
@@ -946,6 +966,8 @@ const styles = StyleSheet.create({
   journalCoverTitleWide: { fontSize: 18, lineHeight: 23 },
   journalCoverTitleCompact: { fontSize: 14, lineHeight: 18 },
   journalCoverTitleDense: { fontSize: 12, lineHeight: 15 },
+  journalCoverDescription: { marginTop: 3, lineHeight: 16 },
+  journalCoverDescriptionCompact: { marginTop: 2, fontSize: 11, lineHeight: 14 },
   journalOptionsWrap: { position: 'absolute', top: 6, right: 6, zIndex: 30, elevation: 30, alignItems: 'flex-end' },
   journalOptionsMenu: {
     minWidth: 154,
@@ -992,6 +1014,18 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     includeFontPadding: false,
     textAlignVertical: 'center',
+  },
+  modalDescriptionInput: {
+    minHeight: 72,
+    borderWidth: 1,
+    borderRadius: 8,
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 10,
+    fontSize: 15,
+    lineHeight: 20,
+    textAlignVertical: 'top',
   },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 18 },
   modalAction: { minHeight: 40, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },

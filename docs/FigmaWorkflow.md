@@ -29,7 +29,7 @@ The visible bottom tab bar has five destinations:
 
 | Tab | Icon concept | Function |
 | --- | --- | --- |
-| Home | Journal/book | Browse journals in cover view by default, switch list/grid/cover presentation, edit journal options from each cover/menu button |
+| Home | Journal/book | Browse journals in cover view by default, switch list/grid/cover presentation, create journals with cover photos and short descriptions, edit journal options from each cover/menu button |
 | Calendar | Calendar | Browse writing days by month and inspect entries for a selected date |
 | Create | Centered plus action | Open the Create Entry composer at `entry/new` |
 | Insights | Chart | Review writing metrics, activity, streaks, and trends |
@@ -182,7 +182,7 @@ Use the existing Ionicons and Material Community Icons style: simple outline ico
 4. Subtle divider.
 5. Body editor with placeholder “What’s on your mind today? Write freely...” and a generous default writing height.
 6. Mood selector with compact uppercase section label and rounded horizontal chips.
-7. Compact journal selector for existing journals only. Journal creation stays on the Journals screen.
+7. Compact journal selector for existing journals only. Journal creation stays on the Journals screen, except for the dedicated first-journal onboarding step after initial setup.
 8. Compact tag selector.
 9. Photo actions in the bottom toolbar. Selected photos enter the writing canvas and use the same move, resize, rotate, delete, and layer controls as stickers.
 
