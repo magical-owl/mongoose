@@ -18,6 +18,7 @@ const requiredFiles = [
   'agents/10-performance-specialist.md',
   'agents/11-monetization-store-commerce-reviewer.md',
   'agents/12-ai-prompt-evaluator.md',
+  'agents/13-responsive-layout-reviewer.md',
   'agents/README.md',
   'agents/CHANGELOG.md',
   'agents/MIGRATION.md',

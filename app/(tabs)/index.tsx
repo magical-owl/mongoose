@@ -46,6 +46,8 @@ const ALL_ENTRIES_JOURNAL_ID = 'all';
 const UNASSIGNED_JOURNAL_ID = 'unassigned';
 const JOURNAL_GRID_GAP = 12;
 const JOURNAL_GRID_HORIZONTAL_PADDING = 40;
+const JOURNAL_COVER_ASPECT_RATIO = 0.96;
+const JOURNAL_COVER_WIDE_ASPECT_RATIO = 2.11;
 const journalColumnOptions: readonly { readonly count: JournalColumnCount; readonly labelKey: TranslationKey }[] = [
   { count: 1, labelKey: 'journalLayoutSingle' },
   { count: 2, labelKey: 'journalLayoutTwoColumn' },
@@ -882,7 +884,7 @@ const styles = StyleSheet.create({
   journalCardRaised: { zIndex: 20, elevation: 20 },
   journalCoverImageFrame: {
     width: '100%',
-    aspectRatio: 0.72,
+    aspectRatio: JOURNAL_COVER_ASPECT_RATIO,
     alignItems: 'center',
     justifyContent: 'center',
     borderTopLeftRadius: 7,
@@ -890,7 +892,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   journalCoverImageFrameWide: {
-    aspectRatio: 1.58,
+    aspectRatio: JOURNAL_COVER_WIDE_ASPECT_RATIO,
   },
   journalCoverImage: {
     width: '100%',

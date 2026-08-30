@@ -15,11 +15,12 @@ The request prepares, audits, builds, submits, or gates a release candidate for 
 7. `agents/10-performance-specialist.md` when release includes heavy UI, startup, list, animation, image, or loading changes.
 8. `agents/11-monetization-store-commerce-reviewer.md` when paid features, IAP, subscriptions, entitlements, or restore purchases changed.
 9. `agents/12-ai-prompt-evaluator.md` when AI prompts, provider behavior, or user-visible AI output changed.
-10. `agents/release.md`
-11. `docs/ReleaseChecklist.md`
-12. `docs/ProductionReadiness.md`
-13. `docs/Deployment.md`
-14. `docs/Versioning.md`
+10. `agents/13-responsive-layout-reviewer.md` when release readiness includes tablet screenshots, large-screen support, landscape behavior, or split-screen behavior.
+11. `agents/release.md`
+12. `docs/ReleaseChecklist.md`
+13. `docs/ProductionReadiness.md`
+14. `docs/Deployment.md`
+15. `docs/Versioning.md`
 
 ## Workflow
 

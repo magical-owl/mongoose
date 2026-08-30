@@ -39,6 +39,7 @@ Use [`AGENT_FLOW.md`](AGENT_FLOW.md) when you need the shortest end-to-end opera
 | [`10-performance-specialist.md`](10-performance-specialist.md) | Rendering, loading, navigation, animation, list, image, and startup performance |
 | [`11-monetization-store-commerce-reviewer.md`](11-monetization-store-commerce-reviewer.md) | Subscriptions, IAP, paywalls, entitlements, restore purchases, and store commerce risk |
 | [`12-ai-prompt-evaluator.md`](12-ai-prompt-evaluator.md) | AI prompts, model inputs/outputs, labeling, opt-in, safety boundaries, and prompt privacy |
+| [`13-responsive-layout-reviewer.md`](13-responsive-layout-reviewer.md) | Large-screen, tablet, landscape, split-screen, and responsive layout readiness |
 
 ## Gate Matrix
 

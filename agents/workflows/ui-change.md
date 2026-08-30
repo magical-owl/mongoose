@@ -17,6 +17,7 @@ Use Fast Path for small spacing, color-token, clipped-text, icon, or label fixes
 
 Add `agents/09-localization-reviewer.md` when user-facing copy, labels, date/time formatting, or text-length risk changes.
 Add `agents/10-performance-specialist.md` when animation, large list, image, loading, or scroll performance changes.
+Add `agents/13-responsive-layout-reviewer.md` when the change affects tablet, landscape, split-screen, full-bleed media, grids, fixed headers/footers, drawers, modals, or large-screen behavior.
 
 ## Workflow
 

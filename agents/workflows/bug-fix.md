@@ -17,6 +17,7 @@ Use Fast Path when the bug is narrow, reversible, and has no sensitive data, sto
 Add `agents/07-security-privacy-reviewer.md` when the bug affects sensitive data, deletion, backup, restore, auth, permissions, logs, or AI.
 Add `agents/10-performance-specialist.md` when the bug involves jank, blank screens, slow loading, memory pressure, list performance, images, animations, or navigation timing.
 Add `agents/09-localization-reviewer.md` when the bug involves clipped text, wrong labels, date/time formatting, or untranslated copy.
+Add `agents/13-responsive-layout-reviewer.md` when the bug appears on tablets, large screens, landscape, split-screen, fixed headers/footers, drawers, modals, grids, or full-bleed media.
 
 ## Workflow
 

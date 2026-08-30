@@ -49,6 +49,7 @@ Examples: small spacing adjustment, typo fix, non-sensitive docs edit, narrow te
 | Copy or text-only UI change | `LIGHT` Design/accessibility check |
 | User-facing copy, translation, locale, date/time, number, currency, pluralization, or error-message change | `REQUIRED` Localization Reviewer; add Design Agent when visible layout can be affected |
 | Layout, spacing, header, drawer, footer, modal, list, or navigation UI change | `REQUIRED` Design Agent, Expo Engineer, accessibility check |
+| Responsive layout, tablet, landscape, split-screen, grid, or full-bleed media behavior | `REQUIRED` Responsive Layout Reviewer, Design Agent, Expo Engineer, accessibility check |
 | New reusable component | `REQUIRED` Expo Engineer, componentization review, component test |
 | New screen or major workflow | `REQUIRED` Product Manager, Design Agent, Expo Engineer, QA |
 | Bug fix with no data impact | `LIGHT` QA regression check |
@@ -71,6 +72,7 @@ Examples: small spacing adjustment, typo fix, non-sensitive docs edit, narrow te
 | Gate | Minimum Evidence |
 |---|---|
 | Design/accessibility | Affected screens, states considered, theme/localization impact, accessibility labels/roles/states checked |
+| Responsive layout | Device classes checked, orientation/split-screen coverage, safe-area and fixed chrome behavior, text scaling risk, residual physical-device gap |
 | Localization | Affected strings, locale-sensitive formatting, text-length risk, accessibility-label impact |
 | Componentization | Existing patterns inspected, public props typed, screen keeps navigation/side effects, component tests updated |
 | QA | Regression scope, steps tested, expected/actual behavior, environment |

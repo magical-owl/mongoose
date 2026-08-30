@@ -29,6 +29,7 @@ Before implementation, classify the task:
 | Security, privacy, deletion, backup, auth | `agents/workflows/data-change.md` | `agents/07-security-privacy-reviewer.md`, `agents/security.md`, `docs/Security.md` |
 | Localization or user-facing copy | Relevant workflow | `agents/09-localization-reviewer.md`, `agents/localization.md`, `docs/AppDesignGuidelines.md` |
 | Performance issue or optimization | `agents/workflows/bug-fix.md` or relevant workflow | `agents/10-performance-specialist.md`, `agents/performance.md`, related tests |
+| Responsive layout, tablet, landscape, or split-screen behavior | `agents/workflows/ui-change.md` or `agents/workflows/bug-fix.md` | `agents/13-responsive-layout-reviewer.md`, `agents/02-design-agent.md`, `agents/03-expo-engineer.md`, `docs/ProductionReadiness.md` |
 | Monetization or store commerce | `agents/workflows/new-feature.md` or `agents/workflows/release.md` | `agents/11-monetization-store-commerce-reviewer.md`, `agents/08-release-gatekeeper.md`, `agents/release.md` |
 | Release or store work | `agents/workflows/release.md` | `agents/08-release-gatekeeper.md`, `agents/release.md`, `docs/ReleaseChecklist.md`, `docs/Deployment.md` |
 | Bug fix | `agents/workflows/bug-fix.md` | `agents/03-expo-engineer.md`, `agents/06-qa-engineer.md`, related feature tests and docs |
@@ -82,6 +83,7 @@ When multiple roles overlap, use this ownership model:
 | Sensitive data, permissions, logs, AI data sharing | Security and Privacy Reviewer | Data Architecture, AI Prompt Evaluator |
 | AI prompt shape and model-output behavior | AI Prompt Evaluator | Product Manager, Security/Privacy |
 | Rendering, loading, navigation timing, animation, image/list performance | Performance Specialist | Expo Engineer, QA |
+| Large-screen, tablet, landscape, and split-screen layout | Responsive Layout Reviewer | Design Agent, Expo Engineer, QA |
 | Purchases, subscriptions, entitlements, restore flow | Monetization and Store Commerce Reviewer | Release Gatekeeper, Security/Privacy |
 | Release decision | Release Gatekeeper | QA, Security/Privacy, Product |
 
