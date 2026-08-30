@@ -57,14 +57,14 @@ import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSelector';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
 import { DiaryCoverPhotoPicker } from '@/features/diary/components/DiaryCoverPhotoPicker';
+import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { chooseDiaryPhoto, chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
-import { getManualMoodColor } from '@/features/diary/domain/moodColors';
-import { manualMoodLabel, premiumPaywallTitle, useTranslation } from '@/localization/i18n';
+import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimitService';
 import { APP_IDENTITY } from '@/config/appIdentity';
@@ -515,8 +515,6 @@ export default function EntryDetailScreen() {
   const foregroundDisplayStickers = displayStickers.filter((sticker) => !sticker.behindText);
   const wordCount = countWords(isEditing ? editContent : entry.content);
   const viewMoods = getEntryManualMoods(entry);
-  const primaryViewMood = getPrimaryManualMood(viewMoods);
-  const moodTone = getManualMoodColor(primaryViewMood, theme.colors);
   const hasViewCoverPhoto = Boolean(entry.coverPhoto);
   const friendlyTimestampLabels = {
     today: t('timeToday'),
@@ -531,11 +529,7 @@ export default function EntryDetailScreen() {
   const renderViewMoodAndTags = (onCover: boolean) => (
     <View style={onCover ? styles.coverMetaLeft : styles.entryMetaRow}>
       {viewMoods.length > 0 ? (
-        <View style={[styles.moodBadge, onCover && styles.coverMoodBadge, { backgroundColor: moodTone + (onCover ? '80' : '18'), borderColor: moodTone + (onCover ? 'CC' : '') }]}>
-          <Text preset="caption" style={[styles.moodBadgeText, { color: onCover ? theme.colors.stickerControlText : moodTone }]}>
-            {viewMoods.map((mood) => manualMoodLabel(mood, t)).join(' · ')}
-          </Text>
-        </View>
+        <MoodBadgeList moods={viewMoods} maxVisible={4} onCover={onCover} style={onCover ? styles.coverMoodBadges : styles.entryMoodBadges} />
       ) : null}
       <View style={onCover ? styles.coverTagRow : styles.tagRow}>
         {entry.tags.map((tag) => (
@@ -1246,10 +1240,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
-  coverMoodBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
+  coverMoodBadges: { maxWidth: '100%' },
   coverTagRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1268,13 +1259,7 @@ const styles = StyleSheet.create({
   coverTagText: {
     fontWeight: '700',
   },
-  moodBadge: {
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  moodBadgeText: { fontWeight: '700' },
+  entryMoodBadges: { maxWidth: '100%' },
   reflectionsModalBody: { maxHeight: 520 },
   reflectionsScroll: { maxHeight: 440 },
   reflectionsScrollContent: { paddingBottom: 12 },

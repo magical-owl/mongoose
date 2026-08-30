@@ -70,6 +70,7 @@ Implementation rules:
 - Screen headers should keep primary navigation and one primary screen action visible, while secondary controls live in that screen's burger menu with Settings available from the same menu.
 - Burger-menu surfaces should use the shared `SlidingDrawer` component so drawer animation, overlay dismissal, and swipe-to-close behavior stay consistent across screens.
 - Feed cover title overlays should use the lightest scrim that keeps text readable, and author name/time should live with the diary body rather than as a separate card between cover and content.
+- Multiple entry moods should render as individual color-coded chips, not a single combined text badge. Tight rows should cap visible chips and use a compact `+n` overflow indicator so the UI stays scannable while each visible mood keeps its own color.
 - When entries are grouped under visible date headers, card rows should not repeat the same date rail.
 - User identity should be compact and contextual: 32 px avatar rows for feed authorship, 24 px avatars for reflection threads, and 20-24 px avatars in dense card/timeline rows.
 - Empty states should be short and action-oriented.
@@ -89,6 +90,7 @@ Implementation rules:
 - The cover image is a rounded landscape block below the header with an explicit gap. Empty cover state uses a centered camera action and label; selected covers keep the same rounded frame.
 - Date, title, and body use an editorial writing hierarchy: compact accent date row, italic serif-like title treatment, subtle divider, and a body editor area that leaves mood, journal, and tag controls reachable in the first compose view.
 - Mood, journal, and tag controls sit below the body as compact horizontal sections with uppercase labels, rounded surface chips, and warning-accent selected states.
+- Selected moods can contain more than one value. Each selected mood should remain visually distinct through its own mood color, with neutral treated as an exclusive state.
 - The editor footer is an inset rounded toolbar above the safe area or keyboard. Footer icons use one neutral inactive treatment; active formatting is the only accent-highlighted state. Related inactive icon pairs may sit together for spacing, but should not use colored group wells.
 - Expanded formatting controls should collapse when the user taps the writing surface, starts scrolling, or dismisses the keyboard.
 - Composer scroll content must reserve the footer height, footer bottom offset, safe-area inset, and a trailing gap so mood, journal, and tag controls are fully visible at the bottom of the scroll.

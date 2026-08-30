@@ -11,10 +11,11 @@ import type { Profile } from '@/features/profile/domain/Profile';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import { findStickerItem, type PlacedSticker } from '@/features/diary/domain/Sticker';
 import { diaryEntryListTitle } from './diaryEntryTypography';
+import { MoodBadgeList } from './MoodBadgeList';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
-import { manualMoodLabel, reflectionCountLabel, useTranslation } from '@/localization/i18n';
+import { reflectionCountLabel, useTranslation } from '@/localization/i18n';
 import { resolveImportedDiaryPhotoUri } from '@/features/diary/services/DiaryPhotoService';
 import {
   DIARY_PHOTO_STICKER_BASE_WIDTH,
@@ -103,10 +104,6 @@ function formatCardDay(value: string): { weekday: string; day: string } {
   };
 }
 
-function MoodDot({ color }: { readonly color: string }): React.JSX.Element {
-  return <View style={[styles.moodDot, { backgroundColor: color }]} />;
-}
-
 export function DiaryEntryView({
   entry,
   mode,
@@ -129,7 +126,6 @@ export function DiaryEntryView({
   const primaryMood = getPrimaryManualMood(entryMoods);
   const hasMood = entryMoods.length > 0;
   const moodTone = getManualMoodColor(primaryMood, theme.colors);
-  const moodLabel = entryMoods.map((mood) => manualMoodLabel(mood, t)).join(' · ');
   const friendlyTimestampLabels = {
     today: t('timeToday'),
     yesterday: t('timeYesterday'),
@@ -282,27 +278,13 @@ export function DiaryEntryView({
       <View style={entry.coverPhoto ? styles.feedCoverMetaRow : styles.feedMetaRow}>
         <View style={styles.feedMetaLeft}>
           {hasMood ? (
-            <View
-              style={[
-                styles.feedMoodBadge,
-                {
-                  backgroundColor: moodTone + (entry.coverPhoto ? '80' : '18'),
-                  borderColor: moodTone + (entry.coverPhoto ? 'CC' : ''),
-                },
-              ]}
+            <MoodBadgeList
+              moods={entryMoods}
+              maxVisible={3}
+              onCover={Boolean(entry.coverPhoto)}
+              style={styles.feedMoodBadges}
               testID={entry.coverPhoto ? 'entry-feed-cover-mood' : 'entry-feed-mood'}
-            >
-              <Text
-                preset="caption"
-                style={[
-                  styles.feedMoodBadgeText,
-                  { color: entry.coverPhoto ? theme.colors.stickerControlText : moodTone },
-                ]}
-                numberOfLines={1}
-              >
-                {moodLabel}
-              </Text>
-            </View>
+            />
           ) : null}
           {entry.tags.map((tag) => (
             <Text
@@ -466,10 +448,7 @@ export function DiaryEntryView({
               </View>
               <View style={styles.timelineActions}>
                 {hasMood ? (
-                  <View style={styles.entryMoodMeta} testID="entry-timeline-mood">
-                    <MoodDot color={moodTone} />
-                    <Text preset="caption" style={[styles.entryMoodText, { color: moodTone }]} numberOfLines={1}>{moodLabel}</Text>
-                  </View>
+                  <MoodBadgeList moods={entryMoods} maxVisible={2} compact style={styles.entryMoodMeta} testID="entry-timeline-mood" />
                 ) : null}
                 {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.timelineTime}>{entryTime}</Text> : null}
                 <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
@@ -497,12 +476,7 @@ export function DiaryEntryView({
   const cardMeta = (
     <View style={styles.cardMetaRow}>
       {hasMood ? (
-        <View style={styles.entryMoodMeta} testID="entry-card-mood">
-          <MoodDot color={moodTone} />
-          <Text preset="caption" style={[styles.entryMoodText, { color: moodTone }]} numberOfLines={1}>
-            {moodLabel}
-          </Text>
-        </View>
+        <MoodBadgeList moods={entryMoods} maxVisible={2} compact style={styles.entryMoodMeta} testID="entry-card-mood" />
       ) : null}
       {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.cardTime}>{entryTime}</Text> : null}
     </View>
@@ -582,9 +556,7 @@ const styles = StyleSheet.create({
   cardTitleBlock: { flex: 1, minWidth: 0 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   cardMetaRow: { minHeight: 18, flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
-  entryMoodMeta: { maxWidth: 180, flexDirection: 'row', alignItems: 'center', gap: 5 },
-  moodDot: { width: 8, height: 8, borderRadius: 4 },
-  entryMoodText: { flexShrink: 1, fontSize: 11, lineHeight: 14, fontWeight: '700' },
+  entryMoodMeta: { maxWidth: 190 },
   title: { flex: 1 },
   content: { fontSize: 16, lineHeight: 22 },
   coverPhoto: { backgroundColor: '#000' },
@@ -623,8 +595,7 @@ const styles = StyleSheet.create({
   feedInlineHeader: { paddingHorizontal: 20 },
   feedMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
   feedMetaLeft: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
-  feedMoodBadge: { maxWidth: 190, borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 4 },
-  feedMoodBadgeText: { fontWeight: '700' },
+  feedMoodBadges: { maxWidth: '100%' },
   feedDateTime: { flexShrink: 0, fontWeight: '700' },
   feedSectionLabel: { marginBottom: 8, fontWeight: '800', textTransform: 'uppercase' },
   feedReflectionPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 0, marginTop: 0, marginHorizontal: 0, padding: 12 },

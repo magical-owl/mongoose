@@ -59,7 +59,7 @@ describe('DiaryEntryView', () => {
     expect(style.backgroundColor).toBe(palette.gray800);
     expect(avatarStyle.width).toBe(22);
     expect(moodStyle.flexDirection).toBe('row');
-    expect(moodStyle.gap).toBe(5);
+    expect(moodStyle.gap).toBe(4);
   });
 
   it('can hide the card date column when a visible date group already labels the entries', async () => {
@@ -120,7 +120,7 @@ describe('DiaryEntryView', () => {
     expect(avatarStyle.width).toBe(22);
     expect(reflectionAvatarStyle.width).toBe(24);
     expect(moodStyle.flexDirection).toBe('row');
-    expect(moodStyle.gap).toBe(5);
+    expect(moodStyle.gap).toBe(4);
     expect(reflectionsStyle.borderLeftWidth).toBe(1);
     expect(reflectionsStyle.marginTop).toBe(0);
     expect(reflectionsStyle.borderLeftColor).toBe(`${accentColors.blue.dark}88`);
@@ -142,7 +142,7 @@ describe('DiaryEntryView', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    const moodStyle = StyleSheet.flatten(getByTestId('entry-feed-mood').props.style);
+    const moodChipStyle = StyleSheet.flatten(getByTestId('entry-feed-mood-calm').props.style);
     const authorAvatarStyle = StyleSheet.flatten(getByTestId('entry-feed-author-avatar').props.style);
     const authorRowStyle = StyleSheet.flatten(getByTestId('entry-feed-author-row').props.style);
     const feedCardStyle = StyleSheet.flatten(getByTestId('entry-feed-card').props.style);
@@ -151,8 +151,8 @@ describe('DiaryEntryView', () => {
     expect(authorAvatarStyle.width).toBe(32);
     expect(authorRowStyle.borderWidth).toBeUndefined();
     expect(authorRowStyle.backgroundColor).toBeUndefined();
-    expect(moodStyle.borderRadius).toBe(14);
-    expect(moodStyle.borderWidth).toBe(1);
+    expect(moodChipStyle.borderRadius).toBe(13);
+    expect(moodChipStyle.borderWidth).toBe(1);
     expect(feedCardStyle.paddingVertical).toBe(0);
     expect(feedCardStyle.marginBottom).toBe(0);
     expect(feedCardStyle.marginHorizontal).toBe(-20);
@@ -197,9 +197,9 @@ describe('DiaryEntryView', () => {
     const authorRowStyle = StyleSheet.flatten(getByTestId('entry-feed-author-row').props.style);
     const feedCardStyle = StyleSheet.flatten(getByTestId('entry-feed-card').props.style);
 
-    const coverMoodStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-mood').props.style);
+    const coverMoodStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-mood-calm').props.style);
 
-    expect(coverMoodStyle.borderRadius).toBe(14);
+    expect(coverMoodStyle.borderRadius).toBe(13);
     expect(coverMoodStyle.borderWidth).toBe(1);
     expect(contentPanelStyle.borderRadius).toBe(0);
     expect(contentPanelStyle.borderWidth).toBe(0);
