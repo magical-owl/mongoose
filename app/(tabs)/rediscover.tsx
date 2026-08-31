@@ -350,6 +350,8 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
     textAlign: 'center',
+    fontSize: 18,
+    lineHeight: 22,
     fontWeight: '800',
   },
   headerSpacer: {
