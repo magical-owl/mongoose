@@ -124,7 +124,7 @@ function isTransparent(png, x, y) {
   return png.data[((png.width * y + x) << 2) + 3] === 0;
 }
 
-function applyCrayonTexture(png, options = {}) {
+function applyHandmadeTexture(png, options = {}) {
   const {
     salt = 1,
     colorJitter = 18,
@@ -173,13 +173,107 @@ function applyCrayonTexture(png, options = {}) {
   }
 }
 
-function save(png, file) {
-  const target = path.join(root, file);
-  ensureDir(path.dirname(file));
-  fs.writeFileSync(target, PNG.sync.write(png));
+function addPaperFlecks(png, options = {}) {
+  const {
+    salt = 1,
+    count = 120,
+    light = '#FFF7E6',
+    dark = '#4A3D34',
+    maxRadius = 1.6,
+    alpha = 56,
+  } = options;
+
+  for (let i = 0; i < count; i += 1) {
+    const x = Math.floor(hashPixel(i, 11, salt) * png.width);
+    const y = Math.floor(hashPixel(i, 17, salt) * png.height);
+    const idx = (png.width * y + x) << 2;
+    if (png.data[idx + 3] === 0) continue;
+    const color = hashPixel(i, 23, salt) > 0.5 ? light : dark;
+    const radius = 0.7 + hashPixel(i, 29, salt) * maxRadius;
+    const opacity = Math.round(alpha * (0.35 + hashPixel(i, 31, salt) * 0.65));
+    circle(png, x, y, radius, rgba(color, opacity));
+  }
 }
 
-function applyCoverCrayonStrokes(png, salt) {
+function softenTransparentEdges(png) {
+  const original = Buffer.from(png.data);
+  for (let y = 0; y < png.height; y += 1) {
+    for (let x = 0; x < png.width; x += 1) {
+      const i = (png.width * y + x) << 2;
+      const alpha = original[i + 3];
+      if (alpha === 0) continue;
+      const edge =
+        original[((png.width * Math.max(0, y - 1) + x) << 2) + 3] === 0 ||
+        original[((png.width * Math.min(png.height - 1, y + 1) + x) << 2) + 3] === 0 ||
+        original[((png.width * y + Math.max(0, x - 1)) << 2) + 3] === 0 ||
+        original[((png.width * y + Math.min(png.width - 1, x + 1)) << 2) + 3] === 0;
+      if (edge) png.data[i + 3] = Math.max(0, Math.round(alpha * 0.86));
+    }
+  }
+}
+
+function samplePremultiplied(png, x, y) {
+  const clampedX = Math.max(0, Math.min(png.width - 1, x));
+  const clampedY = Math.max(0, Math.min(png.height - 1, y));
+  const i = (png.width * clampedY + clampedX) << 2;
+  const alpha = png.data[i + 3] / 255;
+  return {
+    r: png.data[i] * alpha,
+    g: png.data[i + 1] * alpha,
+    b: png.data[i + 2] * alpha,
+    a: alpha,
+  };
+}
+
+function upscalePng(png, factor) {
+  if (factor === 1) return png;
+  const next = new PNG({ width: png.width * factor, height: png.height * factor });
+  for (let y = 0; y < next.height; y += 1) {
+    const sourceY = (y + 0.5) / factor - 0.5;
+    const y0 = Math.floor(sourceY);
+    const y1 = y0 + 1;
+    const ty = sourceY - y0;
+    for (let x = 0; x < next.width; x += 1) {
+      const sourceX = (x + 0.5) / factor - 0.5;
+      const x0 = Math.floor(sourceX);
+      const x1 = x0 + 1;
+      const tx = sourceX - x0;
+      const c00 = samplePremultiplied(png, x0, y0);
+      const c10 = samplePremultiplied(png, x1, y0);
+      const c01 = samplePremultiplied(png, x0, y1);
+      const c11 = samplePremultiplied(png, x1, y1);
+      const topA = c00.a + (c10.a - c00.a) * tx;
+      const bottomA = c01.a + (c11.a - c01.a) * tx;
+      const outA = topA + (bottomA - topA) * ty;
+      const topR = c00.r + (c10.r - c00.r) * tx;
+      const bottomR = c01.r + (c11.r - c01.r) * tx;
+      const topG = c00.g + (c10.g - c00.g) * tx;
+      const bottomG = c01.g + (c11.g - c01.g) * tx;
+      const topB = c00.b + (c10.b - c00.b) * tx;
+      const bottomB = c01.b + (c11.b - c01.b) * tx;
+      const i = (next.width * y + x) << 2;
+      next.data[i + 3] = Math.round(outA * 255);
+      if (outA <= 0.001) {
+        next.data[i] = 0;
+        next.data[i + 1] = 0;
+        next.data[i + 2] = 0;
+      } else {
+        next.data[i] = Math.round((topR + (bottomR - topR) * ty) / outA);
+        next.data[i + 1] = Math.round((topG + (bottomG - topG) * ty) / outA);
+        next.data[i + 2] = Math.round((topB + (bottomB - topB) * ty) / outA);
+      }
+    }
+  }
+  return next;
+}
+
+function save(png, file, options = {}) {
+  const target = path.join(root, file);
+  ensureDir(path.dirname(file));
+  fs.writeFileSync(target, PNG.sync.write(upscalePng(png, options.upscale ?? 1)));
+}
+
+function applyCoverPaperGrain(png, salt) {
   for (let i = 0; i < 1800; i += 1) {
     const x = Math.floor(hashPixel(i, 7, salt) * png.width);
     const y = Math.floor(hashPixel(i, 13, salt) * png.height);
@@ -192,7 +286,7 @@ function journalBackground(file, top, bottom, draw) {
   const png = canvas(1672, 941);
   fillGradient(png, top, bottom);
   draw(png);
-  applyCoverCrayonStrokes(png, file.length * 31);
+  applyCoverPaperGrain(png, file.length * 31);
   save(png, `assets/journal-backgrounds/${file}.png`);
 }
 
@@ -312,14 +406,21 @@ function generateJournalBackgrounds() {
 function sticker(file, draw) {
   const png = canvas(180, 180);
   draw(png);
-  applyCrayonTexture(png, {
+  applyHandmadeTexture(png, {
     salt: file.length * 47,
-    colorJitter: 16,
-    alphaJitter: 14,
-    toothChance: 0.025,
-    edgeFadeChance: 0.16,
+    colorJitter: 12,
+    alphaJitter: 8,
+    toothChance: 0.012,
+    edgeFadeChance: 0.1,
   });
-  save(png, `assets/stickers/${file}.png`);
+  addPaperFlecks(png, {
+    salt: file.length * 83,
+    count: 70,
+    maxRadius: 1.15,
+    alpha: 42,
+  });
+  softenTransparentEdges(png);
+  save(png, `assets/stickers/${file}.png`, { upscale: 2 });
 }
 
 const STICKER_INK = '#3F342D';
@@ -430,9 +531,20 @@ function generateStickers() {
     chalkHighlight(png, 63, 64, 91, 61);
   });
   sticker('summer/sun', (png) => {
-    for (let i = 0; i < 10; i += 1) {
+    for (let i = 0; i < 12; i += 1) {
       const a = (Math.PI * 2 * i) / 12;
-      handLine(png, 91 + Math.cos(a) * 42, 88 + Math.sin(a) * 39, 91 + Math.cos(a) * 68, 88 + Math.sin(a) * 65, 8, rgba('#D7963E', 235), 55 + i);
+      const innerRadius = i % 2 === 0 ? 44 : 47;
+      const outerRadius = i % 2 === 0 ? 71 : 66;
+      handLine(
+        png,
+        91 + Math.cos(a) * innerRadius,
+        88 + Math.sin(a) * (innerRadius - 3),
+        91 + Math.cos(a) * outerRadius,
+        88 + Math.sin(a) * (outerRadius - 4),
+        7,
+        rgba('#D7963E', 240),
+        55 + i,
+      );
     }
     drawSoftEllipseSticker(png, 90, 90, 43, 39, '#EAC763', '#A97845');
     circle(png, 75, 84, 4, rgba(STICKER_INK, 245));
@@ -565,12 +677,12 @@ function leafShape(png, x, y, scale, color) {
 function pattern(file, draw) {
   const png = canvas(1024, 1024);
   draw(png);
-  applyCrayonTexture(png, {
+  applyHandmadeTexture(png, {
     salt: file.length * 59,
-    colorJitter: 10,
-    alphaJitter: 10,
-    toothChance: 0.018,
-    edgeFadeChance: 0.12,
+    colorJitter: 7,
+    alphaJitter: 5,
+    toothChance: 0.008,
+    edgeFadeChance: 0.08,
   });
   save(png, `assets/patterns/${file}.png`);
 }
