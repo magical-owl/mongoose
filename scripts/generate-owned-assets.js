@@ -131,15 +131,10 @@ function applyCrayonTexture(png, options = {}) {
     alphaJitter = 42,
     toothChance = 0.09,
     edgeFadeChance = 0.28,
-    strokeSpacing = 9,
-    strokeStrength = 34,
-    strokeAngle = 0.72,
     preserveOpaqueAlpha = false,
   } = options;
 
   const original = Buffer.from(png.data);
-  const cos = Math.cos(strokeAngle);
-  const sin = Math.sin(strokeAngle);
 
   for (let y = 0; y < png.height; y += 1) {
     for (let x = 0; x < png.width; x += 1) {
@@ -149,22 +144,15 @@ function applyCrayonTexture(png, options = {}) {
 
       const noise = hashPixel(x, y, salt);
       const tooth = hashPixel(Math.floor(x / 3), Math.floor(y / 3), salt + 17);
-      const strokeAxis = x * cos + y * sin;
-      const strokeLane = Math.floor(strokeAxis / strokeSpacing);
-      const strokeOffset = strokeAxis - strokeLane * strokeSpacing;
-      const lanePressure = hashPixel(strokeLane, Math.floor((x * sin - y * cos) / 18), salt + 71);
-      const isWaxGap = strokeOffset < 1.9 || strokeOffset > strokeSpacing - 1.4;
-      const isHeavyWax = strokeOffset > strokeSpacing * 0.34 && strokeOffset < strokeSpacing * 0.72;
+      const softGrain = hashPixel(Math.floor(x / 5), Math.floor(y / 5), salt + 71);
       const edge =
         isTransparent(png, x - 1, y) ||
         isTransparent(png, x + 1, y) ||
         isTransparent(png, x, y - 1) ||
         isTransparent(png, x, y + 1);
-      let jitter = Math.round((noise - 0.5) * colorJitter);
+      let jitter = Math.round((noise - 0.5) * colorJitter + (softGrain - 0.5) * colorJitter * 0.55);
 
-      if (isWaxGap) jitter += Math.round(strokeStrength * 0.52);
-      if (isHeavyWax) jitter -= Math.round(strokeStrength * 0.32 * lanePressure);
-      if (edge && hashPixel(x, y, salt + 83) < 0.56) jitter += Math.round(strokeStrength * 0.25);
+      if (edge && hashPixel(x, y, salt + 83) < 0.42) jitter += 5;
 
       png.data[i] = Math.max(0, Math.min(255, original[i] + jitter));
       png.data[i + 1] = Math.max(0, Math.min(255, original[i + 1] + jitter));
@@ -172,18 +160,11 @@ function applyCrayonTexture(png, options = {}) {
 
       if (!preserveOpaqueAlpha) {
         let nextAlpha = alpha - Math.round(hashPixel(x, y, salt + 29) * alphaJitter);
-        if (isWaxGap) nextAlpha = Math.round(nextAlpha * (0.48 + lanePressure * 0.2));
-        if (isHeavyWax) nextAlpha = Math.min(255, Math.round(nextAlpha * (1.04 + lanePressure * 0.1)));
         if (tooth < toothChance) nextAlpha = Math.round(nextAlpha * 0.42);
         if (edge && hashPixel(x, y, salt + 43) < edgeFadeChance) nextAlpha = Math.round(nextAlpha * 0.54);
         png.data[i + 3] = Math.max(0, Math.min(255, nextAlpha));
       } else if (tooth < toothChance * 0.35) {
         const lift = Math.round(10 + hashPixel(x, y, salt + 53) * 18);
-        png.data[i] = Math.min(255, png.data[i] + lift);
-        png.data[i + 1] = Math.min(255, png.data[i + 1] + lift);
-        png.data[i + 2] = Math.min(255, png.data[i + 2] + lift);
-      } else if (isWaxGap) {
-        const lift = Math.round(strokeStrength * 0.36);
         png.data[i] = Math.min(255, png.data[i] + lift);
         png.data[i + 1] = Math.min(255, png.data[i + 1] + lift);
         png.data[i + 2] = Math.min(255, png.data[i + 2] + lift);
@@ -199,13 +180,11 @@ function save(png, file) {
 }
 
 function applyCoverCrayonStrokes(png, salt) {
-  for (let i = -4; i < 22; i += 1) {
-    const y = i * 58 + hashPixel(i, 3, salt) * 24;
-    line(png, -90, y, png.width + 90, y + png.width * 0.18, 3, rgba('#FFF4DA', 34));
-  }
-  for (let i = -3; i < 18; i += 1) {
-    const y = i * 70 + hashPixel(i, 9, salt) * 32;
-    line(png, -90, y, png.width + 90, y + png.width * 0.14, 2, rgba('#5E4637', 22));
+  for (let i = 0; i < 1800; i += 1) {
+    const x = Math.floor(hashPixel(i, 7, salt) * png.width);
+    const y = Math.floor(hashPixel(i, 13, salt) * png.height);
+    const light = hashPixel(i, 19, salt) > 0.5;
+    circle(png, x, y, hashPixel(i, 23, salt) > 0.75 ? 2 : 1, rgba(light ? '#FFF4DA' : '#5E4637', light ? 18 : 13));
   }
 }
 
@@ -335,88 +314,152 @@ function sticker(file, draw) {
   draw(png);
   applyCrayonTexture(png, {
     salt: file.length * 47,
-    colorJitter: 26,
-    alphaJitter: 34,
-    toothChance: 0.08,
-    edgeFadeChance: 0.28,
-    strokeSpacing: 8,
-    strokeStrength: 58,
-    strokeAngle: 0.68,
+    colorJitter: 16,
+    alphaJitter: 14,
+    toothChance: 0.025,
+    edgeFadeChance: 0.16,
   });
   save(png, `assets/stickers/${file}.png`);
 }
 
+const STICKER_INK = '#3F342D';
+const STICKER_SKETCH = '#6B584D';
+const STICKER_CREAM = '#FFF3DA';
+
+function roundedRect(png, x, y, w, h, r, color) {
+  rect(png, x + r, y, w - r * 2, h, color);
+  rect(png, x, y + r, w, h - r * 2, color);
+  circle(png, x + r, y + r, r, color);
+  circle(png, x + w - r, y + r, r, color);
+  circle(png, x + r, y + h - r, r, color);
+  circle(png, x + w - r, y + h - r, r, color);
+}
+
+function handLine(png, x1, y1, x2, y2, width, color, salt = 1) {
+  const dx = (hashPixel(x1, y1, salt) - 0.5) * 2.6;
+  const dy = (hashPixel(x2, y2, salt + 3) - 0.5) * 2.6;
+  line(png, x1 + dx, y1 + dy, x2 - dy * 0.4, y2 + dx * 0.4, width, color);
+  line(png, x1 + dx * 0.3 + 1.4, y1 + dy * 0.3 - 1.1, x2 - dy * 0.2 + 1.2, y2 + dx * 0.2 - 0.8, Math.max(1, width * 0.32), rgba(STICKER_SKETCH, 105));
+}
+
+function sketchSpark(png, x, y, size, color = '#D8A047') {
+  handLine(png, x, y - size, x, y + size, Math.max(1, size * 0.18), rgba(color, 190), size);
+  handLine(png, x - size, y, x + size, y, Math.max(1, size * 0.18), rgba(color, 180), size + 5);
+  handLine(png, x - size * 0.45, y - size * 0.45, x + size * 0.45, y + size * 0.45, Math.max(1, size * 0.12), rgba(color, 130), size + 9);
+}
+
+function chalkHighlight(png, x1, y1, x2, y2, width = 3) {
+  handLine(png, x1, y1, x2, y2, width, rgba(STICKER_CREAM, 120), x1 + y2);
+}
+
+function drawSoftEllipseSticker(png, cx, cy, rx, ry, fill, shadow = '#8D6E5A') {
+  ellipse(png, cx + 5, cy + 6, rx, ry, rgba(shadow, 70));
+  ellipse(png, cx - 1, cy, rx + 5, ry + 5, rgba(STICKER_INK, 235));
+  ellipse(png, cx, cy, rx, ry, rgba(fill, 255));
+  ellipse(png, cx + 3, cy - 2, rx - 4, ry - 5, rgba(fill, 190));
+  handLine(png, cx - rx * 0.72, cy - ry * 0.45, cx - rx * 0.18, cy - ry * 0.72, 2, rgba(STICKER_SKETCH, 115), cx);
+  chalkHighlight(png, cx - rx * 0.42, cy - ry * 0.36, cx - rx * 0.12, cy - ry * 0.48, 3);
+}
+
 function drawCatFace(png, fur, accent, mood) {
-  circle(png, 90, 96, 58, rgba(fur, 255));
-  polygon(png, [[42, 72], [58, 28], [78, 72]], rgba(fur, 255));
-  polygon(png, [[102, 72], [124, 28], [138, 74]], rgba(fur, 255));
-  polygon(png, [[55, 62], [60, 42], [70, 65]], rgba(accent, 170));
-  polygon(png, [[113, 64], [122, 42], [128, 64]], rgba(accent, 170));
-  circle(png, 68, 92, 6, rgba('#2E2A26', 255));
-  circle(png, 112, 92, 6, rgba('#2E2A26', 255));
-  polygon(png, [[86, 104], [94, 104], [90, 111]], rgba('#D7837B', 255));
+  ellipse(png, 94, 103, 58, 50, rgba('#8C705D', 70));
+  ellipse(png, 89, 96, 63, 56, rgba(STICKER_INK, 245));
+  polygon(png, [[39, 76], [56, 29], [82, 73]], rgba(STICKER_INK, 245));
+  polygon(png, [[100, 72], [126, 31], [141, 78]], rgba(STICKER_INK, 245));
+  ellipse(png, 90, 96, 58, 51, rgba(fur, 255));
+  polygon(png, [[44, 75], [59, 38], [77, 75]], rgba(fur, 255));
+  polygon(png, [[104, 73], [124, 39], [136, 76]], rgba(fur, 255));
+  polygon(png, [[55, 63], [60, 47], [70, 66]], rgba(accent, 180));
+  polygon(png, [[114, 65], [123, 47], [129, 66]], rgba(accent, 180));
+  circle(png, 68, 92, 5, rgba(STICKER_INK, 255));
+  circle(png, 111, 91, 5, rgba(STICKER_INK, 255));
+  polygon(png, [[86, 105], [95, 104], [90, 112]], rgba('#B87976', 255));
   if (mood === 'sleepy') {
-    line(png, 60, 92, 76, 92, 4, rgba('#2E2A26', 255));
-    line(png, 104, 92, 120, 92, 4, rgba('#2E2A26', 255));
+    handLine(png, 60, 92, 76, 91, 3, rgba(STICKER_INK, 255), 17);
+    handLine(png, 103, 91, 119, 90, 3, rgba(STICKER_INK, 255), 19);
   } else if (mood === 'curious') {
-    line(png, 58, 78, 76, 82, 4, rgba('#2E2A26', 255));
-    line(png, 104, 82, 122, 76, 4, rgba('#2E2A26', 255));
+    handLine(png, 58, 79, 76, 82, 3, rgba(STICKER_INK, 255), 21);
+    handLine(png, 104, 82, 122, 77, 3, rgba(STICKER_INK, 255), 23);
   }
-  line(png, 90, 111, 82, 119, 3, rgba('#2E2A26', 255));
-  line(png, 90, 111, 98, 119, 3, rgba('#2E2A26', 255));
-  line(png, 56, 112, 26, 103, 3, rgba('#7B6259', 205));
-  line(png, 57, 122, 28, 125, 3, rgba('#7B6259', 205));
-  line(png, 124, 112, 154, 103, 3, rgba('#7B6259', 205));
-  line(png, 123, 122, 152, 125, 3, rgba('#7B6259', 205));
+  handLine(png, 90, 111, 82, 119, 2, rgba(STICKER_INK, 255), 25);
+  handLine(png, 90, 111, 99, 118, 2, rgba(STICKER_INK, 255), 27);
+  handLine(png, 55, 112, 27, 103, 2, rgba('#766257', 190), 29);
+  handLine(png, 57, 122, 29, 126, 2, rgba('#766257', 190), 31);
+  handLine(png, 124, 112, 153, 102, 2, rgba('#766257', 190), 33);
+  handLine(png, 123, 122, 153, 126, 2, rgba('#766257', 190), 35);
+  chalkHighlight(png, 60, 72, 82, 62);
+  sketchSpark(png, 137, 46, 7);
 }
 
 function generateStickers() {
-  sticker('cat/sleepy', (png) => drawCatFace(png, '#E7B98E', '#F2D1B8', 'sleepy'));
-  sticker('cat/curious', (png) => drawCatFace(png, '#5B5148', '#D6B59B', 'curious'));
+  sticker('cat/sleepy', (png) => drawCatFace(png, '#DDB58F', '#EACAB0', 'sleepy'));
+  sticker('cat/curious', (png) => drawCatFace(png, '#78685C', '#C7A38E', 'curious'));
   sticker('cat/cozy', (png) => {
-    drawCatFace(png, '#D8D1C5', '#F1D7C1', 'cozy');
-    rect(png, 43, 132, 94, 22, rgba('#9E6F60', 245));
+    drawCatFace(png, '#D8D1C5', '#EFD3BD', 'cozy');
+    roundedRect(png, 41, 130, 96, 25, 12, rgba(STICKER_INK, 230));
+    roundedRect(png, 45, 132, 88, 20, 10, rgba('#A87668', 245));
+    handLine(png, 55, 142, 125, 143, 3, rgba('#EAD3B9', 150), 37);
   });
   sticker('school/notebook', (png) => {
-    drawNotebook(png, 37, 38, 0.52);
-    circle(png, 55, 62, 6, rgba('#E2A74E', 255));
-    circle(png, 55, 92, 6, rgba('#E2A74E', 255));
+    polygon(png, [[43, 35], [137, 44], [129, 145], [34, 136]], rgba(STICKER_INK, 240));
+    polygon(png, [[48, 39], [134, 47], [126, 140], [39, 132]], rgba('#F1E5C7', 255));
+    polygon(png, [[48, 39], [65, 41], [56, 135], [39, 132]], rgba('#C98278', 255));
+    handLine(png, 77, 67, 119, 70, 3, rgba('#B9A98F', 175), 41);
+    handLine(png, 75, 91, 119, 93, 3, rgba('#B9A98F', 160), 43);
+    handLine(png, 73, 115, 108, 117, 3, rgba('#B9A98F', 155), 45);
+    circle(png, 56, 64, 5, rgba('#D6A24A', 240));
+    circle(png, 54, 96, 5, rgba('#D6A24A', 240));
+    sketchSpark(png, 136, 34, 7);
   });
   sticker('school/pencil', (png) => {
-    polygon(png, [[48, 134], [122, 42], [142, 58], [68, 150]], rgba('#F2C94C', 255));
-    polygon(png, [[122, 42], [137, 24], [142, 58]], rgba('#DCA66A', 255));
-    polygon(png, [[135, 27], [144, 16], [142, 37]], rgba('#3A302C', 255));
-    line(png, 57, 128, 130, 50, 5, rgba('#E68B49', 210));
+    polygon(png, [[45, 133], [120, 38], [144, 55], [68, 151]], rgba(STICKER_INK, 240));
+    polygon(png, [[51, 132], [122, 45], [137, 57], [68, 145]], rgba('#E8BF58', 255));
+    polygon(png, [[122, 45], [137, 24], [143, 57]], rgba('#D1A06E', 255));
+    polygon(png, [[136, 27], [146, 17], [143, 39]], rgba(STICKER_INK, 255));
+    handLine(png, 60, 127, 128, 50, 4, rgba('#BA7248', 180), 47);
+    chalkHighlight(png, 78, 106, 116, 60);
+    sketchSpark(png, 45, 48, 6);
   });
   sticker('school/backpack', (png) => {
-    rect(png, 48, 55, 84, 92, rgba('#6B8E9F', 255));
-    circle(png, 90, 56, 28, rgba('#6B8E9F', 255));
-    rect(png, 63, 92, 54, 38, rgba('#F0D7A5', 235));
-    line(png, 63, 55, 48, 118, 8, rgba('#4D6874', 255));
-    line(png, 117, 55, 132, 118, 8, rgba('#4D6874', 255));
+    roundedRect(png, 43, 52, 91, 96, 23, rgba(STICKER_INK, 240));
+    roundedRect(png, 48, 56, 82, 88, 21, rgba('#7896A2', 255));
+    roundedRect(png, 62, 92, 55, 39, 11, rgba('#EBD4A4', 235));
+    handLine(png, 62, 57, 48, 120, 7, rgba('#536B73', 245), 49);
+    handLine(png, 118, 57, 131, 119, 7, rgba('#536B73', 245), 51);
+    handLine(png, 70, 81, 110, 80, 3, rgba(STICKER_INK, 140), 53);
+    chalkHighlight(png, 63, 64, 91, 61);
   });
   sticker('summer/sun', (png) => {
-    for (let i = 0; i < 12; i += 1) {
+    for (let i = 0; i < 10; i += 1) {
       const a = (Math.PI * 2 * i) / 12;
-      line(png, 90 + Math.cos(a) * 44, 90 + Math.sin(a) * 44, 90 + Math.cos(a) * 69, 90 + Math.sin(a) * 69, 8, rgba('#F6B23C', 240));
+      handLine(png, 91 + Math.cos(a) * 42, 88 + Math.sin(a) * 39, 91 + Math.cos(a) * 68, 88 + Math.sin(a) * 65, 8, rgba('#D7963E', 235), 55 + i);
     }
-    circle(png, 90, 90, 42, rgba('#FFD466', 255));
-    circle(png, 76, 84, 5, rgba('#7A542E', 255));
-    circle(png, 104, 84, 5, rgba('#7A542E', 255));
-    line(png, 78, 104, 102, 104, 4, rgba('#7A542E', 255));
+    drawSoftEllipseSticker(png, 90, 90, 43, 39, '#EAC763', '#A97845');
+    circle(png, 75, 84, 4, rgba(STICKER_INK, 245));
+    circle(png, 105, 86, 4, rgba(STICKER_INK, 245));
+    handLine(png, 79, 105, 101, 104, 3, rgba(STICKER_INK, 230), 67);
   });
   sticker('summer/wave', (png) => {
-    for (let i = 0; i < 3; i += 1) line(png, 25, 82 + i * 23, 155, 82 + i * 23, 15, rgba(i === 1 ? '#3BA9C6' : '#75CFE0', 245));
-    circle(png, 126, 70, 31, rgba('#75CFE0', 245));
-    circle(png, 137, 65, 23, rgba('#FFFFFF', 210));
+    handLine(png, 25, 96, 151, 92, 30, rgba(STICKER_INK, 230), 69);
+    handLine(png, 29, 95, 151, 92, 24, rgba('#6CBFCC', 245), 71);
+    ellipse(png, 121, 73, 34, 29, rgba(STICKER_INK, 225));
+    ellipse(png, 121, 75, 28, 25, rgba('#6CBFCC', 245));
+    ellipse(png, 137, 68, 18, 16, rgba(STICKER_CREAM, 205));
+    handLine(png, 38, 117, 130, 115, 10, rgba('#4A9BAB', 190), 73);
+    sketchSpark(png, 46, 54, 6);
   });
   sticker('summer/ice-cream', (png) => {
-    polygon(png, [[72, 88], [108, 88], [90, 154]], rgba('#DCA66A', 255));
-    line(png, 79, 104, 101, 125, 3, rgba('#B98250', 180));
-    line(png, 101, 104, 79, 125, 3, rgba('#B98250', 180));
-    circle(png, 73, 76, 28, rgba('#F6A6B2', 255));
-    circle(png, 104, 76, 28, rgba('#F7D77A', 255));
-    circle(png, 90, 54, 28, rgba('#9BD0B3', 255));
+    polygon(png, [[68, 86], [112, 88], [92, 156]], rgba(STICKER_INK, 235));
+    polygon(png, [[73, 91], [107, 91], [92, 149]], rgba('#CFA06B', 255));
+    handLine(png, 80, 106, 101, 126, 2, rgba('#8F674A', 170), 75);
+    handLine(png, 101, 106, 80, 127, 2, rgba('#8F674A', 170), 77);
+    circle(png, 71, 78, 31, rgba(STICKER_INK, 235));
+    circle(png, 105, 77, 30, rgba(STICKER_INK, 235));
+    circle(png, 90, 54, 31, rgba(STICKER_INK, 235));
+    circle(png, 72, 78, 27, rgba('#E9A5B1', 255));
+    circle(png, 104, 78, 27, rgba('#E9CF78', 255));
+    circle(png, 90, 55, 27, rgba('#9FC7A8', 255));
+    chalkHighlight(png, 80, 50, 94, 45);
   });
   sticker('winter/snowflake', (png) => {
     for (let i = 0; i < 6; i += 1) {
@@ -425,65 +468,84 @@ function generateStickers() {
       const innerY = 90 + Math.sin(a) * 16;
       const outerX = 90 + Math.cos(a) * 62;
       const outerY = 90 + Math.sin(a) * 62;
-      line(png, innerX, innerY, outerX, outerY, 7, rgba('#A9D6E5', 245));
-      line(png, outerX, outerY, outerX - Math.cos(a + 0.8) * 18, outerY - Math.sin(a + 0.8) * 18, 4, rgba('#A9D6E5', 220));
-      line(png, outerX, outerY, outerX - Math.cos(a - 0.8) * 18, outerY - Math.sin(a - 0.8) * 18, 4, rgba('#A9D6E5', 220));
+      handLine(png, innerX, innerY, outerX, outerY, 7, rgba('#A9CDD9', 245), 81 + i);
+      handLine(png, outerX, outerY, outerX - Math.cos(a + 0.8) * 18, outerY - Math.sin(a + 0.8) * 18, 4, rgba('#A9CDD9', 220), 91 + i);
+      handLine(png, outerX, outerY, outerX - Math.cos(a - 0.8) * 18, outerY - Math.sin(a - 0.8) * 18, 4, rgba('#A9CDD9', 220), 101 + i);
     }
-    circle(png, 90, 90, 13, rgba('#E4F4F8', 255));
+    circle(png, 90, 90, 14, rgba(STICKER_CREAM, 235));
+    sketchSpark(png, 137, 47, 6);
   });
   sticker('winter/scarf', (png) => {
-    line(png, 44, 72, 132, 72, 26, rgba('#B76565', 255));
-    line(png, 88, 76, 88, 142, 24, rgba('#B76565', 255));
-    line(png, 44, 88, 132, 88, 8, rgba('#E7D2B3', 210));
-    line(png, 88, 102, 88, 132, 8, rgba('#E7D2B3', 210));
-    rect(png, 76, 138, 24, 12, rgba('#B76565', 255));
+    handLine(png, 42, 74, 133, 71, 31, rgba(STICKER_INK, 235), 111);
+    handLine(png, 88, 75, 91, 143, 28, rgba(STICKER_INK, 235), 113);
+    handLine(png, 43, 74, 131, 72, 25, rgba('#A96B68', 255), 115);
+    handLine(png, 89, 76, 90, 139, 22, rgba('#A96B68', 255), 117);
+    handLine(png, 45, 89, 130, 87, 6, rgba('#E7D2B3', 210), 119);
+    handLine(png, 89, 103, 90, 132, 6, rgba('#E7D2B3', 210), 121);
+    roundedRect(png, 77, 136, 25, 14, 6, rgba('#A96B68', 250));
   });
   sticker('winter/snow-globe', (png) => {
-    circle(png, 90, 78, 45, rgba('#C9E3EB', 165));
-    rect(png, 55, 118, 70, 26, rgba('#8A6A55', 255));
-    rect(png, 45, 140, 90, 13, rgba('#6A5044', 255));
-    circle(png, 74, 72, 5, rgba('#FFFFFF', 230));
-    circle(png, 106, 63, 4, rgba('#FFFFFF', 230));
-    polygon(png, [[72, 106], [90, 70], [108, 106]], rgba('#5F8B69', 230));
-    rect(png, 85, 102, 10, 13, rgba('#6A5044', 230));
+    circle(png, 90, 78, 49, rgba(STICKER_INK, 220));
+    circle(png, 90, 78, 44, rgba('#C9E3EB', 160));
+    roundedRect(png, 54, 116, 73, 30, 9, rgba(STICKER_INK, 240));
+    roundedRect(png, 58, 119, 66, 24, 8, rgba('#8A6A55', 255));
+    roundedRect(png, 44, 138, 92, 16, 7, rgba('#6A5044', 255));
+    circle(png, 73, 72, 4, rgba(STICKER_CREAM, 230));
+    circle(png, 107, 64, 4, rgba(STICKER_CREAM, 230));
+    polygon(png, [[71, 106], [90, 69], [109, 106]], rgba('#6F936F', 230));
+    rect(png, 85, 102, 11, 14, rgba('#6A5044', 230));
+    chalkHighlight(png, 67, 53, 82, 45);
   });
   sticker('spring/blossom', (png) => {
-    petalFlower(png, 90, 86, 1.7, '#F2A7B5', '#E2B84A');
-    line(png, 90, 112, 90, 150, 7, rgba('#6F9B67', 245));
-    ellipse(png, 72, 132, 20, 9, rgba('#8DBD7E', 230));
-    ellipse(png, 108, 122, 20, 9, rgba('#8DBD7E', 230));
+    petalFlower(png, 90, 86, 1.85, STICKER_INK, '#B28A36');
+    petalFlower(png, 90, 86, 1.62, '#E9A9B2', '#D0A13F');
+    handLine(png, 90, 111, 91, 150, 7, rgba('#6F9367', 245), 123);
+    ellipse(png, 72, 132, 20, 9, rgba('#8AAE79', 230));
+    ellipse(png, 108, 122, 20, 9, rgba('#8AAE79', 230));
+    sketchSpark(png, 132, 58, 6);
   });
   sticker('spring/tulip', (png) => {
-    line(png, 90, 83, 90, 150, 8, rgba('#5F9662', 245));
-    ellipse(png, 69, 122, 25, 10, rgba('#7CAD70', 230));
-    ellipse(png, 111, 132, 25, 10, rgba('#7CAD70', 230));
-    polygon(png, [[58, 80], [72, 40], [90, 72], [108, 40], [122, 80], [108, 114], [72, 114]], rgba('#E8839B', 255));
-    circle(png, 90, 83, 34, rgba('#F19BB0', 220));
+    handLine(png, 90, 84, 91, 151, 8, rgba('#658E5E', 245), 125);
+    ellipse(png, 68, 122, 25, 10, rgba('#82A871', 230));
+    ellipse(png, 112, 132, 25, 10, rgba('#82A871', 230));
+    polygon(png, [[56, 81], [71, 39], [90, 72], [108, 42], [123, 80], [108, 115], [72, 114]], rgba(STICKER_INK, 235));
+    polygon(png, [[61, 81], [74, 47], [91, 76], [107, 48], [118, 82], [106, 109], [74, 109]], rgba('#DF8FA4', 255));
+    ellipse(png, 91, 84, 31, 28, rgba('#F1A7B7', 185));
+    chalkHighlight(png, 78, 64, 86, 88);
   });
   sticker('spring/daisy', (png) => {
-    petalFlower(png, 90, 86, 1.85, '#FFF2CC', '#D99F2F');
-    line(png, 90, 112, 90, 150, 7, rgba('#6E9E62', 245));
-    ellipse(png, 70, 134, 22, 10, rgba('#8DBD7E', 220));
+    petalFlower(png, 90, 86, 2.05, STICKER_INK, '#B48632');
+    petalFlower(png, 90, 86, 1.78, '#F4E9C8', '#D5A13A');
+    handLine(png, 90, 112, 91, 150, 7, rgba('#6E9362', 245), 127);
+    ellipse(png, 70, 134, 22, 10, rgba('#8CAD7E', 220));
+    sketchSpark(png, 128, 47, 6);
   });
   sticker('fall/leaf', (png) => {
-    ellipse(png, 88, 88, 55, 30, rgba('#C86E37', 255));
-    line(png, 48, 113, 128, 63, 7, rgba('#6B4B2E', 180));
-    line(png, 85, 88, 62, 71, 4, rgba('#6B4B2E', 140));
-    line(png, 91, 91, 118, 96, 4, rgba('#6B4B2E', 140));
-    line(png, 122, 66, 144, 48, 6, rgba('#6B4B2E', 180));
+    drawSoftEllipseSticker(png, 88, 88, 56, 29, '#BD7445', '#7A563F');
+    handLine(png, 48, 114, 128, 62, 6, rgba('#684A32', 180), 129);
+    handLine(png, 85, 88, 62, 71, 3, rgba('#684A32', 140), 131);
+    handLine(png, 91, 91, 118, 96, 3, rgba('#684A32', 140), 133);
+    handLine(png, 122, 66, 144, 48, 5, rgba('#684A32', 180), 135);
   });
   sticker('fall/pumpkin', (png) => {
-    circle(png, 70, 94, 36, rgba('#C66D35', 245));
-    circle(png, 110, 94, 36, rgba('#D67A37', 245));
-    circle(png, 90, 94, 42, rgba('#DF8740', 255));
-    rect(png, 84, 44, 14, 28, rgba('#5D422A', 255));
-    ellipse(png, 108, 54, 25, 9, rgba('#6E8B45', 220));
+    circle(png, 70, 96, 40, rgba(STICKER_INK, 235));
+    circle(png, 111, 94, 39, rgba(STICKER_INK, 235));
+    circle(png, 90, 95, 45, rgba(STICKER_INK, 235));
+    circle(png, 70, 96, 34, rgba('#BE7042', 245));
+    circle(png, 110, 94, 34, rgba('#C97B42', 245));
+    circle(png, 90, 95, 39, rgba('#D68648', 255));
+    roundedRect(png, 84, 42, 16, 31, 7, rgba('#63472D', 255));
+    ellipse(png, 109, 55, 25, 9, rgba('#74884E', 220));
+    chalkHighlight(png, 75, 76, 83, 113);
+    sketchSpark(png, 133, 55, 6);
   });
   sticker('fall/acorn', (png) => {
-    circle(png, 90, 102, 42, rgba('#A77242', 255));
-    polygon(png, [[50, 82], [70, 48], [110, 48], [130, 82]], rgba('#6B4D35', 255));
-    line(png, 58, 78, 122, 78, 6, rgba('#4D3A2B', 155));
-    line(png, 88, 48, 100, 30, 6, rgba('#4D3A2B', 210));
+    drawSoftEllipseSticker(png, 91, 104, 43, 39, '#A77B4D', '#77543A');
+    polygon(png, [[48, 83], [70, 47], [112, 49], [131, 82]], rgba(STICKER_INK, 245));
+    polygon(png, [[53, 81], [72, 53], [110, 54], [126, 81]], rgba('#70533A', 255));
+    handLine(png, 58, 78, 122, 79, 5, rgba('#4D3A2B', 155), 137);
+    handLine(png, 88, 49, 101, 31, 5, rgba('#4D3A2B', 210), 139);
+    chalkHighlight(png, 74, 96, 84, 84);
   });
 }
 
@@ -505,13 +567,10 @@ function pattern(file, draw) {
   draw(png);
   applyCrayonTexture(png, {
     salt: file.length * 59,
-    colorJitter: 20,
-    alphaJitter: 28,
-    toothChance: 0.055,
-    edgeFadeChance: 0.2,
-    strokeSpacing: 10,
-    strokeStrength: 42,
-    strokeAngle: 0.62,
+    colorJitter: 10,
+    alphaJitter: 10,
+    toothChance: 0.018,
+    edgeFadeChance: 0.12,
   });
   save(png, `assets/patterns/${file}.png`);
 }

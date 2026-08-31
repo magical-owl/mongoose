@@ -23,7 +23,7 @@ Use a cozy analog-journal identity:
 - Warm soft-charcoal primary outlines, with gentle line-weight variation.
 - A subtle secondary sketch line on selected contour portions only. Keep it irregular, incomplete, and offset.
 - Dusty, desaturated pastels: one dominant pastel, one supporting pastel, one darker earthy accent, and neutral cream where needed.
-- Subtle dry-crayon or colored-pencil fill texture with small irregular coverage changes.
+- Subtle handmade paper or colored-pencil grain with small irregular coverage changes. Avoid visible repeated stroke lines or banding.
 - No conventional digital gradients. Use tiny hand-offset shadows on selected edges.
 - Tiny imperfect chalk or pencil highlights where useful.
 - A subtle storybook tilt when appropriate.
@@ -107,7 +107,7 @@ Output: [transparent PNG / opaque PNG], [dimensions]
 
 Use chunky, softly squashed, pillowy forms with controlled asymmetry. Prioritize a strong, compact silhouette readable at small size. Add one charming exaggerated feature if it helps the subject.
 
-Use warm soft-charcoal outlines with subtle irregular line weight and an incomplete secondary sketch line on selected contour portions. Use dusty desaturated pastels, subtle dry-crayon texture, tiny hand-offset shadows, and imperfect chalk/pencil highlights. Include one tiny imperfect four-point spark only if compositionally appropriate.
+Use warm soft-charcoal outlines with subtle irregular line weight and an incomplete secondary sketch line on selected contour portions. Use dusty desaturated pastels, subtle handmade grain, tiny hand-offset shadows, and imperfect chalk/pencil highlights. Include one tiny imperfect four-point spark only if compositionally appropriate.
 
 Keep the mood cozy, quiet, nostalgic, personal, slightly playful, handmade, and warm without becoming childish.
 
