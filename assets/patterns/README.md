@@ -1,6 +1,8 @@
 # Pattern Background Assets
 
-These wallpaper tiles are AI-generated raster assets created for Mongoose on 2026-09-01 with the built-in Codex image generation tool. They are original sparse seasonal patterns intended only as low-opacity decorative app backgrounds.
+These wallpaper tiles are AI-generated raster draft assets created for Mongoose on 2026-09-01 with the built-in Codex image generation tool. They are original sparse seasonal patterns intended only as low-opacity decorative app backgrounds during development.
+
+Release status: draft. Replace or re-review before release after original reference art is available.
 
 ## Files
 

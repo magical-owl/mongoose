@@ -1,0 +1,56 @@
+# Asset Register
+
+This register tracks bundled assets that ship with the app. It is an engineering provenance record, not legal clearance. Final release assets still need human owner review before App Store or Google Play submission.
+
+## Asset Policy
+
+- Use project-authored assets, owned references, or third-party assets with a documented commercial-use license.
+- Do not use watermarked previews, brand marks, copyrighted characters, celebrity likenesses, or named living artists as generation targets.
+- Keep prompts, scripts, source dates, license notes, and review status close to the asset files.
+- Generated assets remain draft until a human reviewer checks for confusing similarity, trademarks, watermarks, and store-policy concerns.
+
+## Generated With Project Script
+
+Source: `npm run generate:owned-assets` via `scripts/generate-owned-assets.js`.
+
+License intent: project-authored original assets for this app. No third-party image inputs, no stock references, no logos, no text, no brand marks, no copyrighted characters, and no people.
+
+Attribution: none required by the project-authored generation process.
+
+Review status: draft; human IP/design review required before release.
+
+| Asset group | Paths | Notes |
+| --- | --- | --- |
+| App icon and splash | `assets/icon.png`, `assets/favicon.png`, `assets/splash-icon.png`, `assets/splash-logo.png`, `assets/splash-placeholder.png` | Temporary neutral journal mark. Regenerate after final brand name and app identity are approved. |
+| Android adaptive icon | `assets/android-icon-background.png`, `assets/android-icon-foreground.png`, `assets/android-icon-monochrome.png` | Temporary neutral journal mark; no text or brand name. |
+| Journal cover backgrounds | `assets/journal-backgrounds/*.png` | Twelve simple project-authored scenic illustration covers. |
+| Sticker pack: Cat | `assets/stickers/cat/*.png` | Three transparent PNG stickers: sleepy, curious, cozy. |
+| Sticker pack: School | `assets/stickers/school/*.png` | Three transparent PNG stickers: notebook, pencil, backpack. |
+| Sticker pack: Summer | `assets/stickers/summer/*.png` | Three transparent PNG stickers: sun, wave, ice cream. |
+
+## AI-Generated Draft Pattern Backgrounds
+
+Source: built-in Codex image generation tool. See `assets/patterns/README.md`.
+
+Review status: draft; replace before release after original reference art is available.
+
+| Asset group | Paths | Notes |
+| --- | --- | --- |
+| Seasonal pattern backgrounds | `assets/patterns/pattern-spring.png`, `assets/patterns/pattern-summer.png`, `assets/patterns/pattern-autumn.png`, `assets/patterns/pattern-winter.png` | User-provided images were used as style/layout references only. Keep these as draft because final references are not owned/original yet. |
+
+## Dependency Assets
+
+| Asset group | Package | Local license evidence | Release note |
+| --- | --- | --- | --- |
+| UI icons | `@expo/vector-icons` | `node_modules/@expo/vector-icons/LICENSE` reports MIT. | Track exact icon packs used. Avoid third-party brand icons unless separately cleared. |
+| App fonts | `@expo-google-fonts/inter`, `lora`, `merriweather`, `nunito`, `source-code-pro` | Package metadata reports `MIT AND OFL-1.1`; app labels these as SIL Open Font License in `src/theme/fonts.ts`. | Keep OFL/MIT notices in release compliance docs. |
+
+## Release Review Checklist
+
+- [ ] Every shipped asset is present in this register.
+- [ ] Every final asset has source, license, attribution, and review status.
+- [ ] AI-generated assets include prompt/source notes and use only owned or license-cleared references.
+- [ ] No asset contains watermarks, brand marks, copyrighted characters, celebrity likenesses, or protected style imitation.
+- [ ] App icon/splash assets are reviewed after final app name and brand direction are selected.
+- [ ] Sticker packs are checked for character lookalikes and emoji/clipart similarity.
+- [ ] Backgrounds are checked in light and dark mode for readability.

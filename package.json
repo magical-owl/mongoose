@@ -19,6 +19,7 @@
     "validate:architecture": "node scripts/validate-architecture.js",
     "eas-build-pre-install": "node scripts/validate-production-config.js",
     "generate:stress-data": "node scripts/generate-stress-journal-data.js",
+    "generate:owned-assets": "node scripts/generate-owned-assets.js",
     "init-app": "node scripts/init-app.js",
     "eas:build": "eas build",
     "eas:update": "eas update",
@@ -89,6 +90,7 @@
     "eslint-config-expo": "~57.0.1",
     "jest": "~29.7.0",
     "jest-expo": "~57.0.4",
+    "pngjs": "^3.4.0",
     "react-test-renderer": "^19.2.3",
     "typescript": "~6.0.3"
   },
