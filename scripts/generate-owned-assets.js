@@ -113,16 +113,107 @@ function line(png, x1, y1, x2, y2, width, color) {
   }
 }
 
+function hashPixel(x, y, salt) {
+  let value = ((x + 1) * 374761393 + (y + 1) * 668265263 + salt * 1442695041) >>> 0;
+  value = Math.imul(value ^ (value >>> 13), 1274126177) >>> 0;
+  return ((value ^ (value >>> 16)) >>> 0) / 4294967295;
+}
+
+function isTransparent(png, x, y) {
+  if (x < 0 || y < 0 || x >= png.width || y >= png.height) return true;
+  return png.data[((png.width * y + x) << 2) + 3] === 0;
+}
+
+function applyCrayonTexture(png, options = {}) {
+  const {
+    salt = 1,
+    colorJitter = 18,
+    alphaJitter = 42,
+    toothChance = 0.09,
+    edgeFadeChance = 0.28,
+    strokeSpacing = 9,
+    strokeStrength = 34,
+    strokeAngle = 0.72,
+    preserveOpaqueAlpha = false,
+  } = options;
+
+  const original = Buffer.from(png.data);
+  const cos = Math.cos(strokeAngle);
+  const sin = Math.sin(strokeAngle);
+
+  for (let y = 0; y < png.height; y += 1) {
+    for (let x = 0; x < png.width; x += 1) {
+      const i = (png.width * y + x) << 2;
+      const alpha = original[i + 3];
+      if (alpha === 0) continue;
+
+      const noise = hashPixel(x, y, salt);
+      const tooth = hashPixel(Math.floor(x / 3), Math.floor(y / 3), salt + 17);
+      const strokeAxis = x * cos + y * sin;
+      const strokeLane = Math.floor(strokeAxis / strokeSpacing);
+      const strokeOffset = strokeAxis - strokeLane * strokeSpacing;
+      const lanePressure = hashPixel(strokeLane, Math.floor((x * sin - y * cos) / 18), salt + 71);
+      const isWaxGap = strokeOffset < 1.9 || strokeOffset > strokeSpacing - 1.4;
+      const isHeavyWax = strokeOffset > strokeSpacing * 0.34 && strokeOffset < strokeSpacing * 0.72;
+      const edge =
+        isTransparent(png, x - 1, y) ||
+        isTransparent(png, x + 1, y) ||
+        isTransparent(png, x, y - 1) ||
+        isTransparent(png, x, y + 1);
+      let jitter = Math.round((noise - 0.5) * colorJitter);
+
+      if (isWaxGap) jitter += Math.round(strokeStrength * 0.52);
+      if (isHeavyWax) jitter -= Math.round(strokeStrength * 0.32 * lanePressure);
+      if (edge && hashPixel(x, y, salt + 83) < 0.56) jitter += Math.round(strokeStrength * 0.25);
+
+      png.data[i] = Math.max(0, Math.min(255, original[i] + jitter));
+      png.data[i + 1] = Math.max(0, Math.min(255, original[i + 1] + jitter));
+      png.data[i + 2] = Math.max(0, Math.min(255, original[i + 2] + jitter));
+
+      if (!preserveOpaqueAlpha) {
+        let nextAlpha = alpha - Math.round(hashPixel(x, y, salt + 29) * alphaJitter);
+        if (isWaxGap) nextAlpha = Math.round(nextAlpha * (0.48 + lanePressure * 0.2));
+        if (isHeavyWax) nextAlpha = Math.min(255, Math.round(nextAlpha * (1.04 + lanePressure * 0.1)));
+        if (tooth < toothChance) nextAlpha = Math.round(nextAlpha * 0.42);
+        if (edge && hashPixel(x, y, salt + 43) < edgeFadeChance) nextAlpha = Math.round(nextAlpha * 0.54);
+        png.data[i + 3] = Math.max(0, Math.min(255, nextAlpha));
+      } else if (tooth < toothChance * 0.35) {
+        const lift = Math.round(10 + hashPixel(x, y, salt + 53) * 18);
+        png.data[i] = Math.min(255, png.data[i] + lift);
+        png.data[i + 1] = Math.min(255, png.data[i + 1] + lift);
+        png.data[i + 2] = Math.min(255, png.data[i + 2] + lift);
+      } else if (isWaxGap) {
+        const lift = Math.round(strokeStrength * 0.36);
+        png.data[i] = Math.min(255, png.data[i] + lift);
+        png.data[i + 1] = Math.min(255, png.data[i + 1] + lift);
+        png.data[i + 2] = Math.min(255, png.data[i + 2] + lift);
+      }
+    }
+  }
+}
+
 function save(png, file) {
   const target = path.join(root, file);
   ensureDir(path.dirname(file));
   fs.writeFileSync(target, PNG.sync.write(png));
 }
 
+function applyCoverCrayonStrokes(png, salt) {
+  for (let i = -4; i < 22; i += 1) {
+    const y = i * 58 + hashPixel(i, 3, salt) * 24;
+    line(png, -90, y, png.width + 90, y + png.width * 0.18, 3, rgba('#FFF4DA', 34));
+  }
+  for (let i = -3; i < 18; i += 1) {
+    const y = i * 70 + hashPixel(i, 9, salt) * 32;
+    line(png, -90, y, png.width + 90, y + png.width * 0.14, 2, rgba('#5E4637', 22));
+  }
+}
+
 function journalBackground(file, top, bottom, draw) {
   const png = canvas(1672, 941);
   fillGradient(png, top, bottom);
   draw(png);
+  applyCoverCrayonStrokes(png, file.length * 31);
   save(png, `assets/journal-backgrounds/${file}.png`);
 }
 
@@ -242,6 +333,16 @@ function generateJournalBackgrounds() {
 function sticker(file, draw) {
   const png = canvas(180, 180);
   draw(png);
+  applyCrayonTexture(png, {
+    salt: file.length * 47,
+    colorJitter: 26,
+    alphaJitter: 34,
+    toothChance: 0.08,
+    edgeFadeChance: 0.28,
+    strokeSpacing: 8,
+    strokeStrength: 58,
+    strokeAngle: 0.68,
+  });
   save(png, `assets/stickers/${file}.png`);
 }
 
@@ -402,6 +503,16 @@ function leafShape(png, x, y, scale, color) {
 function pattern(file, draw) {
   const png = canvas(1024, 1024);
   draw(png);
+  applyCrayonTexture(png, {
+    salt: file.length * 59,
+    colorJitter: 20,
+    alphaJitter: 28,
+    toothChance: 0.055,
+    edgeFadeChance: 0.2,
+    strokeSpacing: 10,
+    strokeStrength: 42,
+    strokeAngle: 0.62,
+  });
   save(png, `assets/patterns/${file}.png`);
 }
 

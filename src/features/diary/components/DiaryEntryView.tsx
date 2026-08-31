@@ -12,6 +12,7 @@ import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import { findStickerItem, type PlacedSticker } from '@/features/diary/domain/Sticker';
 import { diaryEntryListTitle } from './diaryEntryTypography';
 import { MoodBadgeList } from './MoodBadgeList';
+import { TagBadgeList } from './TagBadgeList';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
@@ -140,7 +141,6 @@ export function DiaryEntryView({
   const entryTime = formatFriendlyTimestamp(entry.createdAt, timeFormat, friendlyTimestampLabels);
   const feedEntryDateTime = entryTime;
   const isFeedMode = mode === 'feed';
-  const profileName = profile?.displayName.trim() || t('profileFallbackName');
   const showReflectionSummaryAction = mode !== 'timeline' && Boolean(onReflectionSummaryPress);
   const reflectionSummaryLabel = entry.reflections.length > 0 ? reflectionCountLabel(entry.reflections.length, t) : t('reflectOnThis');
   const editorCanvasWidth = Math.max(1, windowWidth - theme.spacing.lg * 2);
@@ -282,22 +282,21 @@ export function DiaryEntryView({
           {hasMood ? (
             <MoodBadgeList
               moods={entryMoods}
-              maxVisible={3}
+              maxVisible={1}
               onCover={Boolean(entry.coverPhoto)}
+              overflowPopup
               style={styles.feedMoodBadges}
               testID={entry.coverPhoto ? 'entry-feed-cover-mood' : 'entry-feed-mood'}
             />
           ) : null}
-          {entry.tags.map((tag) => (
-            <Text
-              key={tag}
-              preset="caption"
-              color={entry.coverPhoto ? undefined : 'textSecondary'}
-              style={entry.coverPhoto ? [styles.feedCoverMetaText, { color: theme.colors.stickerControlText }] : undefined}
-            >
-              #{tag}
-            </Text>
-          ))}
+          <TagBadgeList
+            tags={entry.tags}
+            maxVisible={1}
+            onCover={Boolean(entry.coverPhoto)}
+            overflowPopup
+            style={styles.feedTagBadges}
+            testID={entry.coverPhoto ? 'entry-feed-cover-tags' : 'entry-feed-tags'}
+          />
           {showReflectionSummaryAction ? (
             <Text
               preset="caption"
@@ -328,22 +327,6 @@ export function DiaryEntryView({
         ) : null}
       </View>
     );
-    const feedAuthorRow = (
-      <View style={styles.feedAuthorRow} testID="entry-feed-author-row">
-        <ProfileAvatar
-          profile={profile}
-          size={32}
-          accessibilityLabel={t('profileAvatarA11y')}
-          testID="entry-feed-author-avatar"
-        />
-        <View style={styles.feedAuthorCopy}>
-          <Text preset="bodySmall" color="text" style={styles.feedAuthorName} numberOfLines={1}>
-            {profileName}
-          </Text>
-        </View>
-      </View>
-    );
-
     return (
       <View style={[styles.feedCard, fullWidthEntryFrame]} testID="entry-feed-card">
         <TouchableOpacity
@@ -425,7 +408,6 @@ export function DiaryEntryView({
                 ]}
                 testID="entry-feed-content-panel"
               >
-                {feedAuthorRow}
                 <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>{entry.content}</MarkdownText>
               </View>
             </View>
@@ -449,9 +431,6 @@ export function DiaryEntryView({
                 <Text style={[styles.timelineTitle, { color: theme.colors.text }]} numberOfLines={1}>{entry.title}</Text>
               </View>
               <View style={styles.timelineActions}>
-                {hasMood ? (
-                  <MoodBadgeList moods={entryMoods} maxVisible={2} compact style={styles.entryMoodMeta} testID="entry-timeline-mood" />
-                ) : null}
                 {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.timelineTime}>{entryTime}</Text> : null}
                 <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
               </View>
@@ -460,9 +439,28 @@ export function DiaryEntryView({
             <View style={styles.timelinePreviewRow}>
               <View style={styles.timelineTextPreview}>
                 <Text style={[styles.timelineContent, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
-                {entry.tags.length > 0 && (
-                  <View style={styles.timelineMetaRow}>
-                    <Text preset="caption" color="textSecondary" numberOfLines={1} style={styles.timelineTags}>{entry.tags.map((tag) => `#${tag}`).join('  ')}</Text>
+                {(hasMood || entry.tags.length > 0) && (
+                  <View style={styles.timelineMetaRow} testID="entry-timeline-meta-row">
+                    {hasMood ? (
+                      <MoodBadgeList
+                        moods={entryMoods}
+                        maxVisible={1}
+                        compact
+                        overflowPopup
+                        style={styles.timelineMoodBadges}
+                        testID="entry-timeline-mood"
+                      />
+                    ) : null}
+                    {entry.tags.length > 0 ? (
+                      <TagBadgeList
+                        tags={entry.tags}
+                        maxVisible={1}
+                        compact
+                        overflowPopup
+                        style={styles.timelineTagBadges}
+                        testID="entry-timeline-tags"
+                      />
+                    ) : null}
                   </View>
                 )}
               </View>
@@ -475,18 +473,27 @@ export function DiaryEntryView({
   }
 
   const cardDate = formatCardDay(entry.date);
-  const cardMeta = (
-    <View style={styles.cardMetaRow}>
-      {hasMood ? (
-        <MoodBadgeList moods={entryMoods} maxVisible={2} compact style={styles.entryMoodMeta} testID="entry-card-mood" />
-      ) : null}
-      {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.cardTime}>{entryTime}</Text> : null}
-    </View>
-  );
-  const cardFooterContent = entry.tags.length > 0 || showReflectionSummaryAction ? (
+  const cardFooterContent = hasMood || entry.tags.length > 0 || showReflectionSummaryAction ? (
     <View style={styles.cardFooter}>
+      {hasMood ? (
+        <MoodBadgeList
+          moods={entryMoods}
+          maxVisible={1}
+          compact
+          overflowPopup
+          style={styles.cardFooterMoodBadges}
+          testID="entry-card-mood"
+        />
+      ) : null}
       {entry.tags.length > 0 ? (
-        <Text preset="caption" color="textSecondary" numberOfLines={1} style={styles.cardTags}>#{entry.tags.join(' #')}</Text>
+        <TagBadgeList
+          tags={entry.tags}
+          maxVisible={1}
+          compact
+          overflowPopup
+          style={styles.cardFooterTagBadges}
+          testID="entry-card-tags"
+        />
       ) : null}
       {showReflectionSummaryAction ? (
         <TouchableOpacity
@@ -495,11 +502,9 @@ export function DiaryEntryView({
           style={[styles.reflectionSummaryButton, { backgroundColor: theme.colors.tint + '12' }]}
           accessibilityRole="button"
           accessibilityLabel={reflectionSummaryLabel}
+          testID="entry-card-reflection-button"
         >
           <Ionicons name="chatbubble-ellipses-outline" size={14} color={theme.colors.tint} />
-          <Text preset="caption" color="tint" style={styles.reflectionSummary} numberOfLines={1}>
-            {reflectionSummaryLabel}
-          </Text>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -523,13 +528,11 @@ export function DiaryEntryView({
         ) : null}
         <View style={styles.cardContentColumn}>
           <View style={styles.cardHeader}>
-            <View style={styles.cardTitleBlock}>
-              <View style={styles.cardTitleRow}>
-                <ProfileAvatar profile={profile} size={22} accessibilityLabel={t('profileAvatarA11y')} testID="entry-card-avatar" />
-                <Text preset="h3" color="text" style={styles.title} numberOfLines={1}>{entry.title}</Text>
-              </View>
-              {cardMeta}
+            <View style={styles.cardTitleRow}>
+              <ProfileAvatar profile={profile} size={22} accessibilityLabel={t('profileAvatarA11y')} testID="entry-card-avatar" />
+              <Text preset="h3" color="text" style={styles.title} numberOfLines={1}>{entry.title}</Text>
             </View>
+            {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.cardTime}>{entryTime}</Text> : null}
             <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
           </View>
           <View style={styles.cardPreviewRow}>
@@ -555,9 +558,7 @@ const styles = StyleSheet.create({
   cardTime: { flexShrink: 0, fontSize: 11, lineHeight: 14 },
   cardContentColumn: { flex: 1, paddingLeft: 0, paddingRight: 14, paddingVertical: 10 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
-  cardTitleBlock: { flex: 1, minWidth: 0 },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  cardMetaRow: { minHeight: 18, flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
+  cardTitleRow: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 7 },
   entryMoodMeta: { maxWidth: 190 },
   title: { flex: 1 },
   content: { fontSize: 16, lineHeight: 22 },
@@ -567,8 +568,9 @@ const styles = StyleSheet.create({
   cardCoverPhoto: { width: 58, height: 58, borderRadius: 6 },
   cardHeroCoverPhoto: { width: '100%', height: 138, borderRadius: 0 },
   cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  cardTags: { flex: 1 },
-  reflectionSummaryButton: { minHeight: 28, maxWidth: 142, flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 14, paddingHorizontal: 9 },
+  cardFooterMoodBadges: { maxWidth: 140 },
+  cardFooterTagBadges: { flex: 1, maxWidth: '100%' },
+  reflectionSummaryButton: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: 14 },
   reflectionSummary: { flexShrink: 0, fontWeight: '700' },
   feedCard: { paddingVertical: 0, marginBottom: 0 },
   feedEntrySurface: { borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
@@ -588,16 +590,14 @@ const styles = StyleSheet.create({
   feedCoverTitle: { marginBottom: 8 },
   feedCoverMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   feedCoverMetaText: { fontWeight: '700' },
-  feedAuthorRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  feedAuthorCopy: { flex: 1, minWidth: 0 },
-  feedAuthorName: { fontWeight: '800' },
   feedContent: { fontSize: 16, lineHeight: 24 },
   feedContentPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12 },
-  feedContentPanelMerged: { borderWidth: 0, borderRadius: 0, paddingTop: 0, paddingHorizontal: 20 },
+  feedContentPanelMerged: { borderWidth: 0, borderRadius: 0, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 20 },
   feedInlineHeader: { paddingHorizontal: 20 },
   feedMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
   feedMetaLeft: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
   feedMoodBadges: { maxWidth: '100%' },
+  feedTagBadges: { maxWidth: '100%' },
   feedDateTime: { flexShrink: 0, fontWeight: '700' },
   feedSectionLabel: { marginBottom: 8, fontWeight: '800', textTransform: 'uppercase' },
   feedReflectionPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 0, marginTop: 0, marginHorizontal: 0, padding: 12 },
@@ -618,8 +618,9 @@ const styles = StyleSheet.create({
   timelineCoverPhoto: { width: 62, height: 48, borderRadius: 6 },
   timelineHeroCoverPhoto: { width: '100%', height: 138, borderRadius: 0, marginBottom: 10 },
   timelineContent: { fontSize: 14, lineHeight: 20, marginBottom: 5 },
-  timelineMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  timelineTags: { flex: 1 },
+  timelineMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  timelineMoodBadges: { maxWidth: 140 },
+  timelineTagBadges: { flex: 1, maxWidth: '100%' },
   timelineReflectionSection: { marginRight: 0 },
   timelineReflections: { gap: 7, marginTop: 0, marginLeft: 8, paddingLeft: 10, borderLeftWidth: 1 },
   timelineReflectionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },

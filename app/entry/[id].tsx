@@ -58,6 +58,7 @@ import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSe
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
 import { DiaryCoverPhotoPicker } from '@/features/diary/components/DiaryCoverPhotoPicker';
 import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
+import { TagBadgeList } from '@/features/diary/components/TagBadgeList';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { chooseDiaryPhoto, chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
@@ -529,21 +530,23 @@ export default function EntryDetailScreen() {
   const renderViewMoodAndTags = (onCover: boolean) => (
     <View style={onCover ? styles.coverMetaLeft : styles.entryMetaRow}>
       {viewMoods.length > 0 ? (
-        <MoodBadgeList moods={viewMoods} maxVisible={4} onCover={onCover} style={onCover ? styles.coverMoodBadges : styles.entryMoodBadges} />
+        <MoodBadgeList
+          moods={viewMoods}
+          maxVisible={1}
+          onCover={onCover}
+          overflowPopup
+          style={onCover ? styles.coverMoodBadges : styles.entryMoodBadges}
+          testID={onCover ? 'entry-cover-mood' : 'entry-mood'}
+        />
       ) : null}
-      <View style={onCover ? styles.coverTagRow : styles.tagRow}>
-        {entry.tags.map((tag) => (
-          <View key={tag} style={onCover ? styles.coverTagBadge : undefined}>
-            <Text
-              preset="caption"
-              color={onCover ? undefined : 'textSecondary'}
-              style={onCover ? [styles.coverTagText, { color: theme.colors.stickerControlText }] : undefined}
-            >
-              #{tag}
-            </Text>
-          </View>
-        ))}
-      </View>
+      <TagBadgeList
+        tags={entry.tags}
+        maxVisible={1}
+        onCover={onCover}
+        overflowPopup
+        style={onCover ? styles.coverTagBadges : styles.entryTagBadges}
+        testID={onCover ? 'entry-cover-tags' : 'entry-tags'}
+      />
     </View>
   );
 
@@ -1204,8 +1207,6 @@ const styles = StyleSheet.create({
   },
   headerActions: { minWidth: 98, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 10 },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  tag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
   entryMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
   coverEntryOverlay: {
     position: 'absolute',
@@ -1241,25 +1242,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   coverMoodBadges: { maxWidth: '100%' },
-  coverTagRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-    flex: 1,
-  },
-  coverTagBadge: {
-    borderRadius: 12,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.42)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.28)',
-  },
-  coverTagText: {
-    fontWeight: '700',
-  },
+  coverTagBadges: { maxWidth: '100%' },
   entryMoodBadges: { maxWidth: '100%' },
+  entryTagBadges: { maxWidth: '100%' },
   reflectionsModalBody: { maxHeight: 520 },
   reflectionsScroll: { maxHeight: 440 },
   reflectionsScrollContent: { paddingBottom: 12 },
