@@ -5,7 +5,7 @@
  *   • BlurView glassmorphism background
  *   • Search bar (filters across all packs by name or category)
  *   • Horizontal category tabs
- *   • 4-column grid — renders Image for PNG stickers, Text for emoji
+ *   • 4-column grid for project-authored PNG stickers
  *
  * No native dependencies — works in Expo Go.
  */
@@ -19,7 +19,6 @@ import {
   TextInput,
   Image,
   StyleSheet,
-  Text as RNText,
   useWindowDimensions,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -115,9 +114,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
         >
           {item.source != null ? (
             <Image source={item.source} style={{ width: cellSize - 18, height: cellSize - 18 }} resizeMode="contain" />
-          ) : (
-            <RNText style={styles.cellEmoji}>{item.icon}</RNText>
-          )}
+          ) : null}
           {isLocked ? (
             <View style={[styles.lockBadge, { backgroundColor: theme.colors.background }]}>
               <MaterialCommunityIcons name="lock" size={13} color={theme.colors.tint} />
@@ -289,9 +286,6 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  cellEmoji: {
-    fontSize: 32,
   },
   cellLabel: {
     width: '100%',

@@ -8,6 +8,7 @@ This register tracks bundled assets that ship with the app. It is an engineering
 - Do not use watermarked previews, brand marks, copyrighted characters, celebrity likenesses, or named living artists as generation targets.
 - Keep prompts, scripts, source dates, license notes, and review status close to the asset files.
 - Generated assets remain draft until a human reviewer checks for confusing similarity, trademarks, watermarks, and store-policy concerns.
+- Do not ship platform emoji as sticker-pack artwork. Basic sticker packs should use project-authored PNG assets or another source with recorded commercial-use rights.
 
 ## Generated With Project Script
 
@@ -28,6 +29,9 @@ Review status: draft; human IP/design review required before release.
 | Sticker pack: Cat | `assets/stickers/cat/*.png` | Three transparent PNG stickers: sleepy, curious, cozy. |
 | Sticker pack: School | `assets/stickers/school/*.png` | Three transparent PNG stickers: notebook, pencil, backpack. |
 | Sticker pack: Summer | `assets/stickers/summer/*.png` | Three transparent PNG stickers: sun, wave, ice cream. |
+| Premium sticker pack: Winter | `assets/stickers/winter/*.png` | Three transparent PNG stickers: snowflake, scarf, snow globe. |
+| Premium sticker pack: Spring | `assets/stickers/spring/*.png` | Three transparent PNG stickers: blossom, tulip, daisy. |
+| Premium sticker pack: Fall | `assets/stickers/fall/*.png` | Three transparent PNG stickers: leaf, pumpkin, acorn. |
 
 ## Dependency Assets
 
@@ -44,4 +48,5 @@ Review status: draft; human IP/design review required before release.
 - [ ] No asset contains watermarks, brand marks, copyrighted characters, celebrity likenesses, or protected style imitation.
 - [ ] App icon/splash assets are reviewed after final app name and brand direction are selected.
 - [ ] Sticker packs are checked for character lookalikes and emoji/clipart similarity.
+- [ ] Sticker catalog contains no untracked emoji-only or third-party image sticker packs.
 - [ ] Backgrounds are checked in light and dark mode for readability.

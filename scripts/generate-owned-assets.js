@@ -317,6 +317,73 @@ function generateStickers() {
     circle(png, 104, 76, 28, rgba('#F7D77A', 255));
     circle(png, 90, 54, 28, rgba('#9BD0B3', 255));
   });
+  sticker('winter/snowflake', (png) => {
+    for (let i = 0; i < 6; i += 1) {
+      const a = (Math.PI * 2 * i) / 6;
+      const innerX = 90 + Math.cos(a) * 16;
+      const innerY = 90 + Math.sin(a) * 16;
+      const outerX = 90 + Math.cos(a) * 62;
+      const outerY = 90 + Math.sin(a) * 62;
+      line(png, innerX, innerY, outerX, outerY, 7, rgba('#A9D6E5', 245));
+      line(png, outerX, outerY, outerX - Math.cos(a + 0.8) * 18, outerY - Math.sin(a + 0.8) * 18, 4, rgba('#A9D6E5', 220));
+      line(png, outerX, outerY, outerX - Math.cos(a - 0.8) * 18, outerY - Math.sin(a - 0.8) * 18, 4, rgba('#A9D6E5', 220));
+    }
+    circle(png, 90, 90, 13, rgba('#E4F4F8', 255));
+  });
+  sticker('winter/scarf', (png) => {
+    line(png, 44, 72, 132, 72, 26, rgba('#B76565', 255));
+    line(png, 88, 76, 88, 142, 24, rgba('#B76565', 255));
+    line(png, 44, 88, 132, 88, 8, rgba('#E7D2B3', 210));
+    line(png, 88, 102, 88, 132, 8, rgba('#E7D2B3', 210));
+    rect(png, 76, 138, 24, 12, rgba('#B76565', 255));
+  });
+  sticker('winter/snow-globe', (png) => {
+    circle(png, 90, 78, 45, rgba('#C9E3EB', 165));
+    rect(png, 55, 118, 70, 26, rgba('#8A6A55', 255));
+    rect(png, 45, 140, 90, 13, rgba('#6A5044', 255));
+    circle(png, 74, 72, 5, rgba('#FFFFFF', 230));
+    circle(png, 106, 63, 4, rgba('#FFFFFF', 230));
+    polygon(png, [[72, 106], [90, 70], [108, 106]], rgba('#5F8B69', 230));
+    rect(png, 85, 102, 10, 13, rgba('#6A5044', 230));
+  });
+  sticker('spring/blossom', (png) => {
+    petalFlower(png, 90, 86, 1.7, '#F2A7B5', '#E2B84A');
+    line(png, 90, 112, 90, 150, 7, rgba('#6F9B67', 245));
+    ellipse(png, 72, 132, 20, 9, rgba('#8DBD7E', 230));
+    ellipse(png, 108, 122, 20, 9, rgba('#8DBD7E', 230));
+  });
+  sticker('spring/tulip', (png) => {
+    line(png, 90, 83, 90, 150, 8, rgba('#5F9662', 245));
+    ellipse(png, 69, 122, 25, 10, rgba('#7CAD70', 230));
+    ellipse(png, 111, 132, 25, 10, rgba('#7CAD70', 230));
+    polygon(png, [[58, 80], [72, 40], [90, 72], [108, 40], [122, 80], [108, 114], [72, 114]], rgba('#E8839B', 255));
+    circle(png, 90, 83, 34, rgba('#F19BB0', 220));
+  });
+  sticker('spring/daisy', (png) => {
+    petalFlower(png, 90, 86, 1.85, '#FFF2CC', '#D99F2F');
+    line(png, 90, 112, 90, 150, 7, rgba('#6E9E62', 245));
+    ellipse(png, 70, 134, 22, 10, rgba('#8DBD7E', 220));
+  });
+  sticker('fall/leaf', (png) => {
+    ellipse(png, 88, 88, 55, 30, rgba('#C86E37', 255));
+    line(png, 48, 113, 128, 63, 7, rgba('#6B4B2E', 180));
+    line(png, 85, 88, 62, 71, 4, rgba('#6B4B2E', 140));
+    line(png, 91, 91, 118, 96, 4, rgba('#6B4B2E', 140));
+    line(png, 122, 66, 144, 48, 6, rgba('#6B4B2E', 180));
+  });
+  sticker('fall/pumpkin', (png) => {
+    circle(png, 70, 94, 36, rgba('#C66D35', 245));
+    circle(png, 110, 94, 36, rgba('#D67A37', 245));
+    circle(png, 90, 94, 42, rgba('#DF8740', 255));
+    rect(png, 84, 44, 14, 28, rgba('#5D422A', 255));
+    ellipse(png, 108, 54, 25, 9, rgba('#6E8B45', 220));
+  });
+  sticker('fall/acorn', (png) => {
+    circle(png, 90, 102, 42, rgba('#A77242', 255));
+    polygon(png, [[50, 82], [70, 48], [110, 48], [130, 82]], rgba('#6B4D35', 255));
+    line(png, 58, 78, 122, 78, 6, rgba('#4D3A2B', 155));
+    line(png, 88, 48, 100, 30, 6, rgba('#4D3A2B', 210));
+  });
 }
 
 function petalFlower(png, x, y, scale, petal, center) {

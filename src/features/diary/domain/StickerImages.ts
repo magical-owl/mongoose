@@ -13,6 +13,15 @@ export const STICKER_IMAGES = {
   summer_sun: require('../../../../assets/stickers/summer/sun.png'),
   summer_wave: require('../../../../assets/stickers/summer/wave.png'),
   summer_ice_cream: require('../../../../assets/stickers/summer/ice-cream.png'),
+  winter_snowflake: require('../../../../assets/stickers/winter/snowflake.png'),
+  winter_scarf: require('../../../../assets/stickers/winter/scarf.png'),
+  winter_snow_globe: require('../../../../assets/stickers/winter/snow-globe.png'),
+  spring_blossom: require('../../../../assets/stickers/spring/blossom.png'),
+  spring_tulip: require('../../../../assets/stickers/spring/tulip.png'),
+  spring_daisy: require('../../../../assets/stickers/spring/daisy.png'),
+  fall_leaf: require('../../../../assets/stickers/fall/leaf.png'),
+  fall_pumpkin: require('../../../../assets/stickers/fall/pumpkin.png'),
+  fall_acorn: require('../../../../assets/stickers/fall/acorn.png'),
 } as const;
 
 export type StickerImageKey = keyof typeof STICKER_IMAGES;

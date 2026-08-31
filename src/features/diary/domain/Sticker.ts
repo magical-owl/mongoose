@@ -24,15 +24,15 @@ export const PlacedStickerSchema = z.object({
 export type PlacedSticker = z.infer<typeof PlacedStickerSchema>;
 
 // ---------------------------------------------------------------------------
-// Sticker item — either emoji or PNG image
+// Sticker item
 // ---------------------------------------------------------------------------
 
 export interface StickerItem {
   readonly id: string;
   readonly name: string;
-  // Emoji stickers
+  // Kept for legacy saved sticker data; release catalog entries should use source.
   readonly icon?: string;
-  // PNG stickers — value is a require() result (number in RN)
+  // PNG stickers use project-authored assets recorded in assets/ASSET_REGISTER.md.
   readonly source?: number;
 }
 
@@ -41,108 +41,17 @@ export type StickerAccessTier = 'free' | 'premium';
 export interface StickerCategory {
   readonly id: string;
   readonly name: string;
-  readonly icon: string; // always an emoji, used for the category tab
+  readonly icon: string;
   readonly accessTier: StickerAccessTier;
   readonly stickers: StickerItem[];
 }
 
-// ---------------------------------------------------------------------------
-// Sticker packs — emoji packs first, image packs after
-// ---------------------------------------------------------------------------
-
 export const STICKER_PACKS: StickerCategory[] = [
-  // ── Emoji packs ──────────────────────────────────────────────────────────
-  {
-    id: 'animals',
-    name: 'Animals',
-    icon: '🐱',
-    accessTier: 'free',
-    stickers: [
-      { id: 'cat-boba',     name: 'Cat',       icon: '🐱' },
-      { id: 'dog-happy',    name: 'Dog',        icon: '🐶' },
-      { id: 'bear-hug',     name: 'Bear',       icon: '🐻' },
-      { id: 'bunny-cute',   name: 'Bunny',      icon: '🐰' },
-      { id: 'fox-leaf',     name: 'Fox',        icon: '🦊' },
-      { id: 'panda-bamboo', name: 'Panda',      icon: '🐼' },
-      { id: 'koala',        name: 'Koala',      icon: '🐨' },
-      { id: 'frog',         name: 'Frog',       icon: '🐸' },
-      { id: 'hamster',      name: 'Hamster',    icon: '🐹' },
-    ],
-  },
-  {
-    id: 'everyday',
-    name: 'Vibes',
-    icon: '✨',
-    accessTier: 'free',
-    stickers: [
-      { id: 'happy-star',   name: 'Star',       icon: '⭐' },
-      { id: 'coffee-cup',   name: 'Coffee',     icon: '☕' },
-      { id: 'music-notes',  name: 'Headphones', icon: '🎧' },
-      { id: 'heart-pink',   name: 'Heart',      icon: '💖' },
-      { id: 'sparkles',     name: 'Sparkles',   icon: '✨' },
-      { id: 'rainbow-em',   name: 'Rainbow',    icon: '🌈' },
-      { id: 'fire',         name: 'Fire',       icon: '🔥' },
-      { id: 'crystal-ball', name: 'Crystal',    icon: '🔮' },
-      { id: 'camera',       name: 'Camera',     icon: '📷' },
-      { id: 'pencil',       name: 'Pencil',     icon: '✏️' },
-      { id: 'books',        name: 'Books',      icon: '📚' },
-    ],
-  },
-  {
-    id: 'celebration',
-    name: 'Celebrate',
-    icon: '🎉',
-    accessTier: 'free',
-    stickers: [
-      { id: 'cake-birthday', name: 'Cake',      icon: '🎂' },
-      { id: 'party-popper',  name: 'Party',     icon: '🎉' },
-      { id: 'balloon-red',   name: 'Balloon',   icon: '🎈' },
-      { id: 'gift-box',      name: 'Gift',      icon: '🎁' },
-      { id: 'trophy',        name: 'Trophy',    icon: '🏆' },
-      { id: 'medal',         name: 'Medal',     icon: '🥇' },
-    ],
-  },
-  {
-    id: 'nature',
-    name: 'Nature',
-    icon: '🌿',
-    accessTier: 'free',
-    stickers: [
-      { id: 'flower-sakura', name: 'Blossom',  icon: '🌸' },
-      { id: 'leaf-maple',    name: 'Maple',    icon: '🍁' },
-      { id: 'sun-bright',    name: 'Sun',      icon: '☀️' },
-      { id: 'moon-crescent', name: 'Moon',     icon: '🌙' },
-      { id: 'pumpkin',       name: 'Pumpkin',  icon: '🎃' },
-      { id: 'cloud-rain',    name: 'Rain',     icon: '🌧️' },
-      { id: 'snowflake',     name: 'Snow',     icon: '❄️' },
-      { id: 'wave',          name: 'Wave',     icon: '🌊' },
-      { id: 'mushroom',      name: 'Mushroom', icon: '🍄' },
-    ],
-  },
-  {
-    id: 'mood',
-    name: 'Mood',
-    icon: '😊',
-    accessTier: 'free',
-    stickers: [
-      { id: 'happy-face',  name: 'Happy',     icon: '😊' },
-      { id: 'love-face',   name: 'In Love',   icon: '😍' },
-      { id: 'cool-face',   name: 'Cool',      icon: '😎' },
-      { id: 'cry-face',    name: 'Crying',    icon: '😢' },
-      { id: 'angry-face',  name: 'Angry',     icon: '😠' },
-      { id: 'tired-face',  name: 'Tired',     icon: '😴' },
-      { id: 'think-face',  name: 'Thinking',  icon: '🤔' },
-      { id: 'shocked',     name: 'Shocked',   icon: '😱' },
-      { id: 'party-face',  name: 'Party',     icon: '🥳' },
-    ],
-  },
-
-  // Bundled PNG packs use project-authored assets recorded in assets/ASSET_REGISTER.md.
   {
     id: 'cat-img',
     name: 'Cat',
-    icon: '🐱',
-    accessTier: 'premium',
+    icon: 'cat',
+    accessTier: 'free',
     stickers: [
       { id: 'cat_sleepy', name: 'Sleepy Cat', source: STICKER_IMAGES.cat_sleepy },
       { id: 'cat_curious', name: 'Curious Cat', source: STICKER_IMAGES.cat_curious },
@@ -152,8 +61,8 @@ export const STICKER_PACKS: StickerCategory[] = [
   {
     id: 'school-img',
     name: 'School',
-    icon: '📚',
-    accessTier: 'premium',
+    icon: 'school',
+    accessTier: 'free',
     stickers: [
       { id: 'school_notebook', name: 'Notebook', source: STICKER_IMAGES.school_notebook },
       { id: 'school_pencil', name: 'Pencil', source: STICKER_IMAGES.school_pencil },
@@ -163,12 +72,45 @@ export const STICKER_PACKS: StickerCategory[] = [
   {
     id: 'summer-img',
     name: 'Summer',
-    icon: '☀️',
-    accessTier: 'premium',
+    icon: 'summer',
+    accessTier: 'free',
     stickers: [
       { id: 'summer_sun', name: 'Sun', source: STICKER_IMAGES.summer_sun },
       { id: 'summer_wave', name: 'Wave', source: STICKER_IMAGES.summer_wave },
       { id: 'summer_ice_cream', name: 'Ice Cream', source: STICKER_IMAGES.summer_ice_cream },
+    ],
+  },
+  {
+    id: 'winter-img',
+    name: 'Winter',
+    icon: 'winter',
+    accessTier: 'premium',
+    stickers: [
+      { id: 'winter_snowflake', name: 'Snowflake', source: STICKER_IMAGES.winter_snowflake },
+      { id: 'winter_scarf', name: 'Scarf', source: STICKER_IMAGES.winter_scarf },
+      { id: 'winter_snow_globe', name: 'Snow Globe', source: STICKER_IMAGES.winter_snow_globe },
+    ],
+  },
+  {
+    id: 'spring-img',
+    name: 'Spring',
+    icon: 'spring',
+    accessTier: 'premium',
+    stickers: [
+      { id: 'spring_blossom', name: 'Blossom', source: STICKER_IMAGES.spring_blossom },
+      { id: 'spring_tulip', name: 'Tulip', source: STICKER_IMAGES.spring_tulip },
+      { id: 'spring_daisy', name: 'Daisy', source: STICKER_IMAGES.spring_daisy },
+    ],
+  },
+  {
+    id: 'fall-img',
+    name: 'Fall',
+    icon: 'fall',
+    accessTier: 'premium',
+    stickers: [
+      { id: 'fall_leaf', name: 'Leaf', source: STICKER_IMAGES.fall_leaf },
+      { id: 'fall_pumpkin', name: 'Pumpkin', source: STICKER_IMAGES.fall_pumpkin },
+      { id: 'fall_acorn', name: 'Acorn', source: STICKER_IMAGES.fall_acorn },
     ],
   },
 ];
