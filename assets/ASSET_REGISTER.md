@@ -24,19 +24,10 @@ Review status: draft; human IP/design review required before release.
 | App icon and splash | `assets/icon.png`, `assets/favicon.png`, `assets/splash-icon.png`, `assets/splash-logo.png`, `assets/splash-placeholder.png` | Temporary neutral journal mark. Regenerate after final brand name and app identity are approved. |
 | Android adaptive icon | `assets/android-icon-background.png`, `assets/android-icon-foreground.png`, `assets/android-icon-monochrome.png` | Temporary neutral journal mark; no text or brand name. |
 | Journal cover backgrounds | `assets/journal-backgrounds/*.png` | Twelve simple project-authored scenic illustration covers. |
+| Seasonal pattern backgrounds | `assets/patterns/pattern-spring.png`, `assets/patterns/pattern-summer.png`, `assets/patterns/pattern-autumn.png`, `assets/patterns/pattern-winter.png` | Four transparent project-authored wallpaper tiles. See `assets/patterns/README.md`. |
 | Sticker pack: Cat | `assets/stickers/cat/*.png` | Three transparent PNG stickers: sleepy, curious, cozy. |
 | Sticker pack: School | `assets/stickers/school/*.png` | Three transparent PNG stickers: notebook, pencil, backpack. |
 | Sticker pack: Summer | `assets/stickers/summer/*.png` | Three transparent PNG stickers: sun, wave, ice cream. |
-
-## AI-Generated Draft Pattern Backgrounds
-
-Source: built-in Codex image generation tool. See `assets/patterns/README.md`.
-
-Review status: draft; replace before release after original reference art is available.
-
-| Asset group | Paths | Notes |
-| --- | --- | --- |
-| Seasonal pattern backgrounds | `assets/patterns/pattern-spring.png`, `assets/patterns/pattern-summer.png`, `assets/patterns/pattern-autumn.png`, `assets/patterns/pattern-winter.png` | User-provided images were used as style/layout references only. Keep these as draft because final references are not owned/original yet. |
 
 ## Dependency Assets
 
