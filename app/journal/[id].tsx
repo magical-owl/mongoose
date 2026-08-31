@@ -1,8 +1,11 @@
 import { Fragment, useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Animated,
+  ActivityIndicator,
   Image,
   Keyboard,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   View,
   ScrollView,
   TouchableOpacity,
@@ -28,6 +31,12 @@ import { resolveImportedProfilePhotoUri } from "@/features/profile/services/Prof
 import { getJournalCoverImageSource } from "@/features/journal/domain/JournalBackgrounds";
 import { stripHtml } from "@shared/utils/html";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
+import {
+  DIARY_ENTRY_LIST_PAGE_SIZE,
+  getNextDiaryEntryVisibleCount,
+  getVisibleDiaryEntries,
+  shouldLoadMoreDiaryEntries,
+} from "@/features/diary/services/DiaryEntryListPagination";
 import { appLockService } from "@/services/AppLockService";
 import { DiaryTimelineList } from "@/features/diary/components/DiaryTimelineList";
 import { PaywallModal } from "@/shared/components/PaywallModal";
@@ -108,6 +117,11 @@ export default function JournalEntriesScreen() {
   >(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [entryPagination, setEntryPagination] = useState({
+    key: "",
+    visibleCount: DIARY_ENTRY_LIST_PAGE_SIZE,
+  });
+  const [isLoadingMoreEntries, setIsLoadingMoreEntries] = useState(false);
   const entryLayoutY = useRef(new Map<string, number>());
   const dateGroupLayoutY = useRef(new Map<string, number>());
   const entryDateById = useRef(new Map<string, string>());
@@ -116,12 +130,13 @@ export default function JournalEntriesScreen() {
     scrollRef,
     scrollY,
     scrollOffsetYRef: scrollOffsetY,
-    handleScroll,
+    handleScroll: handleCollapseScroll,
     resetScrollCollapse,
   } = useScrollCollapse();
   const keyboardTopY = useRef(windowHeight);
   const focusedReflectionEntryId = useRef<string | null>(null);
   const pendingScrollEntryId = useRef<string | null>(null);
+  const loadMoreAnimationFrames = useRef<number[]>([]);
   const premiumPromptShownThisSession = useRef(false);
   const selectedJournal = journals.find((journal) => journal.id === journalId);
   const journalEntries = useMemo(() => {
@@ -407,17 +422,81 @@ export default function JournalEntriesScreen() {
     favoritesOnly,
   ]);
 
+  const entryPaginationKey = useMemo(
+    () => [journalId, search, filterDate, filterTag, filterMood, favoritesOnly ? "favorites" : "all"].join("|"),
+    [favoritesOnly, filterDate, filterMood, filterTag, journalId, search],
+  );
+  const visibleEntryCount = entryPagination.key === entryPaginationKey
+    ? entryPagination.visibleCount
+    : DIARY_ENTRY_LIST_PAGE_SIZE;
+
+  const sortedFilteredEntries = useMemo(
+    () => [...filteredEntries].sort((a, b) => b.date.localeCompare(a.date)),
+    [filteredEntries],
+  );
+
+  const visibleFilteredEntries = useMemo(
+    () => getVisibleDiaryEntries(sortedFilteredEntries, visibleEntryCount),
+    [sortedFilteredEntries, visibleEntryCount],
+  );
+
   const groupedEntries = useMemo(() => {
-    const groups = new Map<string, typeof filteredEntries>();
-    [...filteredEntries]
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .forEach((entry) => {
-        const group = groups.get(entry.date);
-        if (group) group.push(entry);
-        else groups.set(entry.date, [entry]);
-      });
+    const groups = new Map<string, (typeof visibleFilteredEntries)[number][]>();
+    visibleFilteredEntries.forEach((entry) => {
+      const group = groups.get(entry.date);
+      if (group) group.push(entry);
+      else groups.set(entry.date, [entry]);
+    });
     return Array.from(groups.entries());
-  }, [filteredEntries]);
+  }, [visibleFilteredEntries]);
+  const hasMoreEntries = visibleEntryCount < filteredEntries.length;
+
+  const loadMoreEntries = useCallback(() => {
+    if (isLoadingMoreEntries || !hasMoreEntries) return;
+    setIsLoadingMoreEntries(true);
+    const showIndicatorFrame = requestAnimationFrame(() => {
+      setEntryPagination((current) => {
+        const currentVisibleCount = current.key === entryPaginationKey
+          ? current.visibleCount
+          : DIARY_ENTRY_LIST_PAGE_SIZE;
+        return {
+          key: entryPaginationKey,
+          visibleCount: getNextDiaryEntryVisibleCount(currentVisibleCount, filteredEntries.length),
+        };
+      });
+      const hideIndicatorFrame = requestAnimationFrame(() => {
+        setIsLoadingMoreEntries(false);
+        loadMoreAnimationFrames.current = loadMoreAnimationFrames.current.filter(
+          (frame) => frame !== showIndicatorFrame && frame !== hideIndicatorFrame,
+        );
+      });
+      loadMoreAnimationFrames.current.push(hideIndicatorFrame);
+    });
+    loadMoreAnimationFrames.current.push(showIndicatorFrame);
+  }, [entryPaginationKey, filteredEntries.length, hasMoreEntries, isLoadingMoreEntries]);
+
+  useEffect(() => () => {
+    loadMoreAnimationFrames.current.forEach((frame) => cancelAnimationFrame(frame));
+    loadMoreAnimationFrames.current = [];
+  }, []);
+
+  const handleJournalScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      handleCollapseScroll(event);
+      if (
+        hasMoreEntries &&
+        !isLoadingMoreEntries &&
+        shouldLoadMoreDiaryEntries({
+          visibleHeight: event.nativeEvent.layoutMeasurement.height,
+          contentOffsetY: event.nativeEvent.contentOffset.y,
+          contentHeight: event.nativeEvent.contentSize.height,
+        })
+      ) {
+        loadMoreEntries();
+      }
+    },
+    [handleCollapseScroll, hasMoreEntries, isLoadingMoreEntries, loadMoreEntries],
+  );
 
   const hasJournalCover = Boolean(journalCoverImageSource);
   const coverHeaderFloorHeight = insets.top
@@ -679,7 +758,7 @@ export default function JournalEntriesScreen() {
         {isLoading ? null : (
         <ScrollView
           ref={scrollRef}
-          onScroll={handleScroll}
+          onScroll={handleJournalScroll}
           scrollEventThrottle={16}
           contentContainerStyle={[
             styles.scrollContent,
@@ -756,6 +835,11 @@ export default function JournalEntriesScreen() {
               onReflectionSummaryPress={viewMode === "timeline" || viewMode === "feed" ? undefined : handleReflectionSummaryPress}
             />
           )}
+          {isLoadingMoreEntries && hasMoreEntries ? (
+            <View style={styles.loadMoreIndicator} accessibilityRole="progressbar">
+              <ActivityIndicator color={theme.colors.tint} />
+            </View>
+          ) : null}
         </ScrollView>
         )}
       </View>
@@ -999,4 +1083,10 @@ const styles = StyleSheet.create({
   emptyIconHalo: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center", marginBottom: 16 },
   emptyPrompt: { fontWeight: "800", marginBottom: 6, textAlign: "center" },
   emptyText: { fontSize: 15, textAlign: "center" },
+  loadMoreIndicator: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 56,
+    paddingVertical: 14,
+  },
 });
