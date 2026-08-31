@@ -582,25 +582,33 @@ export default function JournalEntriesScreen() {
           router.push("/profile/edit");
         }}
         profileAccessibilityLabel={t("settingsProfileTitle")}
-        drawerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }}
+        drawerStyle={[styles.drawer, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}
         testID="journal-entry-list-drawer"
       >
           <ScrollView showsVerticalScrollIndicator={false}>
             <SectionLabel style={styles.drawerSectionLabel}>{t("homeHeaderSearch")}</SectionLabel>
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder={t("homeSearchPlaceholder")}
-              placeholderTextColor={theme.colors.textSecondary}
-              style={[
-                styles.searchInput,
-                {
-                  backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.border,
-                  color: theme.colors.text,
-                },
-              ]}
-            />
+            <View style={[styles.drawerSearchBar, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+              <Ionicons name="search-outline" size={18} color={theme.colors.textSecondary} />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder={t("homeSearchPlaceholder")}
+                placeholderTextColor={theme.colors.textSecondary}
+                style={[styles.drawerSearchInput, { color: theme.colors.text }]}
+                returnKeyType="search"
+                accessibilityLabel={t("homeHeaderSearch")}
+              />
+              {search ? (
+                <IconCircleButton
+                  icon="close-circle"
+                  size="sm"
+                  surface="transparent"
+                  onPress={() => setSearch("")}
+                  accessibilityLabel={t("homeHeaderCloseSearch")}
+                  iconSize={18}
+                />
+              ) : null}
+            </View>
             <TouchableOpacity
               onPress={() => setExpandedFilter(expandedFilter === "hierarchy" ? null : "hierarchy")}
               style={[styles.drawerRow, { borderBottomColor: theme.colors.border }]}
@@ -981,20 +989,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 16,
   },
-  searchInput: {
-    height: 44,
+  drawer: {
+    paddingHorizontal: 20,
+  },
+  drawerSearchBar: {
+    minHeight: 44,
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 0,
-    marginBottom: 12,
-    fontSize: 16,
-    lineHeight: 20,
-    textAlignVertical: "center",
+    paddingLeft: 10,
+    paddingRight: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+  drawerSearchInput: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 8,
+    fontSize: 15,
+    lineHeight: 19,
+    fontWeight: "600",
   },
   drawerSectionLabel: { fontWeight: "700", letterSpacing: 0.6, marginTop: 18, marginBottom: 8 },
-  drawerRow: { minHeight: 52, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth },
-  drawerRowText: { flex: 1, marginLeft: 12 },
+  drawerRow: { minHeight: 54, flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  drawerRowText: { flex: 1 },
   clearFilters: { paddingVertical: 14 },
   inlineOptions: { borderBottomWidth: StyleSheet.hairlineWidth, paddingLeft: 32, paddingBottom: 6 },
   inlineOption: { paddingVertical: 10, paddingHorizontal: 10, borderRadius: 6 },
