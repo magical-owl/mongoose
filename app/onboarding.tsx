@@ -7,11 +7,14 @@ import { Text } from '@/shared/components/Text';
 import { AccentPillButton } from '@/shared/components/AccentPillButton';
 import { IconCircleButton } from '@/shared/components/IconCircleButton';
 import { SectionLabel } from '@/shared/components/SectionLabel';
+import { AppPatternBackground } from '@/shared/components/AppPatternBackground';
+import { PatternBackgroundPreview } from '@/shared/components/PatternBackground';
 import { useTheme, type ThemeMode } from '@/providers/ThemeProvider';
 import { APP_LANGUAGES, appText, useTranslation, type TranslationKey } from '@/localization/i18n';
 import { useAppStore, type FontScale, type TimeFormat } from '@/stores/useAppStore';
 import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
 import { accentColors, type AccentColor } from '@/theme/accents';
+import { PATTERN_BACKGROUND_VARIANTS, type PatternBackgroundVariant } from '@/theme/patternBackgrounds';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
@@ -63,6 +66,14 @@ const READY_POINTS: readonly {
   },
 ];
 
+function patternBackgroundLabelKey(variant: PatternBackgroundVariant): TranslationKey {
+  if (variant === 'none') return 'settingsBackgroundThemeNone';
+  if (variant === 'summer') return 'settingsBackgroundThemeSummer';
+  if (variant === 'autumn') return 'settingsBackgroundThemeAutumn';
+  if (variant === 'winter') return 'settingsBackgroundThemeWinter';
+  return 'settingsBackgroundThemeSpring';
+}
+
 export default function OnboardingScreen(): React.JSX.Element {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -80,12 +91,14 @@ export default function OnboardingScreen(): React.JSX.Element {
   const colorTheme = useAppStore((state) => state.colorTheme);
   const fontScale = useAppStore((state) => state.fontScale);
   const timeFormat = useAppStore((state) => state.timeFormat);
+  const patternBackgroundVariant = useAppStore((state) => state.patternBackgroundVariant);
   const setAppLanguage = useAppStore((state) => state.setAppLanguage);
   const setThemeMode = useAppStore((state) => state.setThemeMode);
   const setAccentColor = useAppStore((state) => state.setAccentColor);
   const setColorTheme = useAppStore((state) => state.setColorTheme);
   const setFontScale = useAppStore((state) => state.setFontScale);
   const setTimeFormat = useAppStore((state) => state.setTimeFormat);
+  const setPatternBackgroundVariant = useAppStore((state) => state.setPatternBackgroundVariant);
   const setOnboardingStatus = useAppStore((state) => state.setOnboardingStatus);
 
   if (isOnboarded) {
@@ -164,7 +177,7 @@ export default function OnboardingScreen(): React.JSX.Element {
         : t('onboardingStart');
 
   return (
-    <View style={[styles.root, { backgroundColor: theme.colors.background, paddingTop: insets.top + 14 }]}>
+    <AppPatternBackground style={[styles.root, { paddingTop: insets.top + 14 }]} testID="onboarding-pattern-background">
       <View style={styles.topBar}>
         {step > 0 ? (
           <View style={styles.backButton}>
@@ -379,6 +392,36 @@ export default function OnboardingScreen(): React.JSX.Element {
             </ScrollView>
             <Text preset="caption" color="textSecondary" style={styles.setupHint}>{t('settingsAccentColorHint')}</Text>
 
+            <SectionLabel style={styles.sectionLabel}>{t('settingsBackgroundThemeSection')}</SectionLabel>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorSlider}>
+              {PATTERN_BACKGROUND_VARIANTS.map((variant) => {
+                const selected = patternBackgroundVariant === variant;
+                const label = t(patternBackgroundLabelKey(variant));
+                return (
+                  <TouchableOpacity
+                    key={variant}
+                    onPress={() => setPatternBackgroundVariant(variant)}
+                    style={[
+                      styles.backgroundThemeCard,
+                      {
+                        borderColor: selected ? theme.colors.tint : theme.colors.border,
+                        backgroundColor: selected ? `${theme.colors.tint}18` : theme.colors.surface,
+                      },
+                    ]}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={`${label}${selected ? `, ${t('settingsBackgroundThemeSelected')}` : ''}`}
+                  >
+                    <PatternBackgroundPreview variant={variant} selected={selected} style={styles.backgroundThemePreview} />
+                    <Text preset="bodySmall" color={selected ? 'tint' : 'text'} style={styles.choiceText} numberOfLines={1}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <Text preset="caption" color="textSecondary" style={styles.setupHint}>{t('settingsBackgroundThemeHint')}</Text>
+
             <SectionLabel style={styles.sectionLabel}>{t('settingsGlobalFontSizeSection')}</SectionLabel>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorSlider}>
               {FONT_SCALE_OPTIONS.map((option) => {
@@ -489,7 +532,7 @@ export default function OnboardingScreen(): React.JSX.Element {
           style={styles.startButton}
         />
       </View>
-    </View>
+    </AppPatternBackground>
   );
 }
 
@@ -655,6 +698,20 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
+  },
+  backgroundThemeCard: {
+    width: 124,
+    minHeight: 104,
+    borderWidth: 1,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    gap: 8,
+  },
+  backgroundThemePreview: {
+    width: 96,
+    height: 50,
   },
   choiceText: { fontWeight: '800' },
   setupHint: {

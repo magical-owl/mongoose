@@ -111,6 +111,10 @@ function MemorySection({
 }: MemorySectionProps): React.JSX.Element {
   const theme = useTheme();
 
+  if (entries.length === 0 && !emptyText) {
+    return <></>;
+  }
+
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
@@ -235,7 +239,6 @@ export default function RediscoverScreen(): React.JSX.Element {
               title={t('rediscoverOnThisDayTitle')}
               icon="today-outline"
               entries={memories.onThisDayEntries}
-              emptyText={t('rediscoverNoOnThisDay')}
               horizontal
               onEntryPress={handleEntryPress}
             />
