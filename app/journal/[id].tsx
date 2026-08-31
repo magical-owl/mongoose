@@ -440,6 +440,7 @@ export default function JournalEntriesScreen() {
     () => getVisibleDiaryEntries(sortedFilteredEntries, visibleEntryCount),
     [sortedFilteredEntries, visibleEntryCount],
   );
+  const effectiveEntryHierarchyMode = viewMode === "timeline" ? entryHierarchyMode : "none";
 
   const groupedEntries = useMemo(() => {
     const groups = new Map<string, (typeof visibleFilteredEntries)[number][]>();
@@ -811,7 +812,7 @@ export default function JournalEntriesScreen() {
               mode={viewMode}
               profile={profile}
               calendarDateFormat={calendarDateFormat}
-              entryHierarchyMode={entryHierarchyMode}
+              entryHierarchyMode={effectiveEntryHierarchyMode}
               collapsedYears={collapsedYears}
               collapsedMonths={collapsedMonths}
               collapsedDates={collapsedDates}
