@@ -18,6 +18,7 @@
     "validate:agent-docs": "node scripts/validate-agent-docs.js",
     "validate:architecture": "node scripts/validate-architecture.js",
     "eas-build-pre-install": "node scripts/validate-production-config.js",
+    "generate:stress-data": "node scripts/generate-stress-journal-data.js",
     "init-app": "node scripts/init-app.js",
     "eas:build": "eas build",
     "eas:update": "eas update",

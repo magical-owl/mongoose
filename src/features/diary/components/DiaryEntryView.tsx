@@ -16,7 +16,7 @@ import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import { reflectionCountLabel, useTranslation } from '@/localization/i18n';
-import { resolveImportedDiaryPhotoUri } from '@/features/diary/services/DiaryPhotoService';
+import { getDiaryPhotoImageSource, resolveImportedDiaryPhotoUri } from '@/features/diary/services/DiaryPhotoService';
 import {
   DIARY_PHOTO_STICKER_BASE_WIDTH,
   DIARY_PHOTO_STICKER_MAX_HEIGHT,
@@ -40,9 +40,11 @@ interface DiaryEntryViewProps {
 
 function CoverPhotoPreview({ entry, style, testID }: { readonly entry: DiaryEntry; readonly style: object; readonly testID?: string }): React.JSX.Element | null {
   if (!entry.coverPhoto) return null;
+  const source = getDiaryPhotoImageSource(entry.coverPhoto.uri);
+  if (!source) return null;
   return (
     <Image
-      source={{ uri: resolveImportedDiaryPhotoUri(entry.coverPhoto.uri) }}
+      source={source}
       style={[styles.coverPhoto, style]}
       resizeMode="cover"
       accessibilityIgnoresInvertColors
@@ -357,7 +359,7 @@ export function DiaryEntryView({
         >
           {entry.coverPhoto ? (
             <ImageBackground
-              source={{ uri: resolveImportedDiaryPhotoUri(entry.coverPhoto.uri) }}
+              source={getDiaryPhotoImageSource(entry.coverPhoto.uri)}
               style={styles.feedCoverHeader}
               imageStyle={styles.feedCoverHeaderImage}
               resizeMode="cover"

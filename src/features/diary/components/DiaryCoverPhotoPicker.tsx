@@ -5,7 +5,7 @@ import { Text } from '@shared/components/Text';
 import { useTheme } from '@providers/ThemeProvider';
 import { useTranslation } from '@/localization/i18n';
 import type { DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
-import { resolveImportedDiaryPhotoUri } from '@/features/diary/services/DiaryPhotoService';
+import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
 
 interface DiaryCoverPhotoPickerProps {
   readonly photo?: DiaryPhoto;
@@ -35,7 +35,7 @@ export function DiaryCoverPhotoPicker({
   const theme = useTheme();
   const t = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
-  const photoUri = photo ? resolveImportedDiaryPhotoUri(photo.uri) : undefined;
+  const photoSource = photo ? getDiaryPhotoImageSource(photo.uri) : undefined;
   const isEntryHero = variant === 'entryHero';
 
   if (!editable && !photo) return null;
@@ -79,10 +79,11 @@ export function DiaryCoverPhotoPicker({
     >
       {photo ? (
         <Image
-          source={{ uri: photoUri }}
+          source={photoSource}
           style={styles.image}
           resizeMode="cover"
           accessibilityIgnoresInvertColors
+          testID="diary-cover-photo-image"
         />
       ) : (
         <TouchableOpacity

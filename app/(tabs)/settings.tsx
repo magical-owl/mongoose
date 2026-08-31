@@ -29,12 +29,14 @@ import { SectionLabel } from '@shared/components/SectionLabel';
 import { ProfileEditorForm } from '@/features/profile/components/ProfileEditorForm';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { useDiary } from '@/features/diary/hooks/useDiary';
+import { useJournals } from '@/features/journal/hooks/useJournals';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { useAppStore, type CalendarDateFormat, type FontScale, type TimeFormat } from '@/stores/useAppStore';
 import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
 import { appLockService } from '@/services/AppLockService';
 import { dataDeletionService } from '@/services/DataDeletionService';
 import { diaryBackupService } from '@/services/DiaryBackupService';
+import { devStressDataImportService } from '@/services/DevStressDataImportService';
 import { useJournalExtras } from '@/features/journal/hooks/useJournalExtras';
 import { accentColors, type AccentColor } from '@/theme/accents';
 import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
@@ -73,6 +75,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { entries, deletedEntries, restoreEntries, restoreDeletedEntry, permanentlyDeleteEntry, refresh } = useDiary();
+  const { refresh: refreshJournals } = useJournals();
   const biometricLockEnabled = useAppStore((state) => state.biometricLockEnabled);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -294,6 +297,33 @@ export default function SettingsScreen() {
     setShowDeveloperModal(false);
     setOnboardingStatus('not_started');
     router.replace('/onboarding');
+  };
+
+  const handleImportStressData = () => {
+    Alert.alert(t('settingsDevStressImportPromptTitle'), t('settingsDevStressImportPromptMessage'), [
+      { text: t('entryCancel'), style: 'cancel' },
+      {
+        text: t('settingsDevStressImportAction'),
+        style: 'destructive',
+        onPress: async () => {
+          const result = await devStressDataImportService.importFromDocumentPicker();
+          if (!result.success) {
+            Alert.alert(t('entryErrorTitle'), result.error.message);
+            return;
+          }
+          if (!result.data) return;
+          await refresh();
+          await refreshJournals();
+          setShowDeveloperModal(false);
+          Alert.alert(
+            t('settingsDevStressImportDoneTitle'),
+            t('settingsDevStressImportDoneMessage')
+              .replace('{entries}', String(result.data.entryCount))
+              .replace('{journals}', String(result.data.journalCount)),
+          );
+        },
+      },
+    ]);
   };
 
   const handleOpenProfileModal = () => {
@@ -998,6 +1028,18 @@ export default function SettingsScreen() {
               <View style={{ flex: 1 }}>
                 <Text preset="label" color="text">{t('settingsDevOnboardingTitle')}</Text>
                 <Text preset="caption" color="textSecondary">{t('settingsDevOnboardingSubtitle')}</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalRowBtn, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+              onPress={handleImportStressData}
+              accessibilityRole="button"
+              accessibilityLabel={t('settingsDevStressImportTitle')}
+            >
+              <Icon name="download-outline" size={24} color="textSecondary" style={{ marginRight: 12 }} />
+              <View style={{ flex: 1 }}>
+                <Text preset="label" color="text">{t('settingsDevStressImportTitle')}</Text>
+                <Text preset="caption" color="textSecondary">{t('settingsDevStressImportSubtitle')}</Text>
               </View>
             </TouchableOpacity>
           </View>

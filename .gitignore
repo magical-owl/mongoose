@@ -55,3 +55,6 @@ coverage/
 # Testing
 jest-output/
 .jest/
+
+# Generated local stress fixtures
+generated/

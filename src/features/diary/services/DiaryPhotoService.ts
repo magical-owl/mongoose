@@ -1,7 +1,9 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import type { ImagePickerAsset } from 'expo-image-picker';
+import type { ImageSourcePropType } from 'react-native';
 import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
+import { getJournalCoverImageSource } from '@/features/journal/domain/JournalBackgrounds';
 import { generateUUID } from '@/shared/utils/uuid';
 
 const PHOTO_DIRECTORY_NAME = 'diary-photos';
@@ -79,6 +81,10 @@ export function resolveImportedDiaryPhotoUri(uri: string): string {
   const filename = getImportedPhotoFilename(uri);
   if (!filename) return uri;
   return new File(new Directory(Paths.document, PHOTO_DIRECTORY_NAME), filename).uri;
+}
+
+export function getDiaryPhotoImageSource(uri: string): ImageSourcePropType | undefined {
+  return getJournalCoverImageSource(uri) ?? { uri: resolveImportedDiaryPhotoUri(uri) };
 }
 
 function getPhotoExtension(asset: ImagePickerAsset): string {
