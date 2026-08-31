@@ -9,6 +9,7 @@ This register tracks bundled assets that ship with the app. It is an engineering
 - Keep prompts, scripts, source dates, license notes, and review status close to the asset files.
 - Generated assets remain draft until a human reviewer checks for confusing similarity, trademarks, watermarks, and store-policy concerns.
 - Do not ship platform emoji as sticker-pack artwork. Basic sticker packs should use project-authored PNG assets or another source with recorded commercial-use rights.
+- New project-authored illustration assets should follow [`agents/original-asset-generation.md`](../agents/original-asset-generation.md) before generation and still require human IP/design review before release.
 
 ## Generated With Project Script
 

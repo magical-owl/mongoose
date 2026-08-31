@@ -12,6 +12,7 @@ Define coherent, accessible Mongoose UI behavior before and during implementatio
 - `agents/componentization.md`
 - `agents/accessibility-review.md`
 - `agents/ip-asset-review.md` when assets, fonts, icons, names, generated images, stickers, sounds, or brand material are involved.
+- `agents/original-asset-generation.md` when generating or revising stickers, pattern backgrounds, journal covers, icons, splash assets, or bundled illustrations.
 - `docs/AppDesignGuidelines.md`
 - `docs/DesignSystem.md`
 - `docs/Accessibility.md`

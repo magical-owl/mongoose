@@ -6,6 +6,7 @@ Use this reference when adding or changing assets, fonts, icons, illustrations, 
 
 - `agents/02-design-agent.md`
 - `agents/compliance-gates.md`
+- `agents/original-asset-generation.md` when generated or project-authored illustration assets are involved.
 - `docs/AppDesignGuidelines.md`
 - Asset source, license, generation prompt, or provenance notes.
 
@@ -15,6 +16,7 @@ Use this reference when adding or changing assets, fonts, icons, illustrations, 
 - License permits the intended app, commercial, and distribution use.
 - Attribution requirements are documented.
 - Generated image usage records the prompt/source and avoids confusing similarity to protected works or real people unless authorized.
+- Generated illustration assets follow the original-asset visual DNA and originality requirements in `agents/original-asset-generation.md`.
 - App names, product names, and marks have human owner review before release.
 - Third-party logos, brand marks, celebrity likenesses, and copyrighted characters are not used without authorization.
 - Asset dimensions and file size are suitable for mobile.
