@@ -26,6 +26,11 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="rediscover"
+        options={{}}
+      />
+
+      <Tabs.Screen
         name="create"
         options={{
           href: null,

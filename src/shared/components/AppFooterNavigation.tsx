@@ -5,7 +5,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { useTranslation } from '@/localization/i18n';
 import { InsetFloatingToolbar } from './InsetFloatingToolbar';
 
-export type AppFooterNavigationItem = 'journal' | 'calendar' | 'insights';
+export type AppFooterNavigationItem = 'journal' | 'calendar' | 'rediscover' | 'insights';
 
 interface AppFooterNavigationProps {
   readonly activeItem: AppFooterNavigationItem;
@@ -15,11 +15,12 @@ interface AppFooterNavigationProps {
 const navItems: readonly {
   readonly key: AppFooterNavigationItem;
   readonly icon: React.ComponentProps<typeof Ionicons>['name'];
-  readonly route: '/(tabs)' | '/(tabs)/calendar' | '/(tabs)/insights';
-  readonly labelKey: 'tabsHome' | 'tabsCalendar' | 'tabsInsights';
+  readonly route: '/(tabs)' | '/(tabs)/calendar' | '/(tabs)/rediscover' | '/(tabs)/insights';
+  readonly labelKey: 'tabsHome' | 'tabsCalendar' | 'tabsRediscover' | 'tabsInsights';
 }[] = [
   { key: 'journal', icon: 'journal-outline', route: '/(tabs)', labelKey: 'tabsHome' },
   { key: 'calendar', icon: 'calendar-outline', route: '/(tabs)/calendar', labelKey: 'tabsCalendar' },
+  { key: 'rediscover', icon: 'sparkles-outline', route: '/(tabs)/rediscover', labelKey: 'tabsRediscover' },
   { key: 'insights', icon: 'stats-chart-outline', route: '/(tabs)/insights', labelKey: 'tabsInsights' },
 ];
 

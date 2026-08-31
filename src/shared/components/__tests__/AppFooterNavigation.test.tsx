@@ -19,5 +19,6 @@ describe('AppFooterNavigation', () => {
 
     expect(toolbarStyle.borderRadius).toBe(28);
     expect(calendarStyle.backgroundColor).toBe(`${accentColors.blue.dark}18`);
+    expect(getByTestId('app-footer-navigation-rediscover')).toBeTruthy();
   });
 });
