@@ -35,7 +35,13 @@ import { PlacedSticker, findStickerItem } from '../domain/Sticker';
 import { useTranslation } from '@/localization/i18n';
 import { useTheme } from '@/providers/ThemeProvider';
 import { resolveImportedDiaryPhotoUri } from '@/features/diary/services/DiaryPhotoService';
-import { DIARY_PHOTO_STICKER_BASE_WIDTH, DIARY_STICKER_BASE_SIZE } from '@/features/diary/domain/StickerLayout';
+import {
+  DIARY_PHOTO_STICKER_BASE_WIDTH,
+  DIARY_STICKER_BASE_SIZE,
+  DIARY_TEXT_STICKER_BASE_HEIGHT,
+  DIARY_TEXT_STICKER_BASE_WIDTH,
+  clampStickerPosition,
+} from '@/features/diary/domain/StickerLayout';
 
 const DEFAULT_TEXT_STICKER_COLOR = '#DC2626';
 const DEFAULT_TEXT_STICKER_BACKGROUND_COLOR = '#E5E7EB';
@@ -100,24 +106,9 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const stickerOpacity = sticker.opacity ?? 1;
   const stickerLayerIndex = sticker.zIndex ?? 1;
 
-  const getStickerVisualSize = useCallback(() => {
-    if (isTextSticker) return { width: 160, height: 54 };
-    if (stickerRef.current.imageUri) {
-      return { width: DIARY_PHOTO_STICKER_BASE_WIDTH, height: DIARY_PHOTO_STICKER_BASE_WIDTH / photoAspectRatio };
-    }
-    return { width: DIARY_STICKER_BASE_SIZE, height: DIARY_STICKER_BASE_SIZE };
-  }, [isTextSticker, photoAspectRatio]);
-
   const clampPosition = useCallback((x: number, y: number) => {
-    if (!bounds) return { x, y };
-    const visualSize = getStickerVisualSize();
-    const maxX = Math.max(0, bounds.width - visualSize.width * scaleRef.current);
-    const maxY = Math.max(0, bounds.height - visualSize.height * scaleRef.current);
-    return {
-      x: Math.max(0, Math.min(maxX, x)),
-      y: Math.max(0, Math.min(maxY, y)),
-    };
-  }, [bounds, getStickerVisualSize]);
+    return clampStickerPosition({ x, y }, stickerRef.current, bounds, scaleRef.current);
+  }, [bounds]);
 
   useEffect(() => {
     if (sticker.text === undefined || sticker.text === draftTextRef.current) return;
@@ -550,6 +541,7 @@ const styles = StyleSheet.create({
   },
   textSticker: {
     minWidth: 120,
+    width: DIARY_TEXT_STICKER_BASE_WIDTH,
     maxWidth: 220,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -560,8 +552,9 @@ const styles = StyleSheet.create({
   },
   textStickerInput: {
     minWidth: 140,
+    width: DIARY_TEXT_STICKER_BASE_WIDTH,
     maxWidth: 240,
-    minHeight: 44,
+    minHeight: DIARY_TEXT_STICKER_BASE_HEIGHT,
     paddingHorizontal: 10,
     paddingVertical: 6,
     fontSize: 24,

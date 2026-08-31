@@ -1,8 +1,13 @@
 import {
   DIARY_PHOTO_STICKER_BASE_WIDTH,
   DIARY_PHOTO_STICKER_MAX_HEIGHT,
+  DIARY_STICKER_BASE_SIZE,
+  DIARY_TEXT_STICKER_BASE_HEIGHT,
+  DIARY_TEXT_STICKER_BASE_WIDTH,
+  clampStickerPosition,
   getStickerBodyPreviewBottom,
   getStickerPreviewHeight,
+  getStickerVisualSize,
   mapStickerToBodyPreview,
 } from '../StickerLayout';
 import type { PlacedSticker } from '../Sticker';
@@ -61,5 +66,38 @@ describe('StickerLayout', () => {
     };
 
     expect(getStickerBodyPreviewBottom(photo)).toBe(48 + (DIARY_PHOTO_STICKER_BASE_WIDTH / 2) * 2);
+  });
+
+  it('reports fixed dimensions for text stickers', () => {
+    expect(getStickerVisualSize({ ...baseSticker, text: 'hello' })).toEqual({
+      width: DIARY_TEXT_STICKER_BASE_WIDTH,
+      height: DIARY_TEXT_STICKER_BASE_HEIGHT,
+    });
+  });
+
+  it('allows bundled image stickers to reach canvas edges despite transparent padding', () => {
+    const position = clampStickerPosition(
+      { x: -40, y: -40 },
+      { ...baseSticker, scale: 1 },
+      { width: 240, height: 240 },
+    );
+
+    expect(position).toEqual({
+      x: -DIARY_STICKER_BASE_SIZE * 0.35,
+      y: -DIARY_STICKER_BASE_SIZE * 0.35,
+    });
+  });
+
+  it('keeps text stickers within the canvas bounds', () => {
+    const position = clampStickerPosition(
+      { x: -40, y: 220 },
+      { ...baseSticker, text: 'hello', scale: 1 },
+      { width: 240, height: 240 },
+    );
+
+    expect(position).toEqual({
+      x: 0,
+      y: 240 - DIARY_TEXT_STICKER_BASE_HEIGHT,
+    });
   });
 });

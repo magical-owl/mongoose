@@ -27,6 +27,7 @@ import {
   TextInput as NativeTextInput,
   StyleSheet,
   useWindowDimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -136,7 +137,7 @@ export default function EntryDetailScreen() {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const t = useTranslation();
-  const { entries, isLoading, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection } = useDiary();
+  const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection } = useDiary();
   const { journals } = useJournals();
   const { profile } = useProfileForm();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
@@ -502,8 +503,8 @@ export default function EntryDetailScreen() {
           <View style={{ flex: 1 }} />
           <View style={styles.headerBtnPlaceholder} />
         </View>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text preset="body" color="textSecondary">{isLoading ? t('commonLoading') : t('entryNotFound')}</Text>
+        <View style={styles.entryFallback}>
+          <ActivityIndicator color={theme.colors.tint} />
         </View>
       </View>
     );
@@ -1158,6 +1159,11 @@ const styles = StyleSheet.create({
   viewCoverPicker: {
     borderWidth: 0,
     borderRadius: 0,
+  },
+  entryFallback: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
     paddingTop: 2,
