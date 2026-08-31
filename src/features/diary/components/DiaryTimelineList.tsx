@@ -113,7 +113,12 @@ export function DiaryTimelineList({
             )}
             {!isYearCollapsed && !isMonthCollapsed ? (
               <View
-                style={[styles.dateGroup, mode === 'feed' && styles.feedDateGroup, !isDateVisible && styles.flatDateGroup]}
+                style={[
+                  styles.dateGroup,
+                  mode !== 'timeline' && styles.compactDateGroup,
+                  mode === 'feed' && styles.feedDateGroup,
+                  !isDateVisible && styles.flatDateGroup,
+                ]}
                 onLayout={(event) => onDateGroupLayout?.(date, event.nativeEvent.layout.y)}
                 testID={mode === 'feed' ? 'entry-feed-date-group' : undefined}
               >
@@ -173,6 +178,9 @@ const styles = StyleSheet.create({
   dateGroup: {
     marginBottom: 6,
     marginLeft: HIERARCHY_INDENT.year,
+  },
+  compactDateGroup: {
+    marginBottom: 0,
   },
   feedDateGroup: {
     marginLeft: 0,

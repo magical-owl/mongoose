@@ -549,7 +549,7 @@ export function DiaryEntryView({
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: 8, marginBottom: 0, overflow: 'hidden' },
+  card: { borderWidth: 1, borderRadius: 0, marginBottom: 0, overflow: 'hidden' },
   cardInner: { flexDirection: 'row' },
   cardRail: { width: 4 },
   cardDateColumn: { width: 66, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
   feedCoverMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   feedCoverMetaText: { fontWeight: '700' },
   feedContent: { fontSize: 16, lineHeight: 24 },
-  feedContentPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12 },
+  feedContentPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 0, paddingHorizontal: 12, paddingVertical: 12 },
   feedContentPanelMerged: { borderWidth: 0, borderRadius: 0, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 20 },
   feedInlineHeader: { paddingHorizontal: 20 },
   feedMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },

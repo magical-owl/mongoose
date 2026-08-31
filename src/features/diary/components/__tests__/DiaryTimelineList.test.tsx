@@ -69,5 +69,6 @@ describe('DiaryTimelineList', () => {
     const dateGroupStyle = StyleSheet.flatten(getByTestId('entry-feed-date-group').props.style);
 
     expect(dateGroupStyle.marginLeft).toBe(0);
+    expect(dateGroupStyle.marginBottom).toBe(0);
   });
 });

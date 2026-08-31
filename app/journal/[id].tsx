@@ -524,6 +524,9 @@ export default function JournalEntriesScreen() {
       + JOURNAL_HEADER_TOP_PADDING
       + JOURNAL_HEADER_ROW_HEIGHT
       + JOURNAL_HEADER_BOTTOM_GAP;
+  const entryListTopPadding = hasJournalCover
+    ? Math.max(0, expandedHeaderHeight - StyleSheet.hairlineWidth)
+    : expandedHeaderHeight;
   const collapsedHeaderHeight = hasJournalCover
     ? coverHeaderFloorHeight + JOURNAL_HEADER_BOTTOM_GAP
     : insets.top
@@ -765,22 +768,23 @@ export default function JournalEntriesScreen() {
           </View>
         </View>
         {isLoading ? null : (
-        <ScrollView
-          ref={scrollRef}
-          onScroll={handleJournalScroll}
-          scrollEventThrottle={16}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              minHeight: windowHeight + (hasJournalCover ? JOURNAL_COVER_EXPANDED_HEIGHT - coverHeaderFloorHeight : 0),
-              paddingTop: expandedHeaderHeight,
-              paddingBottom: insets.bottom + 32 + keyboardHeight + collapsedHeaderHeight,
-            },
-          ]}
-          keyboardDismissMode="on-drag"
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
+        <>
+          <ScrollView
+            ref={scrollRef}
+            onScroll={handleJournalScroll}
+            scrollEventThrottle={16}
+            contentContainerStyle={[
+              styles.scrollContent,
+              {
+                minHeight: windowHeight + (hasJournalCover ? JOURNAL_COVER_EXPANDED_HEIGHT - coverHeaderFloorHeight : 0),
+                paddingTop: entryListTopPadding,
+                paddingBottom: insets.bottom + 32 + keyboardHeight + collapsedHeaderHeight,
+              },
+            ]}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
           {/* {onThisDay.length > 0 && (
             <View style={[styles.memoryBanner, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <Text preset="label" color="text">On this day</Text>
@@ -844,12 +848,20 @@ export default function JournalEntriesScreen() {
               onReflectionSummaryPress={viewMode === "timeline" || viewMode === "feed" ? undefined : handleReflectionSummaryPress}
             />
           )}
+          </ScrollView>
           {isLoadingMoreEntries && hasMoreEntries ? (
-            <View style={styles.loadMoreIndicator} accessibilityRole="progressbar">
+            <View
+              pointerEvents="none"
+              style={[
+                styles.loadMoreIndicator,
+                { bottom: insets.bottom + collapsedHeaderHeight + 10 },
+              ]}
+              accessibilityRole="progressbar"
+            >
               <ActivityIndicator color={theme.colors.tint} />
             </View>
           ) : null}
-        </ScrollView>
+        </>
         )}
       </View>
       <PaywallModal
@@ -1103,9 +1115,10 @@ const styles = StyleSheet.create({
   emptyPrompt: { fontWeight: "800", marginBottom: 6, textAlign: "center" },
   emptyText: { fontSize: 15, textAlign: "center" },
   loadMoreIndicator: {
+    position: "absolute",
+    left: 0,
+    right: 0,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 56,
-    paddingVertical: 14,
   },
 });

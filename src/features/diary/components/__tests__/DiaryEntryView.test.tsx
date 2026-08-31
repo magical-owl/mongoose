@@ -64,7 +64,7 @@ describe('DiaryEntryView', () => {
     const reflectionButtonStyle = StyleSheet.flatten(getByTestId('entry-card-reflection-button').props.style);
 
     expect(getByTestId('entry-card-date-column')).toBeTruthy();
-    expect(style.borderRadius).toBe(8);
+    expect(style.borderRadius).toBe(0);
     expect(style.marginBottom).toBe(0);
     expect(style.marginHorizontal).toBe(-20);
     expect(typeof style.width).toBe('number');
