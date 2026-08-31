@@ -1,5 +1,5 @@
 import { act, fireEvent, waitFor } from '@testing-library/react-native';
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { withTiming } from 'react-native-reanimated';
 import { SlidingDrawer } from '../SlidingDrawer';
 import { renderWithProviders } from '@tests/helpers';
@@ -116,6 +116,9 @@ describe('SlidingDrawer', () => {
     });
 
     expect(getByText('Sarah Meadow')).toBeTruthy();
+    expect(StyleSheet.flatten(getByTestId('drawer-profile').props.style).borderRadius).toBe(8);
+    expect(StyleSheet.flatten(getByText('Sarah Meadow').props.style).textDecorationLine).toBe('underline');
+    expect(getByTestId('drawer-profile-chevron')).toBeTruthy();
     expect(handleProfilePress).toHaveBeenCalledTimes(1);
     expect(handleClose).toHaveBeenCalledTimes(1);
   });

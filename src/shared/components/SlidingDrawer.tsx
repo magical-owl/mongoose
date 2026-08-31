@@ -10,6 +10,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Reanimated, {
   cancelAnimation,
   runOnJS,
@@ -164,7 +165,13 @@ export function SlidingDrawer({
                 onPress={onProfilePress}
                 accessibilityRole={onProfilePress ? 'button' : 'image'}
                 accessibilityLabel={profileAccessibilityLabel ?? profile.displayName}
-                style={styles.profileButton}
+                style={[
+                  styles.profileButton,
+                  onProfilePress && [
+                    styles.profileButtonInteractive,
+                    { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                  ],
+                ]}
                 testID={testID ? `${testID}-profile` : undefined}
               >
                 <Avatar
@@ -174,9 +181,22 @@ export function SlidingDrawer({
                   accessibilityLabel={profileAccessibilityLabel ?? profile.displayName}
                   testID={testID ? `${testID}-profile-avatar` : undefined}
                 />
-                <Text preset="label" color="text" numberOfLines={1} style={styles.profileName}>
+                <Text
+                  preset="label"
+                  color={onProfilePress ? 'tint' : 'text'}
+                  numberOfLines={1}
+                  style={[styles.profileName, onProfilePress && styles.profileNameInteractive]}
+                >
                   {profile.displayName}
                 </Text>
+                {onProfilePress ? (
+                  <Ionicons
+                    name="chevron-forward"
+                    size={18}
+                    color={theme.colors.tint}
+                    testID={testID ? `${testID}-profile-chevron` : undefined}
+                  />
+                ) : null}
               </TouchableOpacity>
               <IconCircleButton
                 icon="close"
@@ -223,8 +243,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  profileButtonInteractive: {
+    minHeight: 44,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginRight: 12,
+  },
   profileName: {
     flex: 1,
     fontWeight: '800',
+  },
+  profileNameInteractive: {
+    textDecorationLine: 'underline',
   },
 });
