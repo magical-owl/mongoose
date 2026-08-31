@@ -1,9 +1,8 @@
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode } from 'react';
 import {
-  Image,
+  ImageBackground,
   type ImageSourcePropType,
   StyleSheet,
-  useWindowDimensions,
   View,
   type StyleProp,
   type ViewStyle,
@@ -32,33 +31,24 @@ interface PatternBackgroundPreviewProps {
   readonly testID?: string;
 }
 
-const PATTERN_TILE_SIZE = 512;
 const PATTERN_PREVIEW_TILE_SIZE = 112;
 
-const PATTERN_IMAGE_SOURCES: Record<PatternBackgroundVariant, ImageSourcePropType> = {
+type PatternImageVariant = Exclude<PatternBackgroundVariant, 'none'>;
+
+const PATTERN_IMAGE_SOURCES: Record<PatternImageVariant, ImageSourcePropType> = {
   spring: require('../../../assets/patterns/pattern-spring.png'),
   summer: require('../../../assets/patterns/pattern-summer.png'),
   autumn: require('../../../assets/patterns/pattern-autumn.png'),
   winter: require('../../../assets/patterns/pattern-winter.png'),
 };
 
-interface PatternTile {
-  readonly column: number;
-  readonly row: number;
-}
-
 function patternOpacity(isDark: boolean): number {
   return isDark ? 0.16 : 0.1;
 }
 
-function createTiles(width: number, height: number, tileSize: number): PatternTile[] {
-  const columnCount = Math.ceil(width / tileSize) + 2;
-  const rowCount = Math.ceil(height / tileSize) + 2;
-
-  return Array.from({ length: columnCount * rowCount }, (_, index) => ({
-    column: index % columnCount,
-    row: Math.floor(index / columnCount),
-  }));
+function patternImageSourceFor(variant: PatternBackgroundVariant): ImageSourcePropType | undefined {
+  if (variant === 'none') return undefined;
+  return PATTERN_IMAGE_SOURCES[variant];
 }
 
 export function PatternBackground({
@@ -69,39 +59,27 @@ export function PatternBackground({
   testID,
 }: PatternBackgroundProps): React.JSX.Element {
   const theme = useTheme();
-  const { width, height } = useWindowDimensions();
-  const imageSource = PATTERN_IMAGE_SOURCES[variant];
-  const tiles = useMemo(() => createTiles(width, height, PATTERN_TILE_SIZE), [height, width]);
+  const imageSource = patternImageSourceFor(variant);
 
   return (
     <View testID={testID} style={[styles.container, { backgroundColor: theme.colors.background }, style]}>
-      <View
-        pointerEvents="none"
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={StyleSheet.absoluteFill}
-        testID={testID ? `${testID}-pattern` : undefined}
-      >
-        {tiles.map((tile) => (
-          <Image
-            key={`${tile.column}-${tile.row}`}
+      {imageSource ? (
+        <View
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={styles.pattern}
+          testID={testID ? `${testID}-pattern` : undefined}
+        >
+          <ImageBackground
             accessibilityIgnoresInvertColors
-            fadeDuration={0}
+            imageStyle={{ opacity: patternOpacity(theme.isDark) }}
             resizeMode="cover"
             source={imageSource}
-            style={[
-              styles.tile,
-              {
-                height: PATTERN_TILE_SIZE,
-                left: tile.column * PATTERN_TILE_SIZE - PATTERN_TILE_SIZE / 2,
-                opacity: patternOpacity(theme.isDark),
-                top: tile.row * PATTERN_TILE_SIZE - PATTERN_TILE_SIZE / 2,
-                width: PATTERN_TILE_SIZE,
-              },
-            ]}
+            style={styles.patternImage}
           />
-        ))}
-      </View>
+        </View>
+      ) : null}
       <View style={[styles.content, contentStyle]}>
         {children}
       </View>
@@ -116,7 +94,7 @@ export function PatternBackgroundPreview({
   testID,
 }: PatternBackgroundPreviewProps): React.JSX.Element {
   const theme = useTheme();
-  const imageSource = PATTERN_IMAGE_SOURCES[variant];
+  const imageSource = patternImageSourceFor(variant);
 
   return (
     <View
@@ -131,18 +109,21 @@ export function PatternBackgroundPreview({
         style,
       ]}
     >
-      <Image
-        accessibilityIgnoresInvertColors
-        fadeDuration={0}
-        resizeMode="cover"
-        source={imageSource}
-        style={[
-          styles.previewTile,
-          {
-            opacity: patternOpacity(theme.isDark),
-          },
-        ]}
-      />
+      {imageSource ? (
+        <ImageBackground
+          accessibilityIgnoresInvertColors
+          resizeMode="cover"
+          source={imageSource}
+          style={[
+            styles.previewTile,
+            {
+              opacity: patternOpacity(theme.isDark),
+            },
+          ]}
+        />
+      ) : (
+        <View style={[styles.emptyPreviewMark, { backgroundColor: theme.colors.textSecondary }]} />
+      )}
     </View>
   );
 }
@@ -155,14 +136,23 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  tile: {
+  pattern: {
+    bottom: 0,
+    left: 0,
     position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  patternImage: {
+    flex: 1,
   },
   preview: {
+    alignItems: 'center',
     width: 96,
     height: 56,
     borderWidth: 1,
     borderRadius: 8,
+    justifyContent: 'center',
     overflow: 'hidden',
   },
   previewTile: {
@@ -171,5 +161,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -28,
     width: PATTERN_PREVIEW_TILE_SIZE,
+  },
+  emptyPreviewMark: {
+    height: 2,
+    opacity: 0.54,
+    transform: [{ rotate: '-18deg' }],
+    width: 44,
   },
 });

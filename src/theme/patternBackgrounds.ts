@@ -1,4 +1,5 @@
 export const PATTERN_BACKGROUND_VARIANTS = [
+  'none',
   'spring',
   'summer',
   'autumn',

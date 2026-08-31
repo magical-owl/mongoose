@@ -115,6 +115,7 @@ Implementation rules:
 
 - Decorative wallpaper backgrounds should use `src/shared/components/PatternBackground.tsx` so opacity, tiling, accessibility hiding, and theme behavior stay consistent.
 - Pattern variants should use generated transparent PNG tiles under `assets/patterns/` with provenance recorded in `assets/patterns/README.md`. Do not copy reference wallpaper art into the app.
+- Always keep a `none` option available so users can disable decorative backgrounds.
 - Keep motifs subtle enough for light and dark mode content to remain readable, and keep meaningful images in the foreground rather than relying on background decoration.
 
 ## Accessibility Checklist

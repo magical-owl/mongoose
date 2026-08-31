@@ -17,6 +17,7 @@ describe('PatternBackground', () => {
 
   it('exposes the available pattern background variants', () => {
     expect(PATTERN_BACKGROUND_VARIANTS).toEqual([
+      'none',
       'spring',
       'summer',
       'autumn',
@@ -30,5 +31,16 @@ describe('PatternBackground', () => {
     );
 
     expect(getByTestId('pattern-preview')).toBeTruthy();
+  });
+
+  it('renders without a decorative pattern layer when the variant is none', async () => {
+    const { getByText, queryByTestId } = await renderWithProviders(
+      <PatternBackground variant="none" testID="pattern-background">
+        <Text>Plain content</Text>
+      </PatternBackground>,
+    );
+
+    expect(getByText('Plain content')).toBeTruthy();
+    expect(queryByTestId('pattern-background-pattern')).toBeNull();
   });
 });

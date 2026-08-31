@@ -14,8 +14,8 @@ describe('useAppStore', () => {
   });
 
   it('updates the pattern background variant', () => {
-    useAppStore.getState().setPatternBackgroundVariant('winter');
+    useAppStore.getState().setPatternBackgroundVariant('none');
 
-    expect(useAppStore.getState().patternBackgroundVariant).toBe('winter');
+    expect(useAppStore.getState().patternBackgroundVariant).toBe('none');
   });
 });

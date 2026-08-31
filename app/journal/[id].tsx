@@ -24,6 +24,7 @@ import { Text } from "@shared/components/Text";
 import { IconCircleButton } from "@shared/components/IconCircleButton";
 import { SectionLabel } from "@shared/components/SectionLabel";
 import { SlidingDrawer } from "@shared/components/SlidingDrawer";
+import { AppPatternBackground } from "@shared/components/AppPatternBackground";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import { useJournals } from "@/features/journal/hooks/useJournals";
 import { useProfileForm } from "@/features/profile/hooks/useProfileForm";
@@ -570,7 +571,7 @@ export default function JournalEntriesScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <AppPatternBackground style={styles.container} testID="journal-entry-list-pattern-background">
       <SlidingDrawer
         visible={isDrawerOpen}
         onClose={closeDrawer}
@@ -692,7 +693,7 @@ export default function JournalEntriesScreen() {
         <View
           style={[
             styles.fixedHeader,
-            hasJournalCover ? styles.fixedHeaderWithCover : { paddingTop: insets.top + JOURNAL_HEADER_TOP_PADDING, backgroundColor: theme.colors.background },
+            hasJournalCover ? styles.fixedHeaderWithCover : { paddingTop: insets.top + JOURNAL_HEADER_TOP_PADDING },
           ]}
         >
           {journalCoverImageSource ? (
@@ -858,7 +859,7 @@ export default function JournalEntriesScreen() {
         ]}
         onSuccess={closePremiumModal}
       />
-    </View>
+    </AppPatternBackground>
   );
 }
 
