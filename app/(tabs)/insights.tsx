@@ -8,6 +8,7 @@ import { Text } from "@shared/components/Text";
 import { AppFooterNavigation } from "@shared/components/AppFooterNavigation";
 import { IconCircleButton } from "@shared/components/IconCircleButton";
 import { SlidingDrawer } from "@shared/components/SlidingDrawer";
+import { AppPatternBackground } from "@shared/components/AppPatternBackground";
 import { stripHtml } from "@shared/utils/html";
 import { useDiary } from "@/features/diary/hooks/useDiary";
 import { getEntryManualMoods, type ManualMood } from "@/features/diary/domain/DiaryEntry";
@@ -266,8 +267,8 @@ export default function InsightsScreen() {
   ];
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.fixedHeader, { paddingTop: insets.top + 20, backgroundColor: theme.colors.background }]}>
+    <AppPatternBackground style={styles.container} testID="insights-pattern-background">
+      <View style={[styles.fixedHeader, { paddingTop: insets.top + 20 }]}>
         <View style={styles.headerControlsRow}>
           <View style={styles.headerSide}>
             <IconCircleButton
@@ -513,7 +514,7 @@ export default function InsightsScreen() {
         </TouchableOpacity>
       </SlidingDrawer>
       <AppFooterNavigation activeItem="insights" bottom={insets.bottom + 12} />
-    </View>
+    </AppPatternBackground>
   );
 }
 

@@ -26,6 +26,8 @@ import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { Modal } from '@shared/components/Modal';
 import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { SectionLabel } from '@shared/components/SectionLabel';
+import { AppPatternBackground } from '@shared/components/AppPatternBackground';
+import { PatternBackgroundPreview } from '@shared/components/PatternBackground';
 import { ProfileEditorForm } from '@/features/profile/components/ProfileEditorForm';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { useDiary } from '@/features/diary/hooks/useDiary';
@@ -41,6 +43,7 @@ import { useJournalExtras } from '@/features/journal/hooks/useJournalExtras';
 import { accentColors, type AccentColor } from '@/theme/accents';
 import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
 import { appFontOptions, getAppFontLabel, normalizeAppFontFamily, resolveAppFontFamily } from '@/theme/fonts';
+import { PATTERN_BACKGROUND_VARIANTS, type PatternBackgroundVariant } from '@/theme/patternBackgrounds';
 import { APP_LANGUAGES, premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { FREE_PLAN_LIMITS, getLocalDateKey, getNextLocalPlanResetDate } from '@/features/subscription/services/PlanLimitService';
@@ -52,6 +55,13 @@ import { config } from '@/config/ConfigService';
 
 function withCount(value: string, count: number): string {
   return value.replace('{count}', String(count));
+}
+
+function patternBackgroundLabelKey(variant: PatternBackgroundVariant) {
+  if (variant === 'summer') return 'settingsBackgroundThemeSummer';
+  if (variant === 'autumn') return 'settingsBackgroundThemeAutumn';
+  if (variant === 'winter') return 'settingsBackgroundThemeWinter';
+  return 'settingsBackgroundThemeSpring';
 }
 
 interface SettingsOption {
@@ -82,6 +92,7 @@ export default function SettingsScreen() {
   const calendarFirstDay = useAppStore((state) => state.calendarFirstDay);
   const fontScale = useAppStore((state) => state.fontScale);
   const fontFamily = useAppStore((state) => state.fontFamily);
+  const patternBackgroundVariant = useAppStore((state) => state.patternBackgroundVariant);
   const appLanguage = useAppStore((state) => state.appLanguage);
   const {
     isPro,
@@ -92,6 +103,7 @@ export default function SettingsScreen() {
   const setCalendarFirstDay = useAppStore((state) => state.setCalendarFirstDay);
   const setFontScale = useAppStore((state) => state.setFontScale);
   const setFontFamily = useAppStore((state) => state.setFontFamily);
+  const setPatternBackgroundVariant = useAppStore((state) => state.setPatternBackgroundVariant);
   const setAppLanguage = useAppStore((state) => state.setAppLanguage);
   const setOnboardingStatus = useAppStore((state) => state.setOnboardingStatus);
   const setBiometricLockEnabled = useAppStore((state) => state.setBiometricLockEnabled);
@@ -451,8 +463,8 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
+    <AppPatternBackground style={styles.container} testID="settings-pattern-background">
+      <View style={[styles.fixedHeader, { paddingTop: insets.top + 16 }]}>
         <View style={styles.headerRow}>
           <View style={styles.headerSide}>
             <IconCircleButton icon="chevron-left" onPress={navigateBack} accessibilityLabel={t('entryBackA11y')} />
@@ -645,6 +657,41 @@ export default function SettingsScreen() {
           </ScrollView>
           <Text preset="caption" color="textSecondary" style={{ marginTop: 8 }}>
             {t('settingsAccentColorHint')}
+          </Text>
+        </View>
+
+        <View style={{ paddingTop: 20 }}>
+          <SectionLabel style={styles.displaySectionLabel}>{t('settingsBackgroundThemeSection')}</SectionLabel>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSelectorSlider}>
+            {PATTERN_BACKGROUND_VARIANTS.map((variant) => {
+              const active = patternBackgroundVariant === variant;
+              const label = t(patternBackgroundLabelKey(variant));
+              return (
+                <TouchableOpacity
+                  key={variant}
+                  onPress={() => setPatternBackgroundVariant(variant)}
+                  style={[
+                    styles.backgroundThemeOption,
+                    {
+                      backgroundColor: active ? theme.colors.tint + '14' : theme.colors.surface,
+                      borderColor: active ? theme.colors.tint : theme.colors.border,
+                    },
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={`${label}${active ? `, ${t('settingsBackgroundThemeSelected')}` : ''}`}
+                >
+                  <PatternBackgroundPreview variant={variant} selected={active} />
+                  <Text preset="bodySmall" color={active ? 'tint' : 'text'} style={styles.backgroundThemeLabel} numberOfLines={1}>
+                    {label}
+                  </Text>
+                  {active ? <Icon name="checkmark" size={18} color="tint" /> : null}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          <Text preset="caption" color="textSecondary" style={{ marginTop: 8 }}>
+            {t('settingsBackgroundThemeHint')}
           </Text>
         </View>
       </Modal>
@@ -1046,7 +1093,7 @@ export default function SettingsScreen() {
         </Modal>
       ) : null}
 
-    </View>
+    </AppPatternBackground>
   );
 }
 
@@ -1158,6 +1205,18 @@ const styles = StyleSheet.create({
   themeOptionLabel: {
     fontWeight: '600',
     marginRight: 8,
+  },
+  backgroundThemeOption: {
+    width: 132,
+    minHeight: 112,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    gap: 8,
+  },
+  backgroundThemeLabel: {
+    minHeight: 18,
+    fontWeight: '700',
   },
   arrow: {
     fontSize: 20,

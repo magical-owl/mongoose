@@ -111,6 +111,12 @@ Implementation rules:
 - Keep card radius at 8 px or less unless a platform-native sheet/modal requires otherwise.
 - Use `ProfileAvatar` for profile pictures and initials fallback instead of duplicating avatar sizing, border, or fallback logic.
 
+### Pattern Backgrounds
+
+- Decorative wallpaper backgrounds should use `src/shared/components/PatternBackground.tsx` so opacity, tiling, accessibility hiding, and theme behavior stay consistent.
+- Pattern variants should use generated transparent PNG tiles under `assets/patterns/` with provenance recorded in `assets/patterns/README.md`. Do not copy reference wallpaper art into the app.
+- Keep motifs subtle enough for light and dark mode content to remain readable, and keep meaningful images in the foreground rather than relying on background decoration.
+
 ## Accessibility Checklist
 
 - Every touch target should be roughly 44 px where practical.

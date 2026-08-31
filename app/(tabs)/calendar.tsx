@@ -18,6 +18,7 @@ import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { AppFooterNavigation } from '@shared/components/AppFooterNavigation';
 import { SlidingDrawer } from '@shared/components/SlidingDrawer';
+import { AppPatternBackground } from '@shared/components/AppPatternBackground';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { resolveImportedProfilePhotoUri } from '@/features/profile/services/ProfilePhotoService';
@@ -291,8 +292,8 @@ export default function CalendarScreen() {
   );
 
   return (
-    <View style={[styles.outerContainer, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.fixedHeader, { paddingTop: insets.top + CALENDAR_HEADER_TOP_PADDING, backgroundColor: theme.colors.background }]}>
+    <AppPatternBackground style={styles.outerContainer} testID="calendar-pattern-background">
+      <View style={[styles.fixedHeader, { paddingTop: insets.top + CALENDAR_HEADER_TOP_PADDING }]}>
         <View style={styles.headerNavRow}>
           <View style={styles.headerSide}>
             <IconCircleButton
@@ -415,7 +416,7 @@ export default function CalendarScreen() {
           </Pressable>
         </Pressable>
       </NativeModal>
-    </View>
+    </AppPatternBackground>
   );
 }
 

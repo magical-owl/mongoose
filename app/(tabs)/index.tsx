@@ -10,6 +10,7 @@ import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { SectionLabel } from '@shared/components/SectionLabel';
 import { AppFooterNavigation } from '@shared/components/AppFooterNavigation';
 import { SlidingDrawer } from '@shared/components/SlidingDrawer';
+import { AppPatternBackground } from '@shared/components/AppPatternBackground';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { JournalCreateForm } from '@/features/journal/components/JournalCreateForm';
 import { useJournals } from '@/features/journal/hooks/useJournals';
@@ -484,8 +485,8 @@ export default function JournalsScreen(): React.JSX.Element {
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.fixedHeader, { paddingTop: insets.top + 16, backgroundColor: theme.colors.background }]}>
+    <AppPatternBackground style={styles.root} testID="journals-pattern-background">
+      <View style={[styles.fixedHeader, { paddingTop: insets.top + 16 }]}>
         <View style={styles.titleRow}>
           <View style={styles.headerSide}>
             <IconCircleButton
@@ -836,7 +837,7 @@ export default function JournalsScreen(): React.JSX.Element {
           </View>
         </View>
       </Modal>
-    </View>
+    </AppPatternBackground>
   );
 }
 

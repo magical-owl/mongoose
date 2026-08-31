@@ -21,6 +21,7 @@ import Reanimated, {
 } from 'react-native-reanimated';
 import { useTheme } from '@providers/ThemeProvider';
 import { Avatar } from './Avatar';
+import { AppPatternBackground } from './AppPatternBackground';
 import { IconCircleButton } from './IconCircleButton';
 import { Text } from './Text';
 
@@ -157,57 +158,60 @@ export function SlidingDrawer({
             drawerStyle,
           ]}
         >
-          {profile ? (
-            <View style={[styles.profileRow, { borderBottomColor: theme.colors.border }]}>
-              <TouchableOpacity
-                activeOpacity={onProfilePress ? 0.72 : 1}
-                disabled={!onProfilePress}
-                onPress={onProfilePress}
-                accessibilityRole={onProfilePress ? 'button' : 'image'}
-                accessibilityLabel={profileAccessibilityLabel ?? profile.displayName}
-                style={[
-                  styles.profileButton,
-                  onProfilePress && [
-                    styles.profileButtonInteractive,
-                    { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-                  ],
-                ]}
-                testID={testID ? `${testID}-profile` : undefined}
-              >
-                <Avatar
-                  source={profile.avatarUri ? { uri: profile.avatarUri } : null}
-                  name={profile.displayName}
-                  size="sm"
+          <AppPatternBackground style={StyleSheet.absoluteFill} />
+          <View style={styles.drawerContent}>
+            {profile ? (
+              <View style={[styles.profileRow, { borderBottomColor: theme.colors.border }]}>
+                <TouchableOpacity
+                  activeOpacity={onProfilePress ? 0.72 : 1}
+                  disabled={!onProfilePress}
+                  onPress={onProfilePress}
+                  accessibilityRole={onProfilePress ? 'button' : 'image'}
                   accessibilityLabel={profileAccessibilityLabel ?? profile.displayName}
-                  testID={testID ? `${testID}-profile-avatar` : undefined}
-                />
-                <Text
-                  preset="label"
-                  color={onProfilePress ? 'tint' : 'text'}
-                  numberOfLines={1}
-                  style={[styles.profileName, onProfilePress && styles.profileNameInteractive]}
+                  style={[
+                    styles.profileButton,
+                    onProfilePress && [
+                      styles.profileButtonInteractive,
+                      { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                    ],
+                  ]}
+                  testID={testID ? `${testID}-profile` : undefined}
                 >
-                  {profile.displayName}
-                </Text>
-                {onProfilePress ? (
-                  <Ionicons
-                    name="chevron-forward"
-                    size={18}
-                    color={theme.colors.tint}
-                    testID={testID ? `${testID}-profile-chevron` : undefined}
+                  <Avatar
+                    source={profile.avatarUri ? { uri: profile.avatarUri } : null}
+                    name={profile.displayName}
+                    size="sm"
+                    accessibilityLabel={profileAccessibilityLabel ?? profile.displayName}
+                    testID={testID ? `${testID}-profile-avatar` : undefined}
                   />
-                ) : null}
-              </TouchableOpacity>
-              <IconCircleButton
-                icon="close"
-                onPress={onClose}
-                accessibilityLabel={accessibilityCloseLabel}
-                size="sm"
-                testID={testID ? `${testID}-close` : undefined}
-              />
-            </View>
-          ) : null}
-          {children}
+                  <Text
+                    preset="label"
+                    color={onProfilePress ? 'tint' : 'text'}
+                    numberOfLines={1}
+                    style={[styles.profileName, onProfilePress && styles.profileNameInteractive]}
+                  >
+                    {profile.displayName}
+                  </Text>
+                  {onProfilePress ? (
+                    <Ionicons
+                      name="chevron-forward"
+                      size={18}
+                      color={theme.colors.tint}
+                      testID={testID ? `${testID}-profile-chevron` : undefined}
+                    />
+                  ) : null}
+                </TouchableOpacity>
+                <IconCircleButton
+                  icon="close"
+                  onPress={onClose}
+                  accessibilityLabel={accessibilityCloseLabel}
+                  size="sm"
+                  testID={testID ? `${testID}-close` : undefined}
+                />
+              </View>
+            ) : null}
+            {children}
+          </View>
         </Reanimated.View>
       </Reanimated.View>
     </Modal>
@@ -221,12 +225,15 @@ const styles = StyleSheet.create({
   drawer: {
     height: '100%',
     borderRightWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 20,
     shadowColor: '#000',
     shadowOffset: { width: 5, height: 0 },
     shadowOpacity: 0.24,
     shadowRadius: 18,
     elevation: 18,
+    overflow: 'hidden',
+  },
+  drawerContent: {
+    flex: 1,
   },
   profileRow: {
     minHeight: 58,

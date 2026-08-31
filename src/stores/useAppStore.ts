@@ -13,6 +13,10 @@ import type { CompanionType } from '@/features/diary/domain/Companion';
 import type { AccentColor } from '@/theme/accents';
 import type { ColorTheme } from '@/theme/colorThemes';
 import type { AppFontFamily } from '@/theme/fonts';
+import {
+  DEFAULT_PATTERN_BACKGROUND_VARIANT,
+  type PatternBackgroundVariant,
+} from '@/theme/patternBackgrounds';
 
 const storage = createSafeMMKV({ id: 'app-store' });
 
@@ -50,6 +54,7 @@ export interface AppState {
   themeMode: ThemeMode;
   accentColor: AccentColor;
   colorTheme: ColorTheme;
+  patternBackgroundVariant: PatternBackgroundVariant;
   onboardingStatus: OnboardingStatus;
   sessionState: SessionState;
   isOnboarded: boolean;
@@ -77,6 +82,7 @@ export interface AppState {
   setThemeMode: (mode: ThemeMode) => void;
   setAccentColor: (color: AccentColor) => void;
   setColorTheme: (theme: ColorTheme) => void;
+  setPatternBackgroundVariant: (variant: PatternBackgroundVariant) => void;
   setOnboardingStatus: (status: OnboardingStatus) => void;
   setSessionState: (state: SessionState) => void;
   setSelectedCalendarDate: (date: string | null) => void;
@@ -106,6 +112,7 @@ const initialState: Pick<
   | 'themeMode'
   | 'accentColor'
   | 'colorTheme'
+  | 'patternBackgroundVariant'
   | 'onboardingStatus'
   | 'sessionState'
   | 'isOnboarded'
@@ -132,6 +139,7 @@ const initialState: Pick<
   themeMode: 'dark',
   accentColor: 'blue',
   colorTheme: 'default',
+  patternBackgroundVariant: DEFAULT_PATTERN_BACKGROUND_VARIANT,
   onboardingStatus: 'not_started',
   sessionState: 'idle',
   isOnboarded: false,
@@ -168,6 +176,7 @@ export const useAppStore = create<AppState>()(
       setThemeMode: (themeMode: ThemeMode) => set({ themeMode }),
       setAccentColor: (accentColor: AccentColor) => set({ accentColor }),
       setColorTheme: (colorTheme: ColorTheme) => set({ colorTheme }),
+      setPatternBackgroundVariant: (patternBackgroundVariant: PatternBackgroundVariant) => set({ patternBackgroundVariant }),
 
       setSelectedCalendarDate: (selectedCalendarDate: string | null) => set({ selectedCalendarDate }),
 
@@ -225,6 +234,7 @@ export const useAppStore = create<AppState>()(
         themeMode: state.themeMode,
         accentColor: state.accentColor,
         colorTheme: state.colorTheme,
+        patternBackgroundVariant: state.patternBackgroundVariant,
         onboardingStatus: state.onboardingStatus,
         isOnboarded: state.isOnboarded,
         selectedCompanion: state.selectedCompanion,

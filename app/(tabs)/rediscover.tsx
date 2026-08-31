@@ -7,6 +7,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { AppFooterNavigation } from '@shared/components/AppFooterNavigation';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
+import { AppPatternBackground } from '@shared/components/AppPatternBackground';
 import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
 import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
 import { getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
@@ -192,8 +193,8 @@ export default function RediscoverScreen(): React.JSX.Element {
   }, [router]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 20, backgroundColor: theme.colors.background }]}>
+    <AppPatternBackground style={styles.container} testID="rediscover-pattern-background">
+      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <IconCircleButton
           icon="menu"
           onPress={() => setShowRediscoverMenu(true)}
@@ -332,7 +333,7 @@ export default function RediscoverScreen(): React.JSX.Element {
         </TouchableOpacity>
       </SlidingDrawer>
       <AppFooterNavigation activeItem="rediscover" bottom={insets.bottom + 12} />
-    </View>
+    </AppPatternBackground>
   );
 }
 
