@@ -500,6 +500,16 @@ export default function JournalsScreen(): React.JSX.Element {
           </Text>
           <View style={[styles.headerSide, styles.headerSideRight]}>
             <IconCircleButton
+              icon="view-grid-outline"
+              onPress={() => {
+                setOpenJournalOptionsId(null);
+                setJournalColumnCount(getNextJournalColumnCount(journalColumnCount));
+              }}
+              accessibilityLabel={`${t('journalLayoutA11y')}: ${activeJournalColumnLabel}`}
+              iconSize={22}
+              testID="journal-layout-toggle"
+            />
+            <IconCircleButton
               icon="plus"
               onPress={() => setShowCreateModal(true)}
               accessibilityLabel={t('journalCreateA11y')}
@@ -845,7 +855,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   fixedHeader: { zIndex: 30, elevation: 30, paddingHorizontal: 20 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  headerSide: { width: 44, flexDirection: 'row', alignItems: 'center' },
+  headerSide: { width: 94, flexDirection: 'row', alignItems: 'center', gap: 6 },
   headerSideRight: { justifyContent: 'flex-end' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, lineHeight: 22, fontWeight: '800' },
   headerSearchBar: {
