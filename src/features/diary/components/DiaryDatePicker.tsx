@@ -59,6 +59,7 @@ export function DiaryDatePicker({
     backgroundColor: theme.colors.surface,
   };
   const accessibilityLabel = label ? `${label}: ${dateText}` : dateText;
+  const entryHeroTextColor = theme.colors.stickerControlText;
 
   if (variant === 'entryHero') {
     return (
@@ -71,7 +72,7 @@ export function DiaryDatePicker({
         >
           <View style={styles.entryHeroDateLeft}>
             <Ionicons name="calendar-outline" size={20} color={theme.colors.tint} />
-            <Text preset="bodySmall" color="textSecondary" style={styles.entryHeroDateText}>
+            <Text preset="bodySmall" style={[styles.entryHeroDateText, { color: entryHeroTextColor }]}>
               {dateText}
             </Text>
           </View>

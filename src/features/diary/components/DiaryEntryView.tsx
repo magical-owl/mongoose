@@ -13,6 +13,7 @@ import { findStickerItem, type PlacedSticker } from '@/features/diary/domain/Sti
 import { diaryEntryListTitle } from './diaryEntryTypography';
 import { MoodBadgeList } from './MoodBadgeList';
 import { TagBadgeList } from './TagBadgeList';
+import { ReflectionSummaryButton } from './ReflectionSummaryButton';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
@@ -496,16 +497,12 @@ export function DiaryEntryView({
         />
       ) : null}
       {showReflectionSummaryAction ? (
-        <TouchableOpacity
+        <ReflectionSummaryButton
+          count={entry.reflections.length}
           onPress={() => onReflectionSummaryPress?.(entry.id)}
-          activeOpacity={0.65}
-          style={[styles.reflectionSummaryButton, { backgroundColor: theme.colors.tint + '12' }]}
-          accessibilityRole="button"
           accessibilityLabel={reflectionSummaryLabel}
           testID="entry-card-reflection-button"
-        >
-          <Ionicons name="chatbubble-ellipses-outline" size={14} color={theme.colors.tint} />
-        </TouchableOpacity>
+        />
       ) : null}
     </View>
   ) : null;
@@ -570,7 +567,6 @@ const styles = StyleSheet.create({
   cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   cardFooterMoodBadges: { maxWidth: 140 },
   cardFooterTagBadges: { flex: 1, maxWidth: '100%' },
-  reflectionSummaryButton: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: 14 },
   reflectionSummary: { flexShrink: 0, fontWeight: '700' },
   feedCard: { paddingVertical: 0, marginBottom: 0 },
   feedEntrySurface: { borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },

@@ -46,8 +46,22 @@ describe('DiaryEntryView', () => {
       ...baseEntry,
       tags: ['daily', 'work'],
       manualMoods: ['calm', 'happy', 'sad'],
+      reflections: [
+        {
+          id: '22222222-2222-4222-8222-222222222222',
+          text: 'A follow-up reflection.',
+          createdAt: '2026-08-29T02:12:00.000Z',
+          updatedAt: '2026-08-29T02:12:00.000Z',
+        },
+        {
+          id: '33333333-3333-4333-8333-333333333333',
+          text: 'Another reflection.',
+          createdAt: '2026-08-29T02:20:00.000Z',
+          updatedAt: '2026-08-29T02:20:00.000Z',
+        },
+      ],
     };
-    const { getByTestId, queryByText } = await renderWithProviders(
+    const { getByTestId, getByText, queryByText } = await renderWithProviders(
       <DiaryEntryView
         entry={entryWithMultipleMeta}
         mode="detailed"
@@ -76,8 +90,9 @@ describe('DiaryEntryView', () => {
     expect(getByTestId('entry-card-mood-overflow')).toBeTruthy();
     expect(getByTestId('entry-card-tags-daily')).toBeTruthy();
     expect(getByTestId('entry-card-tags-overflow')).toBeTruthy();
-    expect(reflectionButtonStyle.width).toBe(28);
+    expect(reflectionButtonStyle.minWidth).toBe(44);
     expect(reflectionButtonStyle.height).toBe(28);
+    expect(getByText('2')).toBeTruthy();
     expect(queryByText('Reflect on this')).toBeNull();
   });
 

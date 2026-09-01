@@ -19,7 +19,6 @@ import {
   View,
   ScrollView,
   Alert,
-  TouchableOpacity,
   Platform,
   KeyboardAvoidingView,
   Keyboard,
@@ -29,7 +28,6 @@ import {
   useWindowDimensions,
   ActivityIndicator,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -58,6 +56,7 @@ import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
 import { DiaryCoverPhotoPicker } from '@/features/diary/components/DiaryCoverPhotoPicker';
 import { DiaryPaperCanvas } from '@/features/diary/components/DiaryPaperCanvas';
 import { EntryReflectionsModal } from '@/features/diary/components/EntryReflectionsModal';
+import { ReflectionSummaryButton } from '@/features/diary/components/ReflectionSummaryButton';
 import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
 import { TagBadgeList } from '@/features/diary/components/TagBadgeList';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
@@ -124,7 +123,7 @@ const ENTRY_HEADER_BUTTON_HEIGHT = ENTRY_EDITOR_HEADER_BUTTON_HEIGHT;
 const ENTRY_HEADER_BOTTOM_PADDING = ENTRY_EDITOR_HEADER_BOTTOM_PADDING;
 const ENTRY_COVER_TOP_GAP = ENTRY_EDITOR_COVER_TOP_GAP;
 const ENTRY_EDIT_COVER_BOTTOM_GAP = 0;
-const ENTRY_VIEW_COVER_BOTTOM_GAP = 0;
+const ENTRY_VIEW_COVER_BOTTOM_GAP = 12;
 const ENTRY_VIEW_COVER_EXPANDED_HEIGHT = 270;
 const ENTRY_VIEW_COVER_COLLAPSED_EXTRA_HEIGHT = 12;
 const ENTRY_BODY_MIN_HEIGHT = ENTRY_EDITOR_BODY_MIN_HEIGHT;
@@ -900,7 +899,13 @@ export default function EntryDetailScreen() {
                     />
                   ))}
                   <View style={styles.entryBodyLayer}>
-                    <MarkdownText style={{ lineHeight: 26 }}>
+                    <MarkdownText
+                      style={{
+                        fontSize: ENTRY_EDITOR_BODY_FONT_SIZE,
+                        lineHeight: ENTRY_EDITOR_BODY_LINE_HEIGHT,
+                        fontWeight: '600',
+                      }}
+                    >
                       {entry.content}
                     </MarkdownText>
                   </View>
@@ -931,24 +936,19 @@ export default function EntryDetailScreen() {
       </KeyboardAvoidingView>
 
       {!isEditing && (
-        <DiaryEntryEditorFooter bottom={insets.bottom + ENTRY_EDITOR_FOOTER_BOTTOM_OFFSET}>
-            <TouchableOpacity
-              style={styles.viewFooterButton}
+        <DiaryEntryEditorFooter
+          bottom={insets.bottom + ENTRY_EDITOR_FOOTER_BOTTOM_OFFSET}
+          style={styles.viewFooter}
+        >
+            <ReflectionSummaryButton
+              count={entry.reflections.length}
               onPress={() => setShowReflections(true)}
-              activeOpacity={0.6}
               accessibilityLabel={`${t('entryOpenReflectionsA11y')} ${entry.reflections.length} ${t('entrySavedA11y')}`}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons name="comment-text-outline" size={21} color={theme.colors.tint} />
-              <Text preset="caption" color="text" style={styles.viewFooterLabel}>
-                {t('reflections')}
-              </Text>
-              {entry.reflections.length > 0 ? (
-                <View style={[styles.reflectionCountBadge, { backgroundColor: theme.colors.tint }]}>
-                  <Text preset="caption" style={[styles.reflectionCountText, { color: theme.colors.background }]}>{entry.reflections.length}</Text>
-                </View>
-              ) : null}
-            </TouchableOpacity>
+              iconSize={21}
+              height={38}
+              minWidth={62}
+              style={styles.viewFooterButton}
+            />
         </DiaryEntryEditorFooter>
       )}
 
@@ -1221,23 +1221,13 @@ const styles = StyleSheet.create({
   coverTagBadges: { maxWidth: '100%' },
   entryMoodBadges: { maxWidth: '100%' },
   entryTagBadges: { maxWidth: '100%' },
+  viewFooter: {
+    left: undefined,
+    width: 86,
+  },
   viewFooterButton: {
-    minHeight: 38,
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 10,
-    borderRadius: 8,
   },
-  viewFooterLabel: { fontWeight: '700' },
-  reflectionCountBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  reflectionCountText: { fontSize: 11, lineHeight: 22, fontWeight: '700', textAlign: 'center', includeFontPadding: false },
   formattingStack: {
     position: 'relative',
   },
