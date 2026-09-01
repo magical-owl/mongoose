@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Image, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@providers/ThemeProvider';
@@ -58,12 +59,20 @@ const journalColumnOptions: readonly { readonly count: JournalColumnCount; reado
   { count: 3, labelKey: 'journalLayoutThreeColumn' },
   { count: 4, labelKey: 'journalLayoutFourColumn' },
 ];
+type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 function getNextJournalColumnCount(count: JournalColumnCount): JournalColumnCount {
   if (count === 1) return 2;
   if (count === 2) return 3;
   if (count === 3) return 4;
   return 1;
+}
+
+function journalLayoutIcon(count: JournalColumnCount): MaterialIconName {
+  if (count === 1) return 'view-agenda-outline';
+  if (count === 2) return 'view-grid-outline';
+  if (count === 3) return 'view-dashboard-outline';
+  return 'view-comfy-outline';
 }
 
 function isSyntheticJournalId(journalId: string): journalId is SyntheticJournalId {
@@ -500,7 +509,7 @@ export default function JournalsScreen(): React.JSX.Element {
           </Text>
           <View style={[styles.headerSide, styles.headerSideRight]}>
             <IconCircleButton
-              icon="view-grid-outline"
+              icon={journalLayoutIcon(journalColumnCount)}
               onPress={() => {
                 setOpenJournalOptionsId(null);
                 setJournalColumnCount(getNextJournalColumnCount(journalColumnCount));
