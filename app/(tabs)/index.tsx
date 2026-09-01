@@ -102,8 +102,6 @@ export default function JournalsScreen(): React.JSX.Element {
   const setSyntheticJournalCover = useAppStore((state) => state.setSyntheticJournalCover);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
-  const [renameJournalTitle, setRenameJournalTitle] = useState('');
-  const [renameJournalDescription, setRenameJournalDescription] = useState('');
   const [renamingJournal, setRenamingJournal] = useState<Journal | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -247,13 +245,11 @@ export default function JournalsScreen(): React.JSX.Element {
     if (!journal) return;
     setOpenJournalOptionsId(null);
     setRenamingJournal(journal);
-    setRenameJournalTitle(journal.title);
-    setRenameJournalDescription(journal.description);
     setShowRenameModal(true);
   }, [journals]);
 
-  const handleRenameJournal = async () => {
-    const trimmed = renameJournalTitle.trim();
+  const handleRenameJournal = async (input: CreateJournalInput) => {
+    const trimmed = input.title.trim();
     if (!trimmed) {
       Alert.alert(t('journalTitleRequiredTitle'), t('journalTitleRequiredMessage'));
       return;
@@ -261,7 +257,14 @@ export default function JournalsScreen(): React.JSX.Element {
     if (!renamingJournal) return;
 
     setIsRenaming(true);
-    const result = await saveJournal({ ...renamingJournal, title: trimmed, description: renameJournalDescription.trim() });
+    const result = await saveJournal({
+      ...renamingJournal,
+      title: trimmed,
+      description: input.description?.trim() ?? '',
+      coverImageUri: input.coverImageUri,
+      coverImageWidth: input.coverImageWidth,
+      coverImageHeight: input.coverImageHeight,
+    });
     setIsRenaming(false);
     if (!result.success) {
       Alert.alert(t('entryErrorTitle'), result.error.message);
@@ -269,8 +272,6 @@ export default function JournalsScreen(): React.JSX.Element {
     }
 
     setRenamingJournal(null);
-    setRenameJournalTitle('');
-    setRenameJournalDescription('');
     setShowRenameModal(false);
   };
 
@@ -410,6 +411,20 @@ export default function JournalsScreen(): React.JSX.Element {
     [t],
   );
   const activeJournalColumnLabel = t(journalColumnOptions.find((option) => option.count === journalColumnCount)?.labelKey ?? 'journalLayoutTwoColumn');
+  const renamingJournalInitialValues = useMemo<CreateJournalInput | undefined>(() => {
+    if (!renamingJournal) return undefined;
+    return {
+      title: renamingJournal.title,
+      description: renamingJournal.description,
+      coverImageUri: renamingJournal.coverImageUri,
+      coverImageWidth: renamingJournal.coverImageWidth,
+      coverImageHeight: renamingJournal.coverImageHeight,
+    };
+  }, [renamingJournal]);
+  const closeRenameModal = useCallback(() => {
+    setShowRenameModal(false);
+    setRenamingJournal(null);
+  }, []);
 
   const renderJournalOptions = (journal: JournalHomeItem) => {
     const isOpen = openJournalOptionsId === journal.id;
@@ -430,34 +445,6 @@ export default function JournalsScreen(): React.JSX.Element {
         />
         {isOpen ? (
           <View style={[styles.journalOptionsMenu, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-            <TouchableOpacity
-              onPress={(event) => {
-                event.stopPropagation();
-                handleOpenCoverPicker(journal.id);
-              }}
-              style={styles.journalOptionsItem}
-              accessibilityRole="button"
-              accessibilityLabel={t('journalSetCoverA11y')}
-              disabled={assigningCoverJournalId === journal.id}
-            >
-              <Ionicons name="image-outline" size={17} color={theme.colors.textSecondary} />
-              <Text preset="caption" color="text" style={styles.journalOptionsText}>{t('journalSetCover')}</Text>
-            </TouchableOpacity>
-            {journal.coverImageUri ? (
-              <TouchableOpacity
-                onPress={(event) => {
-                  event.stopPropagation();
-                  handleRemoveJournalCover(journal.id);
-                }}
-                style={styles.journalOptionsItem}
-                accessibilityRole="button"
-                accessibilityLabel={t('journalRemoveCoverA11y')}
-                disabled={assigningCoverJournalId === journal.id}
-              >
-                <Ionicons name="close-circle-outline" size={17} color={theme.colors.textSecondary} />
-                <Text preset="caption" color="text" style={styles.journalOptionsText}>{t('journalRemoveCover')}</Text>
-              </TouchableOpacity>
-            ) : null}
             {journal.canRename ? (
               <>
                 <TouchableOpacity
@@ -470,7 +457,7 @@ export default function JournalsScreen(): React.JSX.Element {
                   accessibilityLabel={t('journalRenameA11y')}
                 >
                   <Ionicons name="pencil-outline" size={17} color={theme.colors.textSecondary} />
-                  <Text preset="caption" color="text" style={styles.journalOptionsText}>{t('journalRename')}</Text>
+                  <Text preset="caption" color="text" style={styles.journalOptionsText}>{t('journalEdit')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={(event) => {
@@ -486,7 +473,38 @@ export default function JournalsScreen(): React.JSX.Element {
                   <Text preset="caption" style={[styles.journalOptionsText, { color: theme.colors.error }]}>{t('entryDelete')}</Text>
                 </TouchableOpacity>
               </>
-            ) : null}
+            ) : (
+              <>
+                <TouchableOpacity
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    handleOpenCoverPicker(journal.id);
+                  }}
+                  style={styles.journalOptionsItem}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('journalSetCoverA11y')}
+                  disabled={assigningCoverJournalId === journal.id}
+                >
+                  <Ionicons name="image-outline" size={17} color={theme.colors.textSecondary} />
+                  <Text preset="caption" color="text" style={styles.journalOptionsText}>{t('journalSetCover')}</Text>
+                </TouchableOpacity>
+                {journal.coverImageUri ? (
+                  <TouchableOpacity
+                    onPress={(event) => {
+                      event.stopPropagation();
+                      handleRemoveJournalCover(journal.id);
+                    }}
+                    style={styles.journalOptionsItem}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('journalRemoveCoverA11y')}
+                    disabled={assigningCoverJournalId === journal.id}
+                  >
+                    <Ionicons name="close-circle-outline" size={17} color={theme.colors.textSecondary} />
+                    <Text preset="caption" color="text" style={styles.journalOptionsText}>{t('journalRemoveCover')}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </>
+            )}
           </View>
         ) : null}
       </View>
@@ -824,35 +842,22 @@ export default function JournalsScreen(): React.JSX.Element {
         </View>
       </Modal>
 
-      <Modal visible={showRenameModal} animationType="fade" transparent onRequestClose={() => setShowRenameModal(false)}>
+      <Modal visible={showRenameModal} animationType="fade" transparent onRequestClose={closeRenameModal}>
         <View style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}>
           <View style={[styles.modalCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-            <Text preset="h2" color="text" style={styles.modalTitle}>{t('journalRename')}</Text>
-            <TextInput
-              value={renameJournalTitle}
-              onChangeText={setRenameJournalTitle}
-              placeholder={t('journalTitlePlaceholder')}
-              placeholderTextColor={theme.colors.textSecondary}
-              autoFocus
-              style={[styles.modalInput, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontFamily: theme.fontFamily }]}
-              returnKeyType="next"
-            />
-            <TextInput
-              value={renameJournalDescription}
-              onChangeText={setRenameJournalDescription}
-              placeholder={t('journalDescriptionPlaceholder')}
-              placeholderTextColor={theme.colors.textSecondary}
-              multiline
-              maxLength={280}
-              style={[styles.modalDescriptionInput, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.text, fontFamily: theme.fontFamily }]}
-              accessibilityLabel={t('journalDescriptionLabel')}
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity onPress={() => setShowRenameModal(false)} style={styles.modalAction} disabled={isRenaming}>
-                <Text preset="label" color="textSecondary">{t('entryCancel')}</Text>
-              </TouchableOpacity>
-              <AccentPillButton label={t('journalRenameSave')} onPress={() => { void handleRenameJournal(); }} disabled={isRenaming} style={styles.modalActionPrimary} />
-            </View>
+            <Text preset="h2" color="text" style={styles.modalTitle}>{t('journalEdit')}</Text>
+            {renamingJournalInitialValues ? (
+              <JournalCreateForm
+                key={renamingJournal?.id}
+                initialValues={renamingJournalInitialValues}
+                submitLabel={t('entrySave')}
+                savingLabel={t('entrySaving')}
+                isSaving={isRenaming}
+                autoFocus
+                onCancel={closeRenameModal}
+                onSubmit={(input) => { void handleRenameJournal(input); }}
+              />
+            ) : null}
           </View>
         </View>
       </Modal>

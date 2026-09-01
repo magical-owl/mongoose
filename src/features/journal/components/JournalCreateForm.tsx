@@ -19,6 +19,7 @@ interface JournalCoverDraft {
 }
 
 interface JournalCreateFormProps {
+  readonly initialValues?: CreateJournalInput;
   readonly submitLabel: string;
   readonly savingLabel?: string;
   readonly isSaving?: boolean;
@@ -29,6 +30,7 @@ interface JournalCreateFormProps {
 }
 
 export function JournalCreateForm({
+  initialValues,
   submitLabel,
   savingLabel,
   isSaving = false,
@@ -39,9 +41,17 @@ export function JournalCreateForm({
 }: JournalCreateFormProps): React.JSX.Element {
   const theme = useTheme();
   const t = useTranslation();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [cover, setCover] = useState<JournalCoverDraft | null>(null);
+  const [title, setTitle] = useState(initialValues?.title ?? '');
+  const [description, setDescription] = useState(initialValues?.description ?? '');
+  const [cover, setCover] = useState<JournalCoverDraft | null>(
+    initialValues?.coverImageUri
+      ? {
+          coverImageUri: initialValues.coverImageUri,
+          coverImageWidth: initialValues.coverImageWidth,
+          coverImageHeight: initialValues.coverImageHeight,
+        }
+      : null,
+  );
   const selectedCoverSource = getJournalCoverImageSource(cover?.coverImageUri);
 
   const chooseGalleryCover = () => {
