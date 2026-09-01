@@ -3,10 +3,15 @@ import type { ImageSourcePropType } from 'react-native';
 export interface DiaryPaperBackground {
   readonly id: string;
   readonly label: string;
-  readonly source: ImageSourcePropType;
+  readonly source?: ImageSourcePropType;
 }
 
 export const DIARY_PAPER_BACKGROUNDS = [
+  {
+    id: 'blank',
+    label: 'Blank',
+    source: undefined,
+  },
   {
     id: 'vintage-parchment',
     label: 'Vintage parchment',
@@ -19,8 +24,14 @@ export const DIARY_PAPER_BACKGROUNDS = [
   },
 ] as const satisfies readonly DiaryPaperBackground[];
 
-export const DEFAULT_DIARY_PAPER_BACKGROUND_ID = DIARY_PAPER_BACKGROUNDS[0].id;
+export const DEFAULT_DIARY_PAPER_BACKGROUND_ID = 'vintage-parchment';
 
-export function getDiaryPaperBackgroundSource(id: string): ImageSourcePropType {
-  return DIARY_PAPER_BACKGROUNDS.find((background) => background.id === id)?.source ?? DIARY_PAPER_BACKGROUNDS[0].source;
+export function getDiaryPaperBackground(id: string): DiaryPaperBackground {
+  return DIARY_PAPER_BACKGROUNDS.find((background) => background.id === id)
+    ?? DIARY_PAPER_BACKGROUNDS.find((background) => background.source)
+    ?? DIARY_PAPER_BACKGROUNDS[0];
+}
+
+export function getDiaryPaperBackgroundSource(id: string): ImageSourcePropType | undefined {
+  return getDiaryPaperBackground(id).source;
 }

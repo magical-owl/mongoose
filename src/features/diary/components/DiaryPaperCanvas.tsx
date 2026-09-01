@@ -20,6 +20,7 @@ export function DiaryPaperCanvas({
   testID,
 }: DiaryPaperCanvasProps): React.JSX.Element {
   const theme = useTheme();
+  const paperBackgroundSource = getDiaryPaperBackgroundSource(paperBackgroundId);
 
   return (
     <View
@@ -28,18 +29,20 @@ export function DiaryPaperCanvas({
       pointerEvents={pointerEvents}
       testID={testID}
     >
-      <ImageBackground
-        source={getDiaryPaperBackgroundSource(paperBackgroundId)}
-        resizeMode="cover"
-        style={StyleSheet.absoluteFill}
-        imageStyle={styles.image}
-        testID={testID ? `${testID}-image` : undefined}
-      >
-        <View
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { backgroundColor: theme.isDark ? 'rgba(0, 0, 0, 0.32)' : 'rgba(255, 255, 255, 0.12)' }]}
-        />
-      </ImageBackground>
+      {paperBackgroundSource ? (
+        <ImageBackground
+          source={paperBackgroundSource}
+          resizeMode="cover"
+          style={StyleSheet.absoluteFill}
+          imageStyle={styles.image}
+          testID={testID ? `${testID}-image` : undefined}
+        >
+          <View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, { backgroundColor: theme.isDark ? 'rgba(0, 0, 0, 0.32)' : 'rgba(255, 255, 255, 0.12)' }]}
+          />
+        </ImageBackground>
+      ) : null}
       {children}
     </View>
   );

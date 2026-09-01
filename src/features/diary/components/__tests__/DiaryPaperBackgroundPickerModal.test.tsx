@@ -38,4 +38,23 @@ describe('DiaryPaperBackgroundPickerModal', () => {
     expect(onSelect).toHaveBeenCalledWith('soft-lined-paper');
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
+
+  it('allows selecting a blank diary background', async () => {
+    const onSelect = jest.fn();
+    const onDismiss = jest.fn();
+    const { getByTestId } = await renderWithProviders(
+      <DiaryPaperBackgroundPickerModal
+        visible
+        selectedPaperBackgroundId="vintage-parchment"
+        onSelect={onSelect}
+        onDismiss={onDismiss}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    fireEvent.press(getByTestId('entry-paper-background-blank'));
+
+    expect(onSelect).toHaveBeenCalledWith('blank');
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
 });

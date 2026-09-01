@@ -37,6 +37,11 @@ export function DiaryPaperBackgroundPickerModal({
       >
         {DIARY_PAPER_BACKGROUNDS.map((background) => {
           const selected = selectedPaperBackgroundId === background.id;
+          const selectedBadge = selected ? (
+            <View style={[styles.selectedBadge, { backgroundColor: theme.colors.tint }]}>
+              <MaterialCommunityIcons name="check" size={16} color={theme.colors.background} />
+            </View>
+          ) : null;
 
           return (
             <TouchableOpacity
@@ -57,24 +62,35 @@ export function DiaryPaperBackgroundPickerModal({
               accessibilityLabel={`${t('entryPaperBackgroundSelectA11y')} ${background.label}`}
               testID={`entry-paper-background-${background.id}`}
             >
-              <ImageBackground
-                source={background.source}
-                resizeMode="cover"
-                style={styles.preview}
-                imageStyle={styles.previewImage}
-              >
+              {background.source ? (
+                <ImageBackground
+                  source={background.source}
+                  resizeMode="cover"
+                  style={styles.preview}
+                  imageStyle={styles.previewImage}
+                >
+                  <View
+                    style={[
+                      StyleSheet.absoluteFill,
+                      { backgroundColor: theme.isDark ? 'rgba(0, 0, 0, 0.18)' : 'rgba(255, 255, 255, 0.08)' },
+                    ]}
+                  />
+                  {selectedBadge}
+                </ImageBackground>
+              ) : (
                 <View
                   style={[
-                    StyleSheet.absoluteFill,
-                    { backgroundColor: theme.isDark ? 'rgba(0, 0, 0, 0.18)' : 'rgba(255, 255, 255, 0.08)' },
+                    styles.preview,
+                    styles.blankPreview,
+                    {
+                      backgroundColor: theme.colors.card,
+                      borderColor: theme.colors.border,
+                    },
                   ]}
-                />
-                {selected ? (
-                  <View style={[styles.selectedBadge, { backgroundColor: theme.colors.tint }]}>
-                    <MaterialCommunityIcons name="check" size={16} color={theme.colors.background} />
-                  </View>
-                ) : null}
-              </ImageBackground>
+                >
+                  {selectedBadge}
+                </View>
+              )}
               <Text preset="caption" style={[styles.label, { color: selected ? theme.colors.tint : theme.colors.text }]}>
                 {background.label}
               </Text>
@@ -101,6 +117,9 @@ const styles = StyleSheet.create({
     height: 112,
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
+  },
+  blankPreview: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   previewImage: {
     borderTopLeftRadius: 6,
