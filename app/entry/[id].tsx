@@ -115,6 +115,7 @@ const FORMAT_ITEMS: readonly RichTextFormatItem[] = [
   { kind: 'align-justify', icon: 'format-align-justify' },
 ];
 const STICKER_PLACEMENT_SIZE = 96;
+const INITIAL_STICKER_SCALE = 2.25;
 const TEXT_STICKER_PLACEMENT_WIDTH = 160;
 const PHOTO_STICKER_PLACEMENT_WIDTH = 148;
 const VISIBLE_STICKER_STAGGER = 18;
@@ -353,7 +354,7 @@ export default function EntryDetailScreen() {
       category,
       x: position.x,
       y: position.y,
-      scale: 1,
+      scale: INITIAL_STICKER_SCALE,
       rotation: Math.floor(Math.random() * 30) - 15,
       zIndex: editStickers.length + 1,
       behindText: false,
