@@ -40,6 +40,7 @@ import {
 } from "@/features/diary/services/DiaryEntryListPagination";
 import { appLockService } from "@/services/AppLockService";
 import { DiaryTimelineList } from "@/features/diary/components/DiaryTimelineList";
+import { JournalSuggestionsFooter } from "@/features/journal/components/JournalSuggestionsFooter";
 import { PaywallModal } from "@/shared/components/PaywallModal";
 import { useAppStore } from "@/stores/useAppStore";
 import { useScrollCollapse } from "@/shared/hooks/useScrollCollapse";
@@ -452,6 +453,16 @@ export default function JournalEntriesScreen() {
     return Array.from(groups.entries());
   }, [visibleFilteredEntries]);
   const hasMoreEntries = visibleEntryCount < filteredEntries.length;
+  const entryCountsByJournalId = useMemo(() => {
+    const counts = new Map<string, number>();
+    entries.forEach((entry) => {
+      if (!isDiaryEntryVisible(entry)) return;
+      (entry.journalIds ?? entry.collectionIds).forEach((entryJournalId) => {
+        counts.set(entryJournalId, (counts.get(entryJournalId) ?? 0) + 1);
+      });
+    });
+    return counts;
+  }, [entries]);
 
   const loadMoreEntries = useCallback(() => {
     if (isLoadingMoreEntries || !hasMoreEntries) return;
@@ -849,6 +860,17 @@ export default function JournalEntriesScreen() {
               onReflectionSummaryPress={viewMode === "timeline" || viewMode === "feed" ? undefined : handleReflectionSummaryPress}
             />
           )}
+          {!hasMoreEntries && filteredEntries.length > 0 ? (
+            <JournalSuggestionsFooter
+              journals={journals}
+              currentJournalId={journalId}
+              entryCountsByJournalId={entryCountsByJournalId}
+              onPressJournal={(journal) => {
+                router.push({ pathname: "/journal/[id]", params: { id: journal.id, title: journal.title } });
+              }}
+              onPressTitle={() => router.push("/(tabs)")}
+            />
+          ) : null}
           </ScrollView>
           {isLoadingMoreEntries && hasMoreEntries ? (
             <View
