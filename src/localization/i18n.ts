@@ -179,8 +179,18 @@ const translations = {
     insightsNumberEntries: 'Entries',
     insightsNumberWords: 'Words',
     insightsNumberStickers: 'Stickers',
-    insightsNumberWritingDays: 'Entries',
+    insightsNumberWritingDays: 'Writing days',
     insightsNumberReflections: 'Reflections',
+    insightsUnitEntryOne: 'entry',
+    insightsUnitEntryMany: 'entries',
+    insightsUnitWordOne: 'word',
+    insightsUnitWordMany: 'words',
+    insightsUnitStickerOne: 'sticker',
+    insightsUnitStickerMany: 'stickers',
+    insightsUnitWritingDayOne: 'writing day',
+    insightsUnitWritingDayMany: 'writing days',
+    insightsUnitReflectionOne: 'reflection',
+    insightsUnitReflectionMany: 'reflections',
     insightsMoodSection: 'MOOD',
     insightsTagSection: 'TAGS',
     insightsActivitySection: 'ACTIVITY',
@@ -694,8 +704,18 @@ const translations = {
     insightsNumberEntries: 'エントリー',
     insightsNumberWords: '単語',
     insightsNumberStickers: 'ステッカー',
-    insightsNumberWritingDays: 'エントリー',
+    insightsNumberWritingDays: '記録日',
     insightsNumberReflections: 'リフレクション',
+    insightsUnitEntryOne: 'エントリー',
+    insightsUnitEntryMany: 'エントリー',
+    insightsUnitWordOne: '単語',
+    insightsUnitWordMany: '単語',
+    insightsUnitStickerOne: 'ステッカー',
+    insightsUnitStickerMany: 'ステッカー',
+    insightsUnitWritingDayOne: '記録日',
+    insightsUnitWritingDayMany: '記録日',
+    insightsUnitReflectionOne: 'リフレクション',
+    insightsUnitReflectionMany: 'リフレクション',
     insightsMoodSection: '気分',
     insightsTagSection: 'タグ',
     insightsActivitySection: 'アクティビティ',
@@ -1209,8 +1229,18 @@ const translations = {
     insightsNumberEntries: '日记',
     insightsNumberWords: '字词',
     insightsNumberStickers: '贴纸',
-    insightsNumberWritingDays: '日记条目',
+    insightsNumberWritingDays: '写作日',
     insightsNumberReflections: '反思',
+    insightsUnitEntryOne: '篇日记',
+    insightsUnitEntryMany: '篇日记',
+    insightsUnitWordOne: '字词',
+    insightsUnitWordMany: '字词',
+    insightsUnitStickerOne: '张贴纸',
+    insightsUnitStickerMany: '张贴纸',
+    insightsUnitWritingDayOne: '写作日',
+    insightsUnitWritingDayMany: '写作日',
+    insightsUnitReflectionOne: '条反思',
+    insightsUnitReflectionMany: '条反思',
     insightsMoodSection: '心情',
     insightsTagSection: '标签',
     insightsActivitySection: '活动',
@@ -1724,8 +1754,18 @@ const translations = {
     insightsNumberEntries: 'Einträge',
     insightsNumberWords: 'Wörter',
     insightsNumberStickers: 'Sticker',
-    insightsNumberWritingDays: 'Einträge',
+    insightsNumberWritingDays: 'Schreibtage',
     insightsNumberReflections: 'Reflexionen',
+    insightsUnitEntryOne: 'Eintrag',
+    insightsUnitEntryMany: 'Einträge',
+    insightsUnitWordOne: 'Wort',
+    insightsUnitWordMany: 'Wörter',
+    insightsUnitStickerOne: 'Sticker',
+    insightsUnitStickerMany: 'Sticker',
+    insightsUnitWritingDayOne: 'Schreibtag',
+    insightsUnitWritingDayMany: 'Schreibtage',
+    insightsUnitReflectionOne: 'Reflexion',
+    insightsUnitReflectionMany: 'Reflexionen',
     insightsMoodSection: 'STIMMUNG',
     insightsTagSection: 'TAGS',
     insightsActivitySection: 'AKTIVITÄT',
@@ -2239,8 +2279,18 @@ const translations = {
     insightsNumberEntries: 'Entrées',
     insightsNumberWords: 'Mots',
     insightsNumberStickers: 'Autocollants',
-    insightsNumberWritingDays: 'Entrées',
+    insightsNumberWritingDays: 'Jours d’écriture',
     insightsNumberReflections: 'Réflexions',
+    insightsUnitEntryOne: 'entrée',
+    insightsUnitEntryMany: 'entrées',
+    insightsUnitWordOne: 'mot',
+    insightsUnitWordMany: 'mots',
+    insightsUnitStickerOne: 'autocollant',
+    insightsUnitStickerMany: 'autocollants',
+    insightsUnitWritingDayOne: 'jour d’écriture',
+    insightsUnitWritingDayMany: 'jours d’écriture',
+    insightsUnitReflectionOne: 'réflexion',
+    insightsUnitReflectionMany: 'réflexions',
     insightsMoodSection: 'HUMEUR',
     insightsTagSection: 'ÉTIQUETTES',
     insightsActivitySection: 'ACTIVITÉ',
@@ -2620,6 +2670,21 @@ export function homeFilterAllLabel(kind: string, t: (key: TranslationKey) => str
 
 export function reflectionCountLabel(count: number, t: (key: TranslationKey) => string): string {
   return `${count} ${count === 1 ? t('reflection') : t('reflections')}`;
+}
+
+export type InsightsMetricUnit = 'entry' | 'word' | 'sticker' | 'writingDay' | 'reflection';
+
+export function insightsMetricUnitLabel(
+  unit: InsightsMetricUnit,
+  count: number,
+  t: (key: TranslationKey) => string,
+): string {
+  const suffix = count === 1 ? 'One' : 'Many';
+  if (unit === 'entry') return t(suffix === 'One' ? 'insightsUnitEntryOne' : 'insightsUnitEntryMany');
+  if (unit === 'word') return t(suffix === 'One' ? 'insightsUnitWordOne' : 'insightsUnitWordMany');
+  if (unit === 'sticker') return t(suffix === 'One' ? 'insightsUnitStickerOne' : 'insightsUnitStickerMany');
+  if (unit === 'writingDay') return t(suffix === 'One' ? 'insightsUnitWritingDayOne' : 'insightsUnitWritingDayMany');
+  return t(suffix === 'One' ? 'insightsUnitReflectionOne' : 'insightsUnitReflectionMany');
 }
 
 export function appText(value: string): string {

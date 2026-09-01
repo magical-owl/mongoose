@@ -18,7 +18,7 @@ import { normalizeDiaryTags } from "@/features/diary/services/DiaryTagService";
 import { useProfileForm } from "@/features/profile/hooks/useProfileForm";
 import { resolveImportedProfilePhotoUri } from "@/features/profile/services/ProfilePhotoService";
 import { useAppStore } from "@/stores/useAppStore";
-import { manualMoodLabel, type TranslationKey, useTranslation } from "@/localization/i18n";
+import { insightsMetricUnitLabel, manualMoodLabel, type InsightsMetricUnit, type TranslationKey, useTranslation } from "@/localization/i18n";
 
 type InsightsRange = "year" | "month" | "week";
 type JournalTimeBucket = "morning" | "afternoon" | "evening" | "night";
@@ -258,12 +258,12 @@ export default function InsightsScreen() {
   const moodTotal = stats.moodCounts.reduce((sum, [, count]) => sum + count, 0);
   const maxActivityCount = Math.max(...stats.activityBuckets.map((day) => day.count), 1);
   const moodColor = (mood: string) => getManualMoodColor(mood as ManualMood, theme.colors);
-  const numberStats: readonly { readonly label: TranslationKey; readonly value: number; readonly tone: string }[] = [
-    { label: "insightsNumberEntries", value: stats.entryTotal, tone: theme.colors.tint },
-    { label: "insightsNumberWords", value: stats.wordTotal, tone: theme.colors.tint },
-    { label: "insightsNumberStickers", value: stats.stickerTotal, tone: theme.colors.tint },
-    { label: "insightsNumberWritingDays", value: stats.writingDayTotal, tone: theme.colors.tint },
-    { label: "insightsNumberReflections", value: stats.reflectionTotal, tone: theme.colors.tint },
+  const numberStats: readonly { readonly label: TranslationKey; readonly unit: InsightsMetricUnit; readonly value: number; readonly tone: string }[] = [
+    { label: "insightsNumberEntries", unit: "entry", value: stats.entryTotal, tone: theme.colors.tint },
+    { label: "insightsNumberWords", unit: "word", value: stats.wordTotal, tone: theme.colors.tint },
+    { label: "insightsNumberStickers", unit: "sticker", value: stats.stickerTotal, tone: theme.colors.tint },
+    { label: "insightsNumberWritingDays", unit: "writingDay", value: stats.writingDayTotal, tone: theme.colors.tint },
+    { label: "insightsNumberReflections", unit: "reflection", value: stats.reflectionTotal, tone: theme.colors.tint },
   ];
 
   return (
@@ -371,7 +371,7 @@ export default function InsightsScreen() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.6}
                 >
-                  {t(item.label)}
+                  {insightsMetricUnitLabel(item.unit, item.value, t)}
                 </Text>
               </View>
             </View>
@@ -433,7 +433,7 @@ export default function InsightsScreen() {
           </View>
           <View style={[styles.cardFooter, { borderTopColor: theme.colors.border }]}>
             <Text preset="caption" color="textSecondary">{t("insightsTotalWritten")}</Text>
-            <Text preset="caption" color="text" style={styles.footerValue}>{stats.entryTotal} {stats.entryTotal === 1 ? t("insightsEntry") : t("insightsEntries")}</Text>
+            <Text preset="caption" color="text" style={styles.footerValue}>{stats.entryTotal} {insightsMetricUnitLabel("entry", stats.entryTotal, t)}</Text>
           </View>
         </View>
 
@@ -595,12 +595,12 @@ const styles = StyleSheet.create({
   numberCardLabelColumn: { flex: 1, minWidth: 0, paddingRight: 2 },
   numberCardMuted: { fontSize: 15, lineHeight: 19, fontWeight: "300" },
   numberCardTitle: { fontSize: 15, lineHeight: 19, fontWeight: "800" },
-  numberCardValueColumn: { width: 64, alignItems: "center", justifyContent: "center" },
+  numberCardValueColumn: { width: 72, alignItems: "center", justifyContent: "center" },
   numberCardValue: { fontSize: 32, lineHeight: 36, fontWeight: "800", fontVariant: ["tabular-nums"], textAlign: "center" },
-  numberCardUnit: { width: 64, fontSize: 10, lineHeight: 13, fontWeight: "800", textAlign: "center" },
-  numberCardFullValueColumn: { width: 132 },
+  numberCardUnit: { width: 72, fontSize: 12, lineHeight: 16, fontWeight: "800", textAlign: "center" },
+  numberCardFullValueColumn: { width: 140 },
   numberCardFullValue: { width: 132, fontSize: 46, lineHeight: 56 },
-  numberCardFullUnit: { width: 112, fontSize: 15, lineHeight: 19 },
+  numberCardFullUnit: { width: 132, fontSize: 16, lineHeight: 21 },
   sectionLabel: { fontWeight: "700", letterSpacing: 0.5, marginBottom: 10 },
   card: { borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 24 },
   compactCard: { padding: 12 },

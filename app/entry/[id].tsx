@@ -685,6 +685,7 @@ export default function EntryDetailScreen() {
               onRemovePhoto={() => setEditCoverPhoto(undefined)}
               scrollY={coverScrollY}
               containerStyle={hasEditCoverPhoto ? styles.viewCoverPicker : undefined}
+              actionAreaTopInset={hasEditCoverPhoto ? headerOnlyHeight : 0}
             />
           ) : (
             <Animated.View style={[styles.viewCoverClip, { height: viewCoverHeight }]}>

@@ -547,6 +547,7 @@ export default function CreateEntryScreen() {
           onRemovePhoto={() => setCoverPhoto(undefined)}
           scrollY={coverScrollY}
           containerStyle={hasCreateCoverPhoto ? styles.viewCoverPicker : undefined}
+          actionAreaTopInset={hasCreateCoverPhoto ? headerOnlyHeight : 0}
         />
       </View>
 

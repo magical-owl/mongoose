@@ -18,6 +18,7 @@ interface DiaryCoverPhotoPickerProps {
   readonly scrollY?: Animated.Value;
   readonly children?: ReactNode;
   readonly containerStyle?: StyleProp<ViewStyle>;
+  readonly actionAreaTopInset?: number;
 }
 
 export function DiaryCoverPhotoPicker({
@@ -31,6 +32,7 @@ export function DiaryCoverPhotoPicker({
   scrollY,
   children,
   containerStyle,
+  actionAreaTopInset = 0,
 }: DiaryCoverPhotoPickerProps) {
   const theme = useTheme();
   const t = useTranslation();
@@ -41,6 +43,7 @@ export function DiaryCoverPhotoPicker({
   if (!editable && !photo) return null;
 
   const fullHeight = height ?? Math.min(184, Math.max(120, (windowWidth - theme.spacing.lg * 2) / 1.9));
+  const entryHeroActionTop = Math.max(actionAreaTopInset, actionAreaTopInset + (fullHeight - actionAreaTopInset) / 2);
   const collapsedHeight = 0;
   const animatedContainerStyle = scrollY
     ? {
@@ -104,7 +107,10 @@ export function DiaryCoverPhotoPicker({
       )}
 
       {editable && (!isEntryHero || photo) ? (
-        <View style={isEntryHero ? styles.entryHeroActions : styles.actions}>
+        <View
+          testID={isEntryHero ? 'diary-cover-photo-entry-hero-actions' : undefined}
+          style={isEntryHero ? [styles.entryHeroActions, { top: entryHeroActionTop }] : styles.actions}
+        >
           <TouchableOpacity
             style={[
               styles.actionButton,
@@ -205,7 +211,6 @@ const styles = StyleSheet.create({
   },
   entryHeroActions: {
     position: 'absolute',
-    top: '56%',
     left: 0,
     right: 0,
     flexDirection: 'row',
