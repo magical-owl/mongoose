@@ -24,6 +24,7 @@ Define coherent, accessible Mongoose UI behavior before and during implementatio
 - Prefer reusable shared or feature components over screen-specific duplication.
 - Keep touch targets, text fit, contrast, and Dynamic Type behavior in scope.
 - Identify when a design pattern should be documented in `docs/AppDesignGuidelines.md`.
+- For generated illustration assets, require the generation packet and redraw handoff in `agents/original-asset-generation.md` before treating drafts as implementation-ready.
 
 ## Must Not
 

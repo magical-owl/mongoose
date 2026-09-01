@@ -8,8 +8,31 @@ This register tracks bundled assets that ship with the app. It is an engineering
 - Do not use watermarked previews, brand marks, copyrighted characters, celebrity likenesses, or named living artists as generation targets.
 - Keep prompts, scripts, source dates, license notes, and review status close to the asset files.
 - Generated assets remain draft until a human reviewer checks for confusing similarity, trademarks, watermarks, and store-policy concerns.
+- AI-generated drafts are concept material by default. Release candidates should document human redraw or material polish before approval.
+- Do not use third-party visual references as generator inputs unless ownership or commercial-use rights are recorded.
+- For generated drafts, record the asset ID, prompt, model/tool when known, generation date, references, designer handoff notes, and rejection/approval decision.
 - Do not ship platform emoji as sticker-pack artwork. Basic sticker packs should use project-authored PNG assets or another source with recorded commercial-use rights.
 - New project-authored illustration assets should follow [`agents/original-asset-generation.md`](../agents/original-asset-generation.md) before generation and still require human IP/design review before release.
+
+## Per-Asset Evidence Fields
+
+Use these fields when adding or replacing individual generated or human-polished assets:
+
+```text
+Asset ID:
+Path:
+Purpose:
+Draft/final status:
+Source tool or human source file:
+Prompt/source notes:
+Generation or creation date:
+Reference inputs:
+License/ownership notes:
+Designer handoff notes:
+Human redraw/polish evidence:
+IP/design review status:
+Release decision:
+```
 
 ## Generated With Project Script
 
@@ -46,6 +69,7 @@ Review status: draft; human IP/design review required before release.
 - [ ] Every shipped asset is present in this register.
 - [ ] Every final asset has source, license, attribution, and review status.
 - [ ] AI-generated assets include prompt/source notes and use only owned or license-cleared references.
+- [ ] AI-generated release assets include human redraw or material human polish evidence.
 - [ ] No asset contains watermarks, brand marks, copyrighted characters, celebrity likenesses, or protected style imitation.
 - [ ] App icon/splash assets are reviewed after final app name and brand direction are selected.
 - [ ] Sticker packs are checked for character lookalikes and emoji/clipart similarity.
