@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, ImageBackground, Keyboard, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Image, ImageBackground, Keyboard, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View, type ImageStyle, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
@@ -40,18 +40,29 @@ interface DiaryEntryViewProps {
   readonly showDateColumn?: boolean;
 }
 
-function CoverPhotoPreview({ entry, style, testID }: { readonly entry: DiaryEntry; readonly style: object; readonly testID?: string }): React.JSX.Element | null {
+function CoverPhotoPreview({ entry, style, testID }: { readonly entry: DiaryEntry; readonly style: StyleProp<ImageStyle>; readonly testID?: string }): React.JSX.Element | null {
+  const theme = useTheme();
   if (!entry.coverPhoto) return null;
   const source = getDiaryPhotoImageSource(entry.coverPhoto.uri);
   if (!source) return null;
+  const flattenedStyle = StyleSheet.flatten(style) ?? {};
+  const frameStyle = flattenedStyle as ViewStyle;
+  const imageStyle = flattenedStyle as ImageStyle;
   return (
-    <Image
-      source={source}
-      style={[styles.coverPhoto, style]}
-      resizeMode="cover"
-      accessibilityIgnoresInvertColors
-      testID={testID}
-    />
+    <View style={[styles.coverPhotoFrame, frameStyle]} testID={testID}>
+      <Image
+        source={source}
+        style={[styles.coverPhoto, imageStyle]}
+        resizeMode="cover"
+        accessibilityIgnoresInvertColors
+        testID={testID ? `${testID}-image` : undefined}
+      />
+      <View
+        pointerEvents="none"
+        style={[styles.coverPhotoScrim, frameStyle, { backgroundColor: theme.colors.overlay }]}
+        testID={testID ? `${testID}-scrim` : undefined}
+      />
+    </View>
   );
 }
 
@@ -559,7 +570,9 @@ const styles = StyleSheet.create({
   entryMoodMeta: { maxWidth: 190 },
   title: { flex: 1 },
   content: { fontSize: 16, lineHeight: 22 },
+  coverPhotoFrame: { position: 'relative', overflow: 'hidden' },
   coverPhoto: { backgroundColor: '#000' },
+  coverPhotoScrim: { position: 'absolute', top: 0, left: 0, opacity: 0.28 },
   cardPreviewRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   cardTextPreview: { flex: 1, minWidth: 0 },
   cardCoverPhoto: { width: 58, height: 58, borderRadius: 6 },

@@ -149,6 +149,7 @@ describe('DiaryEntryView', () => {
     const reflectionInputStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflection-input').props.style);
     const reflectionItemStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflection-item').props.style);
     const coverStyle = StyleSheet.flatten(getByTestId('entry-timeline-cover-photo').props.style);
+    const coverScrimStyle = StyleSheet.flatten(getByTestId('entry-timeline-cover-photo-scrim').props.style);
 
     expect(spineStyle.width).toBe(1);
     expect(spineStyle.left).toBe(26);
@@ -171,6 +172,7 @@ describe('DiaryEntryView', () => {
     expect(reflectionItemStyle.borderRadius).toBe(8);
     expect(coverStyle.width).toBe('100%');
     expect(coverStyle.borderRadius).toBe(0);
+    expect(coverScrimStyle.opacity).toBe(0.28);
   });
 
   it('renders feed view without cover using the entry-detail mood and width pattern', async () => {
