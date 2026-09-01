@@ -25,6 +25,7 @@ function createDraft(content: string): DiaryDraft {
     date: '2026-08-29',
     companion: 'cat',
     stickers: [],
+    paperBackgroundId: 'vintage-parchment',
     photos: [],
     tags: [],
     manualMoodWeather: 'neutral',

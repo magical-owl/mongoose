@@ -50,4 +50,17 @@ describe('DiaryEntryEditorChrome', () => {
 
     expect(footerStyle.backgroundColor).toEqual(expect.stringMatching(/E6$/));
   });
+
+  it('renders footer trailing controls after the word count', async () => {
+    const { getByText } = await renderWithProviders(
+      React.createElement(
+        DiaryEntryEditorFooter,
+        { bottom: 12, wordCount: 42, trailing: React.createElement(Text, null, 'Details') },
+        React.createElement(Text, null, 'Tools'),
+      ),
+    );
+
+    expect(getByText('42w')).toBeTruthy();
+    expect(getByText('Details')).toBeTruthy();
+  });
 });

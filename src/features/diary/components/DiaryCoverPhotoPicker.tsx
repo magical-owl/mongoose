@@ -90,7 +90,7 @@ export function DiaryCoverPhotoPicker({
         />
       ) : (
         <TouchableOpacity
-          style={[styles.emptyState, isEntryHero && { backgroundColor: theme.colors.surface }]}
+          style={[styles.emptyState, isEntryHero && { backgroundColor: 'transparent' }]}
           onPress={onChoosePhoto ?? onTakePhoto}
           activeOpacity={0.72}
           accessibilityRole={editable ? 'button' : undefined}
@@ -100,7 +100,11 @@ export function DiaryCoverPhotoPicker({
           <View style={[styles.emptyIconHalo, { backgroundColor: theme.colors.background + 'CC', borderColor: theme.colors.border }]}>
             <MaterialCommunityIcons name="camera-outline" size={24} color={theme.colors.tint} />
           </View>
-          <Text preset="bodySmall" color="text" style={[styles.emptyLabel, isEntryHero && styles.entryHeroEmptyLabel]}>
+          <Text
+            preset="bodySmall"
+            color={isEntryHero ? theme.colors.stickerControlText : 'text'}
+            style={[styles.emptyLabel, isEntryHero && styles.entryHeroEmptyLabel]}
+          >
             {t('entryCoverPhotoTitle')}
           </Text>
         </TouchableOpacity>

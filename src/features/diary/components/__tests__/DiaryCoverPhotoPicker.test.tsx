@@ -45,4 +45,15 @@ describe('DiaryCoverPhotoPicker', () => {
 
     expect(actionsStyle.top).toBe(168);
   });
+
+  it('uses white text for the entry hero cover placeholder', async () => {
+    const { getByText } = await renderWithProviders(
+      <DiaryCoverPhotoPicker variant="entryHero" height={160} />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    const placeholderStyle = StyleSheet.flatten(getByText('Cover photo').props.style);
+
+    expect(placeholderStyle.color).toBe('#FFFFFF');
+  });
 });

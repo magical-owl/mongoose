@@ -39,16 +39,15 @@ import { TemplatePickerModal } from '@/features/diary/components/TemplatePickerM
 import { Template } from '@/features/diary/domain/Template';
 import { generateUUID } from '@/shared/utils/uuid';
 import { diaryDraftService } from '@/features/diary/services/DiaryDraftService';
-import { EntryDetailsModal } from '@/features/diary/components/EntryDetailsModal';
 import { RichTextFormattingDrawer, type RichTextFormatItem } from '@/features/diary/components/RichTextFormattingDrawer';
-import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
-import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSelector';
-import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
 import { DiaryCoverPhotoPicker } from '@/features/diary/components/DiaryCoverPhotoPicker';
 import { DiaryPaperCanvas } from '@/features/diary/components/DiaryPaperCanvas';
+import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/DiaryPaperBackgroundPickerModal';
+import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataModal';
+import { DEFAULT_DIARY_PAPER_BACKGROUND_ID } from '@/features/diary/domain/DiaryPaperBackgrounds';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
-import { chooseDiaryPhoto, chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
+import { chooseDiaryPhoto, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
@@ -99,7 +98,6 @@ const DEFAULT_COMPANION = 'cat' as const;
 const STICKER_PLACEMENT_SIZE = 96;
 const INITIAL_STICKER_SCALE = 2.25;
 const TEXT_STICKER_PLACEMENT_WIDTH = 160;
-const PHOTO_STICKER_PLACEMENT_WIDTH = 148;
 const VISIBLE_STICKER_STAGGER = 18;
 const ENTRY_HEADER_TOP_OFFSET = ENTRY_EDITOR_HEADER_TOP_OFFSET;
 const ENTRY_HEADER_BUTTON_HEIGHT = ENTRY_EDITOR_HEADER_BUTTON_HEIGHT;
@@ -152,9 +150,12 @@ export default function CreateEntryScreen() {
   });
   const [stickers, setStickers] = useState<PlacedSticker[]>([]);
   const [coverPhoto, setCoverPhoto] = useState<DiaryPhoto | undefined>();
+  const [paperBackgroundId, setPaperBackgroundId] = useState<string>(DEFAULT_DIARY_PAPER_BACKGROUND_ID);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [showPaperBackgroundPicker, setShowPaperBackgroundPicker] = useState(false);
   const [showFormattingTools, setShowFormattingTools] = useState(false);
+  const [showEntryMetadata, setShowEntryMetadata] = useState(false);
   const [manualMoodWeather, setManualMoodWeather] = useState<ManualMoodWeather>('neutral');
   const [manualMoods, setManualMoods] = useState<ManualMood[]>(['neutral']);
   const [writingMode, setWritingMode] = useState<WritingMode>('free-write');
@@ -169,7 +170,6 @@ export default function CreateEntryScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedJournalIds, setSelectedJournalIds] = useState<string[]>(() => paramJournalId && !isSyntheticJournalId(paramJournalId) ? [paramJournalId] : []);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [showEntryDetails, setShowEntryDetails] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isStickerDragging, setIsStickerDragging] = useState(false);
   const [showStickerBounds, setShowStickerBounds] = useState(false);
@@ -192,6 +192,7 @@ export default function CreateEntryScreen() {
       setTitle(draft.title);
       setContent(draft.content);
       setCoverPhoto(draft.coverPhoto);
+      setPaperBackgroundId(draft.paperBackgroundId);
       setStickers([...draft.stickers, ...draft.photos.map((photo, index) => createPlacedPhotoSticker(photo, draft.stickers.length + index))]);
       setSelectedTags(normalizeDiaryTags(draft.tags));
       setManualMoodWeather(draft.manualMoodWeather);
@@ -225,6 +226,7 @@ export default function CreateEntryScreen() {
         companion: DEFAULT_COMPANION,
         stickers,
         coverPhoto,
+        paperBackgroundId,
         photos: [],
         tags: selectedTags,
         manualMood: getPrimaryManualMood(manualMoods),
@@ -237,7 +239,7 @@ export default function CreateEntryScreen() {
       });
     }, 700);
     return () => clearTimeout(timer);
-  }, [title, content, isoDate, stickers, coverPhoto, selectedTags, manualMoods, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
+  }, [title, content, isoDate, stickers, coverPhoto, paperBackgroundId, selectedTags, manualMoods, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
 
   useEffect(() => () => {
     if (stickerBoundsTimer.current) clearTimeout(stickerBoundsTimer.current);
@@ -345,34 +347,6 @@ export default function CreateEntryScreen() {
     setStickers((prev) => [...prev, newSticker]);
   }, [getVisibleStickerPosition, revealStickerBounds, setStickers, stickers.length]);
 
-  const handlePhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
-    const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhotos();
-    if (!result.success) {
-      if (result.error === 'native-module-missing') {
-        Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
-      } else if (result.error === 'camera-permission-denied') {
-        Alert.alert(t('entryPhotoPermissionTitle'), t('entryCameraPermissionMessage'));
-      } else {
-        Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage'));
-      }
-      return;
-    }
-    if (result.assets.length === 0) return;
-    try {
-      const imported = await Promise.all(result.assets.map((asset) => diaryPhotoService.importAsset(asset)));
-      revealStickerBounds();
-      setStickers((current) => [
-        ...current,
-        ...imported.map((photo, index) => ({
-          ...createPlacedPhotoSticker(photo, current.length + index),
-          ...getVisibleStickerPosition(current.length + index, PHOTO_STICKER_PLACEMENT_WIDTH),
-        })),
-      ]);
-    } catch {
-      Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
-    }
-  }, [getVisibleStickerPosition, revealStickerBounds, t]);
-
   const handleCoverPhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
     const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhoto();
     if (!result.success) {
@@ -421,7 +395,7 @@ export default function CreateEntryScreen() {
       title: title.trim(),
       content: content.trim(),
       date: isoDate,
-      paperBackgroundId: 'vintage-parchment',
+      paperBackgroundId,
       stickers,
       coverPhoto,
       photos: [],
@@ -485,8 +459,9 @@ export default function CreateEntryScreen() {
         outputRange: [coverExpandedHeight, 0],
         extrapolate: 'clamp',
       })
-    : headerOverlayHeight;
+    : 0;
   const coverTopOffset = hasCreateCoverPhoto ? 0 : headerOnlyHeight + ENTRY_COVER_TOP_GAP;
+  const entryPlaceholderColor = theme.colors.stickerControlText;
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
@@ -496,14 +471,14 @@ export default function CreateEntryScreen() {
         topInset={insets.top}
         horizontalPadding={entryHorizontalPadding}
         title={t('entryCreateTitle')}
-        onCover={hasCreateCoverPhoto}
+        onCover
         left={(
           <IconCircleButton
             icon="close-circle-outline"
             onPress={navigateBack}
             accessibilityLabel={t('entryCancelA11y')}
             iconSize={25}
-            surface={hasCreateCoverPhoto ? 'overlay' : 'surface'}
+            surface="overlay"
           />
         )}
         actions={(
@@ -516,7 +491,7 @@ export default function CreateEntryScreen() {
             accessibilityLabel={t('entryBringStickersForwardA11y')}
             iconSize={20}
             size="sm"
-            surface={hasCreateCoverPhoto ? 'overlay' : 'surface'}
+            surface="overlay"
           />
           )}
 
@@ -527,7 +502,7 @@ export default function CreateEntryScreen() {
             active={isFavorite}
             tone="warning"
             iconSize={24}
-            surface={hasCreateCoverPhoto ? 'overlay' : 'surface'}
+            surface="overlay"
           />
 
           <AccentPillButton
@@ -545,7 +520,7 @@ export default function CreateEntryScreen() {
           styles.coverHeader,
           hasCreateCoverPhoto
             ? styles.coverHeaderFullBleed
-            : { top: coverTopOffset, paddingHorizontal: entryHorizontalPadding, backgroundColor: theme.colors.background },
+            : { top: coverTopOffset, paddingHorizontal: entryHorizontalPadding, backgroundColor: 'transparent' },
         ]}
       >
         <DiaryCoverPhotoPicker
@@ -563,7 +538,7 @@ export default function CreateEntryScreen() {
 
       <Animated.View pointerEvents="none" style={[styles.entryPaperBackdropFrame, { top: paperBackdropTop }]}>
         <DiaryPaperCanvas
-          paperBackgroundId="vintage-parchment"
+          paperBackgroundId={paperBackgroundId}
           style={styles.entryPaperBackdrop}
           testID="entry-create-paper-canvas"
         />
@@ -611,7 +586,7 @@ export default function CreateEntryScreen() {
               value={title}
               onChangeText={setTitle}
               placeholder={t('entryTitlePlaceholder')}
-              placeholderTextColor={theme.colors.textTertiary}
+              placeholderTextColor={entryPlaceholderColor}
               style={[styles.titleInput, { color: theme.colors.text }]}
               multiline
               returnKeyType="next"
@@ -658,7 +633,7 @@ export default function CreateEntryScreen() {
                   onChangeText={setContent}
                   onHeightChange={(height) => setBodyContentHeight(Math.max(ENTRY_BODY_MIN_HEIGHT, height))}
                   placeholder={t('entryCreateContentPlaceholder')}
-                  placeholderColor={theme.colors.textTertiary}
+                  placeholderColor={entryPlaceholderColor}
                   fontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
                   lineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
                   fontWeight="600"
@@ -678,19 +653,6 @@ export default function CreateEntryScreen() {
                 />
               ))}
             </View>
-            <View style={styles.belowBodyPickers}>
-              <ManualMoodPicker values={manualMoods} onChangeValues={setManualMoods} multiple />
-              <DiaryJournalSelector
-                selectedJournalIds={selectedJournalIds}
-                journals={journals}
-                onChange={setSelectedJournalIds}
-              />
-              <DiaryTagSelector
-                selectedTags={selectedTags}
-                availableTags={availableTags}
-                onChange={setSelectedTags}
-              />
-            </View>
           </View>
         </ScrollView>
         {showFormattingTools ? (
@@ -707,6 +669,16 @@ export default function CreateEntryScreen() {
       <DiaryEntryEditorFooter
         bottom={keyboardHeight > 0 ? keyboardHeight + 8 : insets.bottom + ENTRY_EDITOR_FOOTER_BOTTOM_OFFSET}
         wordCount={wordCount}
+        trailing={(
+          <IconCircleButton
+            icon="tune-variant"
+            size="sm"
+            surface="transparent"
+            onPress={() => setShowEntryMetadata(true)}
+            accessibilityLabel={t('entryDetailsA11y')}
+            testID="entry-metadata-button"
+          />
+        )}
       >
           <View style={styles.formattingStack}>
             <RichTextFormattingDrawer
@@ -734,24 +706,14 @@ export default function CreateEntryScreen() {
             onPress={() => setShowTemplatePicker(true)}
             accessibilityLabel={t('entryChooseTemplateA11y')}
           />
-
-          <View style={diaryEntryEditorChromeStyles.toolbarPlainGroup}>
-            <IconCircleButton
-              icon="camera-outline"
-              size="sm"
-              surface="transparent"
-              onPress={() => handlePhotoPickerResult('camera')}
-              accessibilityLabel={t('entryTakePhotoA11y')}
-            />
-
-            <IconCircleButton
-              icon="image-outline"
-              size="sm"
-              surface="transparent"
-              onPress={() => handlePhotoPickerResult('library')}
-              accessibilityLabel={t('entryChoosePhotoA11y')}
-            />
-          </View>
+          <IconCircleButton
+            icon="palette-outline"
+            size="sm"
+            surface="transparent"
+            onPress={() => setShowPaperBackgroundPicker(true)}
+            accessibilityLabel={t('entryPaperBackgroundPickerA11y')}
+            testID="entry-paper-background-button"
+          />
 
           <View style={diaryEntryEditorChromeStyles.toolbarPlainGroup}>
             <IconCircleButton
@@ -796,22 +758,23 @@ export default function CreateEntryScreen() {
         onClose={() => setShowTemplatePicker(false)}
         onSelectTemplate={handleSelectTemplate}
       />
-      <EntryDetailsModal
-        visible={showEntryDetails}
-        onDismiss={() => setShowEntryDetails(false)}
-        values={{ manualMood: getPrimaryManualMood(manualMoods), manualMoods, manualMoodWeather, journalIds: selectedJournalIds, writingMode, sensory: { locationLabel, sounds, smells, energyLevel: Number(energyLevel) || 5, bodyState }, isLockbox, timeCapsuleUnlockAt, expiresAt }}
+      <DiaryPaperBackgroundPickerModal
+        visible={showPaperBackgroundPicker}
+        selectedPaperBackgroundId={paperBackgroundId}
+        onSelect={setPaperBackgroundId}
+        onDismiss={() => setShowPaperBackgroundPicker(false)}
+      />
+      <EntryMetadataModal
+        visible={showEntryMetadata}
+        onDismiss={() => setShowEntryMetadata(false)}
+        moods={manualMoods}
+        onChangeMoods={setManualMoods}
+        selectedJournalIds={selectedJournalIds}
         journals={journals}
-        onChange={(next) => {
-          if (next.manualMoods) setManualMoods([...next.manualMoods]);
-          else if (next.manualMood) setManualMoods(normalizeManualMoods(undefined, next.manualMood));
-          if (next.manualMoodWeather) setManualMoodWeather(next.manualMoodWeather);
-          if (next.journalIds) setSelectedJournalIds([...next.journalIds]);
-          if (next.writingMode) setWritingMode(next.writingMode);
-          if (next.sensory) { setLocationLabel(next.sensory.locationLabel); setSounds(next.sensory.sounds); setSmells(next.sensory.smells); setEnergyLevel(String(next.sensory.energyLevel)); setBodyState(next.sensory.bodyState); }
-          if (next.isLockbox !== undefined) setIsLockbox(next.isLockbox);
-          if (next.timeCapsuleUnlockAt !== undefined) setTimeCapsuleUnlockAt(next.timeCapsuleUnlockAt);
-          if (next.expiresAt !== undefined) setExpiresAt(next.expiresAt);
-        }}
+        onChangeJournalIds={setSelectedJournalIds}
+        selectedTags={selectedTags}
+        availableTags={availableTags}
+        onChangeTags={setSelectedTags}
       />
       <PaywallModal
         visible={showPremiumModal}
@@ -904,10 +867,6 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     marginBottom: 18,
-  },
-  belowBodyPickers: {
-    marginTop: 8,
-    paddingTop: 0,
   },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   formattingStack: {

@@ -92,6 +92,7 @@ export function DiaryEntryEditorHeader({
 interface DiaryEntryEditorFooterProps {
   readonly bottom: number;
   readonly children?: ReactNode;
+  readonly trailing?: ReactNode;
   readonly wordCount?: number;
   readonly style?: StyleProp<ViewStyle>;
   readonly testID?: string;
@@ -100,6 +101,7 @@ interface DiaryEntryEditorFooterProps {
 export function DiaryEntryEditorFooter({
   bottom,
   children,
+  trailing,
   wordCount,
   style,
   testID,
@@ -111,13 +113,18 @@ export function DiaryEntryEditorFooter({
       bottom={bottom}
       testID={testID}
       trailing={
-        wordCount ? (
-          <Text
-            preset="caption"
-            style={[styles.wordCount, { color: theme.colors.textSecondary }]}
-          >
-            {wordCount}w
-          </Text>
+        wordCount || trailing ? (
+          <>
+            {wordCount ? (
+              <Text
+                preset="caption"
+                style={[styles.wordCount, { color: theme.colors.textSecondary }]}
+              >
+                {wordCount}w
+              </Text>
+            ) : null}
+            {trailing}
+          </>
         ) : undefined
       }
       style={[{ backgroundColor: theme.colors.surface + "E6" }, style]}

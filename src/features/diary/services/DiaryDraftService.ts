@@ -12,6 +12,7 @@ export interface DiaryDraft {
   readonly companion: CompanionType;
   readonly stickers: PlacedSticker[];
   readonly coverPhoto?: DiaryPhoto;
+  readonly paperBackgroundId: string;
   readonly photos: DiaryPhoto[];
   readonly tags: string[];
   readonly manualMoodWeather: ManualMoodWeather;
@@ -38,6 +39,7 @@ export class DiaryDraftService {
       const manualMoods = normalizeManualMoods(legacyDraft.manualMoods, legacyDraft.manualMood ?? 'neutral');
       return {
         photos: [],
+        paperBackgroundId: 'vintage-parchment',
         tags: [],
         manualMoodWeather: 'neutral',
         writingMode: 'free-write',

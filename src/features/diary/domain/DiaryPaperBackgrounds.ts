@@ -19,6 +19,8 @@ export const DIARY_PAPER_BACKGROUNDS = [
   },
 ] as const satisfies readonly DiaryPaperBackground[];
 
+export const DEFAULT_DIARY_PAPER_BACKGROUND_ID = DIARY_PAPER_BACKGROUNDS[0].id;
+
 export function getDiaryPaperBackgroundSource(id: string): ImageSourcePropType {
   return DIARY_PAPER_BACKGROUNDS.find((background) => background.id === id)?.source ?? DIARY_PAPER_BACKGROUNDS[0].source;
 }
