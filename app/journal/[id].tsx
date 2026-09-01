@@ -40,6 +40,7 @@ import {
 } from "@/features/diary/services/DiaryEntryListPagination";
 import { appLockService } from "@/services/AppLockService";
 import { DiaryTimelineList } from "@/features/diary/components/DiaryTimelineList";
+import { EntryReflectionsModal } from "@/features/diary/components/EntryReflectionsModal";
 import { JournalSuggestionsFooter } from "@/features/journal/components/JournalSuggestionsFooter";
 import { PaywallModal } from "@/shared/components/PaywallModal";
 import { useAppStore } from "@/stores/useAppStore";
@@ -87,11 +88,12 @@ export default function JournalEntriesScreen() {
   const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { height: windowHeight } = useWindowDimensions();
-  const { entries, isLoading, refresh, addReflection } = useDiary();
+  const { entries, isLoading, refresh, addReflection, deleteReflection } = useDiary();
   const { journals, refresh: refreshJournals } = useJournals();
   const { profile } = useProfileForm();
   const { isPro } = useSubscription();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
+  const timeFormat = useAppStore((state) => state.timeFormat);
   const isOnboarded = useAppStore((state) => state.isOnboarded);
   const homeViewModes = useAppStore((state) => state.homeViewModes);
   const homeViewMode = useAppStore((state) => state.homeViewMode);
@@ -119,6 +121,7 @@ export default function JournalEntriesScreen() {
   >(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [reflectionModalEntryId, setReflectionModalEntryId] = useState<string | null>(null);
   const [entryPagination, setEntryPagination] = useState({
     key: "",
     visibleCount: DIARY_ENTRY_LIST_PAGE_SIZE,
@@ -146,6 +149,10 @@ export default function JournalEntriesScreen() {
     if (journalId === UNASSIGNED_JOURNAL_ID) return entries.filter((entry) => (entry.journalIds?.length ?? entry.collectionIds.length) === 0);
     return entries.filter((entry) => (entry.journalIds ?? entry.collectionIds).includes(journalId));
   }, [entries, journalId]);
+  const reflectionModalEntry = useMemo(
+    () => reflectionModalEntryId ? entries.find((entry) => entry.id === reflectionModalEntryId) ?? null : null,
+    [entries, reflectionModalEntryId],
+  );
 
   const journalTitle = journalId === ALL_ENTRIES_JOURNAL_ID
     ? t("journalAllEntriesTitle")
@@ -352,42 +359,27 @@ export default function JournalEntriesScreen() {
     [scrollToEntry, viewMode],
   );
 
-  const handleReflectionSummaryPress = useCallback(
-    (entryId: string) => {
-      const entry = journalEntries.find((item) => item.id === entryId);
-      const timelineIndex = selectableViewModes.findIndex((mode) => mode === "timeline");
-      if (!entry || timelineIndex < 0) {
-        Alert.alert(t("timelineUnavailableTitle"), t("timelineUnavailableMessage"));
-        return;
-      }
+  const handleReflectionSummaryPress = useCallback((entryId: string) => {
+    setReflectionModalEntryId(entryId);
+  }, []);
 
-      pendingScrollEntryId.current = entryId;
-      setCollapsedYears((current) => {
-        const next = new Set(current);
-        next.delete(entry.date.slice(0, 4));
-        return next;
-      });
-      setCollapsedMonths((current) => {
-        const next = new Set(current);
-        next.delete(entry.date.slice(0, 7));
-        return next;
-      });
-      setCollapsedDates((current) => {
-        const next = new Set(current);
-        next.delete(entry.date);
-        return next;
-      });
-      setViewModeIndex(timelineIndex);
-      setHomeViewMode("timeline");
-      [80, 180, 320].forEach((delay) => {
-        setTimeout(() => {
-          if (pendingScrollEntryId.current === entryId) {
-            scrollToEntry(entryId);
-          }
-        }, delay);
-      });
+  const handleDeleteReflection = useCallback(
+    (entryId: string, reflectionId: string) => {
+      Alert.alert(t("reflectionDeleteTitle"), t("reflectionDeleteMessage"), [
+        { text: t("entryCancel"), style: "cancel" },
+        {
+          text: t("entryDelete"),
+          style: "destructive",
+          onPress: async () => {
+            const result = await deleteReflection(entryId, reflectionId);
+            if (!result.success) {
+              Alert.alert(t("reflectionNotDeletedTitle"), result.error.message);
+            }
+          },
+        },
+      ]);
     },
-    [journalEntries, scrollToEntry, selectableViewModes, setHomeViewMode, setViewModeIndex, t],
+    [deleteReflection, t],
   );
 
   const filteredEntries = useMemo(() => {
@@ -901,6 +893,15 @@ export default function JournalEntriesScreen() {
           t("premiumPaywallFeatureOffline"),
         ]}
         onSuccess={closePremiumModal}
+      />
+      <EntryReflectionsModal
+        visible={reflectionModalEntryId !== null}
+        entry={reflectionModalEntry}
+        profile={profile}
+        timeFormat={timeFormat}
+        onDismiss={() => setReflectionModalEntryId(null)}
+        onAddReflection={handleAddReflection}
+        onDeleteReflection={handleDeleteReflection}
       />
     </AppPatternBackground>
   );
