@@ -47,7 +47,7 @@ import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/Dia
 import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataModal';
 import { DEFAULT_DIARY_PAPER_BACKGROUND_ID } from '@/features/diary/domain/DiaryPaperBackgrounds';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
-import { chooseDiaryPhoto, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
+import { chooseDiaryPhoto, chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
@@ -98,6 +98,7 @@ const DEFAULT_COMPANION = 'cat' as const;
 const STICKER_PLACEMENT_SIZE = 96;
 const INITIAL_STICKER_SCALE = 2.25;
 const TEXT_STICKER_PLACEMENT_WIDTH = 160;
+const PHOTO_STICKER_PLACEMENT_WIDTH = 148;
 const VISIBLE_STICKER_STAGGER = 18;
 const ENTRY_HEADER_TOP_OFFSET = ENTRY_EDITOR_HEADER_TOP_OFFSET;
 const ENTRY_HEADER_BUTTON_HEIGHT = ENTRY_EDITOR_HEADER_BUTTON_HEIGHT;
@@ -346,6 +347,32 @@ export default function CreateEntryScreen() {
     };
     setStickers((prev) => [...prev, newSticker]);
   }, [getVisibleStickerPosition, revealStickerBounds, setStickers, stickers.length]);
+
+  const handleAddPhotoStickers = useCallback(async () => {
+    const result = await chooseDiaryPhotos();
+    if (!result.success) {
+      if (result.error === 'native-module-missing') {
+        Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
+      } else {
+        Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage'));
+      }
+      return;
+    }
+    if (result.assets.length === 0) return;
+    try {
+      const imported = await Promise.all(result.assets.map((asset) => diaryPhotoService.importAsset(asset)));
+      revealStickerBounds();
+      setStickers((current) => [
+        ...current,
+        ...imported.map((photo, index) => ({
+          ...createPlacedPhotoSticker(photo, current.length + index),
+          ...getVisibleStickerPosition(current.length + index, PHOTO_STICKER_PLACEMENT_WIDTH),
+        })),
+      ]);
+    } catch {
+      Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
+    }
+  }, [getVisibleStickerPosition, revealStickerBounds, t]);
 
   const handleCoverPhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
     const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhoto();
@@ -716,6 +743,15 @@ export default function CreateEntryScreen() {
           />
 
           <View style={diaryEntryEditorChromeStyles.toolbarPlainGroup}>
+            <IconCircleButton
+              icon="image-outline"
+              size="sm"
+              surface="transparent"
+              onPress={() => { void handleAddPhotoStickers(); }}
+              accessibilityLabel={t('entryChoosePhotoA11y')}
+              testID="entry-add-photo-sticker-button"
+            />
+
             <IconCircleButton
               icon="format-textbox"
               size="sm"

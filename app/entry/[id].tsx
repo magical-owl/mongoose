@@ -58,7 +58,7 @@ import { ReflectionSummaryButton } from '@/features/diary/components/ReflectionS
 import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
 import { TagBadgeList } from '@/features/diary/components/TagBadgeList';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
-import { chooseDiaryPhoto, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
+import { chooseDiaryPhoto, chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
@@ -115,6 +115,7 @@ const FORMAT_ITEMS: readonly RichTextFormatItem[] = [
 const STICKER_PLACEMENT_SIZE = 96;
 const INITIAL_STICKER_SCALE = 2.25;
 const TEXT_STICKER_PLACEMENT_WIDTH = 160;
+const PHOTO_STICKER_PLACEMENT_WIDTH = 148;
 const VISIBLE_STICKER_STAGGER = 18;
 const ENTRY_HEADER_TOP_OFFSET = ENTRY_EDITOR_HEADER_TOP_OFFSET;
 const ENTRY_HEADER_BUTTON_HEIGHT = ENTRY_EDITOR_HEADER_BUTTON_HEIGHT;
@@ -390,6 +391,32 @@ export default function EntryDetailScreen() {
     };
     setEditStickers((prev) => [...prev, newSticker]);
   }, [editStickers.length, getVisibleStickerPosition, revealStickerBounds, setEditStickers]);
+
+  const handleAddPhotoStickers = useCallback(async () => {
+    const result = await chooseDiaryPhotos();
+    if (!result.success) {
+      if (result.error === 'native-module-missing') {
+        Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
+      } else {
+        Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage'));
+      }
+      return;
+    }
+    if (result.assets.length === 0) return;
+    try {
+      const imported = await Promise.all(result.assets.map((asset) => diaryPhotoService.importAsset(asset)));
+      revealStickerBounds();
+      setEditStickers((current) => [
+        ...current,
+        ...imported.map((photo, index) => ({
+          ...createPlacedPhotoSticker(photo, current.length + index),
+          ...getVisibleStickerPosition(current.length + index, PHOTO_STICKER_PLACEMENT_WIDTH),
+        })),
+      ]);
+    } catch {
+      Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
+    }
+  }, [getVisibleStickerPosition, revealStickerBounds, t]);
 
   const handleCoverPhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
     const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhoto();
@@ -963,6 +990,15 @@ export default function EntryDetailScreen() {
               testID="entry-edit-paper-background-button"
             />
             <View style={diaryEntryEditorChromeStyles.toolbarPlainGroup}>
+              <IconCircleButton
+                icon="image-outline"
+                size="sm"
+                surface="transparent"
+                onPress={() => { void handleAddPhotoStickers(); }}
+                accessibilityLabel={t('entryChoosePhotoA11y')}
+                testID="entry-edit-add-photo-sticker-button"
+              />
+
               <IconCircleButton
                 icon="format-textbox"
                 size="sm"
