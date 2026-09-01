@@ -10,6 +10,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
+  Animated,
   View,
   ScrollView,
   Alert,
@@ -45,6 +46,7 @@ import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSelector';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
 import { DiaryCoverPhotoPicker } from '@/features/diary/components/DiaryCoverPhotoPicker';
+import { DiaryPaperCanvas } from '@/features/diary/components/DiaryPaperCanvas';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { chooseDiaryPhoto, chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
@@ -103,7 +105,7 @@ const ENTRY_HEADER_TOP_OFFSET = ENTRY_EDITOR_HEADER_TOP_OFFSET;
 const ENTRY_HEADER_BUTTON_HEIGHT = ENTRY_EDITOR_HEADER_BUTTON_HEIGHT;
 const ENTRY_HEADER_BOTTOM_PADDING = ENTRY_EDITOR_HEADER_BOTTOM_PADDING;
 const ENTRY_COVER_TOP_GAP = ENTRY_EDITOR_COVER_TOP_GAP;
-const ENTRY_EDIT_COVER_BOTTOM_GAP = 6;
+const ENTRY_EDIT_COVER_BOTTOM_GAP = 0;
 const ENTRY_VIEW_COVER_EXPANDED_HEIGHT = 270;
 const ENTRY_BODY_MIN_HEIGHT = ENTRY_EDITOR_BODY_MIN_HEIGHT;
 const ENTRY_BODY_DEFAULT_VIEWPORT_RATIO = ENTRY_EDITOR_BODY_DEFAULT_VIEWPORT_RATIO;
@@ -477,6 +479,13 @@ export default function CreateEntryScreen() {
   const headerOverlayHeight = hasCreateCoverPhoto
     ? coverExpandedHeight + ENTRY_EDIT_COVER_BOTTOM_GAP
     : headerOnlyHeight + ENTRY_COVER_TOP_GAP + coverExpandedHeight;
+  const paperBackdropTop = hasCreateCoverPhoto
+    ? coverScrollY.interpolate({
+        inputRange: [0, 120],
+        outputRange: [coverExpandedHeight, 0],
+        extrapolate: 'clamp',
+      })
+    : headerOverlayHeight;
   const coverTopOffset = hasCreateCoverPhoto ? 0 : headerOnlyHeight + ENTRY_COVER_TOP_GAP;
 
   return (
@@ -551,6 +560,14 @@ export default function CreateEntryScreen() {
           actionAreaTopInset={hasCreateCoverPhoto ? headerOnlyHeight : 0}
         />
       </View>
+
+      <Animated.View pointerEvents="none" style={[styles.entryPaperBackdropFrame, { top: paperBackdropTop }]}>
+        <DiaryPaperCanvas
+          paperBackgroundId="vintage-parchment"
+          style={styles.entryPaperBackdrop}
+          testID="entry-create-paper-canvas"
+        />
+      </Animated.View>
 
       {/* ── Journal body ─────────────────────────────────────────────────── */}
       <KeyboardAvoidingView
@@ -844,6 +861,17 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 2,
     elevation: 2,
+  },
+  entryPaperBackdropFrame: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
+    elevation: 1,
+  },
+  entryPaperBackdrop: {
+    flex: 1,
   },
   bodyStickerCanvas: {
     minHeight: ENTRY_BODY_MIN_HEIGHT,

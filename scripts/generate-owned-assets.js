@@ -752,6 +752,46 @@ function generatePatternBackgrounds() {
   });
 }
 
+function diaryPaperBackground(file, baseHex, draw) {
+  const png = canvas(1024, 1024, { hex: baseHex });
+  draw(png);
+  applyHandmadeTexture(png, {
+    salt: file.length * 97,
+    colorJitter: 5,
+    alphaJitter: 0,
+    toothChance: 0.035,
+    edgeFadeChance: 0,
+    preserveOpaqueAlpha: true,
+  });
+  addPaperFlecks(png, {
+    salt: file.length * 113,
+    count: 720,
+    light: '#FFFDF5',
+    dark: '#6E5A44',
+    maxRadius: 1,
+    alpha: 10,
+  });
+  save(png, `assets/diary-paper/${file}.png`);
+}
+
+function generateDiaryPaperBackgrounds() {
+  diaryPaperBackground('vintage-parchment', '#F3E2C3', (png) => {
+    for (let i = 0; i < 16; i += 1) {
+      const x = 64 + hashPixel(i, 41, 13) * 900;
+      const y = 72 + hashPixel(i, 43, 13) * 880;
+      ellipse(png, x, y, 22 + hashPixel(i, 47, 13) * 34, 8 + hashPixel(i, 53, 13) * 16, rgba('#B99667', 9));
+    }
+  });
+
+  diaryPaperBackground('soft-lined-paper', '#EEF0DC', (png) => {
+    for (let i = 0; i < 18; i += 1) {
+      const y = 62 + i * 52 + (i % 4 === 0 ? 2 : 0);
+      line(png, 36, y, 992, y + (i % 2), 2, rgba('#7C9CA5', 32));
+    }
+    line(png, 118, 40, 124, 985, 2, rgba('#C48B8B', 28));
+  });
+}
+
 function generateAppIdentityAssets() {
   const makeIcon = (size, transparent = false) => {
     const png = canvas(size, size, transparent ? undefined : { hex: '#F5E6D0' });
@@ -790,4 +830,5 @@ function generateAppIdentityAssets() {
 generateJournalBackgrounds();
 generateStickers();
 generatePatternBackgrounds();
+generateDiaryPaperBackgrounds();
 generateAppIdentityAssets();
