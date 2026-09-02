@@ -97,6 +97,28 @@ describe('DiaryEntryView', () => {
     expect(queryByText('Reflect on this')).toBeNull();
   });
 
+  it('keeps card preview text readable instead of applying custom diary body style', async () => {
+    const entryWithDarkBodyStyle: DiaryEntry = {
+      ...baseEntry,
+      bodyFontFamily: 'lora',
+      bodyTextColor: '#2F2A24',
+    };
+    const { getByText } = await renderWithProviders(
+      <DiaryEntryView
+        entry={entryWithDarkBodyStyle}
+        mode="detailed"
+        profile={profile}
+        onPress={jest.fn()}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    const previewStyle = StyleSheet.flatten(getByText('A short entry for today.').props.style);
+
+    expect(previewStyle.color).not.toBe('#2F2A24');
+    expect(previewStyle.fontFamily).not.toBe('Lora_400Regular');
+  });
+
   it('can hide the card date column when a visible date group already labels the entries', async () => {
     const { queryByTestId } = await renderWithProviders(
       <DiaryEntryView entry={baseEntry} mode="detailed" profile={profile} showDateColumn={false} onPress={jest.fn()} />,
@@ -174,6 +196,28 @@ describe('DiaryEntryView', () => {
     expect(coverStyle.width).toBe('100%');
     expect(coverStyle.borderRadius).toBe(0);
     expect(coverScrimStyle.opacity).toBe(0.28);
+  });
+
+  it('keeps timeline preview text readable instead of applying custom diary body style', async () => {
+    const entryWithDarkBodyStyle: DiaryEntry = {
+      ...baseEntry,
+      bodyFontFamily: 'merriweather',
+      bodyTextColor: '#2F2A24',
+    };
+    const { getByText } = await renderWithProviders(
+      <DiaryEntryView
+        entry={entryWithDarkBodyStyle}
+        mode="timeline"
+        profile={profile}
+        onPress={jest.fn()}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    const previewStyle = StyleSheet.flatten(getByText('A short entry for today.').props.style);
+
+    expect(previewStyle.color).not.toBe('#2F2A24');
+    expect(previewStyle.fontFamily).not.toBe('Merriweather_400Regular');
   });
 
   it('renders feed view without cover using the entry-detail mood and width pattern', async () => {
