@@ -34,4 +34,19 @@ describe('ReflectionSummaryButton', () => {
     expect(style.minWidth).toBe(62);
     expect(style.borderRadius).toBe(19);
   });
+
+  it('can render without the tinted backing', async () => {
+    const { getByLabelText } = await renderWithProviders(
+      <ReflectionSummaryButton
+        count={1}
+        onPress={jest.fn()}
+        accessibilityLabel="Open reflections"
+        variant="plain"
+      />,
+    );
+
+    const style = StyleSheet.flatten(getByLabelText('Open reflections').props.style);
+
+    expect(style.backgroundColor).toBe('transparent');
+  });
 });

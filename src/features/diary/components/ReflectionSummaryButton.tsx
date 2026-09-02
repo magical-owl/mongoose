@@ -10,6 +10,7 @@ interface ReflectionSummaryButtonProps {
   readonly iconSize?: number;
   readonly height?: number;
   readonly minWidth?: number;
+  readonly variant?: 'filled' | 'plain';
   readonly showZeroCount?: boolean;
   readonly style?: StyleProp<ViewStyle>;
   readonly testID?: string;
@@ -22,12 +23,14 @@ export function ReflectionSummaryButton({
   iconSize = 14,
   height = 28,
   minWidth = 44,
+  variant = 'filled',
   showZeroCount = true,
   style,
   testID,
 }: ReflectionSummaryButtonProps): React.JSX.Element {
   const theme = useTheme();
   const shouldShowCount = showZeroCount || count > 0;
+  const isPlain = variant === 'plain';
 
   return (
     <TouchableOpacity
@@ -39,7 +42,7 @@ export function ReflectionSummaryButton({
           minWidth,
           height,
           borderRadius: height / 2,
-          backgroundColor: theme.colors.tint + '12',
+          backgroundColor: isPlain ? 'transparent' : theme.colors.tint + '12',
         },
         style,
       ]}

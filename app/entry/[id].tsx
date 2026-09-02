@@ -940,6 +940,7 @@ export default function EntryDetailScreen() {
               iconSize={21}
               height={38}
               minWidth={62}
+              variant="plain"
               style={styles.viewFooterButton}
             />
         </DiaryEntryEditorFooter>
@@ -1231,6 +1232,10 @@ const styles = StyleSheet.create({
   viewFooter: {
     left: undefined,
     width: 86,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   viewFooterButton: {
     gap: 8,

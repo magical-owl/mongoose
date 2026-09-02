@@ -9,6 +9,7 @@ import { AppFooterNavigation } from '@shared/components/AppFooterNavigation';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { AppPatternBackground } from '@shared/components/AppPatternBackground';
 import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
+import { TagBadgeList } from '@/features/diary/components/TagBadgeList';
 import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
 import { getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
 import { useDiary } from '@/features/diary/hooks/useDiary';
@@ -59,6 +60,7 @@ function MemoryCard({ entry, variant = 'compact', onPress, onShuffle }: MemoryCa
         ) : (
           <Ionicons name="book-outline" size={isFeatured ? 36 : 26} color={theme.colors.tint} />
         )}
+        <View pointerEvents="none" style={styles.memoryImageShade} />
         {isFeatured && onShuffle ? (
           <TouchableOpacity
             onPress={(event) => {
@@ -72,18 +74,35 @@ function MemoryCard({ entry, variant = 'compact', onPress, onShuffle }: MemoryCa
             <Ionicons name="shuffle" size={21} color={theme.colors.stickerControlText} />
           </TouchableOpacity>
         ) : null}
+        <View style={styles.memoryCoverCopy}>
+          <View style={styles.memoryCoverMetaRow}>
+            <Text preset="caption" numberOfLines={1} style={[styles.memoryCoverDate, { color: theme.colors.stickerControlText }]}>
+              {formatDisplayDate(entry.date, calendarDateFormat)}
+            </Text>
+            {entry.isFavorite ? <Ionicons name="star" size={13} color={theme.colors.warning} /> : null}
+          </View>
+          <Text preset={isFeatured ? 'h2' : 'label'} style={[styles.memoryTitle, styles.memoryCoverTitle, { color: theme.colors.stickerControlText }]} numberOfLines={1} ellipsizeMode="tail">
+            {entry.title}
+          </Text>
+          <View style={styles.memoryCoverBadgeRow}>
+            <MoodBadgeList
+              moods={getEntryManualMoods(entry)}
+              maxVisible={1}
+              compact
+              overflowPopup
+              style={styles.memoryCoverMoods}
+            />
+            <TagBadgeList
+              tags={entry.tags}
+              maxVisible={1}
+              compact
+              overflowPopup
+              style={styles.memoryCoverTags}
+            />
+          </View>
+        </View>
       </View>
       <View style={styles.memoryCopy}>
-        <View style={styles.memoryMetaRow}>
-          <Text preset="caption" color="textTertiary" numberOfLines={1}>
-            {formatDisplayDate(entry.date, calendarDateFormat)}
-          </Text>
-          {entry.isFavorite ? <Ionicons name="star" size={13} color={theme.colors.warning} /> : null}
-        </View>
-        <Text preset={isFeatured ? 'h2' : 'label'} color="text" style={styles.memoryTitle} numberOfLines={isFeatured ? 2 : 1}>
-          {entry.title}
-        </Text>
-        <MoodBadgeList moods={getEntryManualMoods(entry)} maxVisible={isFeatured ? 3 : 2} compact style={styles.memoryMoods} />
         <Text preset="bodySmall" color="textSecondary" numberOfLines={isFeatured ? 3 : 2}>
           {stripHtml(entry.content)}
         </Text>
@@ -401,6 +420,7 @@ const styles = StyleSheet.create({
     height: 116,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
   featuredImageFrame: {
     height: 190,
@@ -420,21 +440,53 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  memoryCopy: {
-    padding: 12,
-    gap: 7,
+  memoryImageShade: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.34)',
   },
-  memoryMetaRow: {
+  memoryCoverCopy: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 10,
+    gap: 5,
+  },
+  memoryCoverMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
   },
+  memoryCoverDate: {
+    flex: 1,
+    fontWeight: '800',
+    textShadowColor: 'rgba(0, 0, 0, 0.72)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  memoryCoverTitle: {
+    textShadowColor: 'rgba(0, 0, 0, 0.76)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
+  },
+  memoryCoverBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 5,
+  },
+  memoryCoverMoods: {
+    maxWidth: 140,
+  },
+  memoryCoverTags: {
+    flex: 1,
+    maxWidth: '100%',
+  },
+  memoryCopy: {
+    padding: 12,
+  },
   memoryTitle: {
     fontWeight: '800',
-  },
-  memoryMoods: {
-    marginTop: -1,
   },
   emptyInline: {
     minHeight: 54,
