@@ -61,6 +61,7 @@ interface StickerCanvasItemProps {
   };
   readonly allowBottomOverflow?: boolean;
   readonly horizontalEdgeAllowanceRatio?: number;
+  readonly testID?: string;
 }
 
 export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
@@ -72,6 +73,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   bounds,
   allowBottomOverflow = false,
   horizontalEdgeAllowanceRatio,
+  testID,
 }) => {
   const t = useTranslation();
   const theme = useTheme();
@@ -310,15 +312,15 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const resizeBottomPanResponder = useRef(createResizePanResponder(0, 1)).current;
   const resizeLeftPanResponder = useRef(createResizePanResponder(-1, 0)).current;
 
+  const stickerCanvasLayerIndex = sticker.behindText ? 1 : stickerLayerIndex + 3;
+  const activeStickerCanvasLayerIndex = isSelected ? 999 : stickerCanvasLayerIndex;
   const positionStyle = {
     transform: [
       { translateX: pan.x },
       { translateY: pan.y },
     ],
-    // Keep editable stickers touchable even when their saved layer is behind
-    // the text. Read-only rendering still honors the behind-text stack order.
-    zIndex: isSelected ? 999 : sticker.behindText && !isEditable ? 1 : stickerLayerIndex + 3,
-    elevation: isSelected ? 999 : sticker.behindText && !isEditable ? 1 : stickerLayerIndex + 3,
+    zIndex: activeStickerCanvasLayerIndex,
+    elevation: activeStickerCanvasLayerIndex,
   };
 
   const stickerTransformStyle = {
@@ -333,6 +335,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   return (
     <Animated.View
       style={[styles.container, positionStyle]}
+      testID={testID}
     >
       {/* Control strip (only when selected and editable) */}
       {isEditable && isSelected && (
