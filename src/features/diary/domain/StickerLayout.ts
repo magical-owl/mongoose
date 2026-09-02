@@ -28,6 +28,11 @@ export type StickerPosition = {
   readonly y: number;
 };
 
+export type StickerClampOptions = {
+  readonly allowBottomOverflow?: boolean;
+  readonly horizontalEdgeAllowanceRatio?: number;
+};
+
 export function getStickerVisualSize(sticker: PlacedSticker): StickerSize {
   if (sticker.text !== undefined) {
     return { width: DIARY_TEXT_STICKER_BASE_WIDTH, height: DIARY_TEXT_STICKER_BASE_HEIGHT };
@@ -69,19 +74,30 @@ export function clampStickerPosition(
   sticker: PlacedSticker,
   bounds: StickerBounds | undefined,
   scale = sticker.scale,
+  options: StickerClampOptions = {},
 ): StickerPosition {
   if (!bounds) return position;
 
   const visualSize = getStickerVisualSize(sticker);
-  const edgeAllowance = sticker.text === undefined && !sticker.imageUri
+  const defaultImageEdgeAllowanceRatio = sticker.text === undefined && !sticker.imageUri
+    ? DIARY_IMAGE_STICKER_EDGE_ALLOWANCE_RATIO
+    : 0;
+  const horizontalEdgeAllowanceRatio = options.horizontalEdgeAllowanceRatio ?? defaultImageEdgeAllowanceRatio;
+  const horizontalEdgeAllowance = sticker.text === undefined
+    ? visualSize.width * scale * horizontalEdgeAllowanceRatio
+    : 0;
+  const verticalEdgeAllowance = sticker.text === undefined && !sticker.imageUri
     ? DIARY_STICKER_BASE_SIZE * scale * DIARY_IMAGE_STICKER_EDGE_ALLOWANCE_RATIO
     : 0;
-  const minPosition = edgeAllowance > 0 ? -edgeAllowance : 0;
-  const maxX = Math.max(minPosition, bounds.width - visualSize.width * scale + edgeAllowance);
-  const maxY = Math.max(minPosition, bounds.height - visualSize.height * scale + edgeAllowance);
+  const minX = horizontalEdgeAllowance > 0 ? -horizontalEdgeAllowance : 0;
+  const minY = verticalEdgeAllowance > 0 ? -verticalEdgeAllowance : 0;
+  const maxX = Math.max(minX, bounds.width - visualSize.width * scale + horizontalEdgeAllowance);
+  const maxY = options.allowBottomOverflow
+    ? Number.POSITIVE_INFINITY
+    : Math.max(minY, bounds.height - visualSize.height * scale + verticalEdgeAllowance);
 
   return {
-    x: Math.max(minPosition, Math.min(maxX, position.x)),
-    y: Math.max(minPosition, Math.min(maxY, position.y)),
+    x: Math.max(minX, Math.min(maxX, position.x)),
+    y: Math.max(minY, Math.min(maxY, position.y)),
   };
 }

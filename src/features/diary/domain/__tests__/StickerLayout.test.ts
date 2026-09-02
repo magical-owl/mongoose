@@ -100,4 +100,38 @@ describe('StickerLayout', () => {
       y: 240 - DIARY_TEXT_STICKER_BASE_HEIGHT,
     });
   });
+
+  it('allows editable sticker placement to grow past the bottom boundary', () => {
+    const position = clampStickerPosition(
+      { x: -40, y: 320 },
+      { ...baseSticker, text: 'hello', scale: 1 },
+      { width: 240, height: 240 },
+      1,
+      { allowBottomOverflow: true },
+    );
+
+    expect(position).toEqual({
+      x: 0,
+      y: 320,
+    });
+  });
+
+  it('allows enlarged photo stickers to sit near the horizontal canvas edges', () => {
+    const photoSticker: PlacedSticker = {
+      ...baseSticker,
+      imageUri: 'file:///album-photo.jpg',
+      imageWidth: 1200,
+      imageHeight: 800,
+      scale: 2,
+    };
+    const position = clampStickerPosition(
+      { x: 260, y: 48 },
+      photoSticker,
+      { width: 300, height: 320 },
+      2,
+      { horizontalEdgeAllowanceRatio: 0.5 },
+    );
+
+    expect(position.x).toBe(300 - DIARY_PHOTO_STICKER_BASE_WIDTH * 2 + DIARY_PHOTO_STICKER_BASE_WIDTH);
+  });
 });

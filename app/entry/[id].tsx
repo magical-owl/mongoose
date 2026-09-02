@@ -127,6 +127,7 @@ const ENTRY_VIEW_COVER_EXPANDED_HEIGHT = 270;
 const ENTRY_BODY_MIN_HEIGHT = ENTRY_EDITOR_BODY_MIN_HEIGHT;
 const ENTRY_BODY_DEFAULT_VIEWPORT_RATIO = ENTRY_EDITOR_BODY_DEFAULT_VIEWPORT_RATIO;
 const ENTRY_BODY_EXTRA_STICKER_SPACE = ENTRY_EDITOR_BODY_EXTRA_STICKER_SPACE;
+const EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO = 0.5;
 
 export default function EntryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -808,6 +809,8 @@ export default function EntryDetailScreen() {
                       isEditable={isEditing}
                       onDragStateChange={setIsStickerDragging}
                       bounds={bodyLayout}
+                      allowBottomOverflow
+                      horizontalEdgeAllowanceRatio={EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO}
                     />
                   ))}
                   <View style={styles.entryBodyLayer}>
@@ -835,6 +838,8 @@ export default function EntryDetailScreen() {
                       isEditable={isEditing}
                       onDragStateChange={setIsStickerDragging}
                       bounds={bodyLayout}
+                      allowBottomOverflow
+                      horizontalEdgeAllowanceRatio={EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO}
                     />
                   ))}
                 </View>

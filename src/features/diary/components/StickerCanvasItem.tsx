@@ -59,6 +59,8 @@ interface StickerCanvasItemProps {
     readonly width: number;
     readonly height: number;
   };
+  readonly allowBottomOverflow?: boolean;
+  readonly horizontalEdgeAllowanceRatio?: number;
 }
 
 export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
@@ -68,6 +70,8 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   isEditable = true,
   onDragStateChange,
   bounds,
+  allowBottomOverflow = false,
+  horizontalEdgeAllowanceRatio,
 }) => {
   const t = useTranslation();
   const theme = useTheme();
@@ -76,6 +80,12 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const selectedRef = useRef(false);
   const stickerRef = useRef(sticker);
   stickerRef.current = sticker;
+  const boundsRef = useRef(bounds);
+  boundsRef.current = bounds;
+  const allowBottomOverflowRef = useRef(allowBottomOverflow);
+  allowBottomOverflowRef.current = allowBottomOverflow;
+  const horizontalEdgeAllowanceRatioRef = useRef(horizontalEdgeAllowanceRatio);
+  horizontalEdgeAllowanceRatioRef.current = horizontalEdgeAllowanceRatio;
   // Local mutable state — initialised from persisted values
   const [currentScale, setCurrentScale] = useState(sticker.scale);
   const [currentRotation, setCurrentRotation] = useState(sticker.rotation);
@@ -107,8 +117,17 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const stickerLayerIndex = sticker.zIndex ?? 1;
 
   const clampPosition = useCallback((x: number, y: number) => {
-    return clampStickerPosition({ x, y }, stickerRef.current, bounds, scaleRef.current);
-  }, [bounds]);
+    return clampStickerPosition(
+      { x, y },
+      stickerRef.current,
+      boundsRef.current,
+      scaleRef.current,
+      {
+        allowBottomOverflow: allowBottomOverflowRef.current,
+        horizontalEdgeAllowanceRatio: horizontalEdgeAllowanceRatioRef.current,
+      },
+    );
+  }, []);
 
   useEffect(() => {
     if (sticker.text === undefined || sticker.text === draftTextRef.current) return;
