@@ -730,12 +730,13 @@ export default function JournalEntriesScreen() {
                 accessibilityLabel={journalTitle}
               />
               <Animated.View style={[styles.journalCoverContextOverlay, { opacity: journalCoverOverlayOpacity }]}>
-                <View style={styles.journalCoverContextTitleBadge}>
+                <View pointerEvents="none" style={styles.journalCoverContextShade} />
+                <View style={styles.journalCoverContextTitleBlock}>
                   <Text preset="label" numberOfLines={1} style={[styles.journalCoverContextTitle, { color: theme.colors.stickerControlText }]}>
                     {journalTitle}
                   </Text>
                 </View>
-                <View style={styles.journalCoverContextMetaBadge}>
+                <View style={styles.journalCoverContextMetaBlock}>
                   <Text preset="caption" numberOfLines={1} style={[styles.journalCoverContextMeta, { color: theme.colors.stickerControlText }]}>
                     {filteredEntries.length === 1 ? t("journalEntryCountOne") : t("journalEntryCountMany").replace("{count}", String(filteredEntries.length))}
                   </Text>
@@ -956,27 +957,38 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
   },
-  journalCoverContextTitleBadge: {
+  journalCoverContextShade: {
+    position: "absolute",
+    left: -20,
+    right: -20,
+    top: -20,
+    bottom: -18,
+    backgroundColor: "rgba(0, 0, 0, 0.24)",
+  },
+  journalCoverContextTitleBlock: {
     flex: 1,
     minWidth: 0,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    backgroundColor: "rgba(0, 0, 0, 0.52)",
   },
-  journalCoverContextMetaBadge: {
+  journalCoverContextMetaBlock: {
     flexShrink: 0,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    backgroundColor: "rgba(0, 0, 0, 0.52)",
+    maxWidth: "38%",
+    alignItems: "flex-end",
   },
   journalCoverContextTitle: {
     fontWeight: "800",
-    lineHeight: 20,
+    fontSize: 19,
+    lineHeight: 23,
+    textShadowColor: "rgba(0, 0, 0, 0.72)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
   },
   journalCoverContextMeta: {
-    fontWeight: "700",
+    fontWeight: "800",
+    fontSize: 14,
+    lineHeight: 18,
+    textShadowColor: "rgba(0, 0, 0, 0.72)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
   },
   headerRow: {
     flexDirection: "row",
