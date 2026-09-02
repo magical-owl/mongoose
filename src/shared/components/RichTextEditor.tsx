@@ -22,6 +22,8 @@ import { normalizeHtmlContent } from '@/shared/utils/html';
 export type FormatActionKind = 'bold' | 'italic' | 'heading' | 'bullet' | 'quote' | 'code' | 'align-left' | 'align-center' | 'align-right' | 'align-justify';
 
 export interface RichTextEditorHandle {
+  prepareFormat: () => void;
+  restoreSelection: () => void;
   applyFormat: (kind: FormatActionKind) => void;
   setBodyStyle: (style: { readonly fontFamily?: string; readonly textColor?: string }) => void;
   togglePreview: () => void;
@@ -74,8 +76,30 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
     const editorLineHeight = lineHeight ?? Math.round(theme.fontSizes.lg * 1.45);
     const editorFontWeight = fontWeight ?? '400';
 
+    const prepareFormat = useCallback(() => {
+      richTextRef.current?.commandDOM(`
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          window.__mongooseSavedSelectionRange = selection.getRangeAt(0).cloneRange();
+        }
+      `);
+    }, []);
+
+    const restoreSelection = useCallback(() => {
+      richTextRef.current?.commandDOM(`
+        $('#content').focus();
+        const range = window.__mongooseSavedSelectionRange;
+        const selection = window.getSelection();
+        if (range && selection) {
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      `);
+    }, []);
+
     const applyFormat = useCallback((kind: FormatActionKind) => {
       if (!richTextRef.current) return;
+      restoreSelection();
       switch (kind) {
         case 'bold':
           richTextRef.current.sendAction(actions.setBold, 'result');
@@ -108,17 +132,27 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
           richTextRef.current.sendAction(actions.alignFull, 'result');
           break;
       }
-    }, []);
+    }, [restoreSelection]);
 
     const setBodyStyle = useCallback((style: { readonly fontFamily?: string; readonly textColor?: string }) => {
       const commands: string[] = [];
       if (style.fontFamily) {
         const fontFamily = JSON.stringify(style.fontFamily);
-        commands.push(`$('#content').style.fontFamily=${fontFamily}`);
+        commands.push(`
+          $('#content').style.fontFamily=${fontFamily};
+          Array.from($('#content').children).forEach(function(node) {
+            node.style.fontFamily=${fontFamily};
+          })
+        `);
       }
       if (style.textColor) {
         const textColor = JSON.stringify(style.textColor);
-        commands.push(`$('#content').style.color=${textColor}`);
+        commands.push(`
+          $('#content').style.color=${textColor};
+          Array.from($('#content').children).forEach(function(node) {
+            node.style.color=${textColor};
+          })
+        `);
       }
       if (commands.length > 0) {
         richTextRef.current?.commandDOM(commands.join(';'));
@@ -148,6 +182,8 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
     useImperativeHandle(
       ref,
       () => ({
+        prepareFormat,
+        restoreSelection,
         applyFormat,
         setBodyStyle,
         togglePreview: () => {},
@@ -156,7 +192,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
         dismissKeyboard,
         richTextRef,
       }),
-      [applyFormat, dismissKeyboard, setBodyStyle, setContentHTML, insertHTML]
+      [applyFormat, dismissKeyboard, insertHTML, prepareFormat, restoreSelection, setBodyStyle, setContentHTML]
     );
 
     return (

@@ -55,7 +55,7 @@ import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimit
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 import { getStickerBodyPreviewBottom } from '@/features/diary/domain/StickerLayout';
-import { resolveAppFontFamily } from '@/theme/fonts';
+import { resolveAppFontFamilyForWebContent } from '@/theme/fonts';
 import {
   DiaryEntryEditorFooter,
   DiaryEntryEditorHeader,
@@ -88,8 +88,6 @@ const FORMAT_ITEMS: readonly RichTextFormatItem[] = [
   { kind: 'italic',  icon: 'format-italic' },
   { kind: 'heading', icon: 'format-header-2' },
   { kind: 'bullet',  icon: 'format-list-bulleted' },
-  { kind: 'quote',   icon: 'format-quote-close' },
-  { kind: 'code',    icon: 'code-tags' },
   { kind: 'align-left', icon: 'format-align-left' },
   { kind: 'align-center', icon: 'format-align-center' },
   { kind: 'align-right', icon: 'format-align-right' },
@@ -673,7 +671,7 @@ export default function CreateEntryScreen() {
                   placeholder={t('entryCreateContentPlaceholder')}
                   placeholderColor={entryPlaceholderColor}
                   textColor={bodyTextColor}
-                  fontFamily={resolveAppFontFamily(bodyFontFamily, true)}
+                  fontFamily={resolveAppFontFamilyForWebContent(bodyFontFamily)}
                   fontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
                   lineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
                   fontWeight="600"
@@ -721,7 +719,7 @@ export default function CreateEntryScreen() {
               active={showFormattingTools}
               surface="transparent"
               onPress={() => {
-                dismissEntryKeyboard();
+                editorRef.current?.prepareFormat();
                 setShowFormattingTools(true);
               }}
               accessibilityLabel={showFormattingTools ? t('entryHideFormattingA11y') : t('entryShowFormattingA11y')}
@@ -795,7 +793,7 @@ export default function CreateEntryScreen() {
         selectedTextColor={bodyTextColor}
         onSelectFontFamily={(fontFamily) => {
           setBodyFontFamily(fontFamily);
-          editorRef.current?.setBodyStyle({ fontFamily: resolveAppFontFamily(fontFamily, true) });
+          editorRef.current?.setBodyStyle({ fontFamily: resolveAppFontFamilyForWebContent(fontFamily) });
         }}
         onSelectTextColor={(textColor) => {
           setBodyTextColor(textColor);

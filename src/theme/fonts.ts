@@ -127,6 +127,16 @@ export function resolveAppFontFamily(value: unknown, fontsLoaded: boolean): stri
   return 'SourceCodePro_400Regular';
 }
 
+export function resolveAppFontFamilyForWebContent(value: unknown): string {
+  const family = normalizeAppFontFamily(value);
+  if (family === 'inter') return '-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif';
+  if (family === 'nunito') return '"Avenir Next", "Trebuchet MS", Arial, sans-serif';
+  if (family === 'lora') return 'Georgia, "Times New Roman", serif';
+  if (family === 'merriweather') return 'Palatino, Georgia, "Times New Roman", serif';
+  if (family === 'sourceCodePro') return '"Courier New", Courier, monospace';
+  return Platform.OS === 'ios' ? '-apple-system, BlinkMacSystemFont, sans-serif' : 'Roboto, Arial, sans-serif';
+}
+
 export function getAppFontLabel(value: unknown): string {
   const family = normalizeAppFontFamily(value);
   return appFontOptions.find((option) => option.value === family)?.label ?? 'System';

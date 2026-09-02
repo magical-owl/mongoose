@@ -1,4 +1,4 @@
-import { appFontOptions, getAppFontLabel, normalizeAppFontFamily } from '@/theme/fonts';
+import { appFontOptions, getAppFontLabel, normalizeAppFontFamily, resolveAppFontFamilyForWebContent } from '@/theme/fonts';
 
 describe('app font options', () => {
   it('includes only documented bundled font choices', () => {
@@ -22,5 +22,10 @@ describe('app font options', () => {
   it('returns the display label for a selected font', () => {
     expect(getAppFontLabel('merriweather')).toBe('Merriweather');
     expect(getAppFontLabel('serif')).toBe('Lora');
+  });
+
+  it('resolves WebView-safe font families for rich text editing', () => {
+    expect(resolveAppFontFamilyForWebContent('lora')).toContain('Georgia');
+    expect(resolveAppFontFamilyForWebContent('sourceCodePro')).toContain('monospace');
   });
 });
