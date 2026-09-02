@@ -16,6 +16,7 @@ interface Props {
   maximumDate?: Date;
   label?: string;
   variant?: 'default' | 'entryHero';
+  testID?: string;
 }
 
 function formatDate(date: Date) {
@@ -41,6 +42,7 @@ export function DiaryDatePicker({
   maximumDate,
   label = "",
   variant = 'default',
+  testID,
 }: Props) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
@@ -60,6 +62,8 @@ export function DiaryDatePicker({
   };
   const accessibilityLabel = label ? `${label}: ${dateText}` : dateText;
   const entryHeroTextColor = theme.colors.stickerControlText;
+  const nativePickerTextColor = theme.colors.text;
+  const nativePickerThemeVariant = theme.isDark ? 'dark' : 'light';
 
   if (variant === 'entryHero') {
     return (
@@ -69,6 +73,7 @@ export function DiaryDatePicker({
           style={styles.entryHeroButton}
           accessibilityRole="button"
           accessibilityLabel={accessibilityLabel}
+          testID={testID}
         >
           <View style={styles.entryHeroDateLeft}>
             <Ionicons name="calendar-outline" size={20} color={theme.colors.tint} />
@@ -98,6 +103,8 @@ export function DiaryDatePicker({
               display={Platform.OS === "ios" ? "spinner" : "default"}
               onChange={handleChange}
               maximumDate={maximumDate}
+              textColor={nativePickerTextColor}
+              themeVariant={nativePickerThemeVariant}
               style={{
                 width: "100%",
                 height: Platform.OS === "ios" ? 150 : undefined,
@@ -239,6 +246,8 @@ export function DiaryDatePicker({
             display={Platform.OS === "ios" ? "spinner" : "default"}
             onChange={handleChange}
             maximumDate={maximumDate}
+            textColor={nativePickerTextColor}
+            themeVariant={nativePickerThemeVariant}
             style={{
               width: "100%",
               height: Platform.OS === "ios" ? 150 : undefined,
