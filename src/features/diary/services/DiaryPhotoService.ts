@@ -26,7 +26,7 @@ export class DiaryPhotoService implements IDiaryPhotoCleanupService {
 
     return {
       id,
-      uri: destination.uri,
+      uri: normalizeLocalFileUri(destination.uri),
       width: asset.width > 0 ? asset.width : undefined,
       height: asset.height > 0 ? asset.height : undefined,
       createdAt: new Date().toISOString(),
@@ -80,21 +80,25 @@ function getImportedPhotoFilename(uri: string): string | null {
 export function resolveImportedDiaryPhotoUri(uri: string): string {
   const filename = getImportedPhotoFilename(uri);
   if (!filename) return uri;
-  return new File(new Directory(Paths.document, PHOTO_DIRECTORY_NAME), filename).uri;
+  return normalizeLocalFileUri(new File(new Directory(Paths.document, PHOTO_DIRECTORY_NAME), filename).uri);
 }
 
 export function getDiaryPhotoImageSource(uri: string): ImageSourcePropType | undefined {
-  return getJournalCoverImageSource(uri) ?? { uri: resolveImportedDiaryPhotoUri(uri) };
+  return getJournalCoverImageSource(resolveImportedDiaryPhotoUri(uri));
 }
 
 function getPhotoExtension(asset: ImagePickerAsset): string {
+  if (asset.mimeType === 'image/jpeg' || asset.mimeType === 'image/jpg') return '.jpg';
+  if (asset.mimeType === 'image/png') return '.png';
+  if (asset.mimeType === 'image/webp') return '.webp';
   const filenameExtension = asset.fileName?.match(/\.[a-z0-9]+$/i)?.[0];
   if (filenameExtension) return filenameExtension.toLowerCase();
-  if (asset.mimeType === 'image/png') return '.png';
-  if (asset.mimeType === 'image/heic') return '.heic';
-  if (asset.mimeType === 'image/heif') return '.heif';
-  if (asset.mimeType === 'image/webp') return '.webp';
   return '.jpg';
+}
+
+function normalizeLocalFileUri(uri: string): string {
+  if (!uri.startsWith('file://') || uri.startsWith('file:///')) return uri;
+  return `file:///${uri.slice('file://'.length)}`;
 }
 
 export const diaryPhotoService = new DiaryPhotoService();

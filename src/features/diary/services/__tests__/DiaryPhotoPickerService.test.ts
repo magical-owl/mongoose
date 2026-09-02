@@ -11,6 +11,7 @@ describe('DiaryPhotoPickerService', () => {
       quality: 0.85,
       allowsEditing: false,
       allowsMultipleSelection: false,
+      preferredAssetRepresentationMode: 'compatible',
       exif: false,
     });
   });
@@ -21,6 +22,7 @@ describe('DiaryPhotoPickerService', () => {
       quality: 0.85,
       allowsEditing: false,
       allowsMultipleSelection: true,
+      preferredAssetRepresentationMode: 'compatible',
       exif: false,
     });
   });

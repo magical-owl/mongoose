@@ -196,6 +196,8 @@ describe('DiaryEntryView', () => {
     const feedCardStyle = StyleSheet.flatten(getByTestId('entry-feed-card').props.style);
 
     expect(getByTestId('entry-feed-paper-canvas-image')).toBeTruthy();
+    expect(getByTestId('diary-entry-body-view')).toBeTruthy();
+    expect(getByTestId('diary-entry-body-webview')).toBeTruthy();
     expect(queryByTestId('entry-feed-author-row')).toBeNull();
     expect(queryByTestId('entry-feed-author-avatar')).toBeNull();
     expect(getByTestId('entry-feed-mood-overflow')).toBeTruthy();
@@ -252,6 +254,8 @@ describe('DiaryEntryView', () => {
     const coverMoodStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-mood-calm').props.style);
 
     expect(getByTestId('entry-feed-paper-canvas-image')).toBeTruthy();
+    expect(getByTestId('diary-entry-body-view')).toBeTruthy();
+    expect(getByTestId('diary-entry-body-webview')).toBeTruthy();
     expect(coverMoodStyle.borderRadius).toBe(13);
     expect(coverMoodStyle.borderWidth).toBe(1);
     expect(getByTestId('entry-feed-cover-mood-overflow')).toBeTruthy();

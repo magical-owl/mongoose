@@ -4,28 +4,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { Text } from '@shared/components/Text';
-import { MarkdownText } from '@shared/components/MarkdownText';
 import { stripHtml } from '@shared/utils/html';
 import { getEntryManualMoods, getPrimaryManualMood, type DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import type { Profile } from '@/features/profile/domain/Profile';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
-import { findStickerItem, type PlacedSticker } from '@/features/diary/domain/Sticker';
 import { diaryEntryListTitle } from './diaryEntryTypography';
 import { MoodBadgeList } from './MoodBadgeList';
 import { TagBadgeList } from './TagBadgeList';
 import { ReflectionSummaryButton } from './ReflectionSummaryButton';
 import { DiaryPaperCanvas } from './DiaryPaperCanvas';
+import { DiaryEntryBodyView } from './DiaryEntryBodyView';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import { reflectionCountLabel, useTranslation } from '@/localization/i18n';
-import { getDiaryPhotoImageSource, resolveImportedDiaryPhotoUri } from '@/features/diary/services/DiaryPhotoService';
+import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
 import {
-  DIARY_PHOTO_STICKER_BASE_WIDTH,
-  DIARY_PHOTO_STICKER_MAX_HEIGHT,
-  DIARY_STICKER_BASE_SIZE,
   getStickerBodyPreviewBottom,
-  mapStickerToBodyPreview,
 } from '@/features/diary/domain/StickerLayout';
 import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import { resolveAppFontFamily } from '@/theme/fonts';
@@ -65,50 +60,6 @@ function CoverPhotoPreview({ entry, style, testID }: { readonly entry: DiaryEntr
         style={[styles.coverPhotoScrim, frameStyle, { backgroundColor: theme.colors.overlay }]}
         testID={testID ? `${testID}-scrim` : undefined}
       />
-    </View>
-  );
-}
-
-function FeedStickerPreview({ sticker, coordinateScale }: { readonly sticker: PlacedSticker; readonly coordinateScale: number }) {
-  const isTextSticker = sticker.text !== undefined;
-  const stickerItem = sticker.imageUri || isTextSticker ? undefined : findStickerItem(sticker.stickerId);
-  if (!isTextSticker && !sticker.imageUri && !stickerItem) return null;
-  const photoAspectRatio = sticker.imageWidth && sticker.imageHeight ? sticker.imageWidth / sticker.imageHeight : 1;
-  const layout = mapStickerToBodyPreview(sticker, coordinateScale);
-
-  return (
-    <View
-      pointerEvents="none"
-      style={[
-        styles.feedSticker,
-        {
-          left: layout.left,
-          top: layout.top,
-          zIndex: sticker.behindText ? 1 : sticker.zIndex + 3,
-          transform: [{ scale: layout.scale }, { rotate: `${sticker.rotation}deg` }],
-        },
-      ]}
-    >
-      {isTextSticker ? (
-        <Text
-          style={[
-            styles.feedTextSticker,
-            {
-              backgroundColor: sticker.textBackgroundColor ?? '#E5E7EB',
-              color: sticker.textColor ?? '#DC2626',
-              opacity: sticker.opacity ?? 1,
-            },
-          ]}
-        >
-          {sticker.text}
-        </Text>
-      ) : sticker.imageUri ? (
-        <Image source={{ uri: resolveImportedDiaryPhotoUri(sticker.imageUri) }} style={[styles.feedPhotoStickerImage, { aspectRatio: photoAspectRatio }]} resizeMode="cover" />
-      ) : stickerItem?.source != null ? (
-        <Image source={stickerItem.source} style={styles.feedStickerImage} resizeMode="contain" />
-      ) : (
-        <Text style={styles.feedStickerEmoji}>{stickerItem?.icon ?? '⭐'}</Text>
-      )}
     </View>
   );
 }
@@ -393,9 +344,6 @@ export function DiaryEntryView({
             ]}
             testID="entry-feed-paper-canvas"
           >
-            {entry.stickers.map((sticker) => (
-              <FeedStickerPreview key={sticker.id} sticker={sticker} coordinateScale={feedCoordinateScale} />
-            ))}
             <View style={styles.feedTextLayer}>
               {entry.coverPhoto ? null : (
                 <View style={styles.feedInlineHeader}>
@@ -427,7 +375,14 @@ export function DiaryEntryView({
                 ]}
                 testID="entry-feed-content-panel"
               >
-                <MarkdownText style={[styles.feedContent, { color: entryBodyTextColor, fontFamily: entryBodyFontFamily }]}>{entry.content}</MarkdownText>
+                <DiaryEntryBodyView
+                  entry={entry}
+                  bodyCanvasHeight={feedStickerCanvasHeight}
+                  bodyFontSize={16}
+                  bodyLineHeight={24}
+                  stickers={entry.stickers}
+                  onBodyLayout={(layout) => setFeedCanvasWidth(layout.width)}
+                />
               </View>
             </View>
           </DiaryPaperCanvas>
@@ -592,11 +547,6 @@ const styles = StyleSheet.create({
   feedEntrySurface: { borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   feedCanvas: { position: 'relative', overflow: 'visible' },
   feedTextLayer: { position: 'relative', zIndex: 2 },
-  feedSticker: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
-  feedStickerImage: { width: DIARY_STICKER_BASE_SIZE, height: DIARY_STICKER_BASE_SIZE },
-  feedPhotoStickerImage: { width: DIARY_PHOTO_STICKER_BASE_WIDTH, maxHeight: DIARY_PHOTO_STICKER_MAX_HEIGHT, borderRadius: 8 },
-  feedTextSticker: { minWidth: 120, maxWidth: 220, color: '#111827', fontSize: 24, lineHeight: 30, fontWeight: '700', textAlign: 'center' },
-  feedStickerEmoji: { fontSize: 48, lineHeight: 60, includeFontPadding: true, textAlign: 'center' },
   feedTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 10 },
   feedTitle: { flex: 1, fontWeight: '700' },
   feedCoverHeader: { minHeight: 168, justifyContent: 'flex-end', overflow: 'hidden' },
@@ -606,7 +556,6 @@ const styles = StyleSheet.create({
   feedCoverTitle: { marginBottom: 8 },
   feedCoverMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   feedCoverMetaText: { fontWeight: '700' },
-  feedContent: { fontSize: 16, lineHeight: 24 },
   feedContentPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 0, paddingHorizontal: 12, paddingVertical: 12 },
   feedContentPanelMerged: { borderWidth: 0, borderRadius: 0, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 20 },
   feedInlineHeader: { paddingHorizontal: 20 },

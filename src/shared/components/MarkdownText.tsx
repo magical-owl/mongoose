@@ -90,32 +90,34 @@ interface InlineProps {
 }
 
 function InlineSegments({ segments, baseStyle, tintColor }: InlineProps) {
+  const inlineBaseStyle = StyleSheet.flatten(baseStyle) ?? {};
+
   return (
     <Text style={baseStyle}>
       {segments.map((seg, i) => {
         switch (seg.kind) {
           case 'bold':
-            return <Text key={i} style={{ fontWeight: '700' }}>{seg.text}</Text>;
+            return <Text key={i} style={[inlineBaseStyle, { fontWeight: '700' }]}>{seg.text}</Text>;
           case 'italic':
-            return <Text key={i} style={{ fontStyle: 'italic' }}>{seg.text}</Text>;
+            return <Text key={i} style={[inlineBaseStyle, { fontStyle: 'italic' }]}>{seg.text}</Text>;
           case 'bold-italic':
-            return <Text key={i} style={{ fontWeight: '700', fontStyle: 'italic' }}>{seg.text}</Text>;
+            return <Text key={i} style={[inlineBaseStyle, { fontWeight: '700', fontStyle: 'italic' }]}>{seg.text}</Text>;
           case 'code':
             return (
               <Text
                 key={i}
-                style={{
+                style={[inlineBaseStyle, {
                   fontFamily: 'Courier',
                   fontSize: 13,
                   color: tintColor,
                   backgroundColor: tintColor + '18',
-                }}
+                }]}
               >
                 {seg.text}
               </Text>
             );
           default:
-            return <Text key={i}>{seg.text}</Text>;
+            return <Text key={i} style={inlineBaseStyle}>{seg.text}</Text>;
         }
       })}
     </Text>

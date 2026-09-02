@@ -35,6 +35,7 @@ export function getDiaryPhotoLibraryPickerOptions(mode: DiaryPhotoLibrarySelecti
     quality: 0.85,
     allowsEditing: false,
     allowsMultipleSelection: mode === 'multiple',
+    preferredAssetRepresentationMode: 'compatible' as ImagePickerOptions['preferredAssetRepresentationMode'],
     exif: false,
   };
 }

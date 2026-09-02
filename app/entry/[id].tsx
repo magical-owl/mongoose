@@ -37,7 +37,6 @@ import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { RichTextEditor, type RichTextEditorHandle } from '@shared/components/RichTextEditor';
-import { MarkdownText } from '@shared/components/MarkdownText';
 import { DiaryEntry, DiaryPhoto, ManualMood, ManualMoodWeather, WritingMode, getEntryManualMoods, getPrimaryManualMood } from '@/features/diary/domain/DiaryEntry';
 import type { CompanionType } from '@/features/diary/domain/Companion';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
@@ -49,6 +48,7 @@ import { generateUUID } from '@/shared/utils/uuid';
 import { RichTextFormattingDrawer, type RichTextFormatItem } from '@/features/diary/components/RichTextFormattingDrawer';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryCoverPhotoPicker } from '@/features/diary/components/DiaryCoverPhotoPicker';
+import { DiaryEntryBodyView } from '@/features/diary/components/DiaryEntryBodyView';
 import { DiaryPaperCanvas } from '@/features/diary/components/DiaryPaperCanvas';
 import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/DiaryPaperBackgroundPickerModal';
 import { EntryReflectionsModal } from '@/features/diary/components/EntryReflectionsModal';
@@ -69,7 +69,7 @@ import { APP_IDENTITY } from '@/config/appIdentity';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 import { getStickerBodyPreviewBottom } from '@/features/diary/domain/StickerLayout';
 import { DIARY_BODY_DEFAULT_FONT_FAMILY, normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
-import { resolveAppFontFamily, resolveAppFontFamilyForWebContent } from '@/theme/fonts';
+import { resolveAppFontFamilyForWebContent } from '@/theme/fonts';
 import {
   DiaryEntryEditorFooter,
   DiaryEntryEditorHeader,
@@ -882,51 +882,23 @@ export default function EntryDetailScreen() {
                   </>
                 )}
                 {hasViewCoverPhoto ? null : renderViewMoodAndTags(false)}
-                <View
-                  style={[styles.bodyStickerCanvas, { minHeight: bodyCanvasHeight }]}
-                  onLayout={(event) => {
-                    const { y, width, height } = event.nativeEvent.layout;
+                <DiaryEntryBodyView
+                  entry={entry}
+                  bodyCanvasHeight={bodyCanvasHeight}
+                  bodyFontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
+                  bodyLineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
+                  stickers={displayStickers}
+                  onBodyLayout={(layout) => {
                     setBodyLayout((current) => (
-                      current.y === y && current.width === width && current.height === height
+                      current.y === layout.y && current.width === layout.width && current.height === layout.height
                         ? current
-                        : { y, width, height }
+                        : layout
                     ));
                   }}
-                >
-                  {behindDisplayStickers.map((sticker) => (
-                    <StickerCanvasItem
-                      key={sticker.id}
-                      sticker={sticker}
-                      onUpdate={handleUpdateSticker}
-                      onDelete={handleDeleteSticker}
-                      isEditable={isEditing}
-                      onDragStateChange={setIsStickerDragging}
-                    />
-                  ))}
-                  <View style={styles.entryBodyLayer}>
-                    <MarkdownText
-                      style={{
-                        fontSize: ENTRY_EDITOR_BODY_FONT_SIZE,
-                        lineHeight: ENTRY_EDITOR_BODY_LINE_HEIGHT,
-                        fontWeight: '600',
-                        color: normalizeDiaryBodyTextColor(entry.bodyTextColor) ?? theme.colors.text,
-                        fontFamily: resolveAppFontFamily(normalizeDiaryBodyFontFamily(entry.bodyFontFamily), true),
-                      }}
-                    >
-                      {entry.content}
-                    </MarkdownText>
-                  </View>
-                  {foregroundDisplayStickers.map((sticker) => (
-                    <StickerCanvasItem
-                      key={sticker.id}
-                      sticker={sticker}
-                      onUpdate={handleUpdateSticker}
-                      onDelete={handleDeleteSticker}
-                      isEditable={isEditing}
-                      onDragStateChange={setIsStickerDragging}
-                    />
-                  ))}
-                </View>
+                  onUpdateSticker={handleUpdateSticker}
+                  onDeleteSticker={handleDeleteSticker}
+                  onStickerDragStateChange={setIsStickerDragging}
+                />
 
               </>
             )}

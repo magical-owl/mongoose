@@ -200,6 +200,17 @@ jest.mock('expo-clipboard', () => ({
   hasStringAsync: jest.fn().mockResolvedValue(false),
 }));
 
+jest.mock('react-native-webview', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+  const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+  const MockWebView = (props: Record<string, unknown>) => React.createElement(View, props);
+  MockWebView.displayName = 'MockWebView';
+  return {
+    __esModule: true,
+    default: MockWebView,
+  };
+});
+
 // Suppress noisy React Native warnings in test output
 const originalWarn = console.warn;
 console.warn = (...args: unknown[]) => {
