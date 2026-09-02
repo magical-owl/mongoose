@@ -14,6 +14,7 @@ import { diaryEntryListTitle } from './diaryEntryTypography';
 import { MoodBadgeList } from './MoodBadgeList';
 import { TagBadgeList } from './TagBadgeList';
 import { ReflectionSummaryButton } from './ReflectionSummaryButton';
+import { DiaryPaperCanvas } from './DiaryPaperCanvas';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
@@ -379,12 +380,14 @@ export function DiaryEntryView({
               </View>
             </ImageBackground>
           ) : null}
-          <View
+          <DiaryPaperCanvas
+            paperBackgroundId={entry.paperBackgroundId}
             onLayout={(event) => setFeedCanvasWidth(event.nativeEvent.layout.width)}
             style={[
               styles.feedCanvas,
               feedStickerCanvasHeight > 0 && { minHeight: feedStickerCanvasHeight },
             ]}
+            testID="entry-feed-paper-canvas"
           >
             {entry.stickers.map((sticker) => (
               <FeedStickerPreview key={sticker.id} sticker={sticker} coordinateScale={feedCoordinateScale} />
@@ -423,7 +426,7 @@ export function DiaryEntryView({
                 <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>{entry.content}</MarkdownText>
               </View>
             </View>
-          </View>
+          </DiaryPaperCanvas>
         </TouchableOpacity>
         {inlineReflectionSection}
       </View>
