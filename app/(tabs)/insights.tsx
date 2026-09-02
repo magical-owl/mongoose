@@ -5,7 +5,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@providers/ThemeProvider";
 import { Text } from "@shared/components/Text";
-import { AppFooterNavigation } from "@shared/components/AppFooterNavigation";
+import { APP_FOOTER_BOTTOM_OFFSET, AppFooterNavigation } from "@shared/components/AppFooterNavigation";
 import { IconCircleButton } from "@shared/components/IconCircleButton";
 import { SlidingDrawer } from "@shared/components/SlidingDrawer";
 import { AppPatternBackground } from "@shared/components/AppPatternBackground";
@@ -513,7 +513,7 @@ export default function InsightsScreen() {
           <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
         </TouchableOpacity>
       </SlidingDrawer>
-      <AppFooterNavigation activeItem="insights" bottom={insets.bottom + 12} />
+      <AppFooterNavigation activeItem="insights" bottom={insets.bottom + APP_FOOTER_BOTTOM_OFFSET} />
     </AppPatternBackground>
   );
 }

@@ -16,7 +16,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
-import { AppFooterNavigation } from '@shared/components/AppFooterNavigation';
+import { APP_FOOTER_BOTTOM_OFFSET, AppFooterNavigation } from '@shared/components/AppFooterNavigation';
 import { SlidingDrawer } from '@shared/components/SlidingDrawer';
 import { AppPatternBackground } from '@shared/components/AppPatternBackground';
 import { useDiary } from '@/features/diary/hooks/useDiary';
@@ -380,7 +380,7 @@ export default function CalendarScreen() {
           <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
         </TouchableOpacity>
       </SlidingDrawer>
-      <AppFooterNavigation activeItem="calendar" bottom={insets.bottom + 12} />
+      <AppFooterNavigation activeItem="calendar" bottom={insets.bottom + APP_FOOTER_BOTTOM_OFFSET} />
       <NativeModal visible={showMonthPicker} transparent animationType="fade" onRequestClose={() => setShowMonthPicker(false)}>
         <Pressable style={styles.pickerBackdrop} onPress={() => setShowMonthPicker(false)}>
           <Pressable style={[styles.monthPicker, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={(event) => event.stopPropagation()}>

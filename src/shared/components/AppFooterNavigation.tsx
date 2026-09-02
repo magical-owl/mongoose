@@ -6,6 +6,7 @@ import { useTranslation } from '@/localization/i18n';
 import { InsetFloatingToolbar } from './InsetFloatingToolbar';
 
 export type AppFooterNavigationItem = 'journal' | 'calendar' | 'rediscover' | 'insights';
+export const APP_FOOTER_BOTTOM_OFFSET = 4;
 
 interface AppFooterNavigationProps {
   readonly activeItem: AppFooterNavigationItem;

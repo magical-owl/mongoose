@@ -5,7 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
-import { AppFooterNavigation } from '@shared/components/AppFooterNavigation';
+import { APP_FOOTER_BOTTOM_OFFSET, AppFooterNavigation } from '@shared/components/AppFooterNavigation';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { AppPatternBackground } from '@shared/components/AppPatternBackground';
 import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
@@ -354,7 +354,7 @@ export default function RediscoverScreen(): React.JSX.Element {
           <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
         </TouchableOpacity>
       </SlidingDrawer>
-      <AppFooterNavigation activeItem="rediscover" bottom={insets.bottom + 12} />
+      <AppFooterNavigation activeItem="rediscover" bottom={insets.bottom + APP_FOOTER_BOTTOM_OFFSET} />
     </AppPatternBackground>
   );
 }

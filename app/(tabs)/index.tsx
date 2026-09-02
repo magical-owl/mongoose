@@ -9,7 +9,7 @@ import { Text } from '@shared/components/Text';
 import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { SectionLabel } from '@shared/components/SectionLabel';
-import { AppFooterNavigation } from '@shared/components/AppFooterNavigation';
+import { APP_FOOTER_BOTTOM_OFFSET, AppFooterNavigation } from '@shared/components/AppFooterNavigation';
 import { SlidingDrawer } from '@shared/components/SlidingDrawer';
 import { AppPatternBackground } from '@shared/components/AppPatternBackground';
 import { useDiary } from '@/features/diary/hooks/useDiary';
@@ -653,7 +653,7 @@ export default function JournalsScreen(): React.JSX.Element {
           </View>
         )}
       </ScrollView>
-      <AppFooterNavigation activeItem="journal" bottom={insets.bottom + 12} />
+      <AppFooterNavigation activeItem="journal" bottom={insets.bottom + APP_FOOTER_BOTTOM_OFFSET} />
 
       <PaywallModal
         visible={showPremiumModal}
