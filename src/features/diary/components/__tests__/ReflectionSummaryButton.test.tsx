@@ -49,4 +49,21 @@ describe('ReflectionSummaryButton', () => {
 
     expect(style.backgroundColor).toBe('transparent');
   });
+
+  it('can render with a stronger visible backing', async () => {
+    const { getByLabelText } = await renderWithProviders(
+      <ReflectionSummaryButton
+        count={3}
+        onPress={jest.fn()}
+        accessibilityLabel="Open reflections"
+        variant="elevated"
+      />,
+    );
+
+    const style = StyleSheet.flatten(getByLabelText('Open reflections').props.style);
+
+    expect(style.backgroundColor).toEqual(expect.stringMatching(/26$/));
+    expect(style.borderWidth).toBe(StyleSheet.hairlineWidth);
+    expect(style.borderColor).toEqual(expect.stringMatching(/38$/));
+  });
 });

@@ -10,7 +10,7 @@ interface ReflectionSummaryButtonProps {
   readonly iconSize?: number;
   readonly height?: number;
   readonly minWidth?: number;
-  readonly variant?: 'filled' | 'plain';
+  readonly variant?: 'filled' | 'elevated' | 'plain';
   readonly showZeroCount?: boolean;
   readonly style?: StyleProp<ViewStyle>;
   readonly testID?: string;
@@ -31,6 +31,7 @@ export function ReflectionSummaryButton({
   const theme = useTheme();
   const shouldShowCount = showZeroCount || count > 0;
   const isPlain = variant === 'plain';
+  const isElevated = variant === 'elevated';
 
   return (
     <TouchableOpacity
@@ -42,7 +43,9 @@ export function ReflectionSummaryButton({
           minWidth,
           height,
           borderRadius: height / 2,
-          backgroundColor: isPlain ? 'transparent' : theme.colors.tint + '12',
+          backgroundColor: isPlain ? 'transparent' : theme.colors.tint + (isElevated ? '26' : '12'),
+          borderWidth: isElevated ? StyleSheet.hairlineWidth : 0,
+          borderColor: isElevated ? theme.colors.tint + '38' : 'transparent',
         },
         style,
       ]}

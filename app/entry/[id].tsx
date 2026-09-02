@@ -940,7 +940,7 @@ export default function EntryDetailScreen() {
               iconSize={21}
               height={38}
               minWidth={62}
-              variant="plain"
+              variant="elevated"
               style={styles.viewFooterButton}
             />
         </DiaryEntryEditorFooter>
