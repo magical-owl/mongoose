@@ -22,6 +22,26 @@ export const DIARY_PAPER_BACKGROUNDS = [
     label: 'Soft lined paper',
     source: require('../../../../assets/diary-paper/soft-lined-paper.png') as ImageSourcePropType,
   },
+  {
+    id: 'cream-dot-paper',
+    label: 'Pressed petal paper',
+    source: require('../../../../assets/diary-paper/cream-dot-paper.png') as ImageSourcePropType,
+  },
+  {
+    id: 'warm-grid-paper',
+    label: 'Taped note paper',
+    source: require('../../../../assets/diary-paper/warm-grid-paper.png') as ImageSourcePropType,
+  },
+  {
+    id: 'rose-memo-paper',
+    label: 'Rose memo paper',
+    source: require('../../../../assets/diary-paper/rose-memo-paper.png') as ImageSourcePropType,
+  },
+  {
+    id: 'blue-notebook-paper',
+    label: 'Blue notebook paper',
+    source: require('../../../../assets/diary-paper/blue-notebook-paper.png') as ImageSourcePropType,
+  },
 ] as const satisfies readonly DiaryPaperBackground[];
 
 export const DEFAULT_DIARY_PAPER_BACKGROUND_ID = 'vintage-parchment';

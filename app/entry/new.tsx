@@ -47,7 +47,7 @@ import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/Dia
 import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataModal';
 import { DEFAULT_DIARY_PAPER_BACKGROUND_ID } from '@/features/diary/domain/DiaryPaperBackgrounds';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
-import { chooseDiaryPhoto, chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
+import { chooseDiaryPhoto, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
@@ -350,7 +350,7 @@ export default function CreateEntryScreen() {
   }, [getVisibleStickerPosition, revealStickerBounds, setStickers, stickers.length]);
 
   const handleAddPhotoStickers = useCallback(async () => {
-    const result = await chooseDiaryPhotos();
+    const result = await chooseDiaryPhoto();
     if (!result.success) {
       if (result.error === 'native-module-missing') {
         Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));

@@ -1,11 +1,15 @@
 import { DEFAULT_DIARY_PAPER_BACKGROUND_ID, DIARY_PAPER_BACKGROUNDS, getDiaryPaperBackgroundSource } from '@/features/diary/domain/DiaryPaperBackgrounds';
 
 describe('DiaryPaperBackgrounds', () => {
-  it('exposes blank and the initial two diary body paper backgrounds', () => {
+  it('exposes blank and the diary body paper backgrounds', () => {
     expect(DIARY_PAPER_BACKGROUNDS.map((background) => background.id)).toEqual([
       'blank',
       'vintage-parchment',
       'soft-lined-paper',
+      'cream-dot-paper',
+      'warm-grid-paper',
+      'rose-memo-paper',
+      'blue-notebook-paper',
     ]);
   });
 

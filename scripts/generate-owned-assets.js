@@ -790,6 +790,63 @@ function generateDiaryPaperBackgrounds() {
     }
     line(png, 118, 40, 124, 985, 2, rgba('#C48B8B', 28));
   });
+
+  diaryPaperBackground('cream-dot-paper', '#F5EAD0', (png) => {
+    for (let i = 0; i < 13; i += 1) {
+      const x = 72 + hashPixel(i, 191, 23) * 880;
+      const y = 76 + hashPixel(i, 197, 23) * 860;
+      const scale = 0.72 + hashPixel(i, 199, 23) * 0.48;
+      const tilt = hashPixel(i, 211, 23) > 0.5 ? 1 : -1;
+      line(png, x, y - 24 * scale, x + 11 * tilt * scale, y + 28 * scale, 2, rgba('#8F7A5C', 34));
+      ellipse(png, x - 9 * tilt * scale, y - 5 * scale, 8 * scale, 22 * scale, rgba('#B9857E', 38));
+      ellipse(png, x + 12 * tilt * scale, y + 10 * scale, 7 * scale, 18 * scale, rgba('#8AA07B', 34));
+      if (i % 4 === 0) {
+        circle(png, x + 20 * tilt * scale, y - 26 * scale, 3.2 * scale, rgba('#A88448', 38));
+      }
+    }
+  });
+
+  diaryPaperBackground('warm-grid-paper', '#F1E1C9', (png) => {
+    for (let i = 0; i < 7; i += 1) {
+      const x = 86 + hashPixel(i, 223, 29) * 790;
+      const y = 74 + hashPixel(i, 229, 29) * 820;
+      const width = 112 + hashPixel(i, 233, 29) * 92;
+      const height = 30 + hashPixel(i, 239, 29) * 16;
+      const color = i % 2 === 0 ? '#FFF4C7' : '#D7C8AF';
+      rect(png, x, y, width, height, rgba(color, 48));
+      line(png, x + 8, y + height * 0.52, x + width - 8, y + height * 0.48, 1.5, rgba('#8C7057', 32));
+    }
+    for (let i = 0; i < 9; i += 1) {
+      const x = 84 + hashPixel(i, 251, 29) * 850;
+      const y = 86 + hashPixel(i, 257, 29) * 830;
+      const w = 42 + hashPixel(i, 263, 29) * 52;
+      line(png, x, y, x + w, y + (hashPixel(i, 269, 29) - 0.5) * 7, 2, rgba('#7A6251', 34));
+      if (i % 3 === 0) {
+        line(png, x + 4, y + 15, x + w * 0.72, y + 14, 1.5, rgba('#7A6251', 25));
+      }
+    }
+  });
+
+  diaryPaperBackground('rose-memo-paper', '#F0D9D2', (png) => {
+    for (let i = 0; i < 14; i += 1) {
+      const y = 78 + i * 64 + (i % 3 === 0 ? 3 : -1);
+      line(png, 54, y, 970, y + (i % 2 === 0 ? 1 : -1), 2, rgba('#875C61', 30));
+    }
+    for (let i = 0; i < 9; i += 1) {
+      const x = 80 + hashPixel(i, 151, 17) * 860;
+      const y = 80 + hashPixel(i, 157, 17) * 860;
+      ellipse(png, x, y, 34 + hashPixel(i, 163, 17) * 28, 10 + hashPixel(i, 167, 17) * 12, rgba('#FFF7EF', 13));
+    }
+  });
+
+  diaryPaperBackground('blue-notebook-paper', '#DDE8EA', (png) => {
+    for (let i = 0; i < 17; i += 1) {
+      const y = 66 + i * 55 + (i % 4 === 0 ? 2 : 0);
+      line(png, 42, y, 982, y + (i % 2), 2, rgba('#4F7A88', 34));
+    }
+    line(png, 94, 42, 98, 982, 2, rgba('#9C6B70', 32));
+    line(png, 132, 42, 136, 982, 1.4, rgba('#9C6B70', 18));
+  });
 }
 
 function generateAppIdentityAssets() {

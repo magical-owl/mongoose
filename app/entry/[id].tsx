@@ -58,7 +58,7 @@ import { ReflectionSummaryButton } from '@/features/diary/components/ReflectionS
 import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
 import { TagBadgeList } from '@/features/diary/components/TagBadgeList';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
-import { chooseDiaryPhoto, chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
+import { chooseDiaryPhoto, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
@@ -394,7 +394,7 @@ export default function EntryDetailScreen() {
   }, [editStickers.length, getVisibleStickerPosition, revealStickerBounds, setEditStickers]);
 
   const handleAddPhotoStickers = useCallback(async () => {
-    const result = await chooseDiaryPhotos();
+    const result = await chooseDiaryPhoto();
     if (!result.success) {
       if (result.error === 'native-module-missing') {
         Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
