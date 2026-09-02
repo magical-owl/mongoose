@@ -147,13 +147,16 @@ interface MarkdownTextProps {
 
 export function MarkdownText({ children, style }: MarkdownTextProps) {
   const theme = useTheme();
+  const flattenedStyle = StyleSheet.flatten(style) ?? {};
 
   const baseText = {
     color: theme.colors.text,
     fontSize: theme.fontSizes.base,
     lineHeight: 26,
-    ...style,
+    ...flattenedStyle,
   };
+  const bodyColor = typeof flattenedStyle.color === 'string' ? flattenedStyle.color : theme.colors.text;
+  const bodyFontFamily = typeof flattenedStyle.fontFamily === 'string' ? flattenedStyle.fontFamily : undefined;
 
   const normalizedText = convertHtmlToMarkdown(children || '');
   const lines = normalizedText.split('\n');
@@ -173,7 +176,8 @@ export function MarkdownText({ children, style }: MarkdownTextProps) {
                 segments={parseInline(block.text)}
                 tintColor={theme.colors.tint}
                 baseStyle={{
-                  color: theme.colors.text,
+                  color: bodyColor,
+                  fontFamily: bodyFontFamily,
                   fontSize: theme.fontSizes.xxl,
                   fontWeight: '700',
                   lineHeight: 34,
@@ -190,7 +194,8 @@ export function MarkdownText({ children, style }: MarkdownTextProps) {
                 segments={parseInline(block.text)}
                 tintColor={theme.colors.tint}
                 baseStyle={{
-                  color: theme.colors.text,
+                  color: bodyColor,
+                  fontFamily: bodyFontFamily,
                   fontSize: theme.fontSizes.xl,
                   fontWeight: '700',
                   lineHeight: 28,
@@ -207,7 +212,8 @@ export function MarkdownText({ children, style }: MarkdownTextProps) {
                 segments={parseInline(block.text)}
                 tintColor={theme.colors.tint}
                 baseStyle={{
-                  color: theme.colors.text,
+                  color: bodyColor,
+                  fontFamily: bodyFontFamily,
                   fontSize: theme.fontSizes.lg,
                   fontWeight: '600',
                   lineHeight: 26,

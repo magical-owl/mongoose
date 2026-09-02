@@ -10,6 +10,7 @@ function createEntry(id: string, title: string, date: string): DiaryEntry {
     content: '<p>A short entry.</p>',
     date,
     paperBackgroundId: 'vintage-parchment',
+    bodyFontFamily: 'system',
     stickers: [],
     companion: 'cat',
     isFavorite: false,

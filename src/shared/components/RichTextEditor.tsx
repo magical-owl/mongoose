@@ -9,7 +9,7 @@
  * - Optional inline toolbar when `showToolbar={true}`
  */
 
-import { useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
+import { useRef, useImperativeHandle, forwardRef, useCallback, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import {
   RichEditor,
@@ -23,6 +23,7 @@ export type FormatActionKind = 'bold' | 'italic' | 'heading' | 'bullet' | 'quote
 
 export interface RichTextEditorHandle {
   applyFormat: (kind: FormatActionKind) => void;
+  setBodyStyle: (style: { readonly fontFamily?: string; readonly textColor?: string }) => void;
   togglePreview: () => void;
   setContentHTML: (html: string) => void;
   insertHTML: (html: string) => void;
@@ -109,6 +110,25 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
       }
     }, []);
 
+    const setBodyStyle = useCallback((style: { readonly fontFamily?: string; readonly textColor?: string }) => {
+      const commands: string[] = [];
+      if (style.fontFamily) {
+        const fontFamily = JSON.stringify(style.fontFamily);
+        commands.push(`$('#content').style.fontFamily=${fontFamily}`);
+      }
+      if (style.textColor) {
+        const textColor = JSON.stringify(style.textColor);
+        commands.push(`$('#content').style.color=${textColor}`);
+      }
+      if (commands.length > 0) {
+        richTextRef.current?.commandDOM(commands.join(';'));
+      }
+    }, []);
+
+    useEffect(() => {
+      setBodyStyle({ fontFamily: editorFontFamily, textColor: editorTextColor });
+    }, [editorFontFamily, editorTextColor, setBodyStyle]);
+
     const setContentHTML = useCallback((html: string) => {
       if (richTextRef.current) {
         richTextRef.current.setContentHTML(html);
@@ -129,13 +149,14 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
       ref,
       () => ({
         applyFormat,
+        setBodyStyle,
         togglePreview: () => {},
         setContentHTML,
         insertHTML,
         dismissKeyboard,
         richTextRef,
       }),
-      [applyFormat, dismissKeyboard, setContentHTML, insertHTML]
+      [applyFormat, dismissKeyboard, setBodyStyle, setContentHTML, insertHTML]
     );
 
     return (

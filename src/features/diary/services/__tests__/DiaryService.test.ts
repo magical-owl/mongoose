@@ -49,6 +49,7 @@ describe('DiaryService', () => {
     content: 'Had a wonderful and happy day outdoors!',
     date: dateOffset(0),
     paperBackgroundId: 'vintage-parchment',
+    bodyFontFamily: 'system',
     stickers: [],
     companion: 'cat',
     isFavorite: true,

@@ -96,6 +96,7 @@ const entry: DiaryEntry = {
   content: '<p>Synthetic entry.</p>',
   date: '2026-05-01',
   paperBackgroundId: 'vintage-parchment',
+  bodyFontFamily: 'system',
   stickers: [],
   companion: 'cat',
   isFavorite: false,

@@ -26,6 +26,7 @@ const entry: DiaryEntry = {
   content: '<p>A short entry for today.</p>',
   date: '2026-08-29',
   paperBackgroundId: 'vintage-parchment',
+  bodyFontFamily: 'system',
   stickers: [],
   companion: 'cat',
   isFavorite: false,

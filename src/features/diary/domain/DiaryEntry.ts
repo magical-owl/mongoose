@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { PlacedStickerSchema } from './Sticker';
 import { CompanionTypeSchema } from './Companion';
+import { DiaryBodyFontFamilySchema, DiaryBodyTextColorSchema } from './DiaryBodyStyle';
 
 export const ManualMoodWeatherSchema = z.enum(['sunny', 'cloudy', 'stormy', 'foggy', 'windy', 'calm', 'neutral']);
 export type ManualMoodWeather = z.infer<typeof ManualMoodWeatherSchema>;
@@ -121,6 +122,8 @@ export const DiaryEntrySchema = z.object({
   content: z.string().min(1, 'Content cannot be empty'),
   date: z.string(),                                      // YYYY-MM-DD
   paperBackgroundId: z.string().default('vintage-parchment'),
+  bodyFontFamily: DiaryBodyFontFamilySchema.default('system'),
+  bodyTextColor: DiaryBodyTextColorSchema.optional(),
   stickers: z.array(PlacedStickerSchema).default([]),
   companion: CompanionTypeSchema.default('cat'),
   isFavorite: z.boolean().default(false),

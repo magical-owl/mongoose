@@ -4,6 +4,7 @@ import { normalizeHtmlContent } from '@/shared/utils/html';
 import type { CompanionType } from '../domain/Companion';
 import type { PlacedSticker } from '../domain/Sticker';
 import { getPrimaryManualMood, normalizeManualMoods, type DiaryPhoto, type ManualMood, type ManualMoodWeather, type SensoryDetails, type WritingMode } from '../domain/DiaryEntry';
+import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '../domain/DiaryBodyStyle';
 
 export interface DiaryDraft {
   readonly title: string;
@@ -13,6 +14,8 @@ export interface DiaryDraft {
   readonly stickers: PlacedSticker[];
   readonly coverPhoto?: DiaryPhoto;
   readonly paperBackgroundId: string;
+  readonly bodyFontFamily: DiaryBodyFontFamily;
+  readonly bodyTextColor?: DiaryBodyTextColor;
   readonly photos: DiaryPhoto[];
   readonly tags: string[];
   readonly manualMoodWeather: ManualMoodWeather;
@@ -49,6 +52,8 @@ export class DiaryDraftService {
         manualMood: getPrimaryManualMood(manualMoods),
         manualMoods,
         content: normalizeHtmlContent(legacyDraft.content ?? ''),
+        bodyFontFamily: normalizeDiaryBodyFontFamily(legacyDraft.bodyFontFamily),
+        bodyTextColor: normalizeDiaryBodyTextColor(legacyDraft.bodyTextColor),
       } as DiaryDraft;
     } catch {
       return null;

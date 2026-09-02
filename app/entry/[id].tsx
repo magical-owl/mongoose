@@ -22,7 +22,6 @@ import {
   Platform,
   KeyboardAvoidingView,
   Keyboard,
-  Pressable,
   TextInput as NativeTextInput,
   StyleSheet,
   useWindowDimensions,
@@ -69,6 +68,8 @@ import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimit
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 import { getStickerBodyPreviewBottom } from '@/features/diary/domain/StickerLayout';
+import { DIARY_BODY_DEFAULT_FONT_FAMILY, normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
+import { resolveAppFontFamily } from '@/theme/fonts';
 import {
   DiaryEntryEditorFooter,
   DiaryEntryEditorHeader,
@@ -164,6 +165,8 @@ export default function EntryDetailScreen() {
   const [editStickers, setEditStickers] = useState<PlacedSticker[]>([]);
   const [editCoverPhoto, setEditCoverPhoto] = useState<DiaryPhoto | undefined>();
   const [editPaperBackgroundId, setEditPaperBackgroundId] = useState<string>(DEFAULT_DIARY_PAPER_BACKGROUND_ID);
+  const [editBodyFontFamily, setEditBodyFontFamily] = useState<DiaryBodyFontFamily>(DIARY_BODY_DEFAULT_FONT_FAMILY);
+  const [editBodyTextColor, setEditBodyTextColor] = useState<DiaryBodyTextColor | undefined>();
   const [editMoodWeather, setEditMoodWeather] = useState<ManualMoodWeather>('neutral');
   const [editMoods, setEditMoods] = useState<ManualMood[]>(['neutral']);
   const [editWritingMode, setEditWritingMode] = useState<WritingMode>('free-write');
@@ -200,6 +203,11 @@ export default function EntryDetailScreen() {
     setShowFormattingTools(false);
   }, []);
 
+  const resetEditableBodyStyle = useCallback((sourceEntry: DiaryEntry) => {
+    setEditBodyFontFamily(normalizeDiaryBodyFontFamily(sourceEntry.bodyFontFamily));
+    setEditBodyTextColor(normalizeDiaryBodyTextColor(sourceEntry.bodyTextColor));
+  }, []);
+
   const handleSelectTemplate = (template: Template) => {
     const trimmed = editContent
       ? editContent.replace(/[\s\n\r]*$/, '').replace(/(<p><\/p>|<br\s*\/?>)*$/, '')
@@ -216,10 +224,9 @@ export default function EntryDetailScreen() {
     const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => setKeyboardHeight(e.endCoordinates.height));
     const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => {
       setKeyboardHeight(0);
-      closeFormattingTools();
     });
     return () => { show.remove(); hide.remove(); };
-  }, [closeFormattingTools]);
+  }, []);
 
   useEffect(() => () => {
     if (stickerBoundsTimer.current) clearTimeout(stickerBoundsTimer.current);
@@ -245,6 +252,7 @@ export default function EntryDetailScreen() {
         setEditDate(entryDate(found.date));
         setEditCoverPhoto(found.coverPhoto);
         setEditPaperBackgroundId(found.paperBackgroundId ?? DEFAULT_DIARY_PAPER_BACKGROUND_ID);
+        resetEditableBodyStyle(found);
         setEditStickers([...found.stickers, ...found.photos.map((photo, index) => createPlacedPhotoSticker(photo, found.stickers.length + index))]);
         setEditCompanion(found.companion);
         setEditFavorite(found.isFavorite);
@@ -254,7 +262,7 @@ export default function EntryDetailScreen() {
       }
     }, 0);
     return () => clearTimeout(timer);
-  }, [id, entries]);
+  }, [id, entries, resetEditableBodyStyle]);
 
   const navigateBack = useCallback(() => {
     if (router.canGoBack()) router.back();
@@ -269,6 +277,7 @@ export default function EntryDetailScreen() {
     setEditDate(entryDate(entry.date));
     setEditCoverPhoto(entry.coverPhoto);
     setEditPaperBackgroundId(entry.paperBackgroundId ?? DEFAULT_DIARY_PAPER_BACKGROUND_ID);
+    resetEditableBodyStyle(entry);
     setEditStickers([...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))]);
     setEditCompanion(entry.companion);
     setEditFavorite(entry.isFavorite);
@@ -286,6 +295,7 @@ export default function EntryDetailScreen() {
     setEditDate(entryDate(entry.date));
     setEditCoverPhoto(entry.coverPhoto);
     setEditPaperBackgroundId(entry.paperBackgroundId ?? DEFAULT_DIARY_PAPER_BACKGROUND_ID);
+    resetEditableBodyStyle(entry);
     setEditStickers([...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))]);
     setEditCompanion(entry.companion);
     setEditFavorite(entry.isFavorite);
@@ -305,6 +315,8 @@ export default function EntryDetailScreen() {
       content: editContent.trim(),
       date: `${editDate.getFullYear()}-${String(editDate.getMonth() + 1).padStart(2, '0')}-${String(editDate.getDate()).padStart(2, '0')}`,
       paperBackgroundId: editPaperBackgroundId,
+      bodyFontFamily: editBodyFontFamily,
+      bodyTextColor: editBodyTextColor,
       stickers: editStickers,
       coverPhoto: editCoverPhoto,
       photos: [],
@@ -821,6 +833,8 @@ export default function EntryDetailScreen() {
                       onHeightChange={(height) => setBodyContentHeight(Math.max(ENTRY_BODY_MIN_HEIGHT, height))}
                       placeholder={t('entryEditContentPlaceholder')}
                       placeholderColor={entryPlaceholderColor}
+                      textColor={editBodyTextColor}
+                      fontFamily={resolveAppFontFamily(editBodyFontFamily, true)}
                       fontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
                       lineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
                       fontWeight="600"
@@ -897,6 +911,8 @@ export default function EntryDetailScreen() {
                         fontSize: ENTRY_EDITOR_BODY_FONT_SIZE,
                         lineHeight: ENTRY_EDITOR_BODY_LINE_HEIGHT,
                         fontWeight: '600',
+                        color: normalizeDiaryBodyTextColor(entry.bodyTextColor) ?? theme.colors.text,
+                        fontFamily: resolveAppFontFamily(normalizeDiaryBodyFontFamily(entry.bodyFontFamily), true),
                       }}
                     >
                       {entry.content}
@@ -918,14 +934,6 @@ export default function EntryDetailScreen() {
             )}
           </View>
         </ScrollView>
-        {isEditing && showFormattingTools ? (
-          <Pressable
-            accessibilityLabel={t('entryHideFormattingA11y')}
-            accessibilityRole="button"
-            onPress={closeFormattingTools}
-            style={styles.formattingDismissLayer}
-          />
-        ) : null}
       </KeyboardAvoidingView>
 
       {!isEditing && (
@@ -962,19 +970,15 @@ export default function EntryDetailScreen() {
             />
           )}
         >
-            <View style={styles.formattingStack}>
-              <RichTextFormattingDrawer
-                visible={showFormattingTools}
-                items={FORMAT_ITEMS}
-                onSelect={(kind) => editorRef.current?.applyFormat(kind)}
-              />
+            <View>
               <IconCircleButton
                 icon="format-text"
                 size="sm"
                 active={showFormattingTools}
                 surface="transparent"
                 onPress={() => {
-                  setShowFormattingTools((current) => !current);
+                  dismissEntryKeyboard();
+                  setShowFormattingTools(true);
                 }}
                 accessibilityLabel={showFormattingTools ? t('entryHideFormattingA11y') : t('entryShowFormattingA11y')}
               />
@@ -1035,6 +1039,22 @@ export default function EntryDetailScreen() {
         </DiaryEntryEditorFooter>
       )}
 
+      <RichTextFormattingDrawer
+        visible={isEditing && showFormattingTools}
+        onDismiss={closeFormattingTools}
+        items={FORMAT_ITEMS}
+        onSelect={(kind) => editorRef.current?.applyFormat(kind)}
+        selectedFontFamily={editBodyFontFamily}
+        selectedTextColor={editBodyTextColor}
+        onSelectFontFamily={(fontFamily) => {
+          setEditBodyFontFamily(fontFamily);
+          editorRef.current?.setBodyStyle({ fontFamily: resolveAppFontFamily(fontFamily, true) });
+        }}
+        onSelectTextColor={(textColor) => {
+          setEditBodyTextColor(textColor);
+          editorRef.current?.setBodyStyle({ textColor: textColor ?? theme.colors.text });
+        }}
+      />
       <StickerPickerModal
         visible={showStickerPicker}
         onClose={() => setShowStickerPicker(false)}
@@ -1172,11 +1192,6 @@ const styles = StyleSheet.create({
     zIndex: 2,
     elevation: 2,
   },
-  formattingDismissLayer: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 2500,
-    elevation: 19,
-  },
   titleInput: {
     fontSize: 30,
     fontStyle: 'italic',
@@ -1239,8 +1254,5 @@ const styles = StyleSheet.create({
   },
   viewFooterButton: {
     gap: 8,
-  },
-  formattingStack: {
-    position: 'relative',
   },
 });

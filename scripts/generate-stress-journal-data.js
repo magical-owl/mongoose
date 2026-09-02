@@ -213,6 +213,7 @@ function createEntry({ date, entryIndex, sequence, journal, random }) {
     content: entryContent(dateKey, journal.title, random),
     date: dateKey,
     paperBackgroundId: 'vintage-parchment',
+    bodyFontFamily: 'system',
     stickers: [],
     companion: COMPANIONS[randomInt(random, 0, COMPANIONS.length - 1)],
     isFavorite: random() > 0.82,

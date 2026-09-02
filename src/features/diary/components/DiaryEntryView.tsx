@@ -27,6 +27,8 @@ import {
   getStickerBodyPreviewBottom,
   mapStickerToBodyPreview,
 } from '@/features/diary/domain/StickerLayout';
+import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
+import { resolveAppFontFamily } from '@/theme/fonts';
 
 export type DiaryEntryViewMode = 'detailed' | 'timeline' | 'feed';
 
@@ -154,6 +156,8 @@ export function DiaryEntryView({
   const entryTime = formatFriendlyTimestamp(entry.createdAt, timeFormat, friendlyTimestampLabels);
   const feedEntryDateTime = entryTime;
   const isFeedMode = mode === 'feed';
+  const entryBodyTextColor = normalizeDiaryBodyTextColor(entry.bodyTextColor) ?? theme.colors.textSecondary;
+  const entryBodyFontFamily = resolveAppFontFamily(normalizeDiaryBodyFontFamily(entry.bodyFontFamily), true);
   const showReflectionSummaryAction = mode !== 'timeline' && Boolean(onReflectionSummaryPress);
   const reflectionSummaryLabel = entry.reflections.length > 0 ? reflectionCountLabel(entry.reflections.length, t) : t('reflectOnThis');
   const editorCanvasWidth = Math.max(1, windowWidth - theme.spacing.lg * 2);
@@ -423,7 +427,7 @@ export function DiaryEntryView({
                 ]}
                 testID="entry-feed-content-panel"
               >
-                <MarkdownText style={[styles.feedContent, { color: theme.colors.textSecondary }]}>{entry.content}</MarkdownText>
+                <MarkdownText style={[styles.feedContent, { color: entryBodyTextColor, fontFamily: entryBodyFontFamily }]}>{entry.content}</MarkdownText>
               </View>
             </View>
           </DiaryPaperCanvas>
@@ -453,7 +457,7 @@ export function DiaryEntryView({
             {entry.coverPhoto ? <CoverPhotoPreview entry={entry} style={styles.timelineHeroCoverPhoto} testID="entry-timeline-cover-photo" /> : null}
             <View style={styles.timelinePreviewRow}>
               <View style={styles.timelineTextPreview}>
-                <Text style={[styles.timelineContent, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
+                <Text style={[styles.timelineContent, { color: entryBodyTextColor, fontFamily: entryBodyFontFamily }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
                 {(hasMood || entry.tags.length > 0) && (
                   <View style={styles.timelineMetaRow} testID="entry-timeline-meta-row">
                     {hasMood ? (
@@ -548,7 +552,7 @@ export function DiaryEntryView({
           </View>
           <View style={styles.cardPreviewRow}>
             <View style={styles.cardTextPreview}>
-              <Text style={[styles.content, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
+              <Text style={[styles.content, { color: entryBodyTextColor, fontFamily: entryBodyFontFamily }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
               {cardFooterContent}
             </View>
             {!entry.coverPhoto ? <CoverPhotoPreview entry={entry} style={styles.cardCoverPhoto} /> : null}

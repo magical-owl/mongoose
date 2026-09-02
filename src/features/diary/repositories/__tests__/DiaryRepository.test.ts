@@ -28,6 +28,7 @@ describe('DiaryRepository', () => {
     content: 'Today was a wonderful day.',
     date: '2026-08-13',
     paperBackgroundId: 'vintage-parchment',
+    bodyFontFamily: 'system',
     stickers: [
       {
         id: '987e6543-e89b-12d3-a456-426614174000',

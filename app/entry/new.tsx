@@ -17,7 +17,6 @@ import {
   Platform,
   KeyboardAvoidingView,
   Keyboard,
-  Pressable,
   TextInput as NativeTextInput,
   StyleSheet,
   useWindowDimensions,
@@ -46,6 +45,7 @@ import { DiaryPaperCanvas } from '@/features/diary/components/DiaryPaperCanvas';
 import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/DiaryPaperBackgroundPickerModal';
 import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataModal';
 import { DEFAULT_DIARY_PAPER_BACKGROUND_ID } from '@/features/diary/domain/DiaryPaperBackgrounds';
+import { DIARY_BODY_DEFAULT_FONT_FAMILY, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { chooseDiaryPhoto, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
@@ -55,6 +55,7 @@ import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimit
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 import { getStickerBodyPreviewBottom } from '@/features/diary/domain/StickerLayout';
+import { resolveAppFontFamily } from '@/theme/fonts';
 import {
   DiaryEntryEditorFooter,
   DiaryEntryEditorHeader,
@@ -153,6 +154,8 @@ export default function CreateEntryScreen() {
   const [stickers, setStickers] = useState<PlacedSticker[]>([]);
   const [coverPhoto, setCoverPhoto] = useState<DiaryPhoto | undefined>();
   const [paperBackgroundId, setPaperBackgroundId] = useState<string>(DEFAULT_DIARY_PAPER_BACKGROUND_ID);
+  const [bodyFontFamily, setBodyFontFamily] = useState<DiaryBodyFontFamily>(DIARY_BODY_DEFAULT_FONT_FAMILY);
+  const [bodyTextColor, setBodyTextColor] = useState<DiaryBodyTextColor | undefined>();
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showPaperBackgroundPicker, setShowPaperBackgroundPicker] = useState(false);
@@ -195,6 +198,8 @@ export default function CreateEntryScreen() {
       setContent(draft.content);
       setCoverPhoto(draft.coverPhoto);
       setPaperBackgroundId(draft.paperBackgroundId);
+      setBodyFontFamily(draft.bodyFontFamily);
+      setBodyTextColor(draft.bodyTextColor);
       setStickers([...draft.stickers, ...draft.photos.map((photo, index) => createPlacedPhotoSticker(photo, draft.stickers.length + index))]);
       setSelectedTags(normalizeDiaryTags(draft.tags));
       setManualMoodWeather(draft.manualMoodWeather);
@@ -229,6 +234,8 @@ export default function CreateEntryScreen() {
         stickers,
         coverPhoto,
         paperBackgroundId,
+        bodyFontFamily,
+        bodyTextColor,
         photos: [],
         tags: selectedTags,
         manualMood: getPrimaryManualMood(manualMoods),
@@ -241,7 +248,7 @@ export default function CreateEntryScreen() {
       });
     }, 700);
     return () => clearTimeout(timer);
-  }, [title, content, isoDate, stickers, coverPhoto, paperBackgroundId, selectedTags, manualMoods, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
+  }, [title, content, isoDate, stickers, coverPhoto, paperBackgroundId, bodyFontFamily, bodyTextColor, selectedTags, manualMoods, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
 
   useEffect(() => () => {
     if (stickerBoundsTimer.current) clearTimeout(stickerBoundsTimer.current);
@@ -277,10 +284,9 @@ export default function CreateEntryScreen() {
     const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => setKeyboardHeight(e.endCoordinates.height));
     const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => {
       setKeyboardHeight(0);
-      closeFormattingTools();
     });
     return () => { show.remove(); hide.remove(); };
-  }, [closeFormattingTools]);
+  }, []);
 
   const wordCount = countWords(content);
   const availableTags = useMemo(() => normalizeDiaryTags(entries.flatMap((entry) => entry.tags)), [entries]);
@@ -424,6 +430,8 @@ export default function CreateEntryScreen() {
       content: content.trim(),
       date: isoDate,
       paperBackgroundId,
+      bodyFontFamily,
+      bodyTextColor,
       stickers,
       coverPhoto,
       photos: [],
@@ -664,6 +672,8 @@ export default function CreateEntryScreen() {
                   onHeightChange={(height) => setBodyContentHeight(Math.max(ENTRY_BODY_MIN_HEIGHT, height))}
                   placeholder={t('entryCreateContentPlaceholder')}
                   placeholderColor={entryPlaceholderColor}
+                  textColor={bodyTextColor}
+                  fontFamily={resolveAppFontFamily(bodyFontFamily, true)}
                   fontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
                   lineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
                   fontWeight="600"
@@ -687,14 +697,6 @@ export default function CreateEntryScreen() {
             </View>
           </View>
         </ScrollView>
-        {showFormattingTools ? (
-          <Pressable
-            accessibilityLabel={t('entryHideFormattingA11y')}
-            accessibilityRole="button"
-            onPress={closeFormattingTools}
-            style={styles.formattingDismissLayer}
-          />
-        ) : null}
       </KeyboardAvoidingView>
 
       {/* ── Floating bottom toolbar ──────────────────────────────────────── */}
@@ -712,19 +714,15 @@ export default function CreateEntryScreen() {
           />
         )}
       >
-          <View style={styles.formattingStack}>
-            <RichTextFormattingDrawer
-              visible={showFormattingTools}
-              items={FORMAT_ITEMS}
-              onSelect={(kind) => editorRef.current?.applyFormat(kind)}
-            />
+          <View>
             <IconCircleButton
               icon="format-text"
               size="sm"
               active={showFormattingTools}
               surface="transparent"
               onPress={() => {
-                setShowFormattingTools((current) => !current);
+                dismissEntryKeyboard();
+                setShowFormattingTools(true);
               }}
               accessibilityLabel={showFormattingTools ? t('entryHideFormattingA11y') : t('entryShowFormattingA11y')}
             />
@@ -788,6 +786,22 @@ export default function CreateEntryScreen() {
       </DiaryEntryEditorFooter>
 
       {/* Modals */}
+      <RichTextFormattingDrawer
+        visible={showFormattingTools}
+        onDismiss={closeFormattingTools}
+        items={FORMAT_ITEMS}
+        onSelect={(kind) => editorRef.current?.applyFormat(kind)}
+        selectedFontFamily={bodyFontFamily}
+        selectedTextColor={bodyTextColor}
+        onSelectFontFamily={(fontFamily) => {
+          setBodyFontFamily(fontFamily);
+          editorRef.current?.setBodyStyle({ fontFamily: resolveAppFontFamily(fontFamily, true) });
+        }}
+        onSelectTextColor={(textColor) => {
+          setBodyTextColor(textColor);
+          editorRef.current?.setBodyStyle({ textColor: textColor ?? theme.colors.text });
+        }}
+      />
       <StickerPickerModal
         visible={showStickerPicker}
         onClose={() => setShowStickerPicker(false)}
@@ -892,11 +906,6 @@ const styles = StyleSheet.create({
     zIndex: 2,
     elevation: 2,
   },
-  formattingDismissLayer: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 2500,
-    elevation: 19,
-  },
   titleInput: {
     fontSize: 30,
     fontStyle: 'italic',
@@ -910,7 +919,4 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  formattingStack: {
-    position: 'relative',
-  },
 });

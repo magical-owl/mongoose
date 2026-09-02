@@ -12,6 +12,7 @@ function createEntry(overrides: Partial<DiaryEntry> = {}): DiaryEntry {
     content: overrides.content ?? '<p>A remembered day.</p>',
     date,
     paperBackgroundId: 'vintage-parchment',
+    bodyFontFamily: overrides.bodyFontFamily ?? 'system',
     stickers: [],
     companion: 'cat',
     isFavorite: false,

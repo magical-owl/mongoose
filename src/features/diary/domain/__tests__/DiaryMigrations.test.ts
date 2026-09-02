@@ -37,6 +37,13 @@ describe('Diary migrations', () => {
     expect(result.entries[0]?.photos).toEqual([]);
   });
 
+  it('defaults body style for legacy entries', () => {
+    const result = migrateDiaryStorage([entry]);
+
+    expect(result.entries[0]?.bodyFontFamily).toBe('system');
+    expect(result.entries[0]?.bodyTextColor).toBeUndefined();
+  });
+
   it('derives manualMoods from legacy manualMood values', () => {
     const result = migrateDiaryStorage([{ ...entry, manualMood: 'happy' }]);
 

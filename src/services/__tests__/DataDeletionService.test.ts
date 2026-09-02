@@ -28,6 +28,7 @@ describe('DataDeletionService', () => {
       content: 'Today',
       date: '2026-08-29',
       paperBackgroundId: 'vintage-parchment',
+      bodyFontFamily: 'system',
       stickers: [],
       companion: 'cat',
       isFavorite: false,
