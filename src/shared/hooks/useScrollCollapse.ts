@@ -10,9 +10,14 @@ type UseScrollCollapseOptions = {
   onScrollBeginDrag?: () => void;
 };
 
-export function useScrollCollapse(options: UseScrollCollapseOptions = {}) {
+type ScrollCollapseRef = {
+  scrollTo?: (options: { y: number; animated: boolean }) => void;
+  scrollToOffset?: (options: { offset: number; animated: boolean }) => void;
+};
+
+export function useScrollCollapse<TScrollRef extends ScrollCollapseRef = ScrollView>(options: UseScrollCollapseOptions = {}) {
   const { onScrollBeginDrag } = options;
-  const scrollRef = useRef<ScrollView | null>(null);
+  const scrollRef = useRef<TScrollRef | null>(null);
   const scrollY = useRef(new Animated.Value(0)).current;
   const scrollOffsetYRef = useRef(0);
 
@@ -30,7 +35,12 @@ export function useScrollCollapse(options: UseScrollCollapseOptions = {}) {
     scrollOffsetYRef.current = 0;
     scrollY.setValue(0);
     requestAnimationFrame(() => {
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      const target = scrollRef.current;
+      if (target?.scrollToOffset) {
+        target.scrollToOffset({ offset: 0, animated: false });
+        return;
+      }
+      target?.scrollTo?.({ y: 0, animated: false });
     });
   }, [scrollY]);
 

@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Image, ImageBackground, Keyboard, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View, type ImageStyle, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
+import { MarkdownText } from '@shared/components/MarkdownText';
 import { Text } from '@shared/components/Text';
 import { stripHtml } from '@shared/utils/html';
+import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import { getEntryManualMoods, getPrimaryManualMood, type DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import type { Profile } from '@/features/profile/domain/Profile';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import { diaryEntryListTitle } from './diaryEntryTypography';
@@ -13,12 +16,13 @@ import { MoodBadgeList } from './MoodBadgeList';
 import { TagBadgeList } from './TagBadgeList';
 import { ReflectionSummaryButton } from './ReflectionSummaryButton';
 import { DiaryPaperCanvas } from './DiaryPaperCanvas';
-import { DiaryEntryBodyView } from './DiaryEntryBodyView';
+import { StickerCanvasItem } from './StickerCanvasItem';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import { reflectionCountLabel, useTranslation } from '@/localization/i18n';
 import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
+import { resolveAppFontFamily } from '@/theme/fonts';
 import {
   getStickerBodyPreviewBottom,
 } from '@/features/diary/domain/StickerLayout';
@@ -58,6 +62,74 @@ function CoverPhotoPreview({ entry, style, testID }: { readonly entry: DiaryEntr
         style={[styles.coverPhotoScrim, frameStyle, { backgroundColor: theme.colors.overlay }]}
         testID={testID ? `${testID}-scrim` : undefined}
       />
+    </View>
+  );
+}
+
+function FeedDiaryEntryBodyPreview({
+  entry,
+  bodyCanvasHeight,
+  bodyFontSize,
+  bodyLineHeight,
+  stickers,
+  onBodyLayout,
+}: {
+  readonly entry: DiaryEntry;
+  readonly bodyCanvasHeight: number;
+  readonly bodyFontSize: number;
+  readonly bodyLineHeight: number;
+  readonly stickers: readonly PlacedSticker[];
+  readonly onBodyLayout: (layout: { readonly y: number; readonly width: number; readonly height: number }) => void;
+}): React.JSX.Element {
+  const theme = useTheme();
+  const bodyTextColor = normalizeDiaryBodyTextColor(entry.bodyTextColor) ?? theme.colors.text;
+  const bodyFontFamily = resolveAppFontFamily(normalizeDiaryBodyFontFamily(entry.bodyFontFamily), true);
+  const behindStickers = useMemo(() => stickers.filter((sticker) => sticker.behindText), [stickers]);
+  const foregroundStickers = useMemo(() => stickers.filter((sticker) => !sticker.behindText), [stickers]);
+  const contentHeight = Math.max(1, bodyCanvasHeight);
+
+  return (
+    <View
+      testID="diary-entry-body-preview"
+      style={[styles.bodyPreviewCanvas, { minHeight: contentHeight }]}
+      onLayout={(event) => {
+        const { y, width, height } = event.nativeEvent.layout;
+        onBodyLayout({ y, width, height });
+      }}
+    >
+      {behindStickers.map((sticker) => (
+        <StickerCanvasItem
+          key={sticker.id}
+          sticker={sticker}
+          onUpdate={() => {}}
+          onDelete={() => {}}
+          isEditable={false}
+        />
+      ))}
+      <View style={styles.bodyPreviewLayer}>
+        <MarkdownText
+          style={[
+            styles.bodyPreviewText,
+            {
+              color: bodyTextColor,
+              fontFamily: bodyFontFamily,
+              fontSize: bodyFontSize,
+              lineHeight: bodyLineHeight,
+            },
+          ]}
+        >
+          {entry.content}
+        </MarkdownText>
+      </View>
+      {foregroundStickers.map((sticker) => (
+        <StickerCanvasItem
+          key={sticker.id}
+          sticker={sticker}
+          onUpdate={() => {}}
+          onDelete={() => {}}
+          isEditable={false}
+        />
+      ))}
     </View>
   );
 }
@@ -371,7 +443,7 @@ export function DiaryEntryView({
                 ]}
                 testID="entry-feed-content-panel"
               >
-                <DiaryEntryBodyView
+                <FeedDiaryEntryBodyPreview
                   entry={entry}
                   bodyCanvasHeight={feedStickerCanvasHeight}
                   bodyFontSize={16}
@@ -539,6 +611,9 @@ const styles = StyleSheet.create({
   cardFooterMoodBadges: { maxWidth: 140 },
   cardFooterTagBadges: { flex: 1, maxWidth: '100%' },
   reflectionSummary: { flexShrink: 0, fontWeight: '700' },
+  bodyPreviewCanvas: { position: 'relative', overflow: 'hidden' },
+  bodyPreviewLayer: { position: 'relative', zIndex: 2, elevation: 2 },
+  bodyPreviewText: { fontWeight: '600' },
   feedCard: { paddingVertical: 0, marginBottom: 0 },
   feedEntrySurface: { borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   feedCanvas: { position: 'relative', overflow: 'visible' },

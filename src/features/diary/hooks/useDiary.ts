@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { diaryService } from '../services/DiaryService';
 import { DiaryEntry } from '../domain/DiaryEntry';
 import { getCachedDiaryEntries, setCachedDiaryEntries } from '../services/DiaryEntryCache';
@@ -17,6 +17,20 @@ export function useDiary() {
   const selectedCompanion = useAppStore((state) => state.selectedCompanion);
   const setSelectedCompanion = useAppStore((state) => state.setSelectedCompanion);
   const isPro = useSubscriptionStore((state) => state.isPro);
+  const entriesRef = useRef(entries);
+  const deletedEntriesRef = useRef(deletedEntries);
+
+  const commitDiaryEntries = useCallback((nextEntries: DiaryEntry[], nextDeletedEntries: DiaryEntry[]) => {
+    entriesRef.current = nextEntries;
+    deletedEntriesRef.current = nextDeletedEntries;
+    setCachedDiaryEntries(nextEntries, nextDeletedEntries);
+    setEntries(nextEntries);
+    setDeletedEntries(nextDeletedEntries);
+  }, []);
+
+  const sortEntriesByDateDesc = useCallback((items: readonly DiaryEntry[]) => (
+    [...items].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  ), []);
 
   const fetchEntries = useCallback(async () => {
     const entriesResult = await diaryService.getEntries();
@@ -31,12 +45,10 @@ export function useDiary() {
       setIsLoading(false);
       return;
     }
-    setCachedDiaryEntries(entriesResult.data, deletedEntriesResult.data);
-    setEntries(entriesResult.data);
-    setDeletedEntries(deletedEntriesResult.data);
+    commitDiaryEntries(entriesResult.data, deletedEntriesResult.data);
     setError(null);
     setIsLoading(false);
-  }, []);
+  }, [commitDiaryEntries]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -48,7 +60,13 @@ export function useDiary() {
   const saveEntry = async (entry: DiaryEntry) => {
     const result = await diaryService.saveEntry(entry, { isPro });
     if (result.success) {
-      await fetchEntries();
+      commitDiaryEntries(
+        sortEntriesByDateDesc([
+          result.data,
+          ...entriesRef.current.filter((current) => current.id !== result.data.id),
+        ]),
+        deletedEntriesRef.current.filter((current) => current.id !== result.data.id),
+      );
     }
     return result;
   };
@@ -56,7 +74,17 @@ export function useDiary() {
   const deleteEntry = async (id: string) => {
     const result = await diaryService.deleteEntry(id);
     if (result.success) {
-      await fetchEntries();
+      const entry = entriesRef.current.find((current) => current.id === id);
+      if (entry) {
+        const now = new Date().toISOString();
+        commitDiaryEntries(
+          entriesRef.current.filter((current) => current.id !== id),
+          sortEntriesByDateDesc([
+            { ...entry, deletedAt: now, updatedAt: now },
+            ...deletedEntriesRef.current.filter((current) => current.id !== id),
+          ]),
+        );
+      }
     }
     return result;
   };
@@ -64,7 +92,15 @@ export function useDiary() {
   const restoreDeletedEntry = async (id: string) => {
     const result = await diaryService.restoreDeletedEntry(id);
     if (result.success) {
-      await fetchEntries();
+      if (result.data) {
+        commitDiaryEntries(
+          sortEntriesByDateDesc([
+            result.data,
+            ...entriesRef.current.filter((current) => current.id !== result.data?.id),
+          ]),
+          deletedEntriesRef.current.filter((current) => current.id !== result.data?.id),
+        );
+      }
     }
     return result;
   };
@@ -72,7 +108,10 @@ export function useDiary() {
   const permanentlyDeleteEntry = async (id: string) => {
     const result = await diaryService.permanentlyDeleteEntry(id);
     if (result.success) {
-      await fetchEntries();
+      commitDiaryEntries(
+        entriesRef.current.filter((current) => current.id !== id),
+        deletedEntriesRef.current.filter((current) => current.id !== id),
+      );
     }
     return result;
   };
@@ -80,7 +119,14 @@ export function useDiary() {
   const restoreEntries = async (entriesToRestore: readonly DiaryEntry[]) => {
     const result = await diaryService.restoreEntries(entriesToRestore);
     if (result.success) {
-      await fetchEntries();
+      const restoredIds = new Set(result.data.map((entry) => entry.id));
+      commitDiaryEntries(
+        sortEntriesByDateDesc([
+          ...result.data,
+          ...entriesRef.current.filter((entry) => !restoredIds.has(entry.id)),
+        ]),
+        deletedEntriesRef.current.filter((entry) => !restoredIds.has(entry.id)),
+      );
     }
     return result;
   };
@@ -88,7 +134,13 @@ export function useDiary() {
   const addReflection = async (entryId: string, text: string) => {
     const result = await diaryService.addReflection(entryId, text);
     if (result.success) {
-      await fetchEntries();
+      commitDiaryEntries(
+        sortEntriesByDateDesc([
+          result.data,
+          ...entriesRef.current.filter((entry) => entry.id !== entryId),
+        ]),
+        deletedEntriesRef.current,
+      );
     }
     return result;
   };
@@ -96,12 +148,18 @@ export function useDiary() {
   const deleteReflection = async (entryId: string, reflectionId: string) => {
     const result = await diaryService.deleteReflection(entryId, reflectionId);
     if (result.success) {
-      await fetchEntries();
+      commitDiaryEntries(
+        sortEntriesByDateDesc([
+          result.data,
+          ...entriesRef.current.filter((entry) => entry.id !== entryId),
+        ]),
+        deletedEntriesRef.current,
+      );
     }
     return result;
   };
 
-  const streakStats = diaryService.calculateStreak(entries);
+  const streakStats = useMemo(() => diaryService.calculateStreak(entries), [entries]);
 
   return {
     entries,

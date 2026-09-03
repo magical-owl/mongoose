@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Image, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Alert, FlatList, Image, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View, type ListRenderItem } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -29,10 +29,6 @@ import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerServ
 import { diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import type { CreateJournalInput } from '@/features/journal/services/JournalService';
 import type { JournalColumnCount, SyntheticJournalId } from '@/stores/useAppStore';
-
-function entryBelongsToJournal(entry: { readonly journalIds?: readonly string[]; readonly collectionIds?: readonly string[] }, journalId: string): boolean {
-  return (entry.journalIds ?? entry.collectionIds ?? []).includes(journalId);
-}
 
 interface JournalHomeItem {
   readonly id: string;
@@ -163,6 +159,15 @@ export default function JournalsScreen(): React.JSX.Element {
   }, []);
 
   const visibleEntries = useMemo(() => entries.filter((entry) => isDiaryEntryVisible(entry)), [entries]);
+  const entryCountsByJournalId = useMemo(() => {
+    const counts = new Map<string, number>();
+    visibleEntries.forEach((entry) => {
+      (entry.journalIds ?? entry.collectionIds ?? []).forEach((entryJournalId) => {
+        counts.set(entryJournalId, (counts.get(entryJournalId) ?? 0) + 1);
+      });
+    });
+    return counts;
+  }, [visibleEntries]);
   const journalCardWidth = useMemo(() => {
     const availableWidth = Math.max(240, windowWidth - JOURNAL_GRID_HORIZONTAL_PADDING);
     const totalGap = JOURNAL_GRID_GAP * (journalColumnCount - 1);
@@ -177,7 +182,7 @@ export default function JournalsScreen(): React.JSX.Element {
       id: journal.id,
       title: journal.title,
       description: journal.description,
-      count: visibleEntries.filter((entry) => entryBelongsToJournal(entry, journal.id)).length,
+      count: entryCountsByJournalId.get(journal.id) ?? 0,
       canRename: true,
       coverImageUri: journal.coverImageUri,
       coverImageWidth: journal.coverImageWidth,
@@ -211,7 +216,7 @@ export default function JournalsScreen(): React.JSX.Element {
         coverImageHeight: syntheticJournalCovers.unassigned?.coverImageHeight,
       }] : []),
     ];
-  }, [journals, showPermanentJournals, syntheticJournalCovers, t, unassignedEntries.length, visibleEntries]);
+  }, [entryCountsByJournalId, journals, showPermanentJournals, syntheticJournalCovers, t, unassignedEntries.length, visibleEntries.length]);
   const filteredJournalItems = useMemo(() => {
     const query = journalSearchQuery.trim().toLocaleLowerCase();
     if (!query) return journalItems;
@@ -426,7 +431,7 @@ export default function JournalsScreen(): React.JSX.Element {
     setRenamingJournal(null);
   }, []);
 
-  const renderJournalOptions = (journal: JournalHomeItem) => {
+  const renderJournalOptions = useCallback((journal: JournalHomeItem) => {
     const isOpen = openJournalOptionsId === journal.id;
     return (
       <View style={styles.journalOptionsWrap}>
@@ -509,7 +514,139 @@ export default function JournalsScreen(): React.JSX.Element {
         ) : null}
       </View>
     );
-  };
+  }, [
+    assigningCoverJournalId,
+    deletingJournalId,
+    handleDeleteJournal,
+    handleOpenCoverPicker,
+    handleOpenRenameJournal,
+    handleRemoveJournalCover,
+    openJournalOptionsId,
+    t,
+    theme.colors.background,
+    theme.colors.border,
+    theme.colors.error,
+    theme.colors.textSecondary,
+  ]);
+
+  const renderJournalCard = useCallback<ListRenderItem<JournalHomeItem>>(({ item: journal }) => {
+    const journalCoverSource = getJournalCoverImageSource(journal.coverImageUri);
+    const coverCountMeta = (
+      <View style={[
+        styles.journalCoverCountMeta,
+        compactJournalCover && styles.journalCoverCountMetaCompact,
+        denseJournalCover && styles.journalCoverCountMetaDense,
+      ]}>
+        <Text
+          preset="caption"
+          dynamicType={false}
+          adjustsFontSizeToFit
+          minimumFontScale={0.75}
+          numberOfLines={1}
+          style={[
+            styles.journalCoverCountLabel,
+            compactJournalCover && styles.journalCoverCountLabelCompact,
+            denseJournalCover && styles.journalCoverCountLabelDense,
+            { color: theme.colors.stickerControlText },
+          ]}
+        >
+          {denseJournalCover ? journal.count : `${journal.count} ${journalEntryLabelText(journal.count)}`}
+        </Text>
+      </View>
+    );
+
+    return (
+      <TouchableOpacity
+        onPress={() => router.push({ pathname: '/journal/[id]', params: { id: journal.id, title: journal.title } })}
+        style={[
+          styles.journalCoverCard,
+          openJournalOptionsId === journal.id && styles.journalCardRaised,
+          { width: journalCardWidth },
+          { borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
+        ]}
+        accessibilityRole="button"
+      >
+        {renderJournalOptions(journal)}
+        <View style={[
+          styles.journalCoverImageFrame,
+          wideJournalCover && styles.journalCoverImageFrameWide,
+          { backgroundColor: theme.colors.tint + '18' },
+        ]}>
+          {journalCoverSource ? (
+            <Image source={journalCoverSource} style={styles.journalCoverImage} resizeMode="cover" />
+          ) : (
+            <View style={styles.journalCoverPlaceholder}>
+              <Ionicons name="book-outline" size={34} color={theme.colors.tint} />
+            </View>
+          )}
+          {coverCountMeta}
+        </View>
+        <View style={[
+          styles.journalCoverFooter,
+          wideJournalCover && styles.journalCoverFooterWide,
+          compactJournalCover && styles.journalCoverFooterCompact,
+        ]}>
+          <View style={styles.journalCoverCopy}>
+            <Text
+              preset="h3"
+              color="text"
+              numberOfLines={denseJournalCover ? 1 : 2}
+              style={[
+                styles.journalCoverTitle,
+                wideJournalCover && styles.journalCoverTitleWide,
+                compactJournalCover && styles.journalCoverTitleCompact,
+                denseJournalCover && styles.journalCoverTitleDense,
+              ]}
+            >
+              {journal.title}
+            </Text>
+            {journal.description && !denseJournalCover ? (
+              <Text
+                preset="caption"
+                color="textSecondary"
+                numberOfLines={wideJournalCover ? 1 : 2}
+                style={[
+                  styles.journalCoverDescription,
+                  compactJournalCover && styles.journalCoverDescriptionCompact,
+                ]}
+              >
+                {journal.description}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  }, [
+    compactJournalCover,
+    denseJournalCover,
+    journalCardWidth,
+    journalEntryLabelText,
+    openJournalOptionsId,
+    renderJournalOptions,
+    router,
+    theme.colors.border,
+    theme.colors.stickerControlText,
+    theme.colors.surface,
+    theme.colors.tint,
+    wideJournalCover,
+  ]);
+
+  const renderEmptyJournalList = useCallback(() => (
+    journalItems.length === 0 ? (
+      <View style={[styles.emptyState, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+        <Ionicons name="journal-outline" size={34} color={theme.colors.tint} />
+        <Text preset="label" color="text" style={styles.emptyTitle}>{t('journalsEmptyTitle')}</Text>
+        <Text preset="bodySmall" color="textSecondary" style={styles.emptyBody}>{t('journalsEmptyMessage')}</Text>
+        <AccentPillButton label={t('journalCreate')} onPress={() => setShowCreateModal(true)} style={styles.emptyButton} />
+      </View>
+    ) : (
+      <View style={[styles.emptyState, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+        <Ionicons name="search-outline" size={34} color={theme.colors.tint} />
+        <Text preset="label" color="text" style={styles.emptyTitle}>{t('journalNoMatchingJournals')}</Text>
+      </View>
+    )
+  ), [journalItems.length, t, theme.colors.border, theme.colors.surface, theme.colors.tint]);
 
   return (
     <AppPatternBackground style={styles.root} testID="journals-pattern-background">
@@ -546,113 +683,21 @@ export default function JournalsScreen(): React.JSX.Element {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 88 }]} showsVerticalScrollIndicator={false}>
-        {journalItems.length === 0 ? (
-          <View style={[styles.emptyState, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
-            <Ionicons name="journal-outline" size={34} color={theme.colors.tint} />
-            <Text preset="label" color="text" style={styles.emptyTitle}>{t('journalsEmptyTitle')}</Text>
-            <Text preset="bodySmall" color="textSecondary" style={styles.emptyBody}>{t('journalsEmptyMessage')}</Text>
-            <AccentPillButton label={t('journalCreate')} onPress={() => setShowCreateModal(true)} style={styles.emptyButton} />
-          </View>
-        ) : filteredJournalItems.length === 0 ? (
-          <View style={[styles.emptyState, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
-            <Ionicons name="search-outline" size={34} color={theme.colors.tint} />
-            <Text preset="label" color="text" style={styles.emptyTitle}>{t('journalNoMatchingJournals')}</Text>
-          </View>
-        ) : (
-          <View style={styles.journalCoverGrid}>
-            {filteredJournalItems.map((journal) => {
-              const journalCoverSource = getJournalCoverImageSource(journal.coverImageUri);
-              const coverCountMeta = (
-                <View style={[
-                  styles.journalCoverCountMeta,
-                  compactJournalCover && styles.journalCoverCountMetaCompact,
-                  denseJournalCover && styles.journalCoverCountMetaDense,
-                ]}>
-                  <Text
-                    preset="caption"
-                    dynamicType={false}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.75}
-                    numberOfLines={1}
-                    style={[
-                      styles.journalCoverCountLabel,
-                      compactJournalCover && styles.journalCoverCountLabelCompact,
-                      denseJournalCover && styles.journalCoverCountLabelDense,
-                      { color: theme.colors.stickerControlText },
-                    ]}
-                  >
-                    {denseJournalCover ? journal.count : `${journal.count} ${journalEntryLabelText(journal.count)}`}
-                  </Text>
-                </View>
-              );
-              return (
-              <TouchableOpacity
-                key={journal.id}
-                onPress={() => router.push({ pathname: '/journal/[id]', params: { id: journal.id, title: journal.title } })}
-                style={[
-                  styles.journalCoverCard,
-                  openJournalOptionsId === journal.id && styles.journalCardRaised,
-                  { width: journalCardWidth },
-                  { borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
-                ]}
-                accessibilityRole="button"
-              >
-                {renderJournalOptions(journal)}
-                <View style={[
-                  styles.journalCoverImageFrame,
-                  wideJournalCover && styles.journalCoverImageFrameWide,
-                  { backgroundColor: theme.colors.tint + '18' },
-                ]}>
-                  {journalCoverSource ? (
-                    <Image source={journalCoverSource} style={styles.journalCoverImage} resizeMode="cover" />
-                  ) : (
-                    <View style={styles.journalCoverPlaceholder}>
-                      <Ionicons name="book-outline" size={34} color={theme.colors.tint} />
-                    </View>
-                  )}
-                  {coverCountMeta}
-                </View>
-                <View style={[
-                  styles.journalCoverFooter,
-                  wideJournalCover && styles.journalCoverFooterWide,
-                  compactJournalCover && styles.journalCoverFooterCompact,
-                ]}>
-                  <View style={styles.journalCoverCopy}>
-                    <Text
-                      preset="h3"
-                      color="text"
-                      numberOfLines={denseJournalCover ? 1 : 2}
-                      style={[
-                        styles.journalCoverTitle,
-                        wideJournalCover && styles.journalCoverTitleWide,
-                        compactJournalCover && styles.journalCoverTitleCompact,
-                        denseJournalCover && styles.journalCoverTitleDense,
-                      ]}
-                    >
-                      {journal.title}
-                    </Text>
-                    {journal.description && !denseJournalCover ? (
-                      <Text
-                        preset="caption"
-                        color="textSecondary"
-                        numberOfLines={wideJournalCover ? 1 : 2}
-                        style={[
-                          styles.journalCoverDescription,
-                          compactJournalCover && styles.journalCoverDescriptionCompact,
-                        ]}
-                      >
-                        {journal.description}
-                      </Text>
-                    ) : null}
-                  </View>
-                </View>
-              </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-      </ScrollView>
+      <FlatList
+        key={journalColumnCount}
+        data={filteredJournalItems}
+        keyExtractor={(journal) => journal.id}
+        renderItem={renderJournalCard}
+        numColumns={journalColumnCount}
+        columnWrapperStyle={journalColumnCount > 1 ? styles.journalCoverGridRow : undefined}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 88 }]}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={renderEmptyJournalList}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews
+      />
       <AppFooterNavigation activeItem="journal" bottom={insets.bottom + APP_FOOTER_BOTTOM_OFFSET} />
 
       <PaywallModal
@@ -925,7 +970,8 @@ const styles = StyleSheet.create({
   drawerRowTitle: { fontWeight: '700' },
   content: { paddingHorizontal: 20, paddingTop: 12 },
   journalCoverGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: JOURNAL_GRID_GAP },
-  journalCoverCard: { position: 'relative', borderWidth: 1, borderRadius: 8 },
+  journalCoverGridRow: { gap: JOURNAL_GRID_GAP },
+  journalCoverCard: { position: 'relative', borderWidth: 1, borderRadius: 8, marginBottom: JOURNAL_GRID_GAP },
   journalCardRaised: { zIndex: 20, elevation: 20 },
   journalCoverImageFrame: {
     width: '100%',
