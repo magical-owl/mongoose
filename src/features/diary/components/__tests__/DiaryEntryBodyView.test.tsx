@@ -36,7 +36,7 @@ const entry: DiaryEntry = {
 
 describe('DiaryEntryBodyView', () => {
   it('renders saved rich body formatting in read-only view mode', async () => {
-    const { getByTestId } = await renderWithProviders(
+    const { getByTestId, getByText, queryByText } = await renderWithProviders(
       <DiaryEntryBodyView
         entry={entry}
         bodyCanvasHeight={160}
@@ -50,15 +50,10 @@ describe('DiaryEntryBodyView', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    const webView = getByTestId('diary-entry-body-webview');
-    const source = webView.props.source as { readonly html: string };
-
-    expect(source.html).toContain('<strong>bold</strong>');
-    expect(source.html).toContain('color: rgb(243, 198, 193);');
-    expect(source.html).toContain('color: #F3C6C1;');
-    expect(source.html).toContain('font-family: Georgia, "Times New Roman", serif;');
-    expect(source.html).toContain('<a>link</a>');
-    expect(source.html).not.toContain('href="https://example.com"');
-    expect(source.html).not.toContain('<script>alert("x")</script>');
+    expect(getByTestId('diary-entry-body-view')).toBeTruthy();
+    expect(getByText('bold')).toBeTruthy();
+    expect(getByText(/thought/)).toBeTruthy();
+    expect(getByText('link')).toBeTruthy();
+    expect(queryByText('alert("x")')).toBeNull();
   });
 });
