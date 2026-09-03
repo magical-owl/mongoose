@@ -100,6 +100,11 @@ For stickers:
 - One primary subject.
 - Centered composition.
 - Generous breathing room.
+- Favor cute, presentable proportions through soft squash, rounded mass, and a clear focal feature rather than dense decoration.
+- Use readable personality cues: posture, tilt, scale contrast, small cheek marks, or one restrained face only when it helps the subject.
+- Keep the outer contour chunky and confident; avoid assets that read as thin line icons at in-app size.
+- Use subtle texture as surface polish, not visible horizontal/vertical bands, scratch lines, or noisy crayon streaks.
+- Add small offset shadows and imperfect highlights to make the asset feel finished while preserving a clean silhouette.
 - No environmental scene or background scenery.
 - Fully transparent background.
 - Clean isolated subject.
@@ -121,6 +126,9 @@ For pattern backgrounds:
 For journal covers:
 
 - Use simple original scenes or symbolic compositions.
+- Favor soft filled scenic shapes, layered silhouettes, and gentle atmospheric blocks over thin line-art details.
+- Keep important subjects large enough to read behind header controls and cover text overlays.
+- Use subtle grain and haze for warmth, but avoid busy texture or small marks that compete with diary titles.
 - Avoid brand-like marks, readable text, real product packaging, recognizable buildings, and character-like mascots.
 - Preserve legibility under title and entry-count overlays.
 

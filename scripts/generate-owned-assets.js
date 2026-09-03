@@ -274,11 +274,11 @@ function save(png, file, options = {}) {
 }
 
 function applyCoverPaperGrain(png, salt) {
-  for (let i = 0; i < 1800; i += 1) {
+  for (let i = 0; i < 1200; i += 1) {
     const x = Math.floor(hashPixel(i, 7, salt) * png.width);
     const y = Math.floor(hashPixel(i, 13, salt) * png.height);
     const light = hashPixel(i, 19, salt) > 0.5;
-    circle(png, x, y, hashPixel(i, 23, salt) > 0.75 ? 2 : 1, rgba(light ? '#FFF4DA' : '#5E4637', light ? 18 : 13));
+    circle(png, x, y, hashPixel(i, 23, salt) > 0.82 ? 2 : 1, rgba(light ? '#FFF4DA' : '#5E4637', light ? 12 : 8));
   }
 }
 
@@ -294,14 +294,42 @@ function drawGround(png, color) {
   polygon(png, [[0, 735], [420, 640], [840, 730], [1230, 610], [1672, 700], [1672, 941], [0, 941]], color);
 }
 
+function softBlob(png, x, y, rx, ry, color) {
+  ellipse(png, x, y, rx, ry, rgba(color, 52));
+  ellipse(png, x + rx * 0.12, y - ry * 0.08, rx * 0.82, ry * 0.72, rgba(color, 42));
+}
+
+function drawCloud(png, x, y, scale, color = '#F8F0DF', alpha = 190) {
+  ellipse(png, x, y + 18 * scale, 72 * scale, 25 * scale, rgba(color, alpha));
+  circle(png, x - 46 * scale, y + 10 * scale, 27 * scale, rgba(color, alpha));
+  circle(png, x - 10 * scale, y - 4 * scale, 35 * scale, rgba(color, alpha));
+  circle(png, x + 36 * scale, y + 7 * scale, 29 * scale, rgba(color, alpha));
+}
+
+function drawCoverLeafCluster(png, x, y, scale, leafColor = '#789B68', stemColor = '#536F4D') {
+  line(png, x, y + 80 * scale, x + 22 * scale, y - 42 * scale, 8 * scale, rgba(stemColor, 210));
+  ellipse(png, x - 25 * scale, y + 35 * scale, 42 * scale, 16 * scale, rgba(leafColor, 190));
+  ellipse(png, x + 32 * scale, y + 5 * scale, 44 * scale, 17 * scale, rgba(leafColor, 205));
+  ellipse(png, x - 18 * scale, y - 20 * scale, 35 * scale, 14 * scale, rgba(leafColor, 180));
+}
+
+function drawSoftWindow(png, x, y, w, h, color = '#F6E3B8') {
+  roundedRect(png, x + 18, y + 18, w, h, 24, rgba('#2E2520', 34));
+  roundedRect(png, x, y, w, h, 24, rgba(color, 96));
+  line(png, x + w * 0.5, y + 18, x + w * 0.5, y + h - 18, 8, rgba('#FFFFFF', 50));
+  line(png, x + 18, y + h * 0.52, x + w - 18, y + h * 0.52, 8, rgba('#FFFFFF', 45));
+}
+
 function drawNotebook(png, x, y, scale) {
-  rect(png, x, y, 210 * scale, 145 * scale, rgba('#F8F0D7', 238));
-  rect(png, x + 15 * scale, y, 9 * scale, 145 * scale, rgba('#D78D78', 255));
+  roundedRect(png, x + 10 * scale, y + 12 * scale, 210 * scale, 145 * scale, 18 * scale, rgba('#2E2520', 34));
+  roundedRect(png, x, y, 210 * scale, 145 * scale, 18 * scale, rgba('#F8F0D7', 238));
+  roundedRect(png, x + 15 * scale, y, 12 * scale, 145 * scale, 6 * scale, rgba('#D78D78', 255));
   for (let i = 1; i < 5; i += 1) line(png, x + 42 * scale, y + i * 25 * scale, x + 190 * scale, y + i * 25 * scale, 3 * scale, rgba('#C9BCA4', 180));
 }
 
 function drawMug(png, x, y, scale) {
-  rect(png, x, y, 130 * scale, 105 * scale, rgba('#F0D4B2', 245));
+  roundedRect(png, x + 8 * scale, y + 9 * scale, 130 * scale, 105 * scale, 22 * scale, rgba('#2E2520', 34));
+  roundedRect(png, x, y, 130 * scale, 105 * scale, 22 * scale, rgba('#F0D4B2', 245));
   circle(png, x + 130 * scale, y + 52 * scale, 34 * scale, rgba('#F0D4B2', 245));
   circle(png, x + 130 * scale, y + 52 * scale, 20 * scale, rgba('#7D5945', 255));
   ellipse(png, x + 65 * scale, y, 67 * scale, 18 * scale, rgba('#5F4135', 230));
@@ -309,96 +337,131 @@ function drawMug(png, x, y, scale) {
 
 function generateJournalBackgrounds() {
   journalBackground('winter', '#DEEAF0', '#AFC7D4', (png) => {
-    circle(png, 1330, 200, 86, rgba('#F8F5E8', 215));
-    drawGround(png, rgba('#F5F5F0', 255));
-    for (let i = 0; i < 22; i += 1) circle(png, 80 + i * 75, 90 + ((i * 97) % 520), 5 + (i % 3) * 3, rgba('#FFFFFF', 210));
-    rect(png, 300, 610, 260, 180, rgba('#7B5D46', 245));
-    rect(png, 328, 640, 204, 105, rgba('#F18A45', 235));
-    polygon(png, [[270, 620], [430, 505], [590, 620]], rgba('#5A4637', 255));
+    softBlob(png, 1320, 190, 170, 130, '#FFF8DF');
+    circle(png, 1330, 200, 92, rgba('#F8F5E8', 230));
+    drawCloud(png, 350, 240, 1.3, '#F6FBFB', 132);
+    drawCloud(png, 940, 315, 1, '#F6FBFB', 110);
+    polygon(png, [[0, 710], [360, 640], [760, 700], [1180, 610], [1672, 690], [1672, 941], [0, 941]], rgba('#F4F3EA', 255));
+    polygon(png, [[0, 770], [520, 690], [960, 750], [1370, 670], [1672, 735], [1672, 941], [0, 941]], rgba('#E5EDF0', 250));
+    roundedRect(png, 305, 600, 250, 190, 18, rgba('#6F5745', 250));
+    roundedRect(png, 336, 638, 188, 103, 14, rgba('#F18A45', 238));
+    polygon(png, [[260, 616], [430, 498], [603, 616]], rgba('#554437', 255));
+    roundedRect(png, 400, 548, 62, 52, 8, rgba('#6F5745', 255));
+    for (let i = 0; i < 26; i += 1) circle(png, 70 + i * 66, 95 + ((i * 97) % 530), 4 + (i % 3) * 2, rgba('#FFFFFF', 170));
   });
   journalBackground('spring', '#DDEED8', '#F8D9DA', (png) => {
-    drawGround(png, rgba('#9BBF7E', 255));
-    for (let i = 0; i < 9; i += 1) {
-      const x = 150 + i * 160;
-      line(png, x, 720, x + 20, 560 - (i % 2) * 70, 9, rgba('#668F65', 255));
-      circle(png, x + 20, 550 - (i % 2) * 70, 34, rgba(i % 2 ? '#F0A7B6' : '#FFF2A6', 238));
+    softBlob(png, 470, 220, 260, 150, '#FFF4CB');
+    drawCloud(png, 1130, 240, 1.1, '#FFF7EA', 130);
+    polygon(png, [[0, 725], [380, 630], [860, 700], [1240, 620], [1672, 720], [1672, 941], [0, 941]], rgba('#9BBF7E', 255));
+    polygon(png, [[0, 800], [520, 720], [1000, 790], [1672, 700], [1672, 941], [0, 941]], rgba('#7EA66F', 218));
+    for (let i = 0; i < 10; i += 1) {
+      const x = 125 + i * 158;
+      const y = 605 - (i % 3) * 42;
+      line(png, x, 750, x + 16, y, 11, rgba('#668F65', 235));
+      circle(png, x + 18, y, 42, rgba(i % 2 ? '#F0A7B6' : '#FFF2A6', 232));
+      circle(png, x + 4, y - 8, 22, rgba(i % 2 ? '#F7C8CE' : '#FFF8CA', 190));
     }
+    drawCoverLeafCluster(png, 1420, 690, 1.15, '#7CA86D');
   });
   journalBackground('summer', '#9EDDF0', '#F9D69A', (png) => {
-    circle(png, 1280, 200, 120, rgba('#FFD45A', 245));
-    for (let i = 0; i < 7; i += 1) line(png, 0, 690 + i * 38, 1672, 660 + i * 38, 16, rgba(i % 2 ? '#5DB7C6' : '#3B9CAD', 175));
-    polygon(png, [[0, 780], [1672, 720], [1672, 941], [0, 941]], rgba('#EAB875', 255));
-    polygon(png, [[410, 585], [475, 385], [545, 585]], rgba('#F5E8C7', 255));
-    polygon(png, [[430, 410], [520, 410], [475, 345]], rgba('#FF8C75', 245));
+    softBlob(png, 1280, 200, 210, 170, '#FFE081');
+    circle(png, 1280, 200, 126, rgba('#FFD45A', 245));
+    for (let i = 0; i < 7; i += 1) line(png, -20, 665 + i * 42, 1690, 642 + i * 38, 26, rgba(i % 2 ? '#5DB7C6' : '#3B9CAD', 160));
+    polygon(png, [[0, 780], [500, 735], [1060, 770], [1672, 714], [1672, 941], [0, 941]], rgba('#EAB875', 255));
+    polygon(png, [[0, 844], [650, 782], [1200, 830], [1672, 782], [1672, 941], [0, 941]], rgba('#D8A96A', 165));
+    roundedRect(png, 422, 442, 116, 160, 24, rgba('#F5E8C7', 255));
+    polygon(png, [[405, 430], [555, 430], [480, 340]], rgba('#FF8C75', 245));
+    line(png, 480, 602, 480, 730, 12, rgba('#7A5840', 170));
+    drawCloud(png, 320, 260, 1.1, '#FFF4DD', 126);
   });
   journalBackground('fall', '#E9BA71', '#8E6047', (png) => {
+    softBlob(png, 1240, 190, 220, 155, '#FFD28B');
     drawGround(png, rgba('#9B6B46', 255));
-    for (let i = 0; i < 16; i += 1) {
-      const x = 70 + i * 102;
-      const y = 160 + ((i * 141) % 470);
-      ellipse(png, x, y, 34, 18, rgba(i % 3 === 0 ? '#B65332' : i % 3 === 1 ? '#C98239' : '#8F7D3D', 225));
-      line(png, x - 20, y + 12, x + 20, y - 12, 3, rgba('#5D422A', 210));
+    polygon(png, [[0, 815], [450, 700], [930, 780], [1370, 690], [1672, 760], [1672, 941], [0, 941]], rgba('#7F593F', 185));
+    for (let i = 0; i < 18; i += 1) {
+      const x = 70 + i * 95;
+      const y = 155 + ((i * 137) % 455);
+      ellipse(png, x, y, 44, 24, rgba(i % 3 === 0 ? '#B65332' : i % 3 === 1 ? '#C98239' : '#8F7D3D', 210));
+      line(png, x - 25, y + 14, x + 25, y - 14, 5, rgba('#5D422A', 150));
     }
-    circle(png, 1180, 705, 74, rgba('#C96E31', 245));
-    circle(png, 1245, 705, 74, rgba('#D67A37', 245));
-    rect(png, 1208, 600, 24, 70, rgba('#5D422A', 255));
+    circle(png, 1165, 700, 82, rgba('#C96E31', 245));
+    circle(png, 1250, 700, 82, rgba('#D67A37', 245));
+    circle(png, 1210, 700, 94, rgba('#D98742', 245));
+    roundedRect(png, 1196, 592, 32, 82, 9, rgba('#5D422A', 255));
+    ellipse(png, 1265, 628, 70, 20, rgba('#7F8A4F', 160));
   });
   journalBackground('moonlit-lake', '#172D46', '#3B536B', (png) => {
-    circle(png, 1240, 170, 85, rgba('#FFF6CF', 240));
-    for (let i = 0; i < 6; i += 1) line(png, 80, 680 + i * 35, 1590, 655 + i * 35, 13, rgba('#7EA1B3', 135));
-    polygon(png, [[0, 710], [360, 560], [680, 720], [1010, 545], [1672, 735], [1672, 941], [0, 941]], rgba('#203748', 255));
+    softBlob(png, 1240, 170, 180, 135, '#FFF6CF');
+    circle(png, 1240, 170, 88, rgba('#FFF6CF', 240));
+    drawCloud(png, 520, 250, 1.15, '#C6D4D7', 72);
+    for (let i = 0; i < 8; i += 1) line(png, 80, 660 + i * 34, 1590, 642 + i * 31, 22, rgba('#7EA1B3', 105));
+    polygon(png, [[0, 710], [360, 550], [680, 720], [1010, 530], [1672, 735], [1672, 941], [0, 941]], rgba('#203748', 255));
+    polygon(png, [[0, 800], [500, 680], [850, 790], [1280, 660], [1672, 805], [1672, 941], [0, 941]], rgba('#172B3B', 225));
   });
   journalBackground('cozy-reading-nook', '#B47A57', '#6E5042', (png) => {
-    rect(png, 0, 690, 1672, 251, rgba('#8B5D45', 255));
-    circle(png, 1370, 210, 90, rgba('#F5D58C', 210));
+    softBlob(png, 1370, 230, 220, 170, '#F5D58C');
+    roundedRect(png, 0, 690, 1672, 251, 0, rgba('#8B5D45', 255));
+    circle(png, 1370, 210, 95, rgba('#F5D58C', 210));
     drawNotebook(png, 650, 570, 1.55);
     drawMug(png, 1030, 605, 1.2);
-    rect(png, 230, 240, 280, 420, rgba('#E6CFA2', 160));
+    drawSoftWindow(png, 220, 225, 300, 420, '#E6CFA2');
+    roundedRect(png, 1230, 470, 210, 250, 32, rgba('#5F4238', 140));
   });
   journalBackground('school', '#DDE7EF', '#B8CBE0', (png) => {
-    rect(png, 0, 700, 1672, 241, rgba('#CDA576', 255));
+    drawCloud(png, 1180, 220, 1.2, '#F9F4E8', 126);
+    roundedRect(png, 0, 700, 1672, 241, 0, rgba('#CDA576', 255));
+    roundedRect(png, 70, 742, 1530, 90, 18, rgba('#B98E5E', 70));
     drawNotebook(png, 340, 500, 1.8);
-    rect(png, 1000, 495, 90, 265, rgba('#F3C04D', 255));
+    roundedRect(png, 1000, 495, 90, 265, 18, rgba('#F3C04D', 255));
     polygon(png, [[1000, 495], [1045, 425], [1090, 495]], rgba('#E98945', 255));
     circle(png, 1260, 540, 70, rgba('#8CB78A', 245));
-    rect(png, 1190, 540, 140, 190, rgba('#8CB78A', 245));
+    roundedRect(png, 1190, 540, 140, 190, 28, rgba('#8CB78A', 245));
   });
   journalBackground('office', '#CFD8DC', '#8FA4A9', (png) => {
-    rect(png, 0, 705, 1672, 236, rgba('#A7896C', 255));
-    rect(png, 540, 395, 590, 300, rgba('#33434D', 255));
-    rect(png, 580, 435, 510, 220, rgba('#E5F3F4', 255));
-    rect(png, 785, 695, 100, 95, rgba('#33434D', 255));
+    drawSoftWindow(png, 175, 130, 330, 430, '#EAF1EF');
+    roundedRect(png, 0, 705, 1672, 236, 0, rgba('#A7896C', 255));
+    roundedRect(png, 532, 388, 606, 312, 24, rgba('#2F3E47', 245));
+    roundedRect(png, 580, 435, 510, 220, 18, rgba('#E5F3F4', 255));
+    roundedRect(png, 785, 695, 100, 95, 10, rgba('#33434D', 255));
     drawMug(png, 1180, 640, 1.1);
   });
   journalBackground('rainy-window', '#6B7C86', '#36484F', (png) => {
-    rect(png, 250, 90, 1170, 590, rgba('#CFD7D9', 80));
-    line(png, 835, 90, 835, 680, 14, rgba('#30434A', 190));
-    line(png, 250, 385, 1420, 385, 14, rgba('#30434A', 190));
-    for (let i = 0; i < 34; i += 1) line(png, 130 + ((i * 131) % 1420), 110 + ((i * 83) % 520), 118 + ((i * 131) % 1420), 158 + ((i * 83) % 520), 5, rgba('#DCEBEE', 155));
+    roundedRect(png, 248, 92, 1172, 590, 34, rgba('#CFD7D9', 82));
+    roundedRect(png, 250, 90, 1170, 590, 34, rgba('#CFD7D9', 70));
+    line(png, 835, 105, 835, 665, 18, rgba('#30434A', 170));
+    line(png, 265, 385, 1405, 385, 18, rgba('#30434A', 170));
+    softBlob(png, 1110, 240, 190, 130, '#DCEBEE');
+    for (let i = 0; i < 38; i += 1) line(png, 130 + ((i * 131) % 1420), 110 + ((i * 83) % 520), 118 + ((i * 131) % 1420), 168 + ((i * 83) % 520), 7, rgba('#DCEBEE', 128));
   });
   journalBackground('mountain-sunrise', '#F2C078', '#8BB6C9', (png) => {
-    circle(png, 890, 350, 115, rgba('#FFE08B', 245));
-    polygon(png, [[0, 750], [420, 350], [795, 755]], rgba('#566F72', 255));
-    polygon(png, [[520, 760], [1110, 280], [1672, 770]], rgba('#496169', 255));
+    softBlob(png, 890, 350, 220, 150, '#FFE08B');
+    circle(png, 890, 350, 120, rgba('#FFE08B', 245));
+    polygon(png, [[0, 750], [420, 340], [810, 760]], rgba('#566F72', 255));
+    polygon(png, [[520, 760], [1110, 270], [1672, 770]], rgba('#496169', 255));
+    polygon(png, [[0, 810], [420, 420], [795, 810]], rgba('#425C62', 175));
+    polygon(png, [[720, 800], [1110, 355], [1672, 805]], rgba('#3E5860', 150));
     polygon(png, [[980, 386], [1110, 280], [1245, 395]], rgba('#F5F2E8', 245));
     drawGround(png, rgba('#6D8B66', 255));
   });
   journalBackground('greenhouse', '#CDE4D2', '#7FA37E', (png) => {
-    for (let i = 0; i < 7; i += 1) line(png, 90 + i * 240, 120, 320 + i * 210, 790, 8, rgba('#E8F2E8', 145));
-    rect(png, 0, 735, 1672, 206, rgba('#6E8E63', 255));
+    softBlob(png, 1160, 210, 260, 170, '#FFF6D8');
+    for (let i = 0; i < 7; i += 1) line(png, 90 + i * 240, 120, 320 + i * 210, 790, 12, rgba('#E8F2E8', 118));
+    roundedRect(png, 0, 735, 1672, 206, 0, rgba('#6E8E63', 255));
     for (let i = 0; i < 10; i += 1) {
       const x = 120 + i * 155;
-      line(png, x, 760, x + 45, 565 - (i % 3) * 40, 10, rgba('#557E4F', 255));
-      ellipse(png, x + 20, 635, 70, 28, rgba('#7DAE69', 240));
-      ellipse(png, x + 70, 585, 65, 25, rgba('#89B874', 230));
+      line(png, x, 760, x + 45, 565 - (i % 3) * 40, 13, rgba('#557E4F', 245));
+      ellipse(png, x + 20, 635, 84, 34, rgba('#7DAE69', 230));
+      ellipse(png, x + 70, 585, 78, 30, rgba('#89B874', 220));
     }
   });
   journalBackground('cafe-morning', '#E9C9A7', '#9E7154', (png) => {
-    circle(png, 1260, 180, 100, rgba('#F8D685', 220));
-    rect(png, 0, 705, 1672, 236, rgba('#9A6A4E', 255));
+    softBlob(png, 1260, 180, 220, 150, '#F8D685');
+    circle(png, 1260, 180, 106, rgba('#F8D685', 220));
+    roundedRect(png, 0, 705, 1672, 236, 0, rgba('#9A6A4E', 255));
+    drawSoftWindow(png, 225, 195, 260, 390, '#F3CFA2');
     drawMug(png, 620, 555, 1.7);
-    rect(png, 930, 610, 310, 70, rgba('#D7A05F', 250));
-    rect(png, 956, 515, 250, 105, rgba('#F0D190', 250));
+    roundedRect(png, 930, 610, 310, 70, 18, rgba('#D7A05F', 250));
+    roundedRect(png, 956, 515, 250, 105, 20, rgba('#F0D190', 250));
     for (let i = 0; i < 3; i += 1) line(png, 690 + i * 42, 505, 670 + i * 42, 435, 8, rgba('#FFF0D8', 125));
   });
 }
@@ -408,16 +471,16 @@ function sticker(file, draw) {
   draw(png);
   applyHandmadeTexture(png, {
     salt: file.length * 47,
-    colorJitter: 12,
-    alphaJitter: 8,
-    toothChance: 0.012,
-    edgeFadeChance: 0.1,
+    colorJitter: 8,
+    alphaJitter: 5,
+    toothChance: 0.006,
+    edgeFadeChance: 0.06,
   });
   addPaperFlecks(png, {
     salt: file.length * 83,
-    count: 70,
-    maxRadius: 1.15,
-    alpha: 42,
+    count: 42,
+    maxRadius: 0.85,
+    alpha: 26,
   });
   softenTransparentEdges(png);
   save(png, `assets/stickers/${file}.png`, { upscale: 2 });
@@ -426,6 +489,7 @@ function sticker(file, draw) {
 const STICKER_INK = '#3F342D';
 const STICKER_SKETCH = '#6B584D';
 const STICKER_CREAM = '#FFF3DA';
+const STICKER_BLUSH = '#D99691';
 
 function roundedRect(png, x, y, w, h, r, color) {
   rect(png, x + r, y, w - r * 2, h, color);
@@ -453,8 +517,31 @@ function chalkHighlight(png, x1, y1, x2, y2, width = 3) {
   handLine(png, x1, y1, x2, y2, width, rgba(STICKER_CREAM, 120), x1 + y2);
 }
 
+function addOvalCheeks(png, leftX, rightX, y, color = STICKER_BLUSH) {
+  ellipse(png, leftX, y, 6, 4, rgba(color, 92));
+  ellipse(png, rightX, y + 1, 6, 4, rgba(color, 82));
+}
+
+function addTinyFace(png, leftEyeX, rightEyeX, eyeY, mouthY, expression = 'soft') {
+  circle(png, leftEyeX, eyeY, 3.5, rgba(STICKER_INK, 235));
+  circle(png, rightEyeX, eyeY + 1, 3.5, rgba(STICKER_INK, 235));
+  if (expression === 'smile') {
+    handLine(png, leftEyeX + 5, mouthY, rightEyeX - 5, mouthY - 1, 2, rgba(STICKER_INK, 205), mouthY);
+  } else if (expression === 'sleepy') {
+    handLine(png, leftEyeX - 4, eyeY, leftEyeX + 5, eyeY + 1, 2, rgba(STICKER_INK, 220), mouthY + 1);
+    handLine(png, rightEyeX - 5, eyeY + 1, rightEyeX + 4, eyeY, 2, rgba(STICKER_INK, 220), mouthY + 2);
+    handLine(png, leftEyeX + 8, mouthY, rightEyeX - 8, mouthY, 2, rgba(STICKER_INK, 180), mouthY + 3);
+  } else {
+    handLine(png, leftEyeX + 7, mouthY, rightEyeX - 7, mouthY, 2, rgba(STICKER_INK, 190), mouthY + 4);
+  }
+}
+
+function addStickerLiftShadow(png, cx, cy, rx, ry) {
+  ellipse(png, cx + 3, cy + 6, rx, ry, rgba('#2E2621', 46));
+}
+
 function drawSoftEllipseSticker(png, cx, cy, rx, ry, fill, shadow = '#8D6E5A') {
-  ellipse(png, cx + 5, cy + 6, rx, ry, rgba(shadow, 70));
+  addStickerLiftShadow(png, cx, cy, rx + 4, ry + 2);
   ellipse(png, cx - 1, cy, rx + 5, ry + 5, rgba(STICKER_INK, 235));
   ellipse(png, cx, cy, rx, ry, rgba(fill, 255));
   ellipse(png, cx + 3, cy - 2, rx - 4, ry - 5, rgba(fill, 190));
@@ -463,7 +550,7 @@ function drawSoftEllipseSticker(png, cx, cy, rx, ry, fill, shadow = '#8D6E5A') {
 }
 
 function drawCatFace(png, fur, accent, mood) {
-  ellipse(png, 94, 103, 58, 50, rgba('#8C705D', 70));
+  addStickerLiftShadow(png, 94, 104, 58, 44);
   ellipse(png, 89, 96, 63, 56, rgba(STICKER_INK, 245));
   polygon(png, [[39, 76], [56, 29], [82, 73]], rgba(STICKER_INK, 245));
   polygon(png, [[100, 72], [126, 31], [141, 78]], rgba(STICKER_INK, 245));
@@ -484,6 +571,7 @@ function drawCatFace(png, fur, accent, mood) {
   }
   handLine(png, 90, 111, 82, 119, 2, rgba(STICKER_INK, 255), 25);
   handLine(png, 90, 111, 99, 118, 2, rgba(STICKER_INK, 255), 27);
+  addOvalCheeks(png, 61, 119, 106);
   handLine(png, 55, 112, 27, 103, 2, rgba('#766257', 190), 29);
   handLine(png, 57, 122, 29, 126, 2, rgba('#766257', 190), 31);
   handLine(png, 124, 112, 153, 102, 2, rgba('#766257', 190), 33);
@@ -502,6 +590,7 @@ function generateStickers() {
     handLine(png, 55, 142, 125, 143, 3, rgba('#EAD3B9', 150), 37);
   });
   sticker('school/notebook', (png) => {
+    addStickerLiftShadow(png, 88, 94, 54, 58);
     polygon(png, [[43, 35], [137, 44], [129, 145], [34, 136]], rgba(STICKER_INK, 240));
     polygon(png, [[48, 39], [134, 47], [126, 140], [39, 132]], rgba('#F1E5C7', 255));
     polygon(png, [[48, 39], [65, 41], [56, 135], [39, 132]], rgba('#C98278', 255));
@@ -513,6 +602,7 @@ function generateStickers() {
     sketchSpark(png, 136, 34, 7);
   });
   sticker('school/pencil', (png) => {
+    addStickerLiftShadow(png, 94, 94, 52, 28);
     polygon(png, [[45, 133], [120, 38], [144, 55], [68, 151]], rgba(STICKER_INK, 240));
     polygon(png, [[51, 132], [122, 45], [137, 57], [68, 145]], rgba('#E8BF58', 255));
     polygon(png, [[122, 45], [137, 24], [143, 57]], rgba('#D1A06E', 255));
@@ -522,45 +612,51 @@ function generateStickers() {
     sketchSpark(png, 45, 48, 6);
   });
   sticker('school/backpack', (png) => {
+    addStickerLiftShadow(png, 91, 105, 48, 50);
     roundedRect(png, 43, 52, 91, 96, 23, rgba(STICKER_INK, 240));
     roundedRect(png, 48, 56, 82, 88, 21, rgba('#7896A2', 255));
     roundedRect(png, 62, 92, 55, 39, 11, rgba('#EBD4A4', 235));
     handLine(png, 62, 57, 48, 120, 7, rgba('#536B73', 245), 49);
     handLine(png, 118, 57, 131, 119, 7, rgba('#536B73', 245), 51);
     handLine(png, 70, 81, 110, 80, 3, rgba(STICKER_INK, 140), 53);
+    addTinyFace(png, 78, 101, 105, 119, 'soft');
+    addOvalCheeks(png, 67, 112, 114, '#D7A09A');
     chalkHighlight(png, 63, 64, 91, 61);
   });
   sticker('summer/sun', (png) => {
-    for (let i = 0; i < 12; i += 1) {
-      const a = (Math.PI * 2 * i) / 12;
-      const innerRadius = i % 2 === 0 ? 44 : 47;
-      const outerRadius = i % 2 === 0 ? 71 : 66;
+    for (let i = 0; i < 14; i += 1) {
+      const a = (Math.PI * 2 * i) / 14;
+      const innerRadius = i % 2 === 0 ? 42 : 45;
+      const outerRadius = i % 2 === 0 ? 75 : 68;
       handLine(
         png,
         91 + Math.cos(a) * innerRadius,
         88 + Math.sin(a) * (innerRadius - 3),
         91 + Math.cos(a) * outerRadius,
         88 + Math.sin(a) * (outerRadius - 4),
-        7,
+        8,
         rgba('#D7963E', 240),
         55 + i,
       );
     }
     drawSoftEllipseSticker(png, 90, 90, 43, 39, '#EAC763', '#A97845');
-    circle(png, 75, 84, 4, rgba(STICKER_INK, 245));
-    circle(png, 105, 86, 4, rgba(STICKER_INK, 245));
-    handLine(png, 79, 105, 101, 104, 3, rgba(STICKER_INK, 230), 67);
+    addTinyFace(png, 75, 105, 85, 105, 'soft');
+    addOvalCheeks(png, 66, 115, 96, '#DDA07B');
+    chalkHighlight(png, 73, 66, 89, 61, 3);
   });
   sticker('summer/wave', (png) => {
+    addStickerLiftShadow(png, 91, 101, 66, 26);
     handLine(png, 25, 96, 151, 92, 30, rgba(STICKER_INK, 230), 69);
     handLine(png, 29, 95, 151, 92, 24, rgba('#6CBFCC', 245), 71);
     ellipse(png, 121, 73, 34, 29, rgba(STICKER_INK, 225));
     ellipse(png, 121, 75, 28, 25, rgba('#6CBFCC', 245));
     ellipse(png, 137, 68, 18, 16, rgba(STICKER_CREAM, 205));
     handLine(png, 38, 117, 130, 115, 10, rgba('#4A9BAB', 190), 73);
+    chalkHighlight(png, 48, 85, 92, 81, 4);
     sketchSpark(png, 46, 54, 6);
   });
   sticker('summer/ice-cream', (png) => {
+    addStickerLiftShadow(png, 91, 104, 48, 50);
     polygon(png, [[68, 86], [112, 88], [92, 156]], rgba(STICKER_INK, 235));
     polygon(png, [[73, 91], [107, 91], [92, 149]], rgba('#CFA06B', 255));
     handLine(png, 80, 106, 101, 126, 2, rgba('#8F674A', 170), 75);
@@ -571,9 +667,12 @@ function generateStickers() {
     circle(png, 72, 78, 27, rgba('#E9A5B1', 255));
     circle(png, 104, 78, 27, rgba('#E9CF78', 255));
     circle(png, 90, 55, 27, rgba('#9FC7A8', 255));
+    addTinyFace(png, 82, 99, 73, 90, 'smile');
+    addOvalCheeks(png, 72, 110, 83);
     chalkHighlight(png, 80, 50, 94, 45);
   });
   sticker('winter/snowflake', (png) => {
+    addStickerLiftShadow(png, 90, 92, 56, 56);
     for (let i = 0; i < 6; i += 1) {
       const a = (Math.PI * 2 * i) / 6;
       const innerX = 90 + Math.cos(a) * 16;
@@ -588,6 +687,7 @@ function generateStickers() {
     sketchSpark(png, 137, 47, 6);
   });
   sticker('winter/scarf', (png) => {
+    addStickerLiftShadow(png, 88, 104, 55, 45);
     handLine(png, 42, 74, 133, 71, 31, rgba(STICKER_INK, 235), 111);
     handLine(png, 88, 75, 91, 143, 28, rgba(STICKER_INK, 235), 113);
     handLine(png, 43, 74, 131, 72, 25, rgba('#A96B68', 255), 115);
@@ -595,8 +695,10 @@ function generateStickers() {
     handLine(png, 45, 89, 130, 87, 6, rgba('#E7D2B3', 210), 119);
     handLine(png, 89, 103, 90, 132, 6, rgba('#E7D2B3', 210), 121);
     roundedRect(png, 77, 136, 25, 14, 6, rgba('#A96B68', 250));
+    chalkHighlight(png, 54, 62, 88, 61, 4);
   });
   sticker('winter/snow-globe', (png) => {
+    addStickerLiftShadow(png, 91, 104, 52, 48);
     circle(png, 90, 78, 49, rgba(STICKER_INK, 220));
     circle(png, 90, 78, 44, rgba('#C9E3EB', 160));
     roundedRect(png, 54, 116, 73, 30, 9, rgba(STICKER_INK, 240));
@@ -606,9 +708,11 @@ function generateStickers() {
     circle(png, 107, 64, 4, rgba(STICKER_CREAM, 230));
     polygon(png, [[71, 106], [90, 69], [109, 106]], rgba('#6F936F', 230));
     rect(png, 85, 102, 11, 14, rgba('#6A5044', 230));
+    sketchSpark(png, 118, 48, 5, '#F5D88C');
     chalkHighlight(png, 67, 53, 82, 45);
   });
   sticker('spring/blossom', (png) => {
+    addStickerLiftShadow(png, 91, 96, 52, 58);
     petalFlower(png, 90, 86, 1.85, STICKER_INK, '#B28A36');
     petalFlower(png, 90, 86, 1.62, '#E9A9B2', '#D0A13F');
     handLine(png, 90, 111, 91, 150, 7, rgba('#6F9367', 245), 123);
@@ -617,6 +721,7 @@ function generateStickers() {
     sketchSpark(png, 132, 58, 6);
   });
   sticker('spring/tulip', (png) => {
+    addStickerLiftShadow(png, 91, 96, 45, 58);
     handLine(png, 90, 84, 91, 151, 8, rgba('#658E5E', 245), 125);
     ellipse(png, 68, 122, 25, 10, rgba('#82A871', 230));
     ellipse(png, 112, 132, 25, 10, rgba('#82A871', 230));
@@ -624,8 +729,10 @@ function generateStickers() {
     polygon(png, [[61, 81], [74, 47], [91, 76], [107, 48], [118, 82], [106, 109], [74, 109]], rgba('#DF8FA4', 255));
     ellipse(png, 91, 84, 31, 28, rgba('#F1A7B7', 185));
     chalkHighlight(png, 78, 64, 86, 88);
+    sketchSpark(png, 126, 50, 6);
   });
   sticker('spring/daisy', (png) => {
+    addStickerLiftShadow(png, 91, 98, 52, 58);
     petalFlower(png, 90, 86, 2.05, STICKER_INK, '#B48632');
     petalFlower(png, 90, 86, 1.78, '#F4E9C8', '#D5A13A');
     handLine(png, 90, 112, 91, 150, 7, rgba('#6E9362', 245), 127);
@@ -633,6 +740,7 @@ function generateStickers() {
     sketchSpark(png, 128, 47, 6);
   });
   sticker('fall/leaf', (png) => {
+    addStickerLiftShadow(png, 91, 92, 57, 32);
     drawSoftEllipseSticker(png, 88, 88, 56, 29, '#BD7445', '#7A563F');
     handLine(png, 48, 114, 128, 62, 6, rgba('#684A32', 180), 129);
     handLine(png, 85, 88, 62, 71, 3, rgba('#684A32', 140), 131);
@@ -640,6 +748,7 @@ function generateStickers() {
     handLine(png, 122, 66, 144, 48, 5, rgba('#684A32', 180), 135);
   });
   sticker('fall/pumpkin', (png) => {
+    addStickerLiftShadow(png, 92, 103, 57, 43);
     circle(png, 70, 96, 40, rgba(STICKER_INK, 235));
     circle(png, 111, 94, 39, rgba(STICKER_INK, 235));
     circle(png, 90, 95, 45, rgba(STICKER_INK, 235));
@@ -648,15 +757,20 @@ function generateStickers() {
     circle(png, 90, 95, 39, rgba('#D68648', 255));
     roundedRect(png, 84, 42, 16, 31, 7, rgba('#63472D', 255));
     ellipse(png, 109, 55, 25, 9, rgba('#74884E', 220));
+    addTinyFace(png, 76, 105, 94, 113, 'smile');
+    addOvalCheeks(png, 64, 117, 105, '#D59A73');
     chalkHighlight(png, 75, 76, 83, 113);
     sketchSpark(png, 133, 55, 6);
   });
   sticker('fall/acorn', (png) => {
+    addStickerLiftShadow(png, 91, 106, 43, 38);
     drawSoftEllipseSticker(png, 91, 104, 43, 39, '#A77B4D', '#77543A');
     polygon(png, [[48, 83], [70, 47], [112, 49], [131, 82]], rgba(STICKER_INK, 245));
     polygon(png, [[53, 81], [72, 53], [110, 54], [126, 81]], rgba('#70533A', 255));
     handLine(png, 58, 78, 122, 79, 5, rgba('#4D3A2B', 155), 137);
     handLine(png, 88, 49, 101, 31, 5, rgba('#4D3A2B', 210), 139);
+    addTinyFace(png, 79, 103, 103, 121, 'soft');
+    addOvalCheeks(png, 68, 114, 112, '#C48A72');
     chalkHighlight(png, 74, 96, 84, 84);
   });
 }

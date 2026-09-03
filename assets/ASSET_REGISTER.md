@@ -42,13 +42,15 @@ License intent: project-authored original assets for this app. No third-party im
 
 Attribution: none required by the project-authored generation process.
 
+Sticker quality posture: generated sticker assets use simple project-authored geometry with softer silhouettes, restrained tiny-face details where appropriate, subtle lift shadows, reduced texture noise, and cleaner edge handling. This pass is intended to be a more presentable low-risk fallback set, while final release approval still requires human IP/design review.
+
 Review status: draft; human IP/design review required before release.
 
 | Asset group | Paths | Notes |
 | --- | --- | --- |
 | App icon and splash | `assets/icon.png`, `assets/favicon.png`, `assets/splash-icon.png`, `assets/splash-logo.png`, `assets/splash-placeholder.png` | Temporary neutral journal mark. Regenerate after final brand name and app identity are approved. |
 | Android adaptive icon | `assets/android-icon-background.png`, `assets/android-icon-foreground.png`, `assets/android-icon-monochrome.png` | Temporary neutral journal mark; no text or brand name. |
-| Journal cover backgrounds | `assets/journal-backgrounds/*.png` | Twelve simple project-authored scenic illustration covers. |
+| Journal cover backgrounds | `assets/journal-backgrounds/*.png` | Twelve soft filled project-authored scenic illustration covers generated without third-party inputs. |
 | Diary paper backgrounds | `assets/diary-paper/*.png` | Six subtle project-authored body canvas paper textures generated without third-party inputs, plus the in-app blank option. |
 | Seasonal pattern backgrounds | `assets/patterns/pattern-spring.png`, `assets/patterns/pattern-summer.png`, `assets/patterns/pattern-autumn.png`, `assets/patterns/pattern-winter.png` | Four transparent project-authored wallpaper tiles. See `assets/patterns/README.md`. |
 | Sticker pack: Cat | `assets/stickers/cat/*.png` | Three transparent PNG stickers: sleepy, curious, cozy. |
