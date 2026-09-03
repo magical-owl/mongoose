@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@providers/ThemeProvider';
@@ -14,12 +15,19 @@ export default function EditProfileScreen(): React.JSX.Element {
   const theme = useTheme();
   const t = useTranslation();
   const { profile } = useProfileForm();
+  const navigateBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(tabs)/settings');
+  }, [router]);
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background, paddingTop: insets.top + 14 }]}>
       <View style={styles.header}>
         <View style={styles.headerSide}>
-          <IconCircleButton icon="chevron-left" onPress={() => router.back()} accessibilityLabel={t('entryBackA11y')} />
+          <IconCircleButton icon="chevron-left" onPress={navigateBack} accessibilityLabel={t('entryBackA11y')} />
         </View>
         <Text preset="label" color="text" style={styles.title} numberOfLines={1}>
           {t('settingsProfileTitle')}
@@ -30,7 +38,7 @@ export default function EditProfileScreen(): React.JSX.Element {
         <ProfileEditorForm
           key={profile?.updatedAt ?? 'empty-profile'}
           profile={profile}
-          onSaved={() => router.back()}
+          onSaved={navigateBack}
         />
       </View>
     </View>

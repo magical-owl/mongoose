@@ -16,6 +16,7 @@
         "NSPhotoLibraryUsageDescription": "Allow Mongoose to add photos you choose to your diary entries.",
         "NSPhotoLibraryAddUsageDescription": "Allow Mongoose to save diary photos when you choose to keep them.",
         "NSCameraUsageDescription": "Allow Mongoose to take photos for your diary entries.",
+        "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false
         }
@@ -24,15 +25,21 @@
         "NSPrivacyAccessedAPITypes": [
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
-            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
           },
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
-            "NSPrivacyAccessedAPITypeReasons": ["C617.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "C617.1"
+            ]
           },
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
-            "NSPrivacyAccessedAPITypeReasons": ["35F9.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "35F9.1"
+            ]
           }
         ],
         "NSPrivacyCollectedDataTypes": [],
@@ -48,8 +55,12 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.magicalowl.mongoose",
-      "versionCode": 1
+      "package": "com.ezephyrmor.mongoose",
+      "versionCode": 2,
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -81,6 +92,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "fd52d74f-de3b-4410-a9f3-9060fcdfb57b"
+      }
+    },
+    "owner": "ezephyrmor"
   }
 }

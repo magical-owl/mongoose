@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/providers/ThemeProvider';
 import { spacing, borderRadius } from '@/theme';
 import { Text } from '@shared/components/Text';
+import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
 
 /**
@@ -17,6 +18,13 @@ export default function ModalScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const dismiss = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(tabs)');
+  }, [router]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -37,7 +45,7 @@ export default function ModalScreen() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.lg }]}>
         <TouchableOpacity
           style={[styles.dismissBtn, { backgroundColor: colors.tint }]}
-          onPress={() => router.back()}
+          onPress={dismiss}
           activeOpacity={0.8}
         >
           <Text preset="button" color="background">Dismiss</Text>
