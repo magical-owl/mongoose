@@ -919,7 +919,14 @@ export default function EntryDetailScreen() {
               height={38}
               minWidth={62}
               variant="elevated"
-              style={styles.viewFooterButton}
+              style={[
+                styles.viewFooterButton,
+                {
+                  backgroundColor: theme.colors.overlay,
+                  borderColor: theme.colors.tint + '80',
+                  borderWidth: StyleSheet.hairlineWidth,
+                },
+              ]}
             />
         </DiaryEntryEditorFooter>
       )}
