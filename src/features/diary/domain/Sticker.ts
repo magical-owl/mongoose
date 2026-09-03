@@ -81,6 +81,20 @@ export const STICKER_PACKS: StickerCategory[] = [
     ],
   },
   {
+    id: 'scribble-img',
+    name: 'Scribble Art',
+    icon: 'scribble',
+    accessTier: 'free',
+    stickers: [
+      { id: 'scribble_heart', name: 'Scribble Heart', source: STICKER_IMAGES.scribble_heart },
+      { id: 'scribble_starburst', name: 'Starburst', source: STICKER_IMAGES.scribble_starburst },
+      { id: 'scribble_thought', name: 'Thought Bubble', source: STICKER_IMAGES.scribble_thought },
+      { id: 'scribble_swoosh', name: 'Swoosh', source: STICKER_IMAGES.scribble_swoosh },
+      { id: 'scribble_flower', name: 'Scribble Flower', source: STICKER_IMAGES.scribble_flower },
+      { id: 'scribble_tape_note', name: 'Tape Note', source: STICKER_IMAGES.scribble_tape_note },
+    ],
+  },
+  {
     id: 'winter-img',
     name: 'Winter',
     icon: 'winter',

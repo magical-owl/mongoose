@@ -580,6 +580,70 @@ function drawCatFace(png, fur, accent, mood) {
   sketchSpark(png, 137, 46, 7);
 }
 
+function scribbleLoop(png, cx, cy, rx, ry, turns, color, width, salt) {
+  let lastX = cx + rx;
+  let lastY = cy;
+  const steps = 64;
+  for (let i = 1; i <= steps; i += 1) {
+    const t = i / steps;
+    const a = Math.PI * 2 * turns * t;
+    const wobbleX = (hashPixel(i, salt, 11) - 0.5) * 7;
+    const wobbleY = (hashPixel(i, salt, 17) - 0.5) * 7;
+    const x = cx + Math.cos(a) * rx * (0.72 + t * 0.28) + wobbleX;
+    const y = cy + Math.sin(a) * ry * (0.72 + t * 0.28) + wobbleY;
+    handLine(png, lastX, lastY, x, y, width, color, salt + i);
+    lastX = x;
+    lastY = y;
+  }
+}
+
+function scribbleHeart(png, cx, cy, scale, color) {
+  const points = [
+    [cx, cy + 38 * scale],
+    [cx - 45 * scale, cy - 4 * scale],
+    [cx - 34 * scale, cy - 42 * scale],
+    [cx - 4 * scale, cy - 28 * scale],
+    [cx + 28 * scale, cy - 46 * scale],
+    [cx + 48 * scale, cy - 10 * scale],
+    [cx, cy + 38 * scale],
+  ];
+  for (let pass = 0; pass < 3; pass += 1) {
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const [x1, y1] = points[i];
+      const [x2, y2] = points[i + 1];
+      handLine(png, x1 + pass * 1.8, y1 - pass, x2 - pass, y2 + pass * 1.2, 5, color, 150 + pass * 9 + i);
+    }
+  }
+}
+
+function scribbleStarBurst(png, cx, cy, radius, color) {
+  for (let i = 0; i < 9; i += 1) {
+    const angle = (Math.PI * 2 * i) / 9;
+    const inner = radius * (i % 2 === 0 ? 0.2 : 0.32);
+    const outer = radius * (i % 2 === 0 ? 1 : 0.78);
+    handLine(
+      png,
+      cx + Math.cos(angle) * inner,
+      cy + Math.sin(angle) * inner,
+      cx + Math.cos(angle) * outer,
+      cy + Math.sin(angle) * outer,
+      6,
+      color,
+      170 + i,
+    );
+  }
+  circle(png, cx, cy, 8, rgba(STICKER_CREAM, 180));
+}
+
+function scribbleUnderline(png, x, y, width, color) {
+  for (let pass = 0; pass < 3; pass += 1) {
+    const offset = pass * 7;
+    handLine(png, x, y + offset, x + width * 0.35, y - 10 + offset, 7, color, 190 + pass);
+    handLine(png, x + width * 0.32, y - 10 + offset, x + width * 0.68, y + 8 + offset, 7, color, 196 + pass);
+    handLine(png, x + width * 0.64, y + 8 + offset, x + width, y - 3 + offset, 7, color, 202 + pass);
+  }
+}
+
 function generateStickers() {
   sticker('cat/sleepy', (png) => drawCatFace(png, '#DDB58F', '#EACAB0', 'sleepy'));
   sticker('cat/curious', (png) => drawCatFace(png, '#78685C', '#C7A38E', 'curious'));
@@ -772,6 +836,48 @@ function generateStickers() {
     addTinyFace(png, 79, 103, 103, 121, 'soft');
     addOvalCheeks(png, 68, 114, 112, '#C48A72');
     chalkHighlight(png, 74, 96, 84, 84);
+  });
+  sticker('scribble/heart', (png) => {
+    addStickerLiftShadow(png, 91, 96, 47, 39);
+    scribbleHeart(png, 91, 92, 0.88, rgba('#D9899B', 230));
+    chalkHighlight(png, 63, 74, 77, 62, 3);
+    sketchSpark(png, 132, 53, 6);
+  });
+  sticker('scribble/starburst', (png) => {
+    addStickerLiftShadow(png, 91, 91, 46, 46);
+    scribbleStarBurst(png, 90, 90, 58, rgba('#D9A33E', 230));
+    scribbleLoop(png, 91, 91, 30, 25, 1.25, rgba('#F0D78B', 155), 4, 213);
+  });
+  sticker('scribble/thought', (png) => {
+    addStickerLiftShadow(png, 90, 92, 57, 35);
+    scribbleLoop(png, 90, 86, 54, 32, 1.7, rgba('#8FB0B5', 230), 5, 221);
+    circle(png, 58, 125, 7, rgba('#8FB0B5', 210));
+    circle(png, 42, 137, 4, rgba('#8FB0B5', 180));
+    chalkHighlight(png, 65, 72, 93, 62, 3);
+  });
+  sticker('scribble/swoosh', (png) => {
+    addStickerLiftShadow(png, 91, 101, 62, 25);
+    scribbleUnderline(png, 31, 91, 118, rgba('#C97F63', 230));
+    circle(png, 43, 121, 5, rgba('#D9A33E', 180));
+    circle(png, 133, 77, 4, rgba('#8FB0B5', 170));
+  });
+  sticker('scribble/flower', (png) => {
+    addStickerLiftShadow(png, 91, 99, 42, 50);
+    for (let pass = 0; pass < 2; pass += 1) {
+      petalFlower(png, 90 + pass * 2, 82 - pass, 1.45, pass === 0 ? STICKER_INK : '#DFA0AC', '#D8A047');
+    }
+    handLine(png, 90, 105, 92, 151, 8, rgba('#789B68', 225), 229);
+    ellipse(png, 69, 132, 22, 9, rgba('#8AAE79', 200));
+    sketchSpark(png, 130, 62, 5);
+  });
+  sticker('scribble/tape-note', (png) => {
+    addStickerLiftShadow(png, 91, 96, 53, 45);
+    polygon(png, [[48, 52], [133, 47], [139, 130], [43, 135]], rgba(STICKER_INK, 220));
+    polygon(png, [[52, 56], [130, 51], [135, 126], [47, 131]], rgba('#F3E5BF', 238));
+    roundedRect(png, 67, 39, 45, 20, 7, rgba('#D9A681', 210));
+    handLine(png, 67, 82, 119, 78, 4, rgba('#9C8975', 150), 239);
+    handLine(png, 64, 103, 111, 101, 4, rgba('#9C8975', 130), 241);
+    sketchSpark(png, 132, 41, 5);
   });
 }
 

@@ -22,6 +22,12 @@ export const STICKER_IMAGES = {
   fall_leaf: require('../../../../assets/stickers/fall/leaf.png'),
   fall_pumpkin: require('../../../../assets/stickers/fall/pumpkin.png'),
   fall_acorn: require('../../../../assets/stickers/fall/acorn.png'),
+  scribble_heart: require('../../../../assets/stickers/scribble/heart.png'),
+  scribble_starburst: require('../../../../assets/stickers/scribble/starburst.png'),
+  scribble_thought: require('../../../../assets/stickers/scribble/thought.png'),
+  scribble_swoosh: require('../../../../assets/stickers/scribble/swoosh.png'),
+  scribble_flower: require('../../../../assets/stickers/scribble/flower.png'),
+  scribble_tape_note: require('../../../../assets/stickers/scribble/tape-note.png'),
 } as const;
 
 export type StickerImageKey = keyof typeof STICKER_IMAGES;

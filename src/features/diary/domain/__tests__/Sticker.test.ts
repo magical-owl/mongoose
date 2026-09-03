@@ -23,6 +23,15 @@ describe('Sticker catalog', () => {
     expect(emojiStickers).toHaveLength(0);
   });
 
+  it('includes the free Scribble Art sticker pack with six stickers', () => {
+    const scribblePack = STICKER_PACKS.find((pack) => pack.id === 'scribble-img');
+
+    expect(scribblePack?.accessTier).toBe('free');
+    expect(scribblePack?.name).toBe('Scribble Art');
+    expect(scribblePack?.stickers).toHaveLength(6);
+    expect(scribblePack?.stickers.every((sticker) => sticker.source != null)).toBe(true);
+  });
+
   it('supports text stickers in placed sticker data', () => {
     const result = PlacedStickerSchema.parse({
       id: '123e4567-e89b-12d3-a456-426614174000',

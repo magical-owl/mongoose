@@ -56,6 +56,7 @@ Review status: draft; human IP/design review required before release.
 | Sticker pack: Cat | `assets/stickers/cat/*.png` | Three transparent PNG stickers: sleepy, curious, cozy. |
 | Sticker pack: School | `assets/stickers/school/*.png` | Three transparent PNG stickers: notebook, pencil, backpack. |
 | Sticker pack: Summer | `assets/stickers/summer/*.png` | Three transparent PNG stickers: sun, wave, ice cream. |
+| Sticker pack: Scribble Art | `assets/stickers/scribble/*.png` | Six transparent PNG diary doodle stickers: heart, starburst, thought bubble, swoosh, flower, tape note. |
 | Premium sticker pack: Winter | `assets/stickers/winter/*.png` | Three transparent PNG stickers: snowflake, scarf, snow globe. |
 | Premium sticker pack: Spring | `assets/stickers/spring/*.png` | Three transparent PNG stickers: blossom, tulip, daisy. |
 | Premium sticker pack: Fall | `assets/stickers/fall/*.png` | Three transparent PNG stickers: leaf, pumpkin, acorn. |
