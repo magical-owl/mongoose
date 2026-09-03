@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { PlacedStickerSchema } from './Sticker';
 import { CompanionTypeSchema } from './Companion';
 import { DiaryBodyFontFamilySchema, DiaryBodyTextColorSchema } from './DiaryBodyStyle';
+import { MemoryReactionSchema } from './MemoryReaction';
 
 export const ManualMoodWeatherSchema = z.enum(['sunny', 'cloudy', 'stormy', 'foggy', 'windy', 'calm', 'neutral']);
 export type ManualMoodWeather = z.infer<typeof ManualMoodWeatherSchema>;
@@ -127,6 +128,7 @@ export const DiaryEntrySchema = z.object({
   stickers: z.array(PlacedStickerSchema).default([]),
   companion: CompanionTypeSchema.default('cat'),
   isFavorite: z.boolean().default(false),
+  memoryReactions: z.array(MemoryReactionSchema).default([]),
   tags: z.array(z.string()).default([]),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),

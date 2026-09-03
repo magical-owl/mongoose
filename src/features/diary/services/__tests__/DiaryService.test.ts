@@ -53,6 +53,7 @@ describe('DiaryService', () => {
     stickers: [],
     companion: 'cat',
     isFavorite: true,
+    memoryReactions: [],
     tags: ['sunny'],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -130,6 +131,21 @@ describe('DiaryService', () => {
     expect(deleteResult.success).toBe(true);
     if (deleteResult.success) {
       expect(deleteResult.data.reflections).toHaveLength(0);
+    }
+  });
+
+  it('should toggle memory reactions on an entry', async () => {
+    await service.saveEntry(mockEntry);
+
+    const addResult = await service.toggleMemoryReaction(mockEntry.id, 'cherish');
+    expect(addResult.success).toBe(true);
+    if (!addResult.success) return;
+    expect(addResult.data.memoryReactions).toEqual(['cherish']);
+
+    const removeResult = await service.toggleMemoryReaction(mockEntry.id, 'cherish');
+    expect(removeResult.success).toBe(true);
+    if (removeResult.success) {
+      expect(removeResult.data.memoryReactions).toEqual([]);
     }
   });
 

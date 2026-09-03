@@ -32,6 +32,11 @@ describe('Diary migrations', () => {
     expect(result.entries[0]?.reflections).toEqual([]);
   });
 
+  it('defaults memory reactions for legacy entries', () => {
+    const result = migrateDiaryStorage([entry]);
+    expect(result.entries[0]?.memoryReactions).toEqual([]);
+  });
+
   it('defaults photos for legacy entries', () => {
     const result = migrateDiaryStorage([entry]);
     expect(result.entries[0]?.photos).toEqual([]);

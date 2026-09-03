@@ -30,6 +30,7 @@ const entry: DiaryEntry = {
   stickers: [],
   companion: 'cat',
   isFavorite: false,
+  memoryReactions: [],
   tags: ['daily'],
   createdAt: '2026-08-29T01:58:00.000Z',
   updatedAt: '2026-08-29T01:58:00.000Z',

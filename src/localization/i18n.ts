@@ -403,6 +403,16 @@ const translations = {
     reflectOnThis: 'Reflect on this',
     noReflections: 'No reflections yet.',
     addReflectionPlaceholder: 'Add a reflection...',
+    memoryReactionButton: 'React',
+    memoryReactionPickerTitle: 'Memory reactions',
+    memoryReactionNotSavedTitle: 'Reaction not saved',
+    memoryReactionCherish: 'Cherish',
+    memoryReactionTreasure: 'Treasure',
+    memoryReactionSmile: 'Smile',
+    memoryReactionHeavy: 'Heavy',
+    memoryReactionTender: 'Tender',
+    memoryReactionStormy: 'Stormy',
+    memoryReactionWonder: 'Wonder',
     entryCancel: 'Cancel',
     entryBack: 'Back',
     entryCreateTitle: 'Create Entry',
@@ -943,6 +953,16 @@ const translations = {
     reflectOnThis: 'これを振り返る',
     noReflections: 'リフレクションはまだありません。',
     addReflectionPlaceholder: 'リフレクションを追加...',
+    memoryReactionButton: 'リアクション',
+    memoryReactionPickerTitle: '思い出リアクション',
+    memoryReactionNotSavedTitle: 'リアクションを保存できません',
+    memoryReactionCherish: '大切',
+    memoryReactionTreasure: '宝物',
+    memoryReactionSmile: '笑顔',
+    memoryReactionHeavy: '重い',
+    memoryReactionTender: 'やさしい痛み',
+    memoryReactionStormy: '嵐',
+    memoryReactionWonder: '驚き',
     entryCancel: 'キャンセル',
     entryBack: '戻る',
     entryCreateTitle: 'エントリーを作成',
@@ -1483,6 +1503,16 @@ const translations = {
     reflectOnThis: '反思这篇',
     noReflections: '还没有反思。',
     addReflectionPlaceholder: '添加反思...',
+    memoryReactionButton: '回应',
+    memoryReactionPickerTitle: '记忆回应',
+    memoryReactionNotSavedTitle: '回应未保存',
+    memoryReactionCherish: '珍惜',
+    memoryReactionTreasure: '珍藏',
+    memoryReactionSmile: '微笑',
+    memoryReactionHeavy: '沉重',
+    memoryReactionTender: '柔软',
+    memoryReactionStormy: '风暴',
+    memoryReactionWonder: '惊叹',
     entryCancel: '取消',
     entryBack: '返回',
     entryCreateTitle: '创建日记',
@@ -2023,6 +2053,16 @@ const translations = {
     reflectOnThis: 'Darüber reflektieren',
     noReflections: 'Noch keine Reflexionen.',
     addReflectionPlaceholder: 'Reflexion hinzufügen...',
+    memoryReactionButton: 'Reagieren',
+    memoryReactionPickerTitle: 'Erinnerungsreaktionen',
+    memoryReactionNotSavedTitle: 'Reaktion nicht gespeichert',
+    memoryReactionCherish: 'Schätzen',
+    memoryReactionTreasure: 'Hüten',
+    memoryReactionSmile: 'Lächeln',
+    memoryReactionHeavy: 'Schwer',
+    memoryReactionTender: 'Zart',
+    memoryReactionStormy: 'Stürmisch',
+    memoryReactionWonder: 'Staunen',
     entryCancel: 'Abbrechen',
     entryBack: 'Zurück',
     entryCreateTitle: 'Eintrag erstellen',
@@ -2563,6 +2603,16 @@ const translations = {
     reflectOnThis: 'Réfléchir à ceci',
     noReflections: 'Aucune réflexion pour le moment.',
     addReflectionPlaceholder: 'Ajouter une réflexion...',
+    memoryReactionButton: 'Réagir',
+    memoryReactionPickerTitle: 'Réactions au souvenir',
+    memoryReactionNotSavedTitle: 'Réaction non enregistrée',
+    memoryReactionCherish: 'Chérir',
+    memoryReactionTreasure: 'Trésor',
+    memoryReactionSmile: 'Sourire',
+    memoryReactionHeavy: 'Lourd',
+    memoryReactionTender: 'Tendre',
+    memoryReactionStormy: 'Orageux',
+    memoryReactionWonder: 'Émerveillement',
     entryCancel: 'Annuler',
     entryBack: 'Retour',
     entryCreateTitle: 'Créer une entrée',
@@ -2782,6 +2832,16 @@ export function manualMoodLabel(mood: string, t: (key: TranslationKey) => string
   if (mood === 'sad') return t('moodSad');
   if (mood === 'angry') return t('moodAngry');
   return t('moodNeutral');
+}
+
+export function memoryReactionLabel(reaction: string, t: (key: TranslationKey) => string): string {
+  if (reaction === 'treasure') return t('memoryReactionTreasure');
+  if (reaction === 'smile') return t('memoryReactionSmile');
+  if (reaction === 'heavy') return t('memoryReactionHeavy');
+  if (reaction === 'tender') return t('memoryReactionTender');
+  if (reaction === 'stormy') return t('memoryReactionStormy');
+  if (reaction === 'wonder') return t('memoryReactionWonder');
+  return t('memoryReactionCherish');
 }
 
 export function manualMoodWeatherLabel(weather: string, t: (key: TranslationKey) => string): string {

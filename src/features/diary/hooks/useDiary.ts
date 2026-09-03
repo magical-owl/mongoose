@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { diaryService } from '../services/DiaryService';
 import { DiaryEntry } from '../domain/DiaryEntry';
+import type { MemoryReaction } from '../domain/MemoryReaction';
 import { getCachedDiaryEntries, setCachedDiaryEntries } from '../services/DiaryEntryCache';
 import { useAppStore } from '@/stores/useAppStore';
 import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
@@ -159,6 +160,20 @@ export function useDiary() {
     return result;
   };
 
+  const toggleMemoryReaction = async (entryId: string, reaction: MemoryReaction) => {
+    const result = await diaryService.toggleMemoryReaction(entryId, reaction);
+    if (result.success) {
+      commitDiaryEntries(
+        sortEntriesByDateDesc([
+          result.data,
+          ...entriesRef.current.filter((entry) => entry.id !== entryId),
+        ]),
+        deletedEntriesRef.current,
+      );
+    }
+    return result;
+  };
+
   const streakStats = useMemo(() => diaryService.calculateStreak(entries), [entries]);
 
   return {
@@ -177,6 +192,7 @@ export function useDiary() {
     restoreEntries,
     addReflection,
     deleteReflection,
+    toggleMemoryReaction,
     refresh: fetchEntries,
     streakStats,
   };

@@ -16,6 +16,7 @@ function createEntry(overrides: Partial<DiaryEntry> = {}): DiaryEntry {
     stickers: [],
     companion: 'cat',
     isFavorite: false,
+    memoryReactions: [],
     tags: [],
     createdAt: `${date}T08:00:00.000Z`,
     updatedAt: `${date}T08:00:00.000Z`,

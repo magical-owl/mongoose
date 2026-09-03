@@ -17,6 +17,7 @@ import { Text } from '@shared/components/Text';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import type { CalendarDateFormat, EntryHierarchyMode, HomeViewMode } from '@/stores/useAppStore';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import type { Profile } from '@/features/profile/domain/Profile';
 import type { Journal } from '@/features/journal/domain/Journal';
 import { JournalSuggestionsFooter } from '@/features/journal/components/JournalSuggestionsFooter';
@@ -83,6 +84,7 @@ interface VirtualizedDiaryEntryListProps {
   readonly onAddReflection?: (entryId: string, text: string) => Promise<boolean>;
   readonly onReflectionInputFocus?: (entryId: string) => void;
   readonly onReflectionSummaryPress?: (entryId: string) => void;
+  readonly onToggleMemoryReaction?: (entryId: string, reaction: MemoryReaction) => Promise<boolean>;
   readonly onPressJournalSuggestion: (journal: Journal) => void;
   readonly onPressSuggestionsTitle: () => void;
   readonly searchQuery: string;
@@ -188,6 +190,7 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
       onAddReflection,
       onReflectionInputFocus,
       onReflectionSummaryPress,
+      onToggleMemoryReaction,
       onPressJournalSuggestion,
       onPressSuggestionsTitle,
       searchQuery,
@@ -315,6 +318,7 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
             onAddReflection={mode === 'timeline' || mode === 'feed' ? onAddReflection : undefined}
             onReflectionInputFocus={mode === 'timeline' || mode === 'feed' ? onReflectionInputFocus : undefined}
             onReflectionSummaryPress={mode === 'timeline' || mode === 'feed' ? undefined : onReflectionSummaryPress}
+            onToggleMemoryReaction={mode === 'timeline' ? onToggleMemoryReaction : undefined}
           />
         </View>
       );
@@ -328,6 +332,7 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
       onEntryRef,
       onReflectionInputFocus,
       onReflectionSummaryPress,
+      onToggleMemoryReaction,
       onToggleDate,
       onToggleMonth,
       onToggleYear,

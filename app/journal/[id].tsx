@@ -46,6 +46,7 @@ import { useSubscription } from "@/features/subscription/hooks/useSubscription";
 import { APP_IDENTITY } from "@/config/appIdentity";
 import type { HomeViewMode } from "@/stores/useAppStore";
 import { getEntryManualMoods, type DiaryEntry, type ManualMood } from "@/features/diary/domain/DiaryEntry";
+import type { MemoryReaction } from "@/features/diary/domain/MemoryReaction";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
 import { premiumPaywallTitle, useTranslation } from "@/localization/i18n";
 
@@ -64,7 +65,7 @@ export default function JournalEntriesScreen() {
   const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { height: windowHeight } = useWindowDimensions();
-  const { entries, isLoading, refresh, addReflection, deleteReflection } = useDiary();
+  const { entries, isLoading, refresh, addReflection, deleteReflection, toggleMemoryReaction } = useDiary();
   const { journals, refresh: refreshJournals } = useJournals();
   const { profile } = useProfileForm();
   const { isPro } = useSubscription();
@@ -242,6 +243,18 @@ export default function JournalEntriesScreen() {
       return true;
     },
     [addReflection, t],
+  );
+
+  const handleToggleMemoryReaction = useCallback(
+    async (entryId: string, reaction: MemoryReaction) => {
+      const result = await toggleMemoryReaction(entryId, reaction);
+      if (!result.success) {
+        Alert.alert(t("memoryReactionNotSavedTitle"), result.error.message);
+        return false;
+      }
+      return true;
+    },
+    [toggleMemoryReaction, t],
   );
 
   const scrollReflectionInputIntoView = useCallback((entryId: string) => {
@@ -627,6 +640,7 @@ export default function JournalEntriesScreen() {
             onAddReflection={viewMode === "timeline" || viewMode === "feed" ? handleAddReflection : undefined}
             onReflectionInputFocus={viewMode === "timeline" || viewMode === "feed" ? handleReflectionInputFocus : undefined}
             onReflectionSummaryPress={viewMode === "timeline" || viewMode === "feed" ? undefined : handleReflectionSummaryPress}
+            onToggleMemoryReaction={viewMode === "timeline" ? handleToggleMemoryReaction : undefined}
             onPressJournalSuggestion={(journal) => {
               router.push({ pathname: "/journal/[id]", params: { id: journal.id, title: journal.title } });
             }}

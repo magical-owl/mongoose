@@ -15,6 +15,7 @@ function createEntry(id: string, title: string, date: string): DiaryEntry {
     stickers: [],
     companion: 'cat',
     isFavorite: false,
+    memoryReactions: [],
     tags: [],
     createdAt: `${date}T01:00:00.000Z`,
     updatedAt: `${date}T01:00:00.000Z`,

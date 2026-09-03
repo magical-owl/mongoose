@@ -15,6 +15,7 @@ const baseEntry: DiaryEntry = {
   stickers: [],
   companion: 'cat',
   isFavorite: false,
+  memoryReactions: [],
   tags: ['daily'],
   createdAt: '2026-08-29T01:58:00.000Z',
   updatedAt: '2026-08-29T01:58:00.000Z',
@@ -196,6 +197,25 @@ describe('DiaryEntryView', () => {
     expect(coverStyle.width).toBe('100%');
     expect(coverStyle.borderRadius).toBe(0);
     expect(coverScrimStyle.opacity).toBe(0.28);
+  });
+
+  it('renders timeline memory reactions before mood and tags', async () => {
+    const onToggleMemoryReaction = jest.fn().mockResolvedValue(true);
+    const { getByTestId, getByText } = await renderWithProviders(
+      <DiaryEntryView
+        entry={{ ...baseEntry, memoryReactions: ['cherish'], tags: ['daily', 'work'], manualMoods: ['happy', 'sad'] }}
+        mode="timeline"
+        profile={profile}
+        onPress={jest.fn()}
+        onToggleMemoryReaction={onToggleMemoryReaction}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByText('Cherish')).toBeTruthy();
+    expect(getByTestId('entry-timeline-memory-reaction')).toBeTruthy();
+    expect(getByTestId('entry-timeline-meta-row').children[0]).toBe(getByTestId('entry-timeline-memory-reaction').parent);
+    expect(onToggleMemoryReaction).not.toHaveBeenCalled();
   });
 
   it('keeps timeline preview text readable instead of applying custom diary body style', async () => {

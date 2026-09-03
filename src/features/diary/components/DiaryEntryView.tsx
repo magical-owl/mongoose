@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Image, ImageBackground, Keyboard, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View, type ImageStyle, type StyleProp, type ViewStyle } from 'react-native';
+import { Image, ImageBackground, Keyboard, Pressable, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View, type ImageStyle, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { Text } from '@shared/components/Text';
 import { stripHtml } from '@shared/utils/html';
 import { getEntryManualMoods, getPrimaryManualMood, type DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import type { Profile } from '@/features/profile/domain/Profile';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import { diaryEntryListTitle } from './diaryEntryTypography';
@@ -22,6 +23,7 @@ import {
   getStickerBodyPreviewBottom,
 } from '@/features/diary/domain/StickerLayout';
 import { DiaryEntryBodyPreview } from './DiaryEntryBodyPreview';
+import { MemoryReactionButton } from './MemoryReactionButton';
 
 export type DiaryEntryViewMode = 'detailed' | 'timeline' | 'feed';
 
@@ -33,6 +35,7 @@ interface DiaryEntryViewProps {
   readonly onAddReflection?: (entryId: string, text: string) => Promise<boolean>;
   readonly onReflectionSummaryPress?: (entryId: string) => void;
   readonly onReflectionInputFocus?: (entryId: string) => void;
+  readonly onToggleMemoryReaction?: (entryId: string, reaction: MemoryReaction) => Promise<boolean>;
   readonly showDateColumn?: boolean;
 }
 
@@ -79,6 +82,7 @@ export function DiaryEntryView({
   onAddReflection,
   onReflectionSummaryPress,
   onReflectionInputFocus,
+  onToggleMemoryReaction,
   showDateColumn = true,
 }: DiaryEntryViewProps): React.JSX.Element {
   const theme = useTheme();
@@ -88,6 +92,7 @@ export function DiaryEntryView({
   const [reflectionText, setReflectionText] = useState('');
   const [isAddingReflection, setIsAddingReflection] = useState(false);
   const [isReflectionFocused, setIsReflectionFocused] = useState(false);
+  const [isMemoryReactionPickerVisible, setIsMemoryReactionPickerVisible] = useState(false);
   const [feedCanvasWidth, setFeedCanvasWidth] = useState(0);
   const entryMoods = getEntryManualMoods(entry);
   const primaryMood = getPrimaryManualMood(entryMoods);
@@ -106,6 +111,7 @@ export function DiaryEntryView({
   const feedEntryDateTime = entryTime;
   const isFeedMode = mode === 'feed';
   const showReflectionSummaryAction = mode !== 'timeline' && Boolean(onReflectionSummaryPress);
+  const showMemoryReactionControl = mode === 'timeline' && Boolean(onToggleMemoryReaction);
   const reflectionSummaryLabel = entry.reflections.length > 0 ? reflectionCountLabel(entry.reflections.length, t) : t('reflectOnThis');
   const editorCanvasWidth = Math.max(1, windowWidth - theme.spacing.lg * 2);
   const measuredFeedCanvasWidth = feedCanvasWidth > 0 ? feedCanvasWidth : editorCanvasWidth;
@@ -394,7 +400,12 @@ export function DiaryEntryView({
         <View style={[styles.timelineSpine, { backgroundColor: theme.colors.border, left: theme.spacing.xl + 6 }]} testID="entry-timeline-spine" />
         <View style={[styles.timelineDot, { backgroundColor: hasMood ? moodTone : theme.colors.tint, borderColor: theme.colors.background, left: theme.spacing.xl + 1 }]} testID="entry-timeline-dot" />
         <View style={styles.timelineBody}>
-          <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.timelinePressArea}>
+          <Pressable
+            onPress={onPress}
+            onLongPress={showMemoryReactionControl ? () => setIsMemoryReactionPickerVisible(true) : undefined}
+            style={styles.timelinePressArea}
+            testID="entry-timeline-press-area"
+          >
             <View style={styles.timelineHeader}>
               <View style={styles.timelineTitleGroup}>
                 <ProfileAvatar profile={profile} size={22} accessibilityLabel={t('profileAvatarA11y')} testID="entry-timeline-avatar" />
@@ -409,8 +420,22 @@ export function DiaryEntryView({
             <View style={styles.timelinePreviewRow}>
               <View style={styles.timelineTextPreview}>
                 <Text style={[styles.timelineContent, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
-                {(hasMood || entry.tags.length > 0) && (
+                {(showMemoryReactionControl || hasMood || entry.tags.length > 0) && (
                   <View style={styles.timelineMetaRow} testID="entry-timeline-meta-row">
+                    {showMemoryReactionControl ? (
+                      <MemoryReactionButton
+                        reactions={entry.memoryReactions}
+                        visible={isMemoryReactionPickerVisible}
+                        onOpen={() => setIsMemoryReactionPickerVisible(true)}
+                        onDismiss={() => setIsMemoryReactionPickerVisible(false)}
+                        onToggleReaction={async (reaction) => {
+                          await onToggleMemoryReaction?.(entry.id, reaction);
+                        }}
+                        compact
+                        style={styles.timelineReactionButton}
+                        testID="entry-timeline-memory-reaction"
+                      />
+                    ) : null}
                     {hasMood ? (
                       <MoodBadgeList
                         moods={entryMoods}
@@ -435,7 +460,7 @@ export function DiaryEntryView({
                 )}
               </View>
             </View>
-          </TouchableOpacity>
+          </Pressable>
           {inlineReflectionSection}
         </View>
       </View>
@@ -580,6 +605,7 @@ const styles = StyleSheet.create({
   timelineHeroCoverPhoto: { width: '100%', height: 138, borderRadius: 0, marginBottom: 10 },
   timelineContent: { fontSize: 14, lineHeight: 20, marginBottom: 5 },
   timelineMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  timelineReactionButton: { flexShrink: 0 },
   timelineMoodBadges: { maxWidth: 140 },
   timelineTagBadges: { flex: 1, maxWidth: '100%' },
   timelineReflectionSection: { marginRight: 0 },

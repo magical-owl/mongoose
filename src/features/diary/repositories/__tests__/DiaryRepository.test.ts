@@ -44,6 +44,7 @@ describe('DiaryRepository', () => {
     ],
     companion: 'cat',
     isFavorite: false,
+    memoryReactions: [],
     tags: ['test', 'gratitude'],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

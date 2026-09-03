@@ -3,6 +3,7 @@ import { failure, success } from '@/shared/utils/result';
 import { generateUUID } from '@/shared/utils/uuid';
 import { FREE_PLAN_LIMITS, countAddedStickers, getLocalDateKey, validateDiaryEntryPlanLimits } from '@/features/subscription/services/PlanLimitService';
 import { DiaryEntry, DiaryReflection } from '../domain/DiaryEntry';
+import { MemoryReaction, toggleMemoryReactionSelection } from '../domain/MemoryReaction';
 import { IDiaryRepository } from '../repositories/IDiaryRepository';
 import { diaryRepository } from '../repositories/DiaryRepository';
 import { IPlanUsageRepository } from '@/features/subscription/repositories/IPlanUsageRepository';
@@ -172,6 +173,24 @@ export class DiaryService {
     const updated: DiaryEntry = {
       ...entryResult.data,
       reflections: nextReflections,
+      updatedAt: new Date().toISOString(),
+    };
+    return await this.repo.save(updated);
+  }
+
+  public async toggleMemoryReaction(entryId: string, reaction: MemoryReaction): Promise<Result<DiaryEntry>> {
+    const entryResult = await this.repo.getById(entryId);
+    if (!entryResult.success) return entryResult;
+    if (!entryResult.data) {
+      return failure({
+        code: 'NOT_FOUND',
+        message: 'Diary entry not found',
+      });
+    }
+
+    const updated: DiaryEntry = {
+      ...entryResult.data,
+      memoryReactions: toggleMemoryReactionSelection(entryResult.data.memoryReactions, reaction),
       updatedAt: new Date().toISOString(),
     };
     return await this.repo.save(updated);

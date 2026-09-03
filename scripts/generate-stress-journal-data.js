@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const CURRENT_DIARY_SCHEMA_VERSION = 5;
+const CURRENT_DIARY_SCHEMA_VERSION = 6;
 const JOURNAL_STORAGE_VERSION = 1;
 const DEFAULT_OUTPUT = path.join('generated', 'stress-data', 'journal-entry-stress-data.json');
 

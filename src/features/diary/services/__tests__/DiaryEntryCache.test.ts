@@ -11,6 +11,7 @@ const entry = {
   stickers: [],
   companion: 'cat',
   isFavorite: false,
+  memoryReactions: [],
   tags: [],
   createdAt: '2026-08-29T00:00:00.000Z',
   updatedAt: '2026-08-29T00:00:00.000Z',

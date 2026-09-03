@@ -435,6 +435,7 @@ export default function CreateEntryScreen() {
       photos: [],
       companion: DEFAULT_COMPANION,
       isFavorite,
+      memoryReactions: [],
       tags: selectedTags,
       manualMoodWeather,
       manualMood: getPrimaryManualMood(manualMoods),
