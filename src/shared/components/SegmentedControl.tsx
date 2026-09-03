@@ -5,16 +5,32 @@
  */
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Animated, TouchableOpacity, View, type LayoutChangeEvent } from 'react-native';
+import {
+  Animated,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  type LayoutChangeEvent,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';
 
 export interface SegmentedControlProps {
-  readonly segments: string[];
+  readonly segments: readonly string[];
   readonly selectedIndex: number;
   readonly onSelect: (index: number) => void;
   readonly disabled?: boolean;
   readonly accessibilityLabel?: string;
+  readonly selectedTextColor?: string;
+  readonly unselectedTextColor?: string;
+  readonly indicatorColor?: string;
+  readonly containerStyle?: StyleProp<ViewStyle>;
+  readonly segmentStyle?: StyleProp<ViewStyle>;
+  readonly textStyle?: StyleProp<TextStyle>;
+  readonly testID?: string;
 }
 
 export function SegmentedControl({
@@ -23,10 +39,18 @@ export function SegmentedControl({
   onSelect,
   disabled = false,
   accessibilityLabel,
+  selectedTextColor,
+  unselectedTextColor,
+  indicatorColor,
+  containerStyle,
+  segmentStyle,
+  textStyle,
+  testID,
 }: SegmentedControlProps): React.JSX.Element {
   const theme = useTheme();
   const slideAnim = useRef(new Animated.Value(selectedIndex)).current;
   const [containerWidth, setContainerWidth] = useState(0);
+  const resolvedContainerStyle = StyleSheet.flatten(containerStyle);
 
   const handleLayout = useCallback((e: LayoutChangeEvent) => {
     setContainerWidth(e.nativeEvent.layout.width);
@@ -41,11 +65,15 @@ export function SegmentedControl({
     }).start();
   }, [selectedIndex, slideAnim]);
 
-  // Segment width in pixels = container minus 2× padding, divided by count
-  const padding = theme.spacing.xs;
-  const segmentWidth = containerWidth > 0
+  // Segment width in pixels = measured container minus the actual rendered padding.
+  const padding = typeof resolvedContainerStyle?.padding === 'number'
+    ? resolvedContainerStyle.padding
+    : theme.spacing.xs;
+  const segmentWidth = containerWidth > 0 && segments.length > 0
     ? (containerWidth - padding * 2) / segments.length
     : 0;
+  const textSelectedColor = selectedTextColor ?? theme.colors.background;
+  const textDefaultColor = unselectedTextColor ?? theme.colors.text;
 
   const translateX = slideAnim.interpolate({
     inputRange: segments.map((_, i) => i),
@@ -55,27 +83,32 @@ export function SegmentedControl({
   return (
     <View
       onLayout={handleLayout}
-      style={{
-        flexDirection: 'row',
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.md,
-        padding,
-        opacity: disabled ? 0.5 : 1,
-      }}
+      style={[
+        styles.container,
+        {
+          backgroundColor: theme.colors.surface,
+          borderRadius: theme.borderRadius.md,
+          opacity: disabled ? 0.5 : 1,
+          padding,
+        },
+        containerStyle,
+      ]}
       accessibilityRole="tablist"
       accessibilityLabel={accessibilityLabel ?? 'Segmented control'}
+      testID={testID}
     >
       {/* Only render the indicator once we have a real measurement */}
       {containerWidth > 0 && (
         <Animated.View
+          testID={testID ? `${testID}-indicator` : undefined}
           style={{
             position: 'absolute',
             top: padding,
             left: padding,
-            height: '100%',
+            bottom: padding,
             width: segmentWidth,
-            backgroundColor: theme.colors.tint,
-            borderRadius: theme.borderRadius.sm,
+            backgroundColor: indicatorColor ?? theme.colors.tint,
+            borderRadius: 999,
             transform: [{ translateX }],
           }}
         />
@@ -88,15 +121,21 @@ export function SegmentedControl({
             onPress={() => onSelect(index)}
             disabled={disabled}
             activeOpacity={0.7}
-            style={{ flex: 1, paddingVertical: theme.spacing.sm, alignItems: 'center', zIndex: 1 }}
+            style={[styles.segment, { paddingVertical: theme.spacing.sm }, segmentStyle]}
             accessibilityRole="tab"
             accessibilityState={{ selected: isSelected, disabled }}
-            accessibilityLabel={`${segment}${isSelected ? ', selected' : ''}`}
+            accessibilityLabel={segment}
           >
             <Text
               preset="button"
-              color={isSelected ? 'background' : 'text'}
-              style={{ fontSize: theme.fontSizes.sm }}
+              style={[
+                styles.segmentText,
+                { color: isSelected ? textSelectedColor : textDefaultColor, fontSize: theme.fontSizes.sm },
+                textStyle,
+              ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
             >
               {segment}
             </Text>
@@ -106,3 +145,20 @@ export function SegmentedControl({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  segment: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    minWidth: 0,
+    zIndex: 1,
+  },
+  segmentText: {
+    fontWeight: '700',
+  },
+});

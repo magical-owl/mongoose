@@ -2,13 +2,13 @@ import {
   Animated,
   Image,
   StyleSheet,
-  TouchableOpacity,
   View,
   type ImageSourcePropType,
 } from 'react-native';
 
 import { useTheme } from '@providers/ThemeProvider';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
+import { SegmentedControl } from '@shared/components/SegmentedControl';
 import { Text } from '@shared/components/Text';
 import type { EntryHierarchyMode, HomeViewMode } from '@/stores/useAppStore';
 import { homeViewModeLabel, useTranslation } from '@/localization/i18n';
@@ -191,42 +191,28 @@ export function JournalEntryListChrome({
           <View style={[styles.headerSide, styles.headerSideLeft]}>
             <IconCircleButton icon="chevron-left" onPress={onNavigateBack} accessibilityLabel={t('entryBackA11y')} surface={hasJournalCover ? 'overlay' : 'surface'} />
           </View>
-          <View
-            style={[
+          <SegmentedControl
+            segments={selectableViewModes.map((mode) => homeViewModeLabel(mode, t))}
+            selectedIndex={selectedViewModeIndex}
+            onSelect={(index) => {
+              const mode = selectableViewModes[index];
+              if (mode) onSelectViewMode(index, mode);
+            }}
+            selectedTextColor={theme.colors.stickerControlText}
+            unselectedTextColor={hasJournalCover ? theme.colors.stickerControlText : theme.colors.textSecondary}
+            indicatorColor={theme.colors.tint}
+            containerStyle={[
               styles.viewModePill,
               {
                 backgroundColor: hasJournalCover ? 'rgba(0, 0, 0, 0.56)' : theme.colors.surface,
                 borderColor: hasJournalCover ? theme.colors.stickerControlText + '40' : theme.colors.border,
               },
             ]}
-          >
-            {selectableViewModes.map((mode, index) => {
-              const selected = selectedViewModeIndex === index;
-              return (
-                <TouchableOpacity
-                  key={mode}
-                  onPress={() => onSelectViewMode(index, mode)}
-                  style={[styles.viewModeButton, selected && { backgroundColor: theme.colors.tint }]}
-                  accessibilityRole="tab"
-                  accessibilityLabel={homeViewModeLabel(mode, t)}
-                  accessibilityState={{ selected }}
-                >
-                  <Text
-                    preset="caption"
-                    style={[
-                      styles.viewModeButtonText,
-                      { color: selected || hasJournalCover ? theme.colors.stickerControlText : theme.colors.textSecondary },
-                    ]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.75}
-                  >
-                    {homeViewModeLabel(mode, t)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+            segmentStyle={styles.viewModeButton}
+            textStyle={styles.viewModeButtonText}
+            accessibilityLabel="Diary entry view mode"
+            testID="journal-entry-view-mode-pill"
+          />
           <View style={[styles.headerSide, styles.headerSideRight]}>
             <IconCircleButton
               icon="plus"
@@ -346,7 +332,7 @@ const styles = StyleSheet.create({
   viewModePill: {
     alignItems: 'center',
     alignSelf: 'center',
-    borderRadius: 22,
+    borderRadius: 999,
     borderWidth: 1,
     flex: 1,
     flexDirection: 'row',
@@ -356,13 +342,10 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   viewModeButton: {
-    alignItems: 'center',
-    borderRadius: 17,
-    flex: 1,
+    borderRadius: 999,
     height: 34,
-    justifyContent: 'center',
-    minWidth: 0,
     paddingHorizontal: 8,
+    paddingVertical: 0,
   },
   viewModeButtonText: {
     fontSize: 13,
