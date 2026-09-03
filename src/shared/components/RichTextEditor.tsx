@@ -9,8 +9,8 @@
  * - Optional inline toolbar when `showToolbar={true}`
  */
 
-import { useRef, useImperativeHandle, forwardRef, useCallback, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { useRef, useImperativeHandle, forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import {
   RichEditor,
   RichToolbar,
@@ -47,6 +47,7 @@ export interface RichTextEditorProps {
   readonly minHeight?: number;
   readonly accessibilityLabel?: string;
   readonly showToolbar?: boolean;
+  readonly onReady?: () => void;
 }
 
 export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(
@@ -64,17 +65,20 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
       fontWeight,
       minHeight = 320,
       showToolbar = false,
+      onReady,
     },
     ref
   ) => {
     const theme = useTheme();
     const richTextRef = useRef<RichEditor>(null);
+    const [isEditorReady, setIsEditorReady] = useState(false);
     const editorTextColor = textColor ?? theme.colors.text;
     const editorPlaceholderColor = placeholderColor ?? theme.colors.textSecondary;
     const editorFontFamily = fontFamily ?? theme.fontFamily;
     const editorFontSize = fontSize ?? theme.fontSizes.lg;
     const editorLineHeight = lineHeight ?? Math.round(theme.fontSizes.lg * 1.45);
     const editorFontWeight = fontWeight ?? '400';
+    const normalizedValue = useMemo(() => normalizeHtmlContent(value), [value]);
 
     const prepareFormat = useCallback(() => {
       richTextRef.current?.commandDOM(`
@@ -163,6 +167,12 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
       setBodyStyle({ fontFamily: editorFontFamily, textColor: editorTextColor });
     }, [editorFontFamily, editorTextColor, setBodyStyle]);
 
+    const handleEditorInitialized = useCallback(() => {
+      setIsEditorReady(true);
+      setBodyStyle({ fontFamily: editorFontFamily, textColor: editorTextColor });
+      onReady?.();
+    }, [editorFontFamily, editorTextColor, onReady, setBodyStyle]);
+
     const setContentHTML = useCallback((html: string) => {
       if (richTextRef.current) {
         richTextRef.current.setContentHTML(html);
@@ -197,9 +207,15 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
 
     return (
       <View style={[styles.container, { minHeight }]}>
+        {!isEditorReady ? (
+          <View pointerEvents="none" style={styles.loadingOverlay} testID="rich-text-editor-loading-indicator">
+            <ActivityIndicator color={theme.colors.tint} />
+          </View>
+        ) : null}
         <RichEditor
           ref={richTextRef}
-          initialContentHTML={value || ''}
+          initialContentHTML={normalizedValue}
+          editorInitializedCallback={handleEditorInitialized}
           onChange={(html) => onChangeText(normalizeHtmlContent(html))}
           onHeightChange={onHeightChange}
           styleWithCSS={true}
@@ -223,6 +239,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
             flex: 1,
             minHeight,
             backgroundColor: 'transparent',
+            opacity: isEditorReady ? 1 : 0.01,
           }}
         />
 
@@ -254,5 +271,15 @@ RichTextEditor.displayName = 'RichTextEditor';
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingOverlay: {
+    alignItems: 'center',
+    bottom: 0,
+    justifyContent: 'center',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 1,
   },
 });

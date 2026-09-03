@@ -68,4 +68,18 @@ describe('RichTextEditor', () => {
     expect(mockCommandDOM).toHaveBeenNthCalledWith(2, expect.stringContaining('__mongooseSavedSelectionRange'));
     expect(mockSendAction).toHaveBeenCalledWith('bold', 'result');
   });
+
+  it('shows a loading indicator while the native editor initializes', async () => {
+    const { getByTestId, queryByText } = await renderWithProviders(
+      <RichTextEditor
+        value={'<p>A <strong>visible</strong> draft.</p><script>alert("x")</script>'}
+        onChangeText={jest.fn()}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByTestId('rich-text-editor-loading-indicator')).toBeTruthy();
+    expect(queryByText('visible')).toBeNull();
+    expect(queryByText('alert("x")')).toBeNull();
+  });
 });

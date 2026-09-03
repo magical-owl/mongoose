@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { MarkdownText } from '@shared/components/MarkdownText';
 import { useTheme } from '@/providers/ThemeProvider';
+import { normalizeHtmlContent } from '@/shared/utils/html';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
@@ -50,7 +51,7 @@ export function DiaryEntryBodyView({
   const contentHeight = minimumBodyCanvasHeight;
   const handleUpdateSticker = onUpdateSticker ?? (() => {});
   const handleDeleteSticker = onDeleteSticker ?? (() => {});
-  const sanitizedContent = useMemo(() => sanitizeRichBodyHtml(entry.content), [entry.content]);
+  const sanitizedContent = useMemo(() => sanitizeRichBodyHtml(normalizeHtmlContent(entry.content)), [entry.content]);
 
   return (
     <View

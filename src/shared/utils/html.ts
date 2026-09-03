@@ -33,6 +33,14 @@ export function isHtmlContentBlank(html: string): boolean {
   return stripHtml(html).length === 0;
 }
 
+function trimLeadingBlankHtmlBlocks(html: string): string {
+  return html.replace(
+    /^(?:\s|&nbsp;|<br\s*\/?>|<(p|div)[^>]*>(?:\s|&nbsp;|<br\s*\/?>)*<\/\1>)+/gi,
+    '',
+  );
+}
+
 export function normalizeHtmlContent(html: string): string {
-  return isHtmlContentBlank(html) ? '' : html;
+  if (isHtmlContentBlank(html)) return '';
+  return trimLeadingBlankHtmlBlocks(html);
 }

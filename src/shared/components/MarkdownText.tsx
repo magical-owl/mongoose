@@ -17,9 +17,9 @@ function convertHtmlToMarkdown(html: string): string {
   let md = html;
 
   // Convert HTML headers
-  md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
-  md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n');
-  md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n');
+  md = md.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, '# $1\n\n');
+  md = md.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, '## $1\n\n');
+  md = md.replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, '### $1\n\n');
 
   // Convert HTML formatting
   md = md.replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**');
@@ -159,6 +159,18 @@ export function MarkdownText({ children, style }: MarkdownTextProps) {
   };
   const bodyColor = typeof flattenedStyle.color === 'string' ? flattenedStyle.color : theme.colors.text;
   const bodyFontFamily = typeof flattenedStyle.fontFamily === 'string' ? flattenedStyle.fontFamily : undefined;
+  const bodyFontSize = typeof flattenedStyle.fontSize === 'number' ? flattenedStyle.fontSize : theme.fontSizes.base;
+  const bodyLineHeight = typeof flattenedStyle.lineHeight === 'number' ? flattenedStyle.lineHeight : 26;
+  const headingFontSizes = {
+    h1: Math.round(bodyFontSize * 1.55),
+    h2: Math.round(bodyFontSize * 1.32),
+    h3: Math.round(bodyFontSize * 1.16),
+  };
+  const headingLineHeights = {
+    h1: Math.round(bodyLineHeight * 1.45),
+    h2: Math.round(bodyLineHeight * 1.24),
+    h3: Math.round(bodyLineHeight * 1.12),
+  };
 
   const normalizedText = convertHtmlToMarkdown(children || '');
   const lines = normalizedText.split('\n');
@@ -180,9 +192,9 @@ export function MarkdownText({ children, style }: MarkdownTextProps) {
                 baseStyle={{
                   color: bodyColor,
                   fontFamily: bodyFontFamily,
-                  fontSize: theme.fontSizes.xxl,
+                  fontSize: headingFontSizes.h1,
                   fontWeight: '700',
-                  lineHeight: 34,
+                  lineHeight: headingLineHeights.h1,
                   marginBottom: 6,
                   marginTop: i > 0 ? 12 : 0,
                 }}
@@ -198,9 +210,9 @@ export function MarkdownText({ children, style }: MarkdownTextProps) {
                 baseStyle={{
                   color: bodyColor,
                   fontFamily: bodyFontFamily,
-                  fontSize: theme.fontSizes.xl,
+                  fontSize: headingFontSizes.h2,
                   fontWeight: '700',
-                  lineHeight: 28,
+                  lineHeight: headingLineHeights.h2,
                   marginBottom: 4,
                   marginTop: i > 0 ? 10 : 0,
                 }}
@@ -216,9 +228,9 @@ export function MarkdownText({ children, style }: MarkdownTextProps) {
                 baseStyle={{
                   color: bodyColor,
                   fontFamily: bodyFontFamily,
-                  fontSize: theme.fontSizes.lg,
+                  fontSize: headingFontSizes.h3,
                   fontWeight: '600',
-                  lineHeight: 26,
+                  lineHeight: headingLineHeights.h3,
                   marginBottom: 2,
                   marginTop: i > 0 ? 8 : 0,
                 }}

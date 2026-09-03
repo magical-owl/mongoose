@@ -1,6 +1,7 @@
 import { DiaryEntryBodyView } from '@/features/diary/components/DiaryEntryBodyView';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { renderWithProviders } from '@tests/helpers';
+import { StyleSheet } from 'react-native';
 
 const entry: DiaryEntry = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -55,5 +56,27 @@ describe('DiaryEntryBodyView', () => {
     expect(getByText(/thought/)).toBeTruthy();
     expect(getByText('link')).toBeTruthy();
     expect(queryByText('alert("x")')).toBeNull();
+  });
+
+  it('renders saved h2 blocks larger than normal body text', async () => {
+    const h2Entry = {
+      ...entry,
+      content: '<h2><span>Section heading</span></h2><p>Normal body.</p>',
+    };
+    const { getByText } = await renderWithProviders(
+      <DiaryEntryBodyView
+        entry={h2Entry}
+        bodyCanvasHeight={160}
+        bodyFontSize={20}
+        bodyLineHeight={31}
+        stickers={[]}
+        onBodyLayout={jest.fn()}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    const headingStyle = StyleSheet.flatten(getByText('Section heading').props.style);
+    expect(headingStyle?.fontSize).toBeGreaterThan(20);
+    expect(getByText('Normal body.')).toBeTruthy();
   });
 });

@@ -11,4 +11,9 @@ describe('html utils', () => {
     expect(normalizeHtmlContent('<p>Today felt calm.</p>')).toBe('<p>Today felt calm.</p>');
     expect(stripHtml('<p>Today felt calm.</p>')).toBe('Today felt calm.');
   });
+
+  it('removes leading empty rich text blocks before meaningful content', () => {
+    expect(normalizeHtmlContent('<p><br></p><p>Today felt calm.</p>')).toBe('<p>Today felt calm.</p>');
+    expect(normalizeHtmlContent('<div>&nbsp;</div><div>Today felt calm.</div>')).toBe('<div>Today felt calm.</div>');
+  });
 });
