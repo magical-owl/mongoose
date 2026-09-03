@@ -2,7 +2,6 @@ import { Fragment, useState, useCallback, useEffect, useMemo, useRef } from "rea
 import {
   Animated,
   ActivityIndicator,
-  FlatList,
   Image,
   Keyboard,
   NativeScrollEvent,
@@ -16,7 +15,6 @@ import {
   UIManager,
   findNodeHandle,
   useWindowDimensions,
-  type ListRenderItem,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -41,9 +39,8 @@ import {
   shouldLoadMoreDiaryEntries,
 } from "@/features/diary/services/DiaryEntryListPagination";
 import { appLockService } from "@/services/AppLockService";
-import { DiaryEntryView, type DiaryEntryViewMode } from "@/features/diary/components/DiaryEntryView";
 import { EntryReflectionsModal } from "@/features/diary/components/EntryReflectionsModal";
-import { JournalSuggestionsFooter } from "@/features/journal/components/JournalSuggestionsFooter";
+import { VirtualizedDiaryEntryList, type VirtualizedDiaryEntryListRef } from "@/features/diary/components/VirtualizedDiaryEntryList";
 import { PaywallModal } from "@/shared/components/PaywallModal";
 import { useAppStore } from "@/stores/useAppStore";
 import { useScrollCollapse } from "@/shared/hooks/useScrollCollapse";
@@ -53,7 +50,6 @@ import type { EntryHierarchyMode, HomeViewMode } from "@/stores/useAppStore";
 import { getEntryManualMoods, type DiaryEntry, type ManualMood } from "@/features/diary/domain/DiaryEntry";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
 import { homeFilterAllLabel, homeFilterKindLabel, homeViewModeLabel, manualMoodLabel, premiumPaywallTitle, useTranslation } from "@/localization/i18n";
-import { formatDisplayDate } from "@/shared/utils/dateFormat";
 
 const HIERARCHY_MODES: EntryHierarchyMode[] = ["year-month-date", "month-date", "date", "none"];
 const HOME_VIEW_MODES = ["timeline", "detailed", "feed"] as const satisfies readonly HomeViewMode[];
@@ -67,36 +63,6 @@ const JOURNAL_HEADER_TOP_PADDING = 16;
 const JOURNAL_HEADER_ROW_HEIGHT = 44;
 const JOURNAL_HEADER_BOTTOM_GAP = 14;
 const JOURNAL_VIEW_PILL_HEIGHT = JOURNAL_HEADER_ROW_HEIGHT;
-const HIERARCHY_INDENT = { year: 0, month: 12, date: 24 } as const;
-
-type JournalEntryListRow =
-  | {
-      readonly id: string;
-      readonly type: "year";
-      readonly yearKey: string;
-      readonly isCollapsed: boolean;
-    }
-  | {
-      readonly id: string;
-      readonly type: "month";
-      readonly monthKey: string;
-      readonly isCollapsed: boolean;
-      readonly isFlat: boolean;
-    }
-  | {
-      readonly id: string;
-      readonly type: "date";
-      readonly date: string;
-      readonly isCollapsed: boolean;
-      readonly isYearVisible: boolean;
-      readonly entryHierarchyMode: EntryHierarchyMode;
-    }
-  | {
-      readonly id: string;
-      readonly type: "entry";
-      readonly entry: DiaryEntry;
-      readonly isDateVisible: boolean;
-    };
 
 function hierarchyModeLabel(mode: EntryHierarchyMode): string {
   if (mode === "month-date") return "Month / Date";
@@ -110,14 +76,6 @@ function capitalizeFilterLabel(value: string): string {
     .split(/(\s+|-)/)
     .map((part) => /^[A-Za-z]/.test(part) ? `${part.charAt(0).toUpperCase()}${part.slice(1)}` : part)
     .join("");
-}
-
-function formatTimelineMonth(value: string): string {
-  const [year, month] = value.split("-").map(Number);
-  if (!year || !month) return value;
-  return new Intl.DateTimeFormat(undefined, { month: "long" }).format(
-    new Date(year, month - 1, 1, 12),
-  );
 }
 
 export default function JournalEntriesScreen() {
@@ -178,7 +136,7 @@ export default function JournalEntriesScreen() {
     scrollOffsetYRef: scrollOffsetY,
     handleScroll: handleCollapseScroll,
     resetScrollCollapse,
-  } = useScrollCollapse<FlatList<JournalEntryListRow>>();
+  } = useScrollCollapse<VirtualizedDiaryEntryListRef>();
   const keyboardTopY = useRef(windowHeight);
   const focusedReflectionEntryId = useRef<string | null>(null);
   const pendingScrollEntryId = useRef<string | null>(null);
@@ -485,81 +443,7 @@ export default function JournalEntriesScreen() {
     () => getVisibleDiaryEntries(sortedFilteredEntries, visibleEntryCount),
     [sortedFilteredEntries, visibleEntryCount],
   );
-  const effectiveEntryHierarchyMode = viewMode === "timeline" ? entryHierarchyMode : "none";
 
-  const groupedEntries = useMemo(() => {
-    const groups = new Map<string, (typeof visibleFilteredEntries)[number][]>();
-    visibleFilteredEntries.forEach((entry) => {
-      const group = groups.get(entry.date);
-      if (group) group.push(entry);
-      else groups.set(entry.date, [entry]);
-    });
-    return Array.from(groups.entries());
-  }, [visibleFilteredEntries]);
-  const entryListRows = useMemo<JournalEntryListRow[]>(() => {
-    const rows: JournalEntryListRow[] = [];
-
-    groupedEntries.forEach(([date, dateEntries], index) => {
-      const previousDate = groupedEntries[index - 1]?.[0];
-      const isNewYear = !previousDate || previousDate.slice(0, 4) !== date.slice(0, 4);
-      const isNewMonth = isNewYear || previousDate?.slice(0, 7) !== date.slice(0, 7);
-      const yearKey = date.slice(0, 4);
-      const monthKey = date.slice(0, 7);
-      const isYearVisible = effectiveEntryHierarchyMode === "year-month-date";
-      const isMonthVisible = effectiveEntryHierarchyMode === "year-month-date" || effectiveEntryHierarchyMode === "month-date";
-      const isDateVisible = effectiveEntryHierarchyMode !== "none";
-      const isYearCollapsed = isYearVisible && collapsedYears.has(yearKey);
-      const isMonthCollapsed = isMonthVisible && collapsedMonths.has(monthKey);
-      const isDateCollapsed = isDateVisible && collapsedDates.has(date);
-
-      if (isNewYear && isYearVisible) {
-        rows.push({
-          id: `year-${yearKey}`,
-          type: "year",
-          yearKey,
-          isCollapsed: isYearCollapsed,
-        });
-      }
-
-      if (isYearCollapsed) return;
-
-      if (isMonthVisible && isNewMonth) {
-        rows.push({
-          id: `month-${monthKey}`,
-          type: "month",
-          monthKey,
-          isCollapsed: isMonthCollapsed,
-          isFlat: !isYearVisible,
-        });
-      }
-
-      if (isMonthCollapsed) return;
-
-      if (isDateVisible) {
-        rows.push({
-          id: `date-${date}`,
-          type: "date",
-          date,
-          isCollapsed: isDateCollapsed,
-          isYearVisible,
-          entryHierarchyMode: effectiveEntryHierarchyMode,
-        });
-      }
-
-      if (!isDateVisible || !isDateCollapsed) {
-        dateEntries.forEach((entry) => {
-          rows.push({
-            id: `entry-${entry.id}`,
-            type: "entry",
-            entry,
-            isDateVisible,
-          });
-        });
-      }
-    });
-
-    return rows;
-  }, [collapsedDates, collapsedMonths, collapsedYears, effectiveEntryHierarchyMode, groupedEntries]);
   const hasMoreEntries = visibleEntryCount < filteredEntries.length;
   const entryCountsByJournalId = useMemo(() => {
     const counts = new Map<string, number>();
@@ -623,146 +507,6 @@ export default function JournalEntriesScreen() {
     if (entry.isLockbox && !(await appLockService.authenticate())) return;
     router.push(`/entry/${entry.id}`);
   }, [router]);
-
-  const renderEntryListRow = useCallback<ListRenderItem<JournalEntryListRow>>(({ item }) => {
-    if (item.type === "year") {
-      return (
-        <TouchableOpacity
-          onPress={() => setCollapsedYears((current) => {
-            const next = new Set(current);
-            if (next.has(item.yearKey)) next.delete(item.yearKey);
-            else next.add(item.yearKey);
-            return next;
-          })}
-          style={styles.yearGroupRow}
-          accessibilityRole="button"
-          accessibilityLabel={`${item.yearKey} year group`}
-          accessibilityState={{ expanded: !item.isCollapsed }}
-        >
-          <Text preset="h2" style={[styles.yearHeading, { color: theme.colors.text }]}>
-            {item.yearKey}
-          </Text>
-          <Ionicons name={item.isCollapsed ? "chevron-forward" : "chevron-down"} size={16} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-      );
-    }
-
-    if (item.type === "month") {
-      return (
-        <TouchableOpacity
-          onPress={() => setCollapsedMonths((current) => {
-            const next = new Set(current);
-            if (next.has(item.monthKey)) next.delete(item.monthKey);
-            else next.add(item.monthKey);
-            return next;
-          })}
-          style={[styles.monthGroupRow, item.isFlat && styles.flatMonthGroupRow]}
-          accessibilityRole="button"
-          accessibilityLabel={`${formatTimelineMonth(item.monthKey)} month group`}
-          accessibilityState={{ expanded: !item.isCollapsed }}
-        >
-          <Text preset="label" style={[styles.monthHeading, { color: theme.colors.textSecondary }]}>
-            {formatTimelineMonth(item.monthKey)}
-          </Text>
-          <Ionicons name={item.isCollapsed ? "chevron-forward" : "chevron-down"} size={15} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-      );
-    }
-
-    if (item.type === "date") {
-      return (
-        <TouchableOpacity
-          onPress={() => setCollapsedDates((current) => {
-            const next = new Set(current);
-            if (next.has(item.date)) next.delete(item.date);
-            else next.add(item.date);
-            return next;
-          })}
-          style={[
-            styles.dateHeadingRow,
-            !item.isYearVisible && (item.entryHierarchyMode === "month-date" ? styles.monthDateHeadingRow : styles.flatDateHeadingRow),
-          ]}
-          onLayout={(event) => handleDateGroupLayout(item.date, event.nativeEvent.layout.y)}
-          accessibilityRole="button"
-          accessibilityLabel={`${formatDisplayDate(item.date, calendarDateFormat)} date group`}
-          accessibilityState={{ expanded: !item.isCollapsed }}
-        >
-          <Text preset="label" style={[styles.dateHeading, { color: theme.colors.text }]}>
-            {formatDisplayDate(item.date, calendarDateFormat)}
-          </Text>
-          <Ionicons name={item.isCollapsed ? "chevron-forward" : "chevron-down"} size={16} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-      );
-    }
-
-    return (
-      <View
-        collapsable={false}
-        ref={(node) => {
-          if (node) entryRefs.current.set(item.entry.id, node);
-          else entryRefs.current.delete(item.entry.id);
-        }}
-        onLayout={(event) => handleEntryLayout(item.entry.id, item.entry.date, event.nativeEvent.layout.y)}
-        style={[
-          styles.entryListRow,
-          viewMode !== "timeline" && styles.compactEntryListRow,
-          viewMode === "feed" && styles.feedEntryListRow,
-          !item.isDateVisible && styles.flatEntryListRow,
-        ]}
-      >
-        <DiaryEntryView
-          entry={item.entry}
-          mode={viewMode as DiaryEntryViewMode}
-          profile={profile}
-          onPress={() => handleEntryPress(item.entry)}
-          showDateColumn={!(viewMode === "detailed" && item.isDateVisible)}
-          onAddReflection={viewMode === "timeline" || viewMode === "feed" ? handleAddReflection : undefined}
-          onReflectionInputFocus={viewMode === "timeline" || viewMode === "feed" ? handleReflectionInputFocus : undefined}
-          onReflectionSummaryPress={viewMode === "timeline" || viewMode === "feed" ? undefined : handleReflectionSummaryPress}
-        />
-      </View>
-    );
-  }, [
-    calendarDateFormat,
-    handleAddReflection,
-    handleDateGroupLayout,
-    handleEntryLayout,
-    handleEntryPress,
-    handleReflectionInputFocus,
-    handleReflectionSummaryPress,
-    profile,
-    theme.colors.text,
-    theme.colors.textSecondary,
-    viewMode,
-  ]);
-
-  const renderEmptyEntries = useCallback(() => (
-    <View style={[styles.emptyPanel, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
-      <View style={[styles.emptyIconHalo, { backgroundColor: theme.colors.tint + "16" }]}>
-        <Ionicons name={search.trim() ? "search-outline" : "pencil-outline"} size={26} color={theme.colors.tint} />
-      </View>
-      <Text preset="label" color="text" style={styles.emptyPrompt}>
-        {search.trim() ? t("homeNoMatchingEntries") : t("homeEmptyPrompt")}
-      </Text>
-      <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-        {search.trim() ? t("homeSearchPlaceholder") : t("homeNoEntriesYet")}
-      </Text>
-    </View>
-  ), [search, t, theme.colors.border, theme.colors.card, theme.colors.textSecondary, theme.colors.tint]);
-
-  const renderEntryListFooter = useCallback(() => (
-    !hasMoreEntries && filteredEntries.length > 0 ? (
-      <JournalSuggestionsFooter
-        journals={journals}
-        currentJournalId={journalId}
-        entryCountsByJournalId={entryCountsByJournalId}
-        onPressJournal={(journal) => {
-          router.push({ pathname: "/journal/[id]", params: { id: journal.id, title: journal.title } });
-        }}
-        onPressTitle={() => router.push("/(tabs)")}
-      />
-    ) : null
-  ), [entryCountsByJournalId, filteredEntries.length, hasMoreEntries, journalId, journals, router]);
 
   const hasJournalCover = Boolean(journalCoverImageSource);
   const coverHeaderFloorHeight = insets.top
@@ -1035,15 +779,55 @@ export default function JournalEntriesScreen() {
         </View>
         {isLoading ? null : (
         <>
-          <FlatList
+          <VirtualizedDiaryEntryList
             ref={scrollRef}
-            data={filteredEntries.length === 0 ? [] : entryListRows}
-            keyExtractor={(item) => item.id}
-            renderItem={renderEntryListRow}
-            ListEmptyComponent={renderEmptyEntries}
-            ListFooterComponent={renderEntryListFooter}
+            entries={visibleFilteredEntries}
+            totalEntryCount={filteredEntries.length}
+            mode={viewMode}
+            entryHierarchyMode={entryHierarchyMode}
+            calendarDateFormat={calendarDateFormat}
+            profile={profile}
+            collapsedYears={collapsedYears}
+            collapsedMonths={collapsedMonths}
+            collapsedDates={collapsedDates}
+            hasMoreEntries={hasMoreEntries}
+            journals={journals}
+            currentJournalId={journalId}
+            entryCountsByJournalId={entryCountsByJournalId}
+            searchQuery={search}
+            onToggleYear={(yearKey) => setCollapsedYears((current) => {
+              const next = new Set(current);
+              if (next.has(yearKey)) next.delete(yearKey);
+              else next.add(yearKey);
+              return next;
+            })}
+            onToggleMonth={(monthKey) => setCollapsedMonths((current) => {
+              const next = new Set(current);
+              if (next.has(monthKey)) next.delete(monthKey);
+              else next.add(monthKey);
+              return next;
+            })}
+            onToggleDate={(date) => setCollapsedDates((current) => {
+              const next = new Set(current);
+              if (next.has(date)) next.delete(date);
+              else next.add(date);
+              return next;
+            })}
+            onDateGroupLayout={handleDateGroupLayout}
+            onEntryLayout={handleEntryLayout}
+            onEntryRef={(entryId, node) => {
+              if (node) entryRefs.current.set(entryId, node);
+              else entryRefs.current.delete(entryId);
+            }}
+            onEntryPress={handleEntryPress}
+            onAddReflection={viewMode === "timeline" || viewMode === "feed" ? handleAddReflection : undefined}
+            onReflectionInputFocus={viewMode === "timeline" || viewMode === "feed" ? handleReflectionInputFocus : undefined}
+            onReflectionSummaryPress={viewMode === "timeline" || viewMode === "feed" ? undefined : handleReflectionSummaryPress}
+            onPressJournalSuggestion={(journal) => {
+              router.push({ pathname: "/journal/[id]", params: { id: journal.id, title: journal.title } });
+            }}
+            onPressSuggestionsTitle={() => router.push("/(tabs)")}
             onScroll={handleJournalScroll}
-            scrollEventThrottle={16}
             contentContainerStyle={[
               styles.scrollContent,
               {
@@ -1054,11 +838,6 @@ export default function JournalEntriesScreen() {
             ]}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            initialNumToRender={DIARY_ENTRY_LIST_PAGE_SIZE}
-            maxToRenderPerBatch={DIARY_ENTRY_LIST_PAGE_SIZE}
-            windowSize={7}
-            removeClippedSubviews
           />
           {isLoadingMoreEntries && hasMoreEntries ? (
             <View
@@ -1268,67 +1047,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 4,
   },
-  yearGroupRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "space-between",
-    marginBottom: 10,
-    marginLeft: HIERARCHY_INDENT.year,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  yearHeading: {
-    fontWeight: "800",
-  },
-  monthGroupRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "space-between",
-    marginBottom: 8,
-    marginLeft: HIERARCHY_INDENT.month,
-    paddingHorizontal: 20,
-    paddingTop: 4,
-  },
-  flatMonthGroupRow: {
-    marginLeft: 0,
-  },
-  monthHeading: {
-    fontWeight: "800",
-    textTransform: "uppercase",
-  },
-  dateHeadingRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "space-between",
-    marginBottom: 6,
-    marginLeft: HIERARCHY_INDENT.date,
-    paddingHorizontal: 20,
-  },
-  monthDateHeadingRow: {
-    marginLeft: HIERARCHY_INDENT.month,
-  },
-  flatDateHeadingRow: {
-    marginLeft: 0,
-  },
-  dateHeading: {
-    fontWeight: "800",
-  },
-  entryListRow: {
-    marginBottom: 6,
-    marginLeft: HIERARCHY_INDENT.year,
-  },
-  compactEntryListRow: {
-    marginBottom: 0,
-  },
-  feedEntryListRow: {
-    marginLeft: 0,
-  },
-  flatEntryListRow: {
-    marginLeft: 0,
-  },
   card: {
     borderWidth: 1,
     borderRadius: 4,
@@ -1402,10 +1120,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  emptyPanel: { minHeight: 220, borderWidth: 1, borderRadius: 8, alignItems: "center", justifyContent: "center", marginTop: 16, padding: 24 },
-  emptyIconHalo: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center", marginBottom: 16 },
-  emptyPrompt: { fontWeight: "800", marginBottom: 6, textAlign: "center" },
-  emptyText: { fontSize: 15, textAlign: "center" },
   loadMoreIndicator: {
     position: "absolute",
     left: 0,
