@@ -562,7 +562,6 @@ export default function EntryDetailScreen() {
         onOpen={() => setShowMemoryReactionPicker(true)}
         onDismiss={() => setShowMemoryReactionPicker(false)}
         onToggleReaction={handleToggleMemoryReaction}
-        compact
         style={styles.viewFooterReactionButton}
         testID="entry-view-memory-reaction"
       />

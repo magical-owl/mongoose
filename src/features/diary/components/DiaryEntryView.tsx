@@ -146,7 +146,7 @@ export function DiaryEntryView({
         )),
       )
     : 0;
-  const renderMemoryReactionButton = (testID: string, style: StyleProp<ViewStyle>) => (
+  const renderMemoryReactionButton = (testID: string, style: StyleProp<ViewStyle>, compact = true) => (
     <MemoryReactionButton
       reactions={entry.memoryReactions}
       visible={isMemoryReactionPickerVisible}
@@ -155,7 +155,7 @@ export function DiaryEntryView({
       onToggleReaction={async (reaction) => {
         await onToggleMemoryReaction?.(entry.id, reaction);
       }}
-      compact
+      compact={compact}
       style={style}
       testID={testID}
     />
@@ -286,7 +286,7 @@ export function DiaryEntryView({
         ]}
         testID="entry-feed-footer-meta"
       >
-        {showMemoryReactionControl ? renderMemoryReactionButton('entry-feed-memory-reaction', styles.feedReactionButton) : null}
+        {showMemoryReactionControl ? renderMemoryReactionButton('entry-feed-memory-reaction', styles.feedReactionButton, false) : null}
         {hasMood ? (
           <MoodBadgeList
             moods={entryMoods}
