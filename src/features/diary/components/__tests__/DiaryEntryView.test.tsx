@@ -223,7 +223,7 @@ describe('DiaryEntryView', () => {
     expect(onToggleMemoryReaction).not.toHaveBeenCalled();
   });
 
-  it('dismisses an open memory reaction tray when opening an entry', async () => {
+  it('dismisses an open memory reaction tray when tapping the entry surface', async () => {
     const onPress = jest.fn();
     const { getByTestId, queryByTestId } = await renderWithProviders(
       <DiaryEntryView
@@ -241,17 +241,18 @@ describe('DiaryEntryView', () => {
 
     fireEvent.press(getByTestId('entry-timeline-press-area'));
 
-    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(onPress).not.toHaveBeenCalled();
     await waitFor(() => expect(queryByTestId('entry-timeline-memory-reaction-tray')).toBeNull());
   });
 
   it('opens the memory reaction tray from card long press', async () => {
-    const { getByTestId } = await renderWithProviders(
+    const onPress = jest.fn();
+    const { getByTestId, queryByTestId } = await renderWithProviders(
       <DiaryEntryView
         entry={{ ...baseEntry, memoryReactions: ['treasure'], tags: ['daily'], manualMoods: ['happy'] }}
         mode="detailed"
         profile={profile}
-        onPress={jest.fn()}
+        onPress={onPress}
         onToggleMemoryReaction={jest.fn().mockResolvedValue(true)}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
@@ -260,15 +261,21 @@ describe('DiaryEntryView', () => {
     fireEvent(getByTestId('entry-card'), 'longPress');
 
     await waitFor(() => expect(getByTestId('entry-card-memory-reaction-tray')).toBeTruthy());
+
+    fireEvent.press(getByTestId('entry-card'));
+
+    expect(onPress).not.toHaveBeenCalled();
+    await waitFor(() => expect(queryByTestId('entry-card-memory-reaction-tray')).toBeNull());
   });
 
   it('opens the memory reaction tray from feed long press', async () => {
-    const { getByTestId } = await renderWithProviders(
+    const onPress = jest.fn();
+    const { getByTestId, queryByTestId } = await renderWithProviders(
       <DiaryEntryView
         entry={{ ...baseEntry, memoryReactions: ['treasure'], tags: ['daily'], manualMoods: ['happy'] }}
         mode="feed"
         profile={profile}
-        onPress={jest.fn()}
+        onPress={onPress}
         onToggleMemoryReaction={jest.fn().mockResolvedValue(true)}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
@@ -277,6 +284,11 @@ describe('DiaryEntryView', () => {
     fireEvent(getByTestId('entry-feed-surface'), 'longPress');
 
     await waitFor(() => expect(getByTestId('entry-feed-memory-reaction-tray')).toBeTruthy());
+
+    fireEvent.press(getByTestId('entry-feed-surface'));
+
+    expect(onPress).not.toHaveBeenCalled();
+    await waitFor(() => expect(queryByTestId('entry-feed-memory-reaction-tray')).toBeNull());
   });
 
   it('keeps timeline preview text readable instead of applying custom diary body style', async () => {

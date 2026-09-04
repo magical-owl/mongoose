@@ -131,7 +131,10 @@ export function DiaryEntryView({
   };
 
   const handleOpenEntry = () => {
-    setIsMemoryReactionPickerVisible(false);
+    if (isMemoryReactionPickerVisible) {
+      setIsMemoryReactionPickerVisible(false);
+      return;
+    }
     void onPress();
   };
 
