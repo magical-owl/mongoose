@@ -6,6 +6,13 @@ import { getCachedDiaryEntries, setCachedDiaryEntries } from '../services/DiaryE
 import { useAppStore } from '@/stores/useAppStore';
 import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
 
+export function replaceDiaryEntryPreservingOrder(
+  entries: readonly DiaryEntry[],
+  updatedEntry: DiaryEntry,
+): DiaryEntry[] {
+  return entries.map((entry) => (entry.id === updatedEntry.id ? updatedEntry : entry));
+}
+
 export function useDiary() {
   const cachedDiaryEntries = getCachedDiaryEntries();
   const [entries, setEntries] = useState<DiaryEntry[]>(() => cachedDiaryEntries.entries ?? []);
@@ -164,10 +171,7 @@ export function useDiary() {
     const result = await diaryService.toggleMemoryReaction(entryId, reaction);
     if (result.success) {
       commitDiaryEntries(
-        sortEntriesByDateDesc([
-          result.data,
-          ...entriesRef.current.filter((entry) => entry.id !== entryId),
-        ]),
+        replaceDiaryEntryPreservingOrder(entriesRef.current, result.data),
         deletedEntriesRef.current,
       );
     }
