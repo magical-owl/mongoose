@@ -315,6 +315,8 @@ export function DiaryEntryView({
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={handleOpenEntry}
+          onLongPress={showMemoryReactionControl ? () => setIsMemoryReactionPickerVisible(true) : undefined}
+          testID="entry-feed-surface"
           style={[
             styles.feedEntrySurface,
             {
@@ -507,6 +509,7 @@ export function DiaryEntryView({
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={handleOpenEntry}
+      onLongPress={showMemoryReactionControl ? () => setIsMemoryReactionPickerVisible(true) : undefined}
       style={[styles.card, fullWidthEntryFrame, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
       testID="entry-card"
     >
