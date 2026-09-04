@@ -32,9 +32,9 @@ interface MemoryReactionButtonProps {
 function reactionIcon(reaction: MemoryReaction): keyof typeof Ionicons.glyphMap {
   if (reaction === 'treasure') return 'diamond-outline';
   if (reaction === 'smile') return 'happy-outline';
-  if (reaction === 'heavy') return 'rainy-outline';
-  if (reaction === 'tender') return 'sad-outline';
-  if (reaction === 'stormy') return 'flame-outline';
+  if (reaction === 'heavy') return 'sad-outline';
+  if (reaction === 'tender') return 'rose-outline';
+  if (reaction === 'stormy') return 'thunderstorm-outline';
   if (reaction === 'wonder') return 'sparkles-outline';
   return 'heart-outline';
 }
