@@ -19,6 +19,8 @@ import {
 import { memoryReactionLabel, useTranslation } from '@/localization/i18n';
 import { MemoryReactionIcon } from './MemoryReactionIcon';
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 interface MemoryReactionButtonProps {
   readonly reactions: readonly MemoryReaction[];
   readonly visible: boolean;
@@ -44,7 +46,9 @@ export function MemoryReactionButton({
   const t = useTranslation();
   const { width } = useWindowDimensions();
   const trayProgress = useRef(new Animated.Value(0)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
   const firstReaction = reactions[0];
+  const previousReactionRef = useRef<MemoryReaction | undefined>(firstReaction);
   const hasReaction = Boolean(firstReaction);
   const label = firstReaction ? memoryReactionLabel(firstReaction, t) : t('memoryReactionButton');
   const trayWidth = Math.min(Math.max(width - 80, 300), 380);
@@ -62,6 +66,19 @@ export function MemoryReactionButton({
       friction: 16,
     }).start();
   }, [trayProgress, visible]);
+
+  useEffect(() => {
+    if (previousReactionRef.current === firstReaction) return;
+    previousReactionRef.current = firstReaction;
+
+    buttonScale.setValue(0.78);
+    Animated.spring(buttonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 260,
+      friction: 7,
+    }).start();
+  }, [buttonScale, firstReaction]);
 
   const trayAnimatedStyle = {
     opacity: trayProgress,
@@ -141,7 +158,7 @@ export function MemoryReactionButton({
         </Animated.View>
       ) : null}
 
-      <Pressable
+      <AnimatedPressable
         onPress={(event) => {
           stopPressPropagation(event);
           if (visible) onDismiss();
@@ -150,32 +167,33 @@ export function MemoryReactionButton({
         style={[
           styles.button,
           compact && styles.compactButton,
+          { transform: [{ scale: buttonScale }] },
           {
             backgroundColor: hasReaction ? theme.colors.tint + '22' : theme.colors.surface,
             borderColor: hasReaction ? theme.colors.tint : theme.colors.border,
           },
         ]}
-        accessibilityRole="button"
-        accessibilityLabel={t('memoryReactionPickerTitle')}
-        testID={testID}
-      >
-        <MemoryReactionIcon
-          reaction={firstReaction ?? 'cherish'}
-          size={compact ? 24 : 26}
-          testID={testID ? `${testID}-icon` : undefined}
-        />
-        <Text
-          preset="caption"
-          numberOfLines={1}
-          style={[
-            styles.label,
-            compact && styles.compactLabel,
-            { color: hasReaction ? theme.colors.tint : theme.colors.textSecondary },
-          ]}
+          accessibilityRole="button"
+          accessibilityLabel={t('memoryReactionPickerTitle')}
+          testID={testID}
         >
+          <MemoryReactionIcon
+            reaction={firstReaction ?? 'cherish'}
+            size={compact ? 24 : 26}
+            testID={testID ? `${testID}-icon` : undefined}
+          />
+          <Text
+            preset="caption"
+            numberOfLines={1}
+            style={[
+              styles.label,
+              compact && styles.compactLabel,
+              { color: hasReaction ? theme.colors.tint : theme.colors.textSecondary },
+            ]}
+          >
           {label}
         </Text>
-      </Pressable>
+      </AnimatedPressable>
     </View>
   );
 }
