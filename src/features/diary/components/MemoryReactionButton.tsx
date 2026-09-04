@@ -1,4 +1,14 @@
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
+import { useEffect, useRef } from 'react';
+import {
+  Animated,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
@@ -42,17 +52,51 @@ export function MemoryReactionButton({
   const theme = useTheme();
   const t = useTranslation();
   const { width } = useWindowDimensions();
+  const trayProgress = useRef(new Animated.Value(0)).current;
   const firstReaction = reactions[0];
   const hasReaction = Boolean(firstReaction);
   const label = firstReaction ? memoryReactionLabel(firstReaction, t) : t('memoryReactionButton');
   const trayWidth = Math.min(Math.max(width - 80, 300), 380);
 
+  useEffect(() => {
+    if (!visible) {
+      trayProgress.setValue(0);
+      return;
+    }
+
+    Animated.spring(trayProgress, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 170,
+      friction: 16,
+    }).start();
+  }, [trayProgress, visible]);
+
+  const trayAnimatedStyle = {
+    opacity: trayProgress,
+    transform: [
+      {
+        translateY: trayProgress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [8, 0],
+        }),
+      },
+      {
+        scale: trayProgress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.94, 1],
+        }),
+      },
+    ],
+  };
+
   return (
     <View style={[styles.wrapper, style]}>
       {visible ? (
-        <View
+        <Animated.View
           style={[
             styles.tray,
+            trayAnimatedStyle,
             {
               width: trayWidth,
               backgroundColor: theme.colors.surface + 'F2',
@@ -98,7 +142,7 @@ export function MemoryReactionButton({
               );
             })}
           </ScrollView>
-        </View>
+        </Animated.View>
       ) : null}
 
       <Pressable
