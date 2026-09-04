@@ -947,15 +947,7 @@ export default function EntryDetailScreen() {
               iconSize={21}
               height={38}
               minWidth={62}
-              variant="elevated"
-              style={[
-                styles.viewFooterButton,
-                {
-                  backgroundColor: theme.colors.overlay,
-                  borderColor: theme.colors.tint + '80',
-                  borderWidth: StyleSheet.hairlineWidth,
-                },
-              ]}
+              style={styles.viewFooterButton}
             />
         </DiaryEntryEditorFooter>
       )}
