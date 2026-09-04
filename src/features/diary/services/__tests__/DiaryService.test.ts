@@ -142,10 +142,21 @@ describe('DiaryService', () => {
     if (!addResult.success) return;
     expect(addResult.data.memoryReactions).toEqual(['cherish']);
 
+    const replaceResult = await service.toggleMemoryReaction(mockEntry.id, 'treasure');
+    expect(replaceResult.success).toBe(true);
+    if (!replaceResult.success) return;
+    expect(replaceResult.data.memoryReactions).toEqual(['treasure']);
+
     const removeResult = await service.toggleMemoryReaction(mockEntry.id, 'cherish');
     expect(removeResult.success).toBe(true);
     if (removeResult.success) {
-      expect(removeResult.data.memoryReactions).toEqual([]);
+      expect(removeResult.data.memoryReactions).toEqual(['cherish']);
+    }
+
+    const clearResult = await service.toggleMemoryReaction(mockEntry.id, 'cherish');
+    expect(clearResult.success).toBe(true);
+    if (clearResult.success) {
+      expect(clearResult.data.memoryReactions).toEqual([]);
     }
   });
 

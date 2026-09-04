@@ -43,7 +43,6 @@ export function MemoryReactionButton({
   const t = useTranslation();
   const { width } = useWindowDimensions();
   const firstReaction = reactions[0];
-  const extraCount = Math.max(0, reactions.length - 1);
   const hasReaction = Boolean(firstReaction);
   const label = firstReaction ? memoryReactionLabel(firstReaction, t) : t('memoryReactionButton');
   const trayWidth = Math.min(Math.max(width - 80, 300), 380);
@@ -132,18 +131,6 @@ export function MemoryReactionButton({
         >
           {label}
         </Text>
-        {extraCount > 0 ? (
-          <Text
-            preset="caption"
-            style={[
-              styles.count,
-              compact && styles.compactLabel,
-              { color: theme.colors.tint },
-            ]}
-          >
-            +{extraCount}
-          </Text>
-        ) : null}
       </Pressable>
     </View>
   );
@@ -179,9 +166,6 @@ const styles = StyleSheet.create({
   compactLabel: {
     fontSize: 11,
     lineHeight: 14,
-  },
-  count: {
-    fontWeight: '800',
   },
   tray: {
     position: 'absolute',

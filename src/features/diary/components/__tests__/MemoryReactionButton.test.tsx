@@ -25,4 +25,22 @@ describe('MemoryReactionButton', () => {
     expect(getByTestId('memory-reaction-stormy')).toBeTruthy();
     expect(getByTestId('memory-reaction-wonder')).toBeTruthy();
   });
+
+  it('shows only one selected reaction on the button', async () => {
+    const { getByText, queryByText } = await renderWithProviders(
+      <MemoryReactionButton
+        reactions={['cherish', 'treasure']}
+        visible={false}
+        onOpen={jest.fn()}
+        onDismiss={jest.fn()}
+        onToggleReaction={jest.fn()}
+        testID="memory-reaction"
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByText('Cherish')).toBeTruthy();
+    expect(queryByText('+1')).toBeNull();
+    expect(queryByText('Treasure')).toBeNull();
+  });
 });

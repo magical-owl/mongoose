@@ -16,7 +16,8 @@ export const MEMORY_REACTION_OPTIONS: readonly MemoryReaction[] = [
 export function normalizeMemoryReactions(reactions?: readonly MemoryReaction[]): MemoryReaction[] {
   if (!reactions) return [];
   const validReactions = reactions.filter((reaction) => MemoryReactionSchema.safeParse(reaction).success);
-  return Array.from(new Set(validReactions));
+  const firstReaction = validReactions[0];
+  return firstReaction ? [firstReaction] : [];
 }
 
 export function toggleMemoryReactionSelection(
@@ -25,7 +26,7 @@ export function toggleMemoryReactionSelection(
 ): MemoryReaction[] {
   const normalized = normalizeMemoryReactions(selectedReactions);
   if (normalized.includes(reaction)) {
-    return normalized.filter((selected) => selected !== reaction);
+    return [];
   }
-  return [...normalized, reaction];
+  return [reaction];
 }
