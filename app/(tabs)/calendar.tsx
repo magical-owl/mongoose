@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   Animated,
+  Alert,
   View,
   ScrollView,
   TouchableOpacity,
@@ -27,6 +28,7 @@ import { DiaryTimelineList } from '@/features/diary/components/DiaryTimelineList
 import { appLockService } from '@/services/AppLockService';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import { getEntryManualMoods, type ManualMood } from '@/features/diary/domain/DiaryEntry';
+import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import { useTranslation } from '@/localization/i18n';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 
@@ -42,7 +44,7 @@ export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { height: windowHeight } = useWindowDimensions();
-  const { entries, refresh } = useDiary();
+  const { entries, refresh, toggleMemoryReaction } = useDiary();
   const { profile } = useProfileForm();
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
@@ -116,6 +118,17 @@ export default function CalendarScreen() {
   const closeCalendarMenu = useCallback(() => {
     setShowCalendarMenu(false);
   }, []);
+  const handleToggleMemoryReaction = useCallback(
+    async (entryId: string, reaction: MemoryReaction) => {
+      const result = await toggleMemoryReaction(entryId, reaction);
+      if (!result.success) {
+        Alert.alert(t('memoryReactionNotSavedTitle'), result.error.message);
+        return false;
+      }
+      return true;
+    },
+    [toggleMemoryReaction, t],
+  );
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -348,6 +361,7 @@ export default function CalendarScreen() {
               if (entry.isLockbox && !(await appLockService.authenticate())) return;
               router.push(`/entry/${entry.id}`);
             }}
+            onToggleMemoryReaction={handleToggleMemoryReaction}
           />
         )}
       </ScrollView>

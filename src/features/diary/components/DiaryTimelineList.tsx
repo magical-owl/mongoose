@@ -6,6 +6,7 @@ import { Text } from '@shared/components/Text';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import type { CalendarDateFormat, EntryHierarchyMode } from '@/stores/useAppStore';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import type { Profile } from '@/features/profile/domain/Profile';
 import { DiaryEntryView, type DiaryEntryViewMode } from './DiaryEntryView';
 
@@ -31,6 +32,7 @@ interface DiaryTimelineListProps {
   readonly onAddReflection?: (entryId: string, text: string) => Promise<boolean>;
   readonly onReflectionInputFocus?: (entryId: string) => void;
   readonly onReflectionSummaryPress?: (entryId: string) => void;
+  readonly onToggleMemoryReaction?: (entryId: string, reaction: MemoryReaction) => Promise<boolean>;
 }
 
 function formatTimelineMonth(value: string): string {
@@ -61,6 +63,7 @@ export function DiaryTimelineList({
   onAddReflection,
   onReflectionInputFocus,
   onReflectionSummaryPress,
+  onToggleMemoryReaction,
 }: DiaryTimelineListProps): React.JSX.Element {
   const theme = useTheme();
 
@@ -162,6 +165,7 @@ export function DiaryTimelineList({
                       onAddReflection={onAddReflection}
                       onReflectionInputFocus={onReflectionInputFocus}
                       onReflectionSummaryPress={onReflectionSummaryPress}
+                      onToggleMemoryReaction={onToggleMemoryReaction}
                     />
                   </View>
                 ))}

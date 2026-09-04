@@ -1,6 +1,7 @@
 import { DiaryTimelineList } from '@/features/diary/components/DiaryTimelineList';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { renderWithProviders } from '@tests/helpers';
+import { fireEvent, waitFor } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
 function createEntry(id: string, title: string, date: string): DiaryEntry {
@@ -72,5 +73,26 @@ describe('DiaryTimelineList', () => {
 
     expect(dateGroupStyle.marginLeft).toBe(0);
     expect(dateGroupStyle.marginBottom).toBe(0);
+  });
+
+  it('passes memory reaction handling through to rendered entries', async () => {
+    const onToggleMemoryReaction = jest.fn().mockResolvedValue(true);
+    const { getByTestId } = await renderWithProviders(
+      <DiaryTimelineList
+        groupedEntries={[[firstEntry.date, [firstEntry]]]}
+        mode="timeline"
+        calendarDateFormat="month-day-year"
+        entryHierarchyMode="date"
+        onEntryPress={jest.fn()}
+        onToggleMemoryReaction={onToggleMemoryReaction}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    fireEvent.press(getByTestId('entry-timeline-memory-reaction'));
+    await waitFor(() => expect(getByTestId('entry-timeline-memory-reaction-cherish')).toBeTruthy());
+    fireEvent.press(getByTestId('entry-timeline-memory-reaction-cherish'));
+
+    expect(onToggleMemoryReaction).toHaveBeenCalledWith(firstEntry.id, 'cherish');
   });
 });
