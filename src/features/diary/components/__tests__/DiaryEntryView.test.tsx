@@ -89,9 +89,9 @@ describe('DiaryEntryView', () => {
     expect(moodStyle.flexDirection).toBe('row');
     expect(moodStyle.gap).toBe(4);
     expect(getByTestId('entry-card-mood-calm')).toBeTruthy();
-    expect(getByTestId('entry-card-mood-overflow')).toBeTruthy();
     expect(getByTestId('entry-card-tags-daily')).toBeTruthy();
-    expect(getByTestId('entry-card-tags-overflow')).toBeTruthy();
+    expect(getByText('Calm +2')).toBeTruthy();
+    expect(getByText('#daily +1')).toBeTruthy();
     expect(reflectionButtonStyle.minWidth).toBe(44);
     expect(reflectionButtonStyle.height).toBe(28);
     expect(getByText('2')).toBeTruthy();
@@ -151,7 +151,7 @@ describe('DiaryEntryView', () => {
       ],
     };
 
-    const { getByTestId } = await renderWithProviders(
+    const { getByTestId, getByText } = await renderWithProviders(
       <DiaryEntryView
         entry={entryWithReflection}
         mode="timeline"
@@ -184,9 +184,9 @@ describe('DiaryEntryView', () => {
     expect(moodStyle.flexDirection).toBe('row');
     expect(moodStyle.gap).toBe(4);
     expect(getByTestId('entry-timeline-mood-calm')).toBeTruthy();
-    expect(getByTestId('entry-timeline-mood-overflow')).toBeTruthy();
     expect(getByTestId('entry-timeline-tags-daily')).toBeTruthy();
-    expect(getByTestId('entry-timeline-tags-overflow')).toBeTruthy();
+    expect(getByText('Calm +2')).toBeTruthy();
+    expect(getByText('#daily +2')).toBeTruthy();
     expect(metaRowStyle.marginBottom).toBe(8);
     expect(reflectionsStyle.borderLeftWidth).toBe(1);
     expect(reflectionsStyle.marginTop).toBe(0);
@@ -246,7 +246,7 @@ describe('DiaryEntryView', () => {
       tags: ['daily', 'work', 'family'],
       manualMoods: ['calm', 'happy', 'sad'],
     };
-    const { getByTestId, queryByTestId } = await renderWithProviders(
+    const { getByTestId, getByText, queryByTestId } = await renderWithProviders(
       <DiaryEntryView
         entry={entryWithMultipleMeta}
         mode="feed"
@@ -264,9 +264,9 @@ describe('DiaryEntryView', () => {
     expect(queryByTestId('diary-entry-body-webview')).toBeNull();
     expect(queryByTestId('entry-feed-author-row')).toBeNull();
     expect(queryByTestId('entry-feed-author-avatar')).toBeNull();
-    expect(getByTestId('entry-feed-mood-overflow')).toBeTruthy();
     expect(getByTestId('entry-feed-tags-daily')).toBeTruthy();
-    expect(getByTestId('entry-feed-tags-overflow')).toBeTruthy();
+    expect(getByText('Calm +2')).toBeTruthy();
+    expect(getByText('#daily +2')).toBeTruthy();
     expect(queryByTestId('entry-feed-tags-work')).toBeNull();
     expect(moodChipStyle.borderRadius).toBe(13);
     expect(moodChipStyle.borderWidth).toBe(1);
@@ -298,7 +298,7 @@ describe('DiaryEntryView', () => {
       ],
     };
 
-    const { getByTestId, queryByTestId } = await renderWithProviders(
+    const { getByTestId, getByText, queryByTestId } = await renderWithProviders(
       <DiaryEntryView
         entry={entryWithCoverAndReflection}
         mode="feed"
@@ -322,9 +322,9 @@ describe('DiaryEntryView', () => {
     expect(queryByTestId('diary-entry-body-webview')).toBeNull();
     expect(coverMoodStyle.borderRadius).toBe(13);
     expect(coverMoodStyle.borderWidth).toBe(1);
-    expect(getByTestId('entry-feed-cover-mood-overflow')).toBeTruthy();
     expect(getByTestId('entry-feed-cover-tags-daily')).toBeTruthy();
-    expect(getByTestId('entry-feed-cover-tags-overflow')).toBeTruthy();
+    expect(getByText('Calm +2')).toBeTruthy();
+    expect(getByText('#daily +2')).toBeTruthy();
     expect(queryByTestId('entry-feed-cover-tags-travel')).toBeNull();
     expect(contentPanelStyle.borderRadius).toBe(0);
     expect(contentPanelStyle.borderWidth).toBe(0);

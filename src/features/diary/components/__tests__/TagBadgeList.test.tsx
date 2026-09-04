@@ -22,10 +22,9 @@ describe('TagBadgeList', () => {
 
     const firstTagStyle = StyleSheet.flatten(getByTestId('tags-work').props.style);
 
-    expect(getByText('#work')).toBeTruthy();
-    expect(getByText('+2')).toBeTruthy();
+    expect(getByText('#work +2')).toBeTruthy();
     expect(firstTagStyle.borderWidth).toBe(1);
-    expect(getByTestId('tags-overflow').props.accessibilityLabel).toBe('#family, #travel');
+    expect(queryByTestId('tags-overflow')).toBeNull();
     expect(queryByTestId('tags-family')).toBeNull();
   });
 
@@ -42,7 +41,7 @@ describe('TagBadgeList', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.press(getByTestId('tags-overflow'));
+    fireEvent.press(getByTestId('tags-work'));
 
     expect(await findByText('TAGS')).toBeTruthy();
     expect(await findByText('#family')).toBeTruthy();

@@ -26,9 +26,8 @@ describe('MoodBadgeList', () => {
     expect(happyStyle.borderColor).toBeTruthy();
     expect(gratefulStyle.borderColor).toBeTruthy();
     expect(happyStyle.borderColor).not.toBe(gratefulStyle.borderColor);
-    expect(getByTestId('moods-overflow')).toBeTruthy();
-    expect(getByTestId('moods-overflow').props.accessibilityLabel).toBe('Excited');
-    expect(getByText('+1')).toBeTruthy();
+    expect(getByText('Calm +1')).toBeTruthy();
+    expect(queryByTestId('moods-overflow')).toBeNull();
     expect(queryByTestId('moods-excited')).toBeNull();
   });
 
@@ -45,9 +44,10 @@ describe('MoodBadgeList', () => {
       { wrapperOptions: { initialThemeMode: 'light' } },
     );
 
-    fireEvent.press(getByTestId('moods-overflow'));
+    fireEvent.press(getByTestId('moods-happy'));
 
     expect(await findByText('MOOD')).toBeTruthy();
+    expect(await findByText('Happy')).toBeTruthy();
     expect(await findByText('Grateful')).toBeTruthy();
     expect(await findByText('Calm')).toBeTruthy();
   });

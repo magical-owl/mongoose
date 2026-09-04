@@ -34,10 +34,10 @@ export function MoodBadgeList({
 
   if (moods.length === 0) return null;
 
-  const renderMoodBadge = (mood: ManualMood, popup = false) => {
+  const renderMoodBadge = (mood: ManualMood, popup = false, overflowCount = 0) => {
     const color = getManualMoodColor(mood, theme.colors);
     return (
-      <View
+      <TouchableOpacity
         key={mood}
         style={[
           styles.badge,
@@ -49,6 +49,10 @@ export function MoodBadgeList({
           },
         ]}
         accessibilityLabel={manualMoodLabel(mood, t)}
+        accessibilityRole={overflowPopup && overflowCount > 0 && !popup ? 'button' : undefined}
+        activeOpacity={overflowPopup && overflowCount > 0 && !popup ? 0.7 : 1}
+        disabled={!overflowPopup || overflowCount === 0 || popup}
+        onPress={() => setShowOverflow(true)}
         testID={testID && !popup ? `${testID}-${mood}` : undefined}
       >
         <Text
@@ -60,42 +64,19 @@ export function MoodBadgeList({
             { color: onCover && !popup ? theme.colors.stickerControlText : color },
           ]}
         >
-          {manualMoodLabel(mood, t)}
+          {overflowCount > 0 ? `${manualMoodLabel(mood, t)} +${overflowCount}` : manualMoodLabel(mood, t)}
         </Text>
-      </View>
+      </TouchableOpacity>
     );
   };
 
   return (
     <View style={[styles.row, compact && styles.compactRow, style]} testID={testID}>
-      {visibleMoods.map((mood) => renderMoodBadge(mood))}
-      {hiddenMoods.length > 0 ? (
-        <TouchableOpacity
-          style={[
-            styles.badge,
-            compact && styles.compactBadge,
-            { backgroundColor: theme.colors.surface + (onCover ? '99' : ''), borderColor: theme.colors.border },
-          ]}
-          disabled={!overflowPopup}
-          activeOpacity={0.7}
-          onPress={() => setShowOverflow(true)}
-          accessibilityLabel={hiddenMoods.map((mood) => manualMoodLabel(mood, t)).join(', ')}
-          accessibilityRole={overflowPopup ? 'button' : undefined}
-          testID={testID ? `${testID}-overflow` : undefined}
-        >
-          <Text
-            preset="caption"
-            numberOfLines={1}
-            style={[
-              styles.badgeText,
-              compact && styles.compactText,
-              { color: onCover ? theme.colors.stickerControlText : theme.colors.textSecondary },
-            ]}
-          >
-            +{hiddenMoods.length}
-          </Text>
-        </TouchableOpacity>
-      ) : null}
+      {visibleMoods.map((mood, index) => renderMoodBadge(
+        mood,
+        false,
+        index === visibleMoods.length - 1 ? hiddenMoods.length : 0,
+      ))}
       {overflowPopup && showOverflow ? (
         <Modal
           visible={showOverflow}
@@ -116,7 +97,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
   compactRow: { gap: 4 },
   badge: { minHeight: 26, maxWidth: 118, borderWidth: 1, borderRadius: 13, paddingHorizontal: 9, alignItems: 'center', justifyContent: 'center' },
-  compactBadge: { minHeight: 22, maxWidth: 86, borderRadius: 11, paddingHorizontal: 7 },
+  compactBadge: { minHeight: 22, maxWidth: 104, borderRadius: 11, paddingHorizontal: 7 },
   popupBadge: { maxWidth: 160 },
   badgeText: { fontWeight: '700' },
   compactText: { fontSize: 11, lineHeight: 14 },
