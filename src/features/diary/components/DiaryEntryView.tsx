@@ -246,57 +246,54 @@ export function DiaryEntryView({
   ) : null;
 
   if (mode === 'feed') {
-    const feedMetaContent = (
-      <View style={entry.coverPhoto ? styles.feedCoverMetaRow : styles.feedMetaRow}>
-        <View style={styles.feedMetaLeft}>
-          {hasMood ? (
-            <MoodBadgeList
-              moods={entryMoods}
-              maxVisible={1}
-              onCover={Boolean(entry.coverPhoto)}
-              overflowPopup
-              style={styles.feedMoodBadges}
-              testID={entry.coverPhoto ? 'entry-feed-cover-mood' : 'entry-feed-mood'}
-            />
-          ) : null}
-          <TagBadgeList
-            tags={entry.tags}
+    const feedTimestamp = feedEntryDateTime ? (
+      <Text
+        preset="caption"
+        color={entry.coverPhoto ? undefined : 'textTertiary'}
+        style={[
+          styles.feedDateTime,
+          entry.coverPhoto && { color: theme.colors.stickerControlText },
+        ]}
+        numberOfLines={1}
+        testID={entry.coverPhoto ? 'entry-feed-cover-timestamp' : 'entry-feed-timestamp'}
+      >
+        {feedEntryDateTime}
+      </Text>
+    ) : null;
+    const feedFooterMeta = hasMood || entry.tags.length > 0 || showReflectionSummaryAction ? (
+      <View
+        style={[
+          styles.feedFooterMetaRow,
+          { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+        ]}
+        testID="entry-feed-footer-meta"
+      >
+        {hasMood ? (
+          <MoodBadgeList
+            moods={entryMoods}
             maxVisible={1}
-            onCover={Boolean(entry.coverPhoto)}
             overflowPopup
-            style={styles.feedTagBadges}
-            testID={entry.coverPhoto ? 'entry-feed-cover-tags' : 'entry-feed-tags'}
+            style={styles.feedMoodBadges}
+            testID="entry-feed-mood"
           />
-          {showReflectionSummaryAction ? (
-            <Text
-              preset="caption"
-              color={entry.coverPhoto ? undefined : 'tint'}
-              style={[
-                styles.reflectionSummary,
-                entry.coverPhoto && styles.feedCoverMetaText,
-                entry.coverPhoto && { color: theme.colors.stickerControlText },
-              ]}
-              onPress={() => onReflectionSummaryPress?.(entry.id)}
-            >
-              {reflectionSummaryLabel}
-            </Text>
-          ) : null}
-        </View>
-        {feedEntryDateTime ? (
-          <Text
-            preset="caption"
-            color={entry.coverPhoto ? undefined : 'textTertiary'}
-            style={[
-              styles.feedDateTime,
-              entry.coverPhoto && { color: theme.colors.stickerControlText },
-            ]}
-            numberOfLines={1}
-          >
-            {feedEntryDateTime}
-          </Text>
+        ) : null}
+        <TagBadgeList
+          tags={entry.tags}
+          maxVisible={1}
+          overflowPopup
+          style={styles.feedTagBadges}
+          testID="entry-feed-tags"
+        />
+        {showReflectionSummaryAction ? (
+          <ReflectionSummaryButton
+            count={entry.reflections.length}
+            onPress={() => onReflectionSummaryPress?.(entry.id)}
+            accessibilityLabel={reflectionSummaryLabel}
+            testID="entry-feed-reflection-button"
+          />
         ) : null}
       </View>
-    );
+    ) : null;
     return (
       <View style={[styles.feedCard, fullWidthEntryFrame]} testID="entry-feed-card">
         <TouchableOpacity
@@ -333,7 +330,7 @@ export function DiaryEntryView({
                 >
                   {entry.title}
                 </Text>
-                {feedMetaContent}
+                {feedTimestamp}
               </View>
             </ImageBackground>
           ) : null}
@@ -363,7 +360,7 @@ export function DiaryEntryView({
                       {entry.title}
                     </Text>
                   </View>
-                  {feedMetaContent}
+                  {feedTimestamp}
                 </View>
               )}
               <View
@@ -389,6 +386,7 @@ export function DiaryEntryView({
             </View>
           </DiaryPaperCanvas>
         </TouchableOpacity>
+        {feedFooterMeta}
         {inlineReflectionSection}
       </View>
     );
@@ -563,7 +561,6 @@ const styles = StyleSheet.create({
   cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   cardFooterMoodBadges: { maxWidth: 140 },
   cardFooterTagBadges: { flex: 1, maxWidth: '100%' },
-  reflectionSummary: { flexShrink: 0, fontWeight: '700' },
   feedCard: { paddingVertical: 0, marginBottom: 0 },
   feedEntrySurface: { borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   feedCanvas: { position: 'relative', overflow: 'visible' },
@@ -574,17 +571,14 @@ const styles = StyleSheet.create({
   feedCoverHeaderImage: { borderRadius: 0 },
   feedCoverScrim: { ...StyleSheet.absoluteFill, opacity: 0.28 },
   feedCoverContent: { paddingHorizontal: 20, paddingTop: 42, paddingBottom: 12 },
-  feedCoverTitle: { marginBottom: 8 },
-  feedCoverMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  feedCoverMetaText: { fontWeight: '700' },
+  feedCoverTitle: { marginBottom: 2 },
   feedContentPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 0, paddingHorizontal: 12, paddingVertical: 12 },
   feedContentPanelMerged: { borderWidth: 0, borderRadius: 0, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 20 },
   feedInlineHeader: { paddingHorizontal: 20 },
-  feedMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
-  feedMetaLeft: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  feedFooterMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 20, paddingVertical: 10 },
   feedMoodBadges: { maxWidth: '100%' },
-  feedTagBadges: { maxWidth: '100%' },
-  feedDateTime: { flexShrink: 0, fontWeight: '700' },
+  feedTagBadges: { flex: 1, maxWidth: '100%' },
+  feedDateTime: { flexShrink: 0, fontWeight: '700', marginTop: 2 },
   feedSectionLabel: { marginBottom: 8, fontWeight: '800', textTransform: 'uppercase' },
   feedReflectionPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 0, marginTop: 0, marginHorizontal: 0, padding: 12 },
   feedInlineReflections: { marginTop: 0, marginLeft: 0, paddingLeft: 0, borderLeftWidth: 0 },

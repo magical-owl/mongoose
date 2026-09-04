@@ -538,25 +538,23 @@ export default function EntryDetailScreen() {
     hoursAgo: t('timeHoursAgoShort'),
   };
   const viewDateTime = formatFriendlyTimestamp(entry.createdAt, timeFormat, friendlyTimestampLabels);
-  const renderViewMoodAndTags = (onCover: boolean) => (
-    <View style={onCover ? styles.coverMetaLeft : styles.entryMetaRow}>
+  const renderViewFooterMoodAndTags = () => (
+    <View style={styles.viewFooterMeta} testID="entry-view-footer-meta">
       {viewMoods.length > 0 ? (
         <MoodBadgeList
           moods={viewMoods}
           maxVisible={1}
-          onCover={onCover}
           overflowPopup
-          style={onCover ? styles.coverMoodBadges : styles.entryMoodBadges}
-          testID={onCover ? 'entry-cover-mood' : 'entry-mood'}
+          style={styles.viewFooterMoodBadges}
+          testID="entry-view-footer-mood"
         />
       ) : null}
       <TagBadgeList
         tags={entry.tags}
         maxVisible={1}
-        onCover={onCover}
         overflowPopup
-        style={onCover ? styles.coverTagBadges : styles.entryTagBadges}
-        testID={onCover ? 'entry-cover-tags' : 'entry-tags'}
+        style={styles.viewFooterTagBadges}
+        testID="entry-view-footer-tags"
       />
     </View>
   );
@@ -721,12 +719,9 @@ export default function EntryDetailScreen() {
                 <Text preset="h2" numberOfLines={2} style={[styles.coverTitle, { color: theme.colors.stickerControlText }]}>
                   {entry.title}
                 </Text>
-                <View style={styles.coverMetaRow}>
-                  {renderViewMoodAndTags(true)}
-                  <Text preset="caption" numberOfLines={1} style={[styles.coverDateTime, { color: theme.colors.stickerControlText }]}>
-                    {viewDateTime}
-                  </Text>
-                </View>
+                <Text preset="caption" numberOfLines={1} style={[styles.coverDateTime, { color: theme.colors.stickerControlText }]}>
+                  {viewDateTime}
+                </Text>
               </Animated.View>
             </DiaryCoverPhotoPicker>
           )}
@@ -879,9 +874,16 @@ export default function EntryDetailScreen() {
                     >
                       {entry.title}
                     </Text>
+                    <Text
+                      preset="caption"
+                      color="textSecondary"
+                      style={styles.entryDateTime}
+                      numberOfLines={1}
+                    >
+                      {viewDateTime}
+                    </Text>
                   </>
                 )}
-                {hasViewCoverPhoto ? null : renderViewMoodAndTags(false)}
                 <DiaryEntryBodyView
                   entry={entry}
                   bodyCanvasHeight={bodyCanvasHeight}
@@ -911,6 +913,7 @@ export default function EntryDetailScreen() {
           bottom={insets.bottom + ENTRY_EDITOR_FOOTER_BOTTOM_OFFSET}
           style={styles.viewFooter}
         >
+          {renderViewFooterMoodAndTags()}
             <ReflectionSummaryButton
               count={entry.reflections.length}
               onPress={() => setShowReflections(true)}
@@ -1183,7 +1186,11 @@ const styles = StyleSheet.create({
   },
   headerActions: { minWidth: 98, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 10 },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  entryMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  entryDateTime: {
+    marginTop: -8,
+    marginBottom: 16,
+    fontWeight: '600',
+  },
   coverEntryOverlay: {
     position: 'absolute',
     left: 10,
@@ -1203,33 +1210,14 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     marginBottom: 8,
   },
-  coverMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  coverMetaLeft: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  coverMoodBadges: { maxWidth: '100%' },
-  coverTagBadges: { maxWidth: '100%' },
-  entryMoodBadges: { maxWidth: '100%' },
-  entryTagBadges: { maxWidth: '100%' },
   viewFooter: {
-    left: undefined,
-    width: 86,
-    borderWidth: 0,
-    backgroundColor: 'transparent',
-    shadowOpacity: 0,
-    elevation: 0,
+    paddingHorizontal: 12,
   },
+  viewFooterMeta: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  viewFooterMoodBadges: { maxWidth: 116 },
+  viewFooterTagBadges: { flex: 1, maxWidth: '100%' },
   viewFooterButton: {
+    flexShrink: 0,
     gap: 8,
   },
 });

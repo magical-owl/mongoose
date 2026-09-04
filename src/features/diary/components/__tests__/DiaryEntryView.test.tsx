@@ -240,7 +240,7 @@ describe('DiaryEntryView', () => {
     expect(previewStyle.fontFamily).not.toBe('Merriweather_400Regular');
   });
 
-  it('renders feed view without cover using the entry-detail mood and width pattern', async () => {
+  it('renders feed view without cover using bottom mood and tag metadata', async () => {
     const entryWithMultipleMeta: DiaryEntry = {
       ...baseEntry,
       tags: ['daily', 'work', 'family'],
@@ -257,6 +257,7 @@ describe('DiaryEntryView', () => {
     );
 
     const moodChipStyle = StyleSheet.flatten(getByTestId('entry-feed-mood-calm').props.style);
+    const footerMetaStyle = StyleSheet.flatten(getByTestId('entry-feed-footer-meta').props.style);
     const feedCardStyle = StyleSheet.flatten(getByTestId('entry-feed-card').props.style);
 
     expect(getByTestId('entry-feed-paper-canvas-image')).toBeTruthy();
@@ -264,12 +265,16 @@ describe('DiaryEntryView', () => {
     expect(queryByTestId('diary-entry-body-webview')).toBeNull();
     expect(queryByTestId('entry-feed-author-row')).toBeNull();
     expect(queryByTestId('entry-feed-author-avatar')).toBeNull();
+    expect(getByTestId('entry-feed-timestamp')).toBeTruthy();
+    expect(getByTestId('entry-feed-footer-meta')).toBeTruthy();
     expect(getByTestId('entry-feed-tags-daily')).toBeTruthy();
     expect(getByText('Calm +2')).toBeTruthy();
     expect(getByText('#daily +2')).toBeTruthy();
     expect(queryByTestId('entry-feed-tags-work')).toBeNull();
     expect(moodChipStyle.borderRadius).toBe(13);
     expect(moodChipStyle.borderWidth).toBe(1);
+    expect(footerMetaStyle.flexDirection).toBe('row');
+    expect(footerMetaStyle.borderTopWidth).toBe(StyleSheet.hairlineWidth);
     expect(feedCardStyle.paddingVertical).toBe(0);
     expect(feedCardStyle.marginBottom).toBe(0);
     expect(feedCardStyle.marginHorizontal).toBe(-20);
@@ -315,17 +320,24 @@ describe('DiaryEntryView', () => {
     const reflectionInputStyle = StyleSheet.flatten(getByTestId('entry-feed-reflection-input').props.style);
     const feedCardStyle = StyleSheet.flatten(getByTestId('entry-feed-card').props.style);
 
-    const coverMoodStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-mood-calm').props.style);
+    const coverTimestampStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-timestamp').props.style);
+    const footerMetaStyle = StyleSheet.flatten(getByTestId('entry-feed-footer-meta').props.style);
+    const moodStyle = StyleSheet.flatten(getByTestId('entry-feed-mood-calm').props.style);
 
     expect(getByTestId('entry-feed-paper-canvas-image')).toBeTruthy();
     expect(getByTestId('diary-entry-body-preview')).toBeTruthy();
     expect(queryByTestId('diary-entry-body-webview')).toBeNull();
-    expect(coverMoodStyle.borderRadius).toBe(13);
-    expect(coverMoodStyle.borderWidth).toBe(1);
-    expect(getByTestId('entry-feed-cover-tags-daily')).toBeTruthy();
+    expect(coverTimestampStyle.color).toBeTruthy();
+    expect(getByTestId('entry-feed-footer-meta')).toBeTruthy();
+    expect(getByTestId('entry-feed-tags-daily')).toBeTruthy();
+    expect(moodStyle.borderRadius).toBe(13);
+    expect(moodStyle.borderWidth).toBe(1);
     expect(getByText('Calm +2')).toBeTruthy();
     expect(getByText('#daily +2')).toBeTruthy();
-    expect(queryByTestId('entry-feed-cover-tags-travel')).toBeNull();
+    expect(queryByTestId('entry-feed-tags-travel')).toBeNull();
+    expect(queryByTestId('entry-feed-cover-mood-calm')).toBeNull();
+    expect(queryByTestId('entry-feed-cover-tags-daily')).toBeNull();
+    expect(footerMetaStyle.borderTopWidth).toBe(StyleSheet.hairlineWidth);
     expect(contentPanelStyle.borderRadius).toBe(0);
     expect(contentPanelStyle.borderWidth).toBe(0);
     expect(contentPanelStyle.backgroundColor).toBe('transparent');
