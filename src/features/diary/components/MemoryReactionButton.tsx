@@ -6,6 +6,7 @@ import {
   StyleSheet,
   useWindowDimensions,
   View,
+  type GestureResponderEvent,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -80,6 +81,10 @@ export function MemoryReactionButton({
     ],
   };
 
+  const stopPressPropagation = (event: GestureResponderEvent) => {
+    event.stopPropagation();
+  };
+
   return (
     <View style={[styles.wrapper, style]}>
       {visible ? (
@@ -107,7 +112,8 @@ export function MemoryReactionButton({
               return (
                 <Pressable
                   key={reaction}
-                  onPress={() => {
+                  onPress={(event) => {
+                    stopPressPropagation(event);
                     void onToggleReaction(reaction);
                     onDismiss();
                   }}
@@ -136,7 +142,11 @@ export function MemoryReactionButton({
       ) : null}
 
       <Pressable
-        onPress={visible ? onDismiss : onOpen}
+        onPress={(event) => {
+          stopPressPropagation(event);
+          if (visible) onDismiss();
+          else onOpen();
+        }}
         style={[
           styles.button,
           compact && styles.compactButton,

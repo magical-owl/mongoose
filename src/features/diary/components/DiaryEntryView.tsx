@@ -129,6 +129,12 @@ export function DiaryEntryView({
     if (saved) setReflectionText('');
     setIsAddingReflection(false);
   };
+
+  const handleOpenEntry = () => {
+    setIsMemoryReactionPickerVisible(false);
+    void onPress();
+  };
+
   const feedStickerCanvasHeight = entry.stickers.length > 0
     ? Math.max(
         0,
@@ -308,7 +314,7 @@ export function DiaryEntryView({
       <View style={[styles.feedCard, fullWidthEntryFrame]} testID="entry-feed-card">
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={onPress}
+          onPress={handleOpenEntry}
           style={[
             styles.feedEntrySurface,
             {
@@ -409,7 +415,7 @@ export function DiaryEntryView({
         <View style={[styles.timelineDot, { backgroundColor: hasMood ? moodTone : theme.colors.tint, borderColor: theme.colors.background, left: theme.spacing.xl + 1 }]} testID="entry-timeline-dot" />
         <View style={styles.timelineBody}>
           <Pressable
-            onPress={onPress}
+            onPress={handleOpenEntry}
             onLongPress={showMemoryReactionControl ? () => setIsMemoryReactionPickerVisible(true) : undefined}
             style={styles.timelinePressArea}
             testID="entry-timeline-press-area"
@@ -500,7 +506,7 @@ export function DiaryEntryView({
   return (
     <TouchableOpacity
       activeOpacity={0.8}
-      onPress={onPress}
+      onPress={handleOpenEntry}
       style={[styles.card, fullWidthEntryFrame, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
       testID="entry-card"
     >

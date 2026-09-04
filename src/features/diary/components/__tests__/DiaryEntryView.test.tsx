@@ -1,3 +1,4 @@
+import { fireEvent, waitFor } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { DiaryEntryView } from '@/features/diary/components/DiaryEntryView';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
@@ -220,6 +221,28 @@ describe('DiaryEntryView', () => {
     expect(getByTestId('entry-timeline-memory-reaction')).toBeTruthy();
     expect(getByTestId('entry-timeline-meta-row').children[0]).toBe(getByTestId('entry-timeline-memory-reaction').parent);
     expect(onToggleMemoryReaction).not.toHaveBeenCalled();
+  });
+
+  it('dismisses an open memory reaction tray when opening an entry', async () => {
+    const onPress = jest.fn();
+    const { getByTestId, queryByTestId } = await renderWithProviders(
+      <DiaryEntryView
+        entry={{ ...baseEntry, memoryReactions: ['cherish'], tags: ['daily'], manualMoods: ['happy'] }}
+        mode="timeline"
+        profile={profile}
+        onPress={onPress}
+        onToggleMemoryReaction={jest.fn().mockResolvedValue(true)}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    fireEvent.press(getByTestId('entry-timeline-memory-reaction'));
+    await waitFor(() => expect(getByTestId('entry-timeline-memory-reaction-tray')).toBeTruthy());
+
+    fireEvent.press(getByTestId('entry-timeline-press-area'));
+
+    expect(onPress).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(queryByTestId('entry-timeline-memory-reaction-tray')).toBeNull());
   });
 
   it('keeps timeline preview text readable instead of applying custom diary body style', async () => {
