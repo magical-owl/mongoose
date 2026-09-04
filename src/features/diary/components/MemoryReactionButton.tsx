@@ -9,7 +9,6 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import {
@@ -17,6 +16,7 @@ import {
   type MemoryReaction,
 } from '@/features/diary/domain/MemoryReaction';
 import { memoryReactionLabel, useTranslation } from '@/localization/i18n';
+import { MemoryReactionIcon } from './MemoryReactionIcon';
 
 interface MemoryReactionButtonProps {
   readonly reactions: readonly MemoryReaction[];
@@ -27,16 +27,6 @@ interface MemoryReactionButtonProps {
   readonly compact?: boolean;
   readonly style?: StyleProp<ViewStyle>;
   readonly testID?: string;
-}
-
-function reactionIcon(reaction: MemoryReaction): keyof typeof Ionicons.glyphMap {
-  if (reaction === 'treasure') return 'diamond-outline';
-  if (reaction === 'smile') return 'happy-outline';
-  if (reaction === 'heavy') return 'sad-outline';
-  if (reaction === 'tender') return 'rose-outline';
-  if (reaction === 'stormy') return 'thunderstorm-outline';
-  if (reaction === 'wonder') return 'sparkles-outline';
-  return 'heart-outline';
 }
 
 export function MemoryReactionButton({
@@ -133,10 +123,10 @@ export function MemoryReactionButton({
                   accessibilityLabel={memoryReactionLabel(reaction, t)}
                   testID={testID ? `${testID}-${reaction}` : undefined}
                 >
-                  <Ionicons
-                    name={reactionIcon(reaction)}
-                    size={22}
-                    color={active ? theme.colors.background : theme.colors.textSecondary}
+                  <MemoryReactionIcon
+                    reaction={reaction}
+                    size={42}
+                    testID={testID ? `${testID}-${reaction}-icon` : undefined}
                   />
                 </Pressable>
               );
@@ -159,10 +149,10 @@ export function MemoryReactionButton({
         accessibilityLabel={t('memoryReactionPickerTitle')}
         testID={testID}
       >
-        <Ionicons
-          name={firstReaction ? reactionIcon(firstReaction) : 'heart-outline'}
-          size={compact ? 13 : 15}
-          color={hasReaction ? theme.colors.tint : theme.colors.textSecondary}
+        <MemoryReactionIcon
+          reaction={firstReaction ?? 'cherish'}
+          size={compact ? 24 : 26}
+          testID={testID ? `${testID}-icon` : undefined}
         />
         <Text
           preset="caption"
@@ -187,8 +177,8 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   button: {
-    minHeight: 26,
-    maxWidth: 128,
+    minHeight: 30,
+    maxWidth: 136,
     borderWidth: 1,
     borderRadius: 13,
     paddingHorizontal: 9,
@@ -198,10 +188,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   compactButton: {
-    minHeight: 22,
-    maxWidth: 104,
-    borderRadius: 11,
-    paddingHorizontal: 7,
+    minHeight: 28,
+    maxWidth: 112,
+    borderRadius: 14,
+    paddingHorizontal: 8,
   },
   label: {
     flexShrink: 1,
@@ -218,8 +208,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     shadowOpacity: 0.24,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
@@ -230,10 +220,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   option: {
-    width: 42,
-    height: 42,
+    width: 52,
+    height: 52,
     borderWidth: 1,
-    borderRadius: 21,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },

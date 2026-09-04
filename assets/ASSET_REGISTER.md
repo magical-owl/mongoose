@@ -53,6 +53,7 @@ Review status: draft; human IP/design review required before release.
 | Journal cover backgrounds | `assets/journal-backgrounds/*.png` | Twelve soft filled project-authored scenic illustration covers generated without third-party inputs. |
 | Diary paper backgrounds | `assets/diary-paper/*.png` | Six subtle project-authored body canvas paper textures generated without third-party inputs, plus the in-app blank option. |
 | Seasonal pattern backgrounds | `assets/patterns/pattern-spring.png`, `assets/patterns/pattern-summer.png`, `assets/patterns/pattern-autumn.png`, `assets/patterns/pattern-winter.png` | Four transparent project-authored wallpaper tiles. See `assets/patterns/README.md`. |
+| Memory reaction icons | `assets/reactions/*.png` | Seven transparent PNG reaction icons: cherish, treasure, smile, heavy, tender, stormy, wonder. Generated without third-party image inputs. Draft; human IP/design review required before release. |
 | Sticker pack: Cat | `assets/stickers/cat/*.png` | Three transparent PNG stickers: sleepy, curious, cozy. |
 | Sticker pack: School | `assets/stickers/school/*.png` | Three transparent PNG stickers: notebook, pencil, backpack. |
 | Sticker pack: Summer | `assets/stickers/summer/*.png` | Three transparent PNG stickers: sun, wave, ice cream. |
