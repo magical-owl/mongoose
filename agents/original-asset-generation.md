@@ -34,6 +34,8 @@ Use clean inputs:
 - Do not upload third-party reference images into an image generator unless ownership or commercial-use rights are documented.
 - When a user provides a third-party visual reference, convert it into neutral words: spacing, density, subject category, palette direction, and composition. Do not copy motif arrangement, exact shapes, character posture, or distinctive details.
 - If the reference includes watermarks, logos, recognizable characters, or platform screenshots, use it only to discuss risks and generate a safer independent brief.
+- Do not use named artists, studios, companies, franchises, games, films, animation houses, or brands as style targets. This includes prompts such as "Studio Ghibli-like", "Disney-like", "Pixar-style", "Sanrio-like", "Pokemon-style", "Animal Crossing-style", or "in the style of [named artist/studio/franchise]".
+- Replace protected-style wording with neutral medium and mood language, such as "cozy hand-drawn diary illustration", "colored-pencil texture", "soft charcoal outline", "rounded handmade forms", "dusty pastel palette", or "warm analog journal aesthetic".
 
 ## Generation Packet
 
@@ -168,6 +170,8 @@ Prompts should optimize for redrawable drafts:
 - Ask for a limited palette and the same outline treatment across the collection.
 - Avoid terms that strongly imply an existing property, such as mascot, cartoon mouse, anime studio, luxury logo, movie poster, branded toy, or game character.
 - Avoid "make it like this image." Use "loosely inspired by these non-protected qualities" only when the reference is owned or license-cleared.
+- Avoid named-style shorthand even when the requested style feels generic or popular. Do not ask for assets to look like Studio Ghibli, Disney, Pixar, Sanrio, Pokemon, Animal Crossing, a known mobile game, a known sticker pack, or any named artist/studio/franchise/brand.
+- Prefer descriptive art-direction language: medium, texture, silhouette, palette, lighting, composition, and mood.
 
 Quality requirements:
 

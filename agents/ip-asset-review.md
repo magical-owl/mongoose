@@ -21,6 +21,8 @@ Use this reference when adding or changing assets, fonts, icons, illustrations, 
 - Third-party reference images were not used as generator inputs unless ownership or commercial-use rights are documented.
 - Generated assets avoid confusing similarity to protected works, real people, existing sticker collections, brands, logos, and product packaging.
 - Generated illustration assets follow the original-asset visual DNA and originality requirements in `agents/original-asset-generation.md`.
+- Prompts and review notes do not rely on named artist, studio, company, franchise, game, film, sticker-pack, or brand style targets, including examples like "Studio Ghibli-like", "Disney-like", "Pixar-style", "Sanrio-like", "Pokemon-style", or "Animal Crossing-style".
+- Any protected-style shorthand has been converted into neutral medium, texture, composition, palette, and mood language before generation or approval.
 - App names, product names, and marks have human owner review before release.
 - Third-party logos, brand marks, celebrity likenesses, and copyrighted characters are not used without authorization.
 - Asset dimensions and file size are suitable for mobile.

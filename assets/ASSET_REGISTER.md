@@ -13,6 +13,7 @@ This register tracks bundled assets that ship with the app. It is an engineering
 - For generated drafts, record the asset ID, prompt, model/tool when known, generation date, references, designer handoff notes, and rejection/approval decision.
 - Do not ship platform emoji as sticker-pack artwork. Basic sticker packs should use project-authored PNG assets or another source with recorded commercial-use rights.
 - New project-authored illustration assets should follow [`agents/original-asset-generation.md`](../agents/original-asset-generation.md) before generation and still require human IP/design review before release.
+- Protected style imitation includes named artists, studios, companies, franchises, games, films, sticker collections, and brands. Do not use prompts such as "Studio Ghibli-like", "Disney-like", "Pixar-style", "Sanrio-like", "Pokemon-style", or "Animal Crossing-style"; use neutral medium and mood terms instead.
 
 ## Per-Asset Evidence Fields
 
@@ -50,7 +51,7 @@ Review status: draft; human IP/design review required before release.
 | --- | --- | --- |
 | App icon and splash | `assets/icon.png`, `assets/favicon.png`, `assets/splash-icon.png`, `assets/splash-logo.png`, `assets/splash-placeholder.png` | Temporary neutral journal mark. Regenerate after final brand name and app identity are approved. |
 | Android adaptive icon | `assets/android-icon-background.png`, `assets/android-icon-foreground.png`, `assets/android-icon-monochrome.png` | Temporary neutral journal mark; no text or brand name. |
-| Journal cover backgrounds | `assets/journal-backgrounds/*.png` | Twelve soft filled project-authored scenic illustration covers generated without third-party inputs. |
+| Journal cover backgrounds | `assets/journal-backgrounds/*.png` | Twelve generic AI-generated wide diary covers regenerated with the built-in image tool using only project-owned reaction icons as internal art-direction references. No third-party image inputs, text, logos, people, characters, or branded products. Draft; human IP/design review required before release. |
 | Diary paper backgrounds | `assets/diary-paper/*.png` | Six subtle project-authored body canvas paper textures generated without third-party inputs, plus the in-app blank option. |
 | Seasonal pattern backgrounds | `assets/patterns/pattern-spring.png`, `assets/patterns/pattern-summer.png`, `assets/patterns/pattern-autumn.png`, `assets/patterns/pattern-winter.png` | Four transparent project-authored wallpaper tiles. See `assets/patterns/README.md`. |
 | Memory reaction icons | `assets/reactions/*.png` | Seven transparent PNG reaction icons: cherish, treasure, smile, heavy, tender, stormy, wonder. Generated without third-party image inputs. Draft; human IP/design review required before release. |
