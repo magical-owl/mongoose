@@ -1,5 +1,7 @@
 import { ScrollView, StyleSheet } from 'react-native';
+import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { Modal } from '@shared/components/Modal';
+import { Text } from '@shared/components/Text';
 import { ManualMoodPicker } from '@/features/diary/components/ManualMoodPicker';
 import { DiaryJournalSelector } from '@/features/diary/components/DiaryJournalSelector';
 import { DiaryTagSelector } from '@/features/diary/components/DiaryTagSelector';
@@ -18,6 +20,10 @@ interface EntryMetadataModalProps {
   readonly selectedTags: readonly string[];
   readonly availableTags: readonly string[];
   readonly onChangeTags: (tags: string[]) => void;
+  readonly prompt?: string;
+  readonly confirmLabel?: string;
+  readonly confirmDisabled?: boolean;
+  readonly onConfirm?: () => void;
 }
 
 export function EntryMetadataModal({
@@ -31,6 +37,10 @@ export function EntryMetadataModal({
   selectedTags,
   availableTags,
   onChangeTags,
+  prompt,
+  confirmLabel,
+  confirmDisabled = false,
+  onConfirm,
 }: EntryMetadataModalProps): React.JSX.Element {
   const t = useTranslation();
 
@@ -48,6 +58,11 @@ export function EntryMetadataModal({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {prompt ? (
+          <Text preset="body" style={styles.prompt}>
+            {prompt}
+          </Text>
+        ) : null}
         <ManualMoodPicker values={moods} onChangeValues={onChangeMoods} multiple />
         <DiaryJournalSelector
           selectedJournalIds={selectedJournalIds}
@@ -59,6 +74,14 @@ export function EntryMetadataModal({
           availableTags={availableTags}
           onChange={onChangeTags}
         />
+        {confirmLabel && onConfirm ? (
+          <AccentPillButton
+            label={confirmLabel}
+            onPress={onConfirm}
+            disabled={confirmDisabled}
+            style={styles.confirmButton}
+          />
+        ) : null}
       </ScrollView>
     </Modal>
   );
@@ -70,5 +93,13 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: 8,
+  },
+  prompt: {
+    marginBottom: 14,
+    lineHeight: 22,
+  },
+  confirmButton: {
+    alignSelf: 'stretch',
+    marginTop: 16,
   },
 });

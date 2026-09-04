@@ -47,6 +47,7 @@ import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataMod
 import { DEFAULT_DIARY_PAPER_BACKGROUND_ID } from '@/features/diary/domain/DiaryPaperBackgrounds';
 import { DIARY_BODY_DEFAULT_FONT_FAMILY, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
+import { shouldPromptForEntryMetadataBeforeSave } from '@/features/diary/services/EntryMetadataSavePrompt';
 import { chooseDiaryPhoto, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
@@ -159,6 +160,7 @@ export default function CreateEntryScreen() {
   const [showPaperBackgroundPicker, setShowPaperBackgroundPicker] = useState(false);
   const [showFormattingTools, setShowFormattingTools] = useState(false);
   const [showEntryMetadata, setShowEntryMetadata] = useState(false);
+  const [isEntryMetadataSavePrompt, setIsEntryMetadataSavePrompt] = useState(false);
   const [manualMoodWeather, setManualMoodWeather] = useState<ManualMoodWeather>('neutral');
   const [manualMoods, setManualMoods] = useState<ManualMood[]>(['neutral']);
   const [writingMode, setWritingMode] = useState<WritingMode>('free-write');
@@ -412,7 +414,17 @@ export default function CreateEntryScreen() {
     else router.replace('/(tabs)');
   };
 
-  const handleSave = async () => {
+  const handleOpenEntryMetadata = useCallback(() => {
+    setIsEntryMetadataSavePrompt(false);
+    setShowEntryMetadata(true);
+  }, []);
+
+  const handleDismissEntryMetadata = useCallback(() => {
+    setIsEntryMetadataSavePrompt(false);
+    setShowEntryMetadata(false);
+  }, []);
+
+  const handleSave = async (options: { readonly skipMetadataPrompt?: boolean } = {}) => {
     if (!title.trim()) {
       Alert.alert(t('entryTitleRequiredTitle'), t('entryCreateTitleRequiredMessage'));
       return;
@@ -421,6 +433,13 @@ export default function CreateEntryScreen() {
       Alert.alert(t('entryContentRequiredTitle'), t('entryContentRequiredMessage'));
       return;
     }
+    if (!options.skipMetadataPrompt && shouldPromptForEntryMetadataBeforeSave({ moods: manualMoods, tags: selectedTags })) {
+      setIsEntryMetadataSavePrompt(true);
+      setShowEntryMetadata(true);
+      return;
+    }
+
+    handleDismissEntryMetadata();
     setIsSaving(true);
     const newEntry: DiaryEntry = {
       id: generateUUID(),
@@ -541,7 +560,7 @@ export default function CreateEntryScreen() {
           />
 
           <AccentPillButton
-            onPress={handleSave}
+            onPress={() => { void handleSave(); }}
             disabled={isSaving}
             label={isSaving ? t('entrySaving') : t('entrySave')}
             accessibilityLabel={t('entrySaveA11y')}
@@ -707,7 +726,7 @@ export default function CreateEntryScreen() {
             icon="tune-variant"
             size="sm"
             surface="transparent"
-            onPress={() => setShowEntryMetadata(true)}
+            onPress={handleOpenEntryMetadata}
             accessibilityLabel={t('entryDetailsA11y')}
             testID="entry-metadata-button"
           />
@@ -820,7 +839,7 @@ export default function CreateEntryScreen() {
       />
       <EntryMetadataModal
         visible={showEntryMetadata}
-        onDismiss={() => setShowEntryMetadata(false)}
+        onDismiss={handleDismissEntryMetadata}
         moods={manualMoods}
         onChangeMoods={setManualMoods}
         selectedJournalIds={selectedJournalIds}
@@ -829,6 +848,10 @@ export default function CreateEntryScreen() {
         selectedTags={selectedTags}
         availableTags={availableTags}
         onChangeTags={setSelectedTags}
+        prompt={isEntryMetadataSavePrompt ? t('entryDetailsBeforeSavePrompt') : undefined}
+        confirmLabel={isEntryMetadataSavePrompt ? t('entrySave') : undefined}
+        confirmDisabled={isSaving}
+        onConfirm={isEntryMetadataSavePrompt ? () => { void handleSave({ skipMetadataPrompt: true }); } : undefined}
       />
       <PaywallModal
         visible={showPremiumModal}

@@ -1,7 +1,8 @@
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent } from '@testing-library/react-native';
 import type React from 'react';
 import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataModal';
 import type { Journal } from '@/features/journal/domain/Journal';
+import { renderWithProviders } from '@tests/helpers';
 
 jest.mock('@shared/components/Modal', () => {
   const { View } = jest.requireActual<typeof import('react-native')>('react-native');
@@ -84,7 +85,7 @@ describe('EntryMetadataModal', () => {
     const onChangeJournalIds = jest.fn();
     const onChangeTags = jest.fn();
 
-    const { getByLabelText, getByText } = await render(
+    const { getByLabelText, getByText } = await renderWithProviders(
       <EntryMetadataModal
         visible
         onDismiss={jest.fn()}
@@ -112,5 +113,35 @@ describe('EntryMetadataModal', () => {
     expect(onChangeMoods).toHaveBeenCalledWith(['happy']);
     expect(onChangeJournalIds).toHaveBeenCalledWith(['11111111-1111-4111-8111-111111111111']);
     expect(onChangeTags).toHaveBeenCalledWith(['reflection']);
+  });
+
+  it('can show a save confirmation prompt before creating an entry', async () => {
+    const onConfirm = jest.fn();
+
+    const { getByText } = await renderWithProviders(
+      <EntryMetadataModal
+        visible
+        onDismiss={jest.fn()}
+        moods={['neutral']}
+        onChangeMoods={jest.fn()}
+        selectedJournalIds={[]}
+        journals={journals}
+        onChangeJournalIds={jest.fn()}
+        selectedTags={[]}
+        availableTags={['reflection']}
+        onChangeTags={jest.fn()}
+        prompt="Add a mood, journal, or tags before saving."
+        confirmLabel="Save entry"
+        onConfirm={onConfirm}
+      />,
+    );
+
+    expect(getByText('Add a mood, journal, or tags before saving.')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(getByText('Save entry'));
+    });
+
+    expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 });
