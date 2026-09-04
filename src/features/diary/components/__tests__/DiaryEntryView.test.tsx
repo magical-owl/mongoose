@@ -70,6 +70,7 @@ describe('DiaryEntryView', () => {
         profile={profile}
         onPress={jest.fn()}
         onReflectionSummaryPress={jest.fn()}
+        onToggleMemoryReaction={jest.fn().mockResolvedValue(true)}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
@@ -88,6 +89,8 @@ describe('DiaryEntryView', () => {
     expect(avatarStyle.width).toBe(22);
     expect(moodStyle.flexDirection).toBe('row');
     expect(moodStyle.gap).toBe(4);
+    expect(getByTestId('entry-card-memory-reaction')).toBeTruthy();
+    expect(getByTestId('entry-card-footer').children[0]).toBe(getByTestId('entry-card-memory-reaction').parent);
     expect(getByTestId('entry-card-mood-calm')).toBeTruthy();
     expect(getByTestId('entry-card-tags-daily')).toBeTruthy();
     expect(getByText('Calm +2')).toBeTruthy();
@@ -110,6 +113,7 @@ describe('DiaryEntryView', () => {
         mode="detailed"
         profile={profile}
         onPress={jest.fn()}
+        onToggleMemoryReaction={jest.fn().mockResolvedValue(true)}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
@@ -252,6 +256,7 @@ describe('DiaryEntryView', () => {
         mode="feed"
         profile={profile}
         onPress={jest.fn()}
+        onToggleMemoryReaction={jest.fn().mockResolvedValue(true)}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
@@ -267,6 +272,8 @@ describe('DiaryEntryView', () => {
     expect(queryByTestId('entry-feed-author-avatar')).toBeNull();
     expect(getByTestId('entry-feed-timestamp')).toBeTruthy();
     expect(getByTestId('entry-feed-footer-meta')).toBeTruthy();
+    expect(getByTestId('entry-feed-memory-reaction')).toBeTruthy();
+    expect(getByTestId('entry-feed-footer-meta').children[0]).toBe(getByTestId('entry-feed-memory-reaction').parent);
     expect(getByTestId('entry-feed-tags-daily')).toBeTruthy();
     expect(getByText('Calm +2')).toBeTruthy();
     expect(getByText('#daily +2')).toBeTruthy();

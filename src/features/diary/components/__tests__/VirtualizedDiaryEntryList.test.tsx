@@ -95,4 +95,36 @@ describe('VirtualizedDiaryEntryList', () => {
 
     expect(getByText('No matching entries.')).toBeTruthy();
   });
+
+  it('passes memory reaction controls through in card and feed views', async () => {
+    const entry = createEntry('11111111-1111-4111-8111-111111111111', 'First', '2026-08-29');
+    const onToggleMemoryReaction = jest.fn().mockResolvedValue(true);
+
+    const cardView = await renderWithProviders(
+      <VirtualizedDiaryEntryList
+        {...baseProps}
+        entries={[entry]}
+        mode="detailed"
+        entryHierarchyMode="none"
+        onToggleMemoryReaction={onToggleMemoryReaction}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(cardView.getByTestId('entry-card-memory-reaction')).toBeTruthy();
+    cardView.unmount();
+
+    const feedView = await renderWithProviders(
+      <VirtualizedDiaryEntryList
+        {...baseProps}
+        entries={[entry]}
+        mode="feed"
+        entryHierarchyMode="none"
+        onToggleMemoryReaction={onToggleMemoryReaction}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(feedView.getByTestId('entry-feed-memory-reaction')).toBeTruthy();
+  });
 });

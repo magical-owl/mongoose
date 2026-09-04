@@ -318,7 +318,7 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
             onAddReflection={mode === 'timeline' || mode === 'feed' ? onAddReflection : undefined}
             onReflectionInputFocus={mode === 'timeline' || mode === 'feed' ? onReflectionInputFocus : undefined}
             onReflectionSummaryPress={mode === 'timeline' || mode === 'feed' ? undefined : onReflectionSummaryPress}
-            onToggleMemoryReaction={mode === 'timeline' ? onToggleMemoryReaction : undefined}
+            onToggleMemoryReaction={onToggleMemoryReaction}
           />
         </View>
       );

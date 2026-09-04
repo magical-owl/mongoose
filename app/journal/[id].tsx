@@ -640,7 +640,7 @@ export default function JournalEntriesScreen() {
             onAddReflection={viewMode === "timeline" || viewMode === "feed" ? handleAddReflection : undefined}
             onReflectionInputFocus={viewMode === "timeline" || viewMode === "feed" ? handleReflectionInputFocus : undefined}
             onReflectionSummaryPress={viewMode === "timeline" || viewMode === "feed" ? undefined : handleReflectionSummaryPress}
-            onToggleMemoryReaction={viewMode === "timeline" ? handleToggleMemoryReaction : undefined}
+            onToggleMemoryReaction={handleToggleMemoryReaction}
             onPressJournalSuggestion={(journal) => {
               router.push({ pathname: "/journal/[id]", params: { id: journal.id, title: journal.title } });
             }}

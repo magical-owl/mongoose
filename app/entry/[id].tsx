@@ -54,6 +54,7 @@ import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/Dia
 import { EntryReflectionsModal } from '@/features/diary/components/EntryReflectionsModal';
 import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataModal';
 import { ReflectionSummaryButton } from '@/features/diary/components/ReflectionSummaryButton';
+import { MemoryReactionButton } from '@/features/diary/components/MemoryReactionButton';
 import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
 import { TagBadgeList } from '@/features/diary/components/TagBadgeList';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
@@ -69,6 +70,7 @@ import { APP_IDENTITY } from '@/config/appIdentity';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 import { getStickerBodyPreviewBottom } from '@/features/diary/domain/StickerLayout';
 import { DIARY_BODY_DEFAULT_FONT_FAMILY, normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
+import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import { resolveAppFontFamilyForWebContent } from '@/theme/fonts';
 import {
   DiaryEntryEditorFooter,
@@ -135,7 +137,7 @@ export default function EntryDetailScreen() {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const t = useTranslation();
-  const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection } = useDiary();
+  const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection, toggleMemoryReaction } = useDiary();
   const { journals } = useJournals();
   const { profile } = useProfileForm();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
@@ -186,6 +188,7 @@ export default function EntryDetailScreen() {
   const [showPaperBackgroundPicker, setShowPaperBackgroundPicker] = useState(false);
   const [showFormattingTools, setShowFormattingTools] = useState(false);
   const [showReflections, setShowReflections] = useState(false);
+  const [showMemoryReactionPicker, setShowMemoryReactionPicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isStickerDragging, setIsStickerDragging] = useState(false);
@@ -503,6 +506,19 @@ export default function EntryDetailScreen() {
     ]);
   };
 
+  const handleToggleMemoryReaction = useCallback(
+    async (reaction: MemoryReaction) => {
+      if (!entry) return;
+      const result = await toggleMemoryReaction(entry.id, reaction);
+      if (result.success) {
+        setEntry(result.data);
+      } else {
+        Alert.alert(t('memoryReactionNotSavedTitle'), result.error.message);
+      }
+    },
+    [entry, toggleMemoryReaction, t],
+  );
+
   const availableTags = useMemo(() => normalizeDiaryTags(entries.flatMap((item) => item.tags)), [entries]);
 
   if (!entry) {
@@ -540,6 +556,16 @@ export default function EntryDetailScreen() {
   const viewDateTime = formatFriendlyTimestamp(entry.createdAt, timeFormat, friendlyTimestampLabels);
   const renderViewFooterMoodAndTags = () => (
     <View style={styles.viewFooterMeta} testID="entry-view-footer-meta">
+      <MemoryReactionButton
+        reactions={entry.memoryReactions}
+        visible={showMemoryReactionPicker}
+        onOpen={() => setShowMemoryReactionPicker(true)}
+        onDismiss={() => setShowMemoryReactionPicker(false)}
+        onToggleReaction={handleToggleMemoryReaction}
+        compact
+        style={styles.viewFooterReactionButton}
+        testID="entry-view-memory-reaction"
+      />
       {viewMoods.length > 0 ? (
         <MoodBadgeList
           moods={viewMoods}
@@ -1214,6 +1240,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   viewFooterMeta: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  viewFooterReactionButton: { flexShrink: 0 },
   viewFooterMoodBadges: { maxWidth: 116 },
   viewFooterTagBadges: { flex: 1, maxWidth: '100%' },
   viewFooterButton: {

@@ -111,7 +111,7 @@ export function DiaryEntryView({
   const feedEntryDateTime = entryTime;
   const isFeedMode = mode === 'feed';
   const showReflectionSummaryAction = mode !== 'timeline' && Boolean(onReflectionSummaryPress);
-  const showMemoryReactionControl = mode === 'timeline' && Boolean(onToggleMemoryReaction);
+  const showMemoryReactionControl = Boolean(onToggleMemoryReaction);
   const reflectionSummaryLabel = entry.reflections.length > 0 ? reflectionCountLabel(entry.reflections.length, t) : t('reflectOnThis');
   const editorCanvasWidth = Math.max(1, windowWidth - theme.spacing.lg * 2);
   const measuredFeedCanvasWidth = feedCanvasWidth > 0 ? feedCanvasWidth : editorCanvasWidth;
@@ -137,6 +137,20 @@ export function DiaryEntryView({
         )),
       )
     : 0;
+  const renderMemoryReactionButton = (testID: string, style: StyleProp<ViewStyle>) => (
+    <MemoryReactionButton
+      reactions={entry.memoryReactions}
+      visible={isMemoryReactionPickerVisible}
+      onOpen={() => setIsMemoryReactionPickerVisible(true)}
+      onDismiss={() => setIsMemoryReactionPickerVisible(false)}
+      onToggleReaction={async (reaction) => {
+        await onToggleMemoryReaction?.(entry.id, reaction);
+      }}
+      compact
+      style={style}
+      testID={testID}
+    />
+  );
 
   const hasInlineReflectionContent = entry.reflections.length > 0 || Boolean(onAddReflection);
   const inlineReflectionSection = hasInlineReflectionContent ? (
@@ -148,11 +162,6 @@ export function DiaryEntryView({
       ]}
       testID={isFeedMode ? 'entry-feed-reflection-panel' : 'entry-timeline-reflection-section'}
     >
-      {isFeedMode ? (
-        <Text preset="caption" color="textSecondary" style={styles.feedSectionLabel}>
-          {t('reflections')}
-        </Text>
-      ) : null}
       {entry.reflections.length > 0 ? (
         <View
           style={[
@@ -260,7 +269,7 @@ export function DiaryEntryView({
         {feedEntryDateTime}
       </Text>
     ) : null;
-    const feedFooterMeta = hasMood || entry.tags.length > 0 || showReflectionSummaryAction ? (
+    const feedFooterMeta = showMemoryReactionControl || hasMood || entry.tags.length > 0 || showReflectionSummaryAction ? (
       <View
         style={[
           styles.feedFooterMetaRow,
@@ -268,6 +277,7 @@ export function DiaryEntryView({
         ]}
         testID="entry-feed-footer-meta"
       >
+        {showMemoryReactionControl ? renderMemoryReactionButton('entry-feed-memory-reaction', styles.feedReactionButton) : null}
         {hasMood ? (
           <MoodBadgeList
             moods={entryMoods}
@@ -420,20 +430,7 @@ export function DiaryEntryView({
                 <Text style={[styles.timelineContent, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
                 {(showMemoryReactionControl || hasMood || entry.tags.length > 0) && (
                   <View style={styles.timelineMetaRow} testID="entry-timeline-meta-row">
-                    {showMemoryReactionControl ? (
-                      <MemoryReactionButton
-                        reactions={entry.memoryReactions}
-                        visible={isMemoryReactionPickerVisible}
-                        onOpen={() => setIsMemoryReactionPickerVisible(true)}
-                        onDismiss={() => setIsMemoryReactionPickerVisible(false)}
-                        onToggleReaction={async (reaction) => {
-                          await onToggleMemoryReaction?.(entry.id, reaction);
-                        }}
-                        compact
-                        style={styles.timelineReactionButton}
-                        testID="entry-timeline-memory-reaction"
-                      />
-                    ) : null}
+                    {showMemoryReactionControl ? renderMemoryReactionButton('entry-timeline-memory-reaction', styles.timelineReactionButton) : null}
                     {hasMood ? (
                       <MoodBadgeList
                         moods={entryMoods}
@@ -466,8 +463,9 @@ export function DiaryEntryView({
   }
 
   const cardDate = formatCardDay(entry.date);
-  const cardFooterContent = hasMood || entry.tags.length > 0 || showReflectionSummaryAction ? (
-    <View style={styles.cardFooter}>
+  const cardFooterContent = showMemoryReactionControl || hasMood || entry.tags.length > 0 || showReflectionSummaryAction ? (
+    <View style={styles.cardFooter} testID="entry-card-footer">
+      {showMemoryReactionControl ? renderMemoryReactionButton('entry-card-memory-reaction', styles.cardFooterReactionButton) : null}
       {hasMood ? (
         <MoodBadgeList
           moods={entryMoods}
@@ -538,7 +536,7 @@ export function DiaryEntryView({
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: 0, marginBottom: 0, overflow: 'hidden' },
+  card: { borderWidth: 1, borderRadius: 0, marginBottom: 0 },
   cardInner: { flexDirection: 'row' },
   cardRail: { width: 4 },
   cardDateColumn: { width: 66, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
@@ -559,6 +557,7 @@ const styles = StyleSheet.create({
   cardCoverPhoto: { width: 58, height: 58, borderRadius: 6 },
   cardHeroCoverPhoto: { width: '100%', height: 138, borderRadius: 0 },
   cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  cardFooterReactionButton: { flexShrink: 0 },
   cardFooterMoodBadges: { maxWidth: 140 },
   cardFooterTagBadges: { flex: 1, maxWidth: '100%' },
   feedCard: { paddingVertical: 0, marginBottom: 0 },
@@ -576,10 +575,10 @@ const styles = StyleSheet.create({
   feedContentPanelMerged: { borderWidth: 0, borderRadius: 0, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 20 },
   feedInlineHeader: { paddingHorizontal: 20 },
   feedFooterMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 20, paddingVertical: 10 },
+  feedReactionButton: { flexShrink: 0 },
   feedMoodBadges: { maxWidth: '100%' },
   feedTagBadges: { flex: 1, maxWidth: '100%' },
   feedDateTime: { flexShrink: 0, fontWeight: '700', marginTop: 2 },
-  feedSectionLabel: { marginBottom: 8, fontWeight: '800', textTransform: 'uppercase' },
   feedReflectionPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 0, marginTop: 0, marginHorizontal: 0, padding: 12 },
   feedInlineReflections: { marginTop: 0, marginLeft: 0, paddingLeft: 0, borderLeftWidth: 0 },
   feedReflectionInputBox: { marginLeft: 0 },
