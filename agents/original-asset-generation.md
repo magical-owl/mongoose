@@ -58,6 +58,40 @@ Review owner:
 
 For multi-asset sets, define shared rules once and list each asset ID separately. Keep subject prompts generic and concrete.
 
+## Right-Sized Output Targets
+
+Do not overestimate image generation size. Generate each asset only large enough for its actual in-app purpose, with a modest scale buffer for high-density screens. Oversized source files slow builds, increase app size, and can make tiny UI assets look over-detailed or muddy after downscaling.
+
+Use these defaults unless a specific screen needs more:
+
+- Stickers: transparent square PNG, `512x512` default. Use `768x768` only for stickers designed to be placed very large on the diary canvas. Avoid `1024x1024` or larger for ordinary stickers.
+- Memory reaction/emote icons: transparent square PNG, `256x256` default. Use `384x384` only if the icon has a larger button state or needs extra edge cleanup. Keep the silhouette bold and simple.
+- Pattern background tiles: transparent or low-contrast tile PNG, `768x768` default. Use `1024x1024` only when the repeat needs larger spacing. Test the tile as a 2-by-2 repeat before approving it.
+- Diary paper backgrounds: texture PNG, `1024x1024` default unless the implementation requires a different repeat/crop behavior. Keep texture subtle and compressible.
+- Journal cover images: wide opaque PNG, `1280x720` default for app use. Use `1600x900` when the cover is shown full-width on large devices. Avoid larger exports unless the asset is also used for marketing.
+- App icon and splash assets: follow platform-required dimensions exactly. Do not invent larger drafts beyond the required export target.
+
+Every generated asset packet must include both `Dimensions` and `Intended display size`. If the generated size is larger than these defaults, document why.
+
+## Current Art Direction Layer
+
+Current app art direction: soft low-poly journal style.
+
+This layer is deliberately separate from the permanent originality and review rules. If the product theme changes, replace this section and leave the rest of the asset safety process intact.
+
+Apply this layer to new or regenerated bundled illustration assets unless the human owner explicitly selects another direction:
+
+- Use simplified geometric planes, faceted silhouettes, and soft polygonal color blocks.
+- Let low-poly construction define the structure: strong readable forms, angular light planes, and simple faceted shadows.
+- Let analog journal finishing define the surface: warm soft-charcoal outlines where useful, gentle line-weight variation, dusty desaturated pastels, subtle paper or colored-pencil grain, and tiny imperfect highlights.
+- Use low-poly lighting: a few matte angular shadow and highlight facets instead of glossy digital gradients.
+- Keep the mood cozy, quiet, personal, and diary-friendly, not game-like, sci-fi, corporate, or mascot-heavy.
+- Use restrained, desaturated palettes that work with light and dark app themes: one dominant pastel, one supporting pastel, one darker earthy accent, and neutral cream where needed.
+- For stickers and reaction icons, keep one centered subject with enough transparent breathing room and a clean silhouette.
+- For journal covers, use simple generic scenes with broad low-poly shapes and safe overlay areas for title text.
+- For pattern backgrounds, use sparse low-poly motifs with low contrast and seamless repeat behavior.
+- Avoid describing the style through named artists, studios, franchises, games, brands, marketplace sticker packs, or living illustrators.
+
 ## Visual DNA
 
 Use a cozy analog-journal identity:
@@ -66,14 +100,13 @@ Use a cozy analog-journal identity:
 - Strong, simple silhouettes that remain readable at small sizes.
 - Compact proportions over tall or highly detailed compositions.
 - One charmingly exaggerated feature per subject when it helps personality.
-- Warm soft-charcoal primary outlines, with gentle line-weight variation.
-- A subtle secondary sketch line on selected contour portions only. Keep it irregular, incomplete, and offset.
+- Prefer shape-first low-poly construction. Use outlines to reinforce the silhouette and cozy journal feel, not as the main structure.
+- If outlines are used, keep them warm and soft with gentle line-weight variation; an incomplete secondary sketch line may appear on selected contour portions only. Keep it irregular, incomplete, and offset.
 - Dusty, desaturated pastels: one dominant pastel, one supporting pastel, one darker earthy accent, and neutral cream where needed.
-- Subtle handmade paper or colored-pencil grain with small irregular coverage changes. Avoid visible repeated stroke lines or banding.
-- No conventional digital gradients. Use tiny hand-offset shadows on selected edges.
-- Tiny imperfect chalk or pencil highlights where useful.
+- Subtle paper grain or matte surface texture only. Avoid visible repeated stroke lines, horizontal bands, noisy crayon streaks, or over-texturing.
+- No conventional digital gradients. Use simple angular low-poly shadow facets, tiny hand-offset shadows on selected edges, and selected chalk/pencil-like highlights.
 - A subtle storybook tilt when appropriate.
-- One tiny imperfect four-point hand-drawn spark when compositionally appropriate. Keep it secondary and vary placement across assets.
+- One small decorative spark may appear when compositionally appropriate. Keep it secondary and vary placement across assets.
 
 ## Controlled Imperfection
 
@@ -204,7 +237,7 @@ Status: concept draft, not release-cleared final art
 
 Use chunky, softly squashed, pillowy forms with controlled asymmetry. Prioritize a strong, compact silhouette readable at small size. Add one charming exaggerated feature if it helps the subject.
 
-Use warm soft-charcoal outlines with subtle irregular line weight and an incomplete secondary sketch line on selected contour portions. Use dusty desaturated pastels, subtle handmade grain, tiny hand-offset shadows, and imperfect chalk/pencil highlights. Include one tiny imperfect four-point spark only if compositionally appropriate.
+Apply the current art direction layer from this guide. For the current soft low-poly journal theme, use faceted geometric forms, matte polygonal color planes, sparse angular highlights/shadows, warm soft-charcoal silhouette outlines where useful, dusty desaturated pastels, subtle paper or colored-pencil grain, and strong readable silhouettes. Avoid thin line-art, noisy crayon texture, visible repeated bands, heavy sketch marks, and named artist/studio/franchise style references.
 
 Keep the mood cozy, quiet, nostalgic, personal, slightly playful, handmade, and warm without becoming childish.
 

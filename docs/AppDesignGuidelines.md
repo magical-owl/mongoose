@@ -48,6 +48,24 @@ Implementation rules:
 - Do not hardcode colors in app or feature components unless the value is an external asset color or a temporary migration value with a clear reason.
 - Do not introduce NativeWind without an explicit architecture decision. If adopted later, define token mapping, migration scope, lint rules, and coexistence rules first.
 
+## Current Art Direction
+
+Current theme: soft low-poly journal style.
+
+This section is intentionally isolated so the app can change visual direction later without rewriting the full asset policy. If the art direction changes, update this section first, then regenerate or review affected assets against the new direction.
+
+Use soft low-poly journal art direction for new or regenerated bundled illustration assets:
+
+- Stickers, memory reaction icons, journal cover images, pattern backgrounds, diary paper art, app icon drafts, and splash drafts should use simplified geometric planes, faceted forms, and soft polygonal color blocks.
+- Low-poly construction controls the structure: bold silhouettes, readable shapes, angular light planes, and simple faceted shadows.
+- Analog journal finishing controls the surface: warm soft-charcoal outlines where needed, gentle line-weight variation, dusty desaturated pastels, subtle paper or colored-pencil grain, and tiny imperfect highlights.
+- Use one dominant pastel, one supporting pastel, one darker earthy accent, and neutral cream where useful.
+- Avoid glossy gradients, noisy crayon strokes, visible repeated bands, heavy sketch outlines, and thin icon-like line art.
+- Keep details sparse enough to remain readable at small mobile sizes.
+- Generate bundled assets at the smallest source size that stays crisp at their intended in-app scale. Stickers and reaction icons should not be full-screen sized assets; reserve large exports for journal covers, splash, and platform-required icon files.
+- A subtle storybook tilt and one tiny imperfect four-point spark may be used when compositionally appropriate.
+- Do not use named artist, studio, franchise, brand, sticker-pack, or game references to define the style. Describe medium and structure instead: faceted, geometric, soft matte color, charcoal outline, dusty pastel palette, subtle paper grain, cozy diary tone.
+
 ## Screen-Level Patterns
 
 ### Headers
