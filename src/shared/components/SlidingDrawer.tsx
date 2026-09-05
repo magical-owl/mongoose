@@ -24,6 +24,7 @@ import { Avatar } from './Avatar';
 import { AppPatternBackground } from './AppPatternBackground';
 import { IconCircleButton } from './IconCircleButton';
 import { Text } from './Text';
+import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 const DRAWER_OPEN_DURATION_MS = 220;
 const DRAWER_CLOSE_DURATION_MS = 180;
@@ -66,6 +67,7 @@ export function SlidingDrawer({
   const [mounted, setMounted] = useState(visible);
   const progress = useSharedValue(0);
   const dragStart = useRef(0);
+  const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
 
   useEffect(() => {
     cancelAnimation(progress);
@@ -172,7 +174,7 @@ export function SlidingDrawer({
                     styles.profileButton,
                     onProfilePress && [
                       styles.profileButtonInteractive,
-                      { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                      { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border },
                     ],
                   ]}
                   testID={testID ? `${testID}-profile` : undefined}

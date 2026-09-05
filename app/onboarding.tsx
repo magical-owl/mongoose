@@ -15,6 +15,7 @@ import { useAppStore, type FontScale, type TimeFormat } from '@/stores/useAppSto
 import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
 import { accentColors, type AccentColor } from '@/theme/accents';
 import { PATTERN_BACKGROUND_VARIANTS, type PatternBackgroundVariant } from '@/theme/patternBackgrounds';
+import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
@@ -80,6 +81,7 @@ export default function OnboardingScreen(): React.JSX.Element {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const t = useTranslation();
+  const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
   const [step, setStep] = useState<OnboardingStep>(0);
   const [profileName, setProfileName] = useState('');
   const [profileAvatarUri, setProfileAvatarUri] = useState<string | undefined>(undefined);
@@ -244,7 +246,7 @@ export default function OnboardingScreen(): React.JSX.Element {
                       styles.languageCard,
                       {
                         borderColor: selected ? theme.colors.tint : theme.colors.border,
-                        backgroundColor: selected ? `${theme.colors.tint}18` : theme.colors.surface,
+                        backgroundColor: selected ? `${theme.colors.tint}18` : translucentSurfaceColor,
                       },
                     ]}
                     accessibilityRole="radio"
@@ -270,7 +272,7 @@ export default function OnboardingScreen(): React.JSX.Element {
               {t('onboardingProfileSubtitle')}
             </Text>
 
-            <View style={[styles.profilePanel, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.profilePanel, { borderColor: theme.colors.border, backgroundColor: translucentSurfaceColor }]}>
               <TouchableOpacity
                 onPress={() => { void handleChooseProfilePhoto(); }}
                 activeOpacity={0.72}
@@ -323,7 +325,7 @@ export default function OnboardingScreen(): React.JSX.Element {
                       styles.optionCard,
                       {
                         borderColor: selected ? theme.colors.tint : theme.colors.border,
-                        backgroundColor: selected ? `${theme.colors.tint}18` : theme.colors.surface,
+                        backgroundColor: selected ? `${theme.colors.tint}18` : translucentSurfaceColor,
                       },
                     ]}
                     accessibilityRole="radio"
@@ -348,7 +350,7 @@ export default function OnboardingScreen(): React.JSX.Element {
                       styles.colorCard,
                       {
                         borderColor: selected ? theme.colors.tint : theme.colors.border,
-                        backgroundColor: selected ? `${theme.colors.tint}18` : theme.colors.surface,
+                        backgroundColor: selected ? `${theme.colors.tint}18` : translucentSurfaceColor,
                       },
                     ]}
                     accessibilityRole="radio"
@@ -376,7 +378,7 @@ export default function OnboardingScreen(): React.JSX.Element {
                       styles.accentCard,
                       {
                         borderColor: selected ? theme.colors.text : theme.colors.border,
-                        backgroundColor: selected ? `${theme.colors.tint}18` : theme.colors.surface,
+                        backgroundColor: selected ? `${theme.colors.tint}18` : translucentSurfaceColor,
                       },
                     ]}
                     accessibilityRole="radio"
@@ -406,7 +408,7 @@ export default function OnboardingScreen(): React.JSX.Element {
                       styles.backgroundThemeCard,
                       {
                         borderColor: selected ? theme.colors.tint : theme.colors.border,
-                        backgroundColor: selected ? `${theme.colors.tint}18` : theme.colors.surface,
+                        backgroundColor: selected ? `${theme.colors.tint}18` : translucentSurfaceColor,
                       },
                     ]}
                     accessibilityRole="radio"
@@ -435,7 +437,7 @@ export default function OnboardingScreen(): React.JSX.Element {
                       styles.optionCard,
                       {
                         borderColor: selected ? theme.colors.tint : theme.colors.border,
-                        backgroundColor: selected ? `${theme.colors.tint}18` : theme.colors.surface,
+                        backgroundColor: selected ? `${theme.colors.tint}18` : translucentSurfaceColor,
                       },
                     ]}
                     accessibilityRole="radio"
@@ -460,7 +462,7 @@ export default function OnboardingScreen(): React.JSX.Element {
                       styles.optionCard,
                       {
                         borderColor: selected ? theme.colors.tint : theme.colors.border,
-                        backgroundColor: selected ? `${theme.colors.tint}18` : theme.colors.surface,
+                        backgroundColor: selected ? `${theme.colors.tint}18` : translucentSurfaceColor,
                       },
                     ]}
                     accessibilityRole="radio"
@@ -489,7 +491,7 @@ export default function OnboardingScreen(): React.JSX.Element {
               {t('onboardingReadySubtitle')}
             </Text>
 
-            <View style={[styles.readyPanel, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.readyPanel, { borderColor: theme.colors.border, backgroundColor: translucentSurfaceColor }]}>
               {READY_POINTS.map((point, index) => (
                 <View
                   key={point.title}

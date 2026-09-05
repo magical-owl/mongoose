@@ -29,6 +29,7 @@ import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerServ
 import { diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import type { CreateJournalInput } from '@/features/journal/services/JournalService';
 import type { JournalColumnCount, SyntheticJournalId } from '@/stores/useAppStore';
+import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
 const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -68,6 +69,7 @@ export default function JournalsScreen(): React.JSX.Element {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const t = useTranslation();
+  const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
   const { entries, refresh: refreshEntries } = useDiary();
   const { journals, refresh: refreshJournals, createJournal, saveJournal, deleteJournal } = useJournals();
   const { profile } = useProfileForm();
@@ -495,7 +497,7 @@ export default function JournalsScreen(): React.JSX.Element {
       >
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <SectionLabel style={styles.drawerSectionLabel}>{t('homeHeaderSearch')}</SectionLabel>
-              <View style={[styles.drawerSearchBar, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+              <View style={[styles.drawerSearchBar, { borderColor: theme.colors.border, backgroundColor: translucentSurfaceColor }]}>
                 <Ionicons name="search-outline" size={18} color={theme.colors.textSecondary} />
                 <TextInput
                   value={journalSearchQuery}
@@ -584,7 +586,7 @@ export default function JournalsScreen(): React.JSX.Element {
             >
               <TouchableOpacity
                 onPress={handleAssignGalleryCover}
-                style={[styles.coverPickerGalleryButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+                style={[styles.coverPickerGalleryButton, { borderColor: theme.colors.border, backgroundColor: translucentSurfaceColor }]}
                 accessibilityRole="button"
                 accessibilityLabel={t('journalSetCoverFromGalleryA11y')}
                 disabled={Boolean(assigningCoverJournalId)}
@@ -607,7 +609,7 @@ export default function JournalsScreen(): React.JSX.Element {
                         styles.coverPickerOption,
                         {
                           borderColor: selected ? theme.colors.tint : theme.colors.border,
-                          backgroundColor: theme.colors.surface,
+                          backgroundColor: translucentSurfaceColor,
                         },
                       ]}
                       accessibilityRole="radio"

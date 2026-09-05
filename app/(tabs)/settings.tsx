@@ -44,6 +44,7 @@ import { accentColors, type AccentColor } from '@/theme/accents';
 import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
 import { appFontOptions, getAppFontLabel, normalizeAppFontFamily, resolveAppFontFamily } from '@/theme/fonts';
 import { PATTERN_BACKGROUND_VARIANTS, type PatternBackgroundVariant } from '@/theme/patternBackgrounds';
+import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 import { APP_LANGUAGES, premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { FREE_PLAN_LIMITS, getLocalDateKey, getNextLocalPlanResetDate } from '@/features/subscription/services/PlanLimitService';
@@ -148,6 +149,7 @@ export default function SettingsScreen() {
   const exhaustedAtCandidates = [entryLimitExhaustedAt, stickerLimitExhaustedAt]
     .filter((value): value is string => Boolean(value))
     .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+  const optionSurfaceColor = getTranslucentSurfaceColor(theme);
   const limitExhaustedAt = exhaustedAtCandidates[0];
   const freeLimitExhausted = !isPro && (
     createdTodayCount >= FREE_PLAN_LIMITS.entriesPerDay
@@ -488,7 +490,7 @@ export default function SettingsScreen() {
           {settingsSections.map((section) => (
             <View key={section.id} style={styles.optionSection}>
               <SectionLabel style={styles.optionSectionTitle}>{section.title}</SectionLabel>
-              <View style={[styles.optionGroup, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+              <View style={[styles.optionGroup, { borderColor: theme.colors.border, backgroundColor: optionSurfaceColor }]}>
                 {section.options.map((option, index) => (
                   <TouchableOpacity
                     key={option.id}

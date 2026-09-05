@@ -19,6 +19,7 @@ import { useProfileForm } from "@/features/profile/hooks/useProfileForm";
 import { resolveImportedProfilePhotoUri } from "@/features/profile/services/ProfilePhotoService";
 import { useAppStore } from "@/stores/useAppStore";
 import { insightsMetricUnitLabel, manualMoodLabel, type InsightsMetricUnit, type TranslationKey, useTranslation } from "@/localization/i18n";
+import { getTranslucentSurfaceColor } from "@/theme/surfaces";
 
 type InsightsRange = "year" | "month" | "week";
 type JournalTimeBucket = "morning" | "afternoon" | "evening" | "night";
@@ -265,6 +266,7 @@ export default function InsightsScreen() {
     { label: "insightsNumberWritingDays", unit: "writingDay", value: stats.writingDayTotal, tone: theme.colors.tint },
     { label: "insightsNumberReflections", unit: "reflection", value: stats.reflectionTotal, tone: theme.colors.tint },
   ];
+  const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
 
   return (
     <AppPatternBackground style={styles.container} testID="insights-pattern-background">
@@ -311,7 +313,7 @@ export default function InsightsScreen() {
             <Ionicons name="refresh-outline" size={22} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
-        <View style={[styles.rangePills, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        <View style={[styles.rangePills, { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border }]}>
           {INSIGHTS_RANGES.map((value) => {
             const selected = value === range;
             return (
@@ -347,7 +349,7 @@ export default function InsightsScreen() {
               style={[
                 styles.numberCard,
                 isFull ? styles.numberCardFull : styles.numberCardHalf,
-                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border },
               ]}
             >
               <View style={styles.numberCardLabelColumn}>
@@ -380,7 +382,7 @@ export default function InsightsScreen() {
         </View>
 
         <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>{t("insightsMoodSection")}</Text>
-        <View style={[styles.card, styles.compactCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        <View style={[styles.card, styles.compactCard, { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border }]}>
           {moodTotal > 0 ? (
             <>
               <View style={[styles.moodBar, { backgroundColor: theme.colors.border }]}>
@@ -402,7 +404,7 @@ export default function InsightsScreen() {
         </View>
 
         <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>{t("insightsTagSection")}</Text>
-        <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        <View style={[styles.card, { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border }]}>
           {stats.mostUsedTags.length > 0 ? (
             <View style={styles.tagList}>
               {stats.mostUsedTags.map(([tag, count]) => (
@@ -420,7 +422,7 @@ export default function InsightsScreen() {
         </View>
 
         <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>{t("insightsActivitySection")}</Text>
-        <View style={[styles.card, styles.compactCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        <View style={[styles.card, styles.compactCard, { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border }]}>
           <View style={styles.chart}>
             {stats.activityBuckets.map((day, index) => (
               <View key={`${day.label}-${index}`} style={styles.barColumn}>
@@ -438,7 +440,7 @@ export default function InsightsScreen() {
         </View>
 
         <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>{t("insightsRhythmSection")}</Text>
-        <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        <View style={[styles.card, { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border }]}>
           {stats.usualJournalTime ? (
             <>
               <View style={styles.usualTimeRow}>
@@ -460,7 +462,7 @@ export default function InsightsScreen() {
         </View>
 
         <Text preset="caption" color="textSecondary" style={[styles.sectionLabel, styles.stickerSectionLabel]}>{t("insightsStickerSection")}</Text>
-        <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        <View style={[styles.card, { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border }]}>
           {stats.mostUsedStickers.length > 0 ? (
             <View style={styles.stickerList}>
               {stats.mostUsedStickers.map((sticker) => (

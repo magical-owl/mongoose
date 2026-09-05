@@ -12,6 +12,7 @@ import { SegmentedControl } from '@shared/components/SegmentedControl';
 import { Text } from '@shared/components/Text';
 import type { EntryHierarchyMode, HomeViewMode } from '@/stores/useAppStore';
 import { homeViewModeLabel, useTranslation } from '@/localization/i18n';
+import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 import {
   JournalEntryListDrawer,
@@ -111,6 +112,7 @@ export function JournalEntryListChrome({
 }: JournalEntryListChromeProps): React.JSX.Element {
   const theme = useTheme();
   const t = useTranslation();
+  const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
 
   return (
     <>
@@ -204,7 +206,7 @@ export function JournalEntryListChrome({
             containerStyle={[
               styles.viewModePill,
               {
-                backgroundColor: hasJournalCover ? 'rgba(0, 0, 0, 0.56)' : theme.colors.surface,
+                backgroundColor: hasJournalCover ? 'rgba(0, 0, 0, 0.56)' : translucentSurfaceColor,
                 borderColor: hasJournalCover ? theme.colors.stickerControlText + '40' : theme.colors.border,
               },
             ]}

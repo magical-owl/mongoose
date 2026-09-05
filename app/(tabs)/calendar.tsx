@@ -31,6 +31,7 @@ import { getEntryManualMoods, type ManualMood } from '@/features/diary/domain/Di
 import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import { useTranslation } from '@/localization/i18n';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
+import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 const CALENDAR_COLLAPSED_HEIGHT = 0;
 const CALENDAR_HEADER_TOP_PADDING = 16;
@@ -187,12 +188,13 @@ export default function CalendarScreen() {
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
+  const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
 
   const calendarCard = (
     <View
       style={[
         styles.calendarCard,
-        { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+        { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border },
       ]}
       onTouchStart={(event) => { touchStartX.current = event.nativeEvent.pageX; }}
       onTouchEnd={(event) => handleSwipe(event.nativeEvent.pageX)}
@@ -345,7 +347,7 @@ export default function CalendarScreen() {
         showsVerticalScrollIndicator={false}
       >
         {selectedDayEntries.length === 0 ? (
-          <View style={[styles.emptyState, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <View style={[styles.emptyState, { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border }]}>
             <Ionicons name="book-outline" size={28} color={theme.colors.textSecondary} />
             <Text preset="bodySmall" color="textSecondary" style={styles.emptyStateText}>{t('calendarNoEntriesOnDate')}</Text>
           </View>

@@ -22,6 +22,7 @@ import type { Profile } from '@/features/profile/domain/Profile';
 import type { Journal } from '@/features/journal/domain/Journal';
 import { JournalSuggestionsFooter } from '@/features/journal/components/JournalSuggestionsFooter';
 import { useTranslation } from '@/localization/i18n';
+import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 import { DiaryEntryView, type DiaryEntryViewMode } from './DiaryEntryView';
 
@@ -201,6 +202,7 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
   ) => {
     const theme = useTheme();
     const t = useTranslation();
+    const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
     const effectiveEntryHierarchyMode = mode === 'timeline' ? entryHierarchyMode : 'none';
     const groupedEntries = useMemo(() => groupEntriesByDate(entries), [entries]);
     const rows = useMemo(
@@ -215,7 +217,7 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
     );
 
     const renderEmptyEntries = useCallback(() => (
-      <View style={[styles.emptyPanel, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+      <View style={[styles.emptyPanel, { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border }]}>
         <View style={[styles.emptyIconHalo, { backgroundColor: theme.colors.tint + '16' }]}>
           <Ionicons name={searchQuery.trim() ? 'search-outline' : 'pencil-outline'} size={26} color={theme.colors.tint} />
         </View>
@@ -226,7 +228,7 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
           {searchQuery.trim() ? t('homeSearchPlaceholder') : t('homeNoEntriesYet')}
         </Text>
       </View>
-    ), [searchQuery, t, theme.colors.border, theme.colors.card, theme.colors.textSecondary, theme.colors.tint]);
+    ), [searchQuery, t, theme.colors.border, theme.colors.textSecondary, theme.colors.tint, translucentSurfaceColor]);
 
     const renderFooter = useCallback(() => (
       !hasMoreEntries && totalEntryCount > 0 ? (

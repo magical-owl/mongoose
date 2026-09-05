@@ -10,6 +10,7 @@ import { SlidingDrawer } from '@shared/components/SlidingDrawer';
 import { Text } from '@shared/components/Text';
 import type { EntryHierarchyMode } from '@/stores/useAppStore';
 import { homeFilterAllLabel, homeFilterKindLabel, manualMoodLabel, useTranslation } from '@/localization/i18n';
+import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 const HIERARCHY_MODES: EntryHierarchyMode[] = ['year-month-date', 'month-date', 'date', 'none'];
 
@@ -107,6 +108,7 @@ export function JournalEntryListDrawer({
 }: JournalEntryListDrawerProps): React.JSX.Element {
   const theme = useTheme();
   const t = useTranslation();
+  const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
 
   const renderFilterOptions = (kind: JournalEntryFilterKind, value: string) => (
     <View style={[styles.inlineOptions, { borderBottomColor: theme.colors.border }]}>
@@ -161,7 +163,7 @@ export function JournalEntryListDrawer({
     >
       <ScrollView showsVerticalScrollIndicator={false}>
         <SectionLabel style={styles.drawerSectionLabel}>{t('homeHeaderSearch')}</SectionLabel>
-        <View style={[styles.drawerSearchBar, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+        <View style={[styles.drawerSearchBar, { borderColor: theme.colors.border, backgroundColor: translucentSurfaceColor }]}>
           <Ionicons name="search-outline" size={18} color={theme.colors.textSecondary} />
           <TextInput
             value={search}

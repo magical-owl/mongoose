@@ -23,6 +23,7 @@ import { useAppStore } from '@/stores/useAppStore';
 import { useTranslation } from '@/localization/i18n';
 import { formatDisplayDate } from '@/shared/utils/dateFormat';
 import { stripHtml } from '@/shared/utils/html';
+import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 function getEntryDisplayPhoto(entry: DiaryEntry): DiaryPhoto | undefined {
   return entry.coverPhoto ?? entry.photos[0];
@@ -42,6 +43,7 @@ function MemoryCard({ entry, variant = 'compact', onPress, onShuffle }: MemoryCa
   const displayPhoto = getEntryDisplayPhoto(entry);
   const imageSource = displayPhoto ? getDiaryPhotoImageSource(displayPhoto.uri) : undefined;
   const isFeatured = variant === 'featured';
+  const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
 
   return (
     <TouchableOpacity
@@ -49,7 +51,7 @@ function MemoryCard({ entry, variant = 'compact', onPress, onShuffle }: MemoryCa
       style={[
         styles.memoryCard,
         isFeatured && styles.featuredMemoryCard,
-        { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+        { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border },
       ]}
       accessibilityRole="button"
       accessibilityLabel={`${t('rediscoverOpenEntryA11y')}: ${entry.title}`}
@@ -129,6 +131,7 @@ function MemorySection({
   onEntryPress,
 }: MemorySectionProps): React.JSX.Element {
   const theme = useTheme();
+  const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
 
   if (entries.length === 0 && !emptyText) {
     return <></>;
@@ -159,7 +162,7 @@ function MemorySection({
           </View>
         )
       ) : emptyText ? (
-        <View style={[styles.emptyInline, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        <View style={[styles.emptyInline, { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border }]}>
           <Text preset="bodySmall" color="textSecondary">{emptyText}</Text>
         </View>
       ) : null}
@@ -174,6 +177,7 @@ export default function RediscoverScreen(): React.JSX.Element {
   const t = useTranslation();
   const { entries, isLoading, refresh } = useDiary();
   const { profile } = useProfileForm();
+  const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
   const [shuffleSeed, setShuffleSeed] = useState(0);
   const [now, setNow] = useState(() => new Date());
   const [showRediscoverMenu, setShowRediscoverMenu] = useState(false);
@@ -312,7 +316,7 @@ export default function RediscoverScreen(): React.JSX.Element {
             />
           </>
         ) : (
-          <View style={[styles.emptyPanel, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <View style={[styles.emptyPanel, { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border }]}>
             <View style={[styles.emptyIconHalo, { backgroundColor: theme.colors.tint + '16' }]}>
               <Ionicons name="sparkles-outline" size={28} color={theme.colors.tint} />
             </View>

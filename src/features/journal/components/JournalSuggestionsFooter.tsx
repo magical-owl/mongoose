@@ -5,6 +5,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { getJournalCoverImageSource } from '@/features/journal/domain/JournalBackgrounds';
 import type { Journal } from '@/features/journal/domain/Journal';
 import { type TranslationKey, useTranslation } from '@/localization/i18n';
+import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 interface JournalSuggestionsFooterProps {
   readonly journals: readonly Journal[];
@@ -28,6 +29,7 @@ export function JournalSuggestionsFooter({
 }: JournalSuggestionsFooterProps): React.JSX.Element | null {
   const theme = useTheme();
   const t = useTranslation();
+  const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
   const suggestedJournals = journals.filter((journal) => journal.id !== currentJournalId);
 
   if (suggestedJournals.length === 0) return null;
@@ -62,7 +64,7 @@ export function JournalSuggestionsFooter({
           return (
             <TouchableOpacity
               key={journal.id}
-              style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+              style={[styles.card, { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border }]}
               onPress={() => onPressJournal(journal)}
               activeOpacity={0.76}
               accessibilityRole="button"

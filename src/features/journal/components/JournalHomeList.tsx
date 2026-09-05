@@ -8,6 +8,7 @@ import { Text } from '@shared/components/Text';
 import { useTheme } from '@providers/ThemeProvider';
 import { useTranslation } from '@/localization/i18n';
 import type { JournalColumnCount } from '@/stores/useAppStore';
+import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 import { getJournalCoverImageSource } from '../domain/JournalBackgrounds';
 
@@ -70,6 +71,7 @@ export function JournalHomeList({
   const wideCover = columnCount === 1;
   const compactCover = columnCount >= 3;
   const denseCover = columnCount >= 4;
+  const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
 
   const renderJournalOptions = useCallback((journal: JournalHomeItem) => {
     const isOpen = openOptionsId === journal.id;
@@ -173,19 +175,19 @@ export function JournalHomeList({
 
   const renderEmptyList = useCallback(() => (
     totalItemCount === 0 ? (
-      <View style={[styles.emptyState, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+      <View style={[styles.emptyState, { borderColor: theme.colors.border, backgroundColor: translucentSurfaceColor }]}>
         <Ionicons name="journal-outline" size={34} color={theme.colors.tint} />
         <Text preset="label" color="text" style={styles.emptyTitle}>{t('journalsEmptyTitle')}</Text>
         <Text preset="bodySmall" color="textSecondary" style={styles.emptyBody}>{t('journalsEmptyMessage')}</Text>
         <AccentPillButton label={t('journalCreate')} onPress={onCreateJournal} style={styles.emptyButton} />
       </View>
     ) : (
-      <View style={[styles.emptyState, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+      <View style={[styles.emptyState, { borderColor: theme.colors.border, backgroundColor: translucentSurfaceColor }]}>
         <Ionicons name="search-outline" size={34} color={theme.colors.tint} />
         <Text preset="label" color="text" style={styles.emptyTitle}>{t('journalNoMatchingJournals')}</Text>
       </View>
     )
-  ), [onCreateJournal, t, theme.colors.border, theme.colors.surface, theme.colors.tint, totalItemCount]);
+  ), [onCreateJournal, t, theme.colors.border, theme.colors.tint, totalItemCount, translucentSurfaceColor]);
 
   const renderItem = useCallback<ListRenderItem<JournalHomeItem>>(({ item: journal }) => {
     const journalCoverSource = getJournalCoverImageSource(journal.coverImageUri);
