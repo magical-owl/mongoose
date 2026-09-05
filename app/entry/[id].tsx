@@ -844,6 +844,15 @@ export default function EntryDetailScreen() {
                     {viewDateTime}
                   </Text>
                 </Animated.View>
+                <EntryViewCountBadge
+                  count={entry.viewCount ?? 0}
+                  accessibilityLabel={t('entryViewCountA11y').replace('{count}', String(entry.viewCount ?? 0))}
+                  height={26}
+                  minWidth={44}
+                  iconSize={15}
+                  style={styles.coverViewCountBadge}
+                  testID="entry-view-count"
+                />
               </DiaryCoverPhotoPicker>
             )}
           </Animated.View>
@@ -1064,12 +1073,6 @@ export default function EntryDetailScreen() {
           style={styles.viewFooter}
         >
           {renderViewFooterMoodAndTags()}
-            <EntryViewCountBadge
-              count={entry.viewCount ?? 0}
-              accessibilityLabel={t('entryViewCountA11y').replace('{count}', String(entry.viewCount ?? 0))}
-              style={styles.viewFooterButton}
-              testID="entry-view-count"
-            />
             <ReflectionSummaryButton
               count={entry.reflections.length}
               onPress={() => setShowReflections(true)}
@@ -1356,6 +1359,7 @@ const styles = StyleSheet.create({
     bottom: 10,
     borderRadius: 8,
     paddingHorizontal: 12,
+    paddingRight: 76,
     paddingVertical: 9,
   },
   coverDateTime: {
@@ -1367,6 +1371,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     lineHeight: 34,
     marginBottom: 8,
+  },
+  coverViewCountBadge: {
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
   },
   viewFooter: {
     paddingHorizontal: 12,

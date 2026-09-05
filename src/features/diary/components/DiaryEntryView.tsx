@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Image, ImageBackground, Keyboard, Pressable, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View, type ImageStyle, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
@@ -13,6 +13,7 @@ import { diaryEntryListTitle } from './diaryEntryTypography';
 import { MoodBadgeList } from './MoodBadgeList';
 import { TagBadgeList } from './TagBadgeList';
 import { ReflectionSummaryButton } from './ReflectionSummaryButton';
+import { EntryViewCountBadge } from './EntryViewCountBadge';
 import { DiaryPaperCanvas } from './DiaryPaperCanvas';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
@@ -39,7 +40,17 @@ interface DiaryEntryViewProps {
   readonly showDateColumn?: boolean;
 }
 
-function CoverPhotoPreview({ entry, style, testID }: { readonly entry: DiaryEntry; readonly style: StyleProp<ImageStyle>; readonly testID?: string }): React.JSX.Element | null {
+function CoverPhotoPreview({
+  children,
+  entry,
+  style,
+  testID,
+}: {
+  readonly children?: ReactNode;
+  readonly entry: DiaryEntry;
+  readonly style: StyleProp<ImageStyle>;
+  readonly testID?: string;
+}): React.JSX.Element | null {
   const theme = useTheme();
   if (!entry.coverPhoto) return null;
   const source = getDiaryPhotoImageSource(entry.coverPhoto.uri);
@@ -61,6 +72,7 @@ function CoverPhotoPreview({ entry, style, testID }: { readonly entry: DiaryEntr
         style={[styles.coverPhotoScrim, frameStyle, { backgroundColor: theme.colors.overlay }]}
         testID={testID ? `${testID}-scrim` : undefined}
       />
+      {children}
     </View>
   );
 }
@@ -109,6 +121,8 @@ export function DiaryEntryView({
   };
   const entryTime = formatFriendlyTimestamp(entry.createdAt, timeFormat, friendlyTimestampLabels);
   const feedEntryDateTime = entryTime;
+  const viewCount = entry.viewCount ?? 0;
+  const viewCountA11y = t('entryViewCountA11y').replace('{count}', String(viewCount));
   const isFeedMode = mode === 'feed';
   const showReflectionSummaryAction = mode !== 'timeline' && Boolean(onReflectionSummaryPress);
   const showMemoryReactionControl = Boolean(onToggleMemoryReaction);
@@ -156,6 +170,17 @@ export function DiaryEntryView({
         await onToggleMemoryReaction?.(entry.id, reaction);
       }}
       compact={compact}
+      style={style}
+      testID={testID}
+    />
+  );
+  const renderViewCountBadge = (testID: string, style?: StyleProp<ViewStyle>) => (
+    <EntryViewCountBadge
+      count={viewCount}
+      accessibilityLabel={viewCountA11y}
+      height={26}
+      minWidth={44}
+      iconSize={15}
       style={style}
       testID={testID}
     />
@@ -353,6 +378,7 @@ export function DiaryEntryView({
                 </Text>
                 {feedTimestamp}
               </View>
+              {renderViewCountBadge('entry-feed-view-count', styles.coverViewCountBadge)}
             </ImageBackground>
           ) : null}
           <DiaryPaperCanvas
@@ -435,7 +461,11 @@ export function DiaryEntryView({
                 <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
               </View>
             </View>
-            {entry.coverPhoto ? <CoverPhotoPreview entry={entry} style={styles.timelineHeroCoverPhoto} testID="entry-timeline-cover-photo" /> : null}
+            {entry.coverPhoto ? (
+              <CoverPhotoPreview entry={entry} style={styles.timelineHeroCoverPhoto} testID="entry-timeline-cover-photo">
+                {renderViewCountBadge('entry-timeline-view-count', styles.coverViewCountBadge)}
+              </CoverPhotoPreview>
+            ) : null}
             <View style={styles.timelinePreviewRow}>
               <View style={styles.timelineTextPreview}>
                 <Text style={[styles.timelineContent, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
@@ -516,7 +546,11 @@ export function DiaryEntryView({
       style={[styles.card, fullWidthEntryFrame, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
       testID="entry-card"
     >
-      {entry.coverPhoto ? <CoverPhotoPreview entry={entry} style={styles.cardHeroCoverPhoto} /> : null}
+      {entry.coverPhoto ? (
+        <CoverPhotoPreview entry={entry} style={styles.cardHeroCoverPhoto} testID="entry-card-cover-photo">
+          {renderViewCountBadge('entry-card-view-count', styles.coverViewCountBadge)}
+        </CoverPhotoPreview>
+      ) : null}
       <View style={styles.cardInner}>
         <View style={[styles.cardRail, { backgroundColor: hasMood ? moodTone : theme.colors.tint }]} />
         {showDateColumn ? (
@@ -564,6 +598,7 @@ const styles = StyleSheet.create({
   coverPhotoFrame: { position: 'relative', overflow: 'hidden' },
   coverPhoto: { backgroundColor: '#000' },
   coverPhotoScrim: { position: 'absolute', top: 0, left: 0, opacity: 0.28 },
+  coverViewCountBadge: { position: 'absolute', right: 10, bottom: 10 },
   cardPreviewRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   cardTextPreview: { flex: 1, minWidth: 0 },
   cardCoverPhoto: { width: 58, height: 58, borderRadius: 6 },
@@ -581,7 +616,7 @@ const styles = StyleSheet.create({
   feedCoverHeader: { minHeight: 168, justifyContent: 'flex-end', overflow: 'hidden' },
   feedCoverHeaderImage: { borderRadius: 0 },
   feedCoverScrim: { ...StyleSheet.absoluteFill, opacity: 0.28 },
-  feedCoverContent: { paddingHorizontal: 20, paddingTop: 42, paddingBottom: 12 },
+  feedCoverContent: { paddingLeft: 20, paddingRight: 78, paddingTop: 42, paddingBottom: 12 },
   feedCoverTitle: { marginBottom: 2 },
   feedContentPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 0, paddingHorizontal: 12, paddingVertical: 12 },
   feedContentPanelMerged: { borderWidth: 0, borderRadius: 0, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 20 },
