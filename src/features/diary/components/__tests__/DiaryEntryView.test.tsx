@@ -152,6 +152,13 @@ describe('DiaryEntryView', () => {
           text: 'A follow-up reflection.',
           createdAt: '2026-08-29T02:12:00.000Z',
           updatedAt: '2026-08-29T02:12:00.000Z',
+          photo: {
+            id: '44444444-4444-4444-8444-444444444444',
+            uri: 'file:///document/diary-photos/timeline-reflection.jpg',
+            width: 1200,
+            height: 800,
+            createdAt: '2026-08-29T02:13:00.000Z',
+          },
         },
       ],
     };
@@ -180,6 +187,10 @@ describe('DiaryEntryView', () => {
     const coverStyle = StyleSheet.flatten(getByTestId('entry-timeline-cover-photo').props.style);
     const coverScrimStyle = StyleSheet.flatten(getByTestId('entry-timeline-cover-photo-scrim').props.style);
 
+    expect(getByText('A follow-up reflection.')).toBeTruthy();
+    expect(getByTestId('entry-inline-reflection-photo').props.source).toEqual({
+      uri: 'file:///document/diary-photos/timeline-reflection.jpg',
+    });
     expect(spineStyle.width).toBe(1);
     expect(spineStyle.left).toBe(26);
     expect(timelineStyle.marginHorizontal).toBe(-20);
@@ -375,6 +386,13 @@ describe('DiaryEntryView', () => {
           text: 'A feed reflection.',
           createdAt: '2026-08-29T02:12:00.000Z',
           updatedAt: '2026-08-29T02:12:00.000Z',
+          photo: {
+            id: '55555555-5555-4555-8555-555555555555',
+            uri: 'file:///document/diary-photos/feed-reflection.jpg',
+            width: 1200,
+            height: 800,
+            createdAt: '2026-08-29T02:13:00.000Z',
+          },
         },
       ],
     };
@@ -406,6 +424,9 @@ describe('DiaryEntryView', () => {
     expect(coverTimestampStyle.color).toBeTruthy();
     expect(getByTestId('entry-feed-footer-meta')).toBeTruthy();
     expect(getByTestId('entry-feed-tags-daily')).toBeTruthy();
+    expect(getByTestId('entry-inline-reflection-photo').props.source).toEqual({
+      uri: 'file:///document/diary-photos/feed-reflection.jpg',
+    });
     expect(moodStyle.borderRadius).toBe(13);
     expect(moodStyle.borderWidth).toBe(1);
     expect(getByText('Calm +2')).toBeTruthy();

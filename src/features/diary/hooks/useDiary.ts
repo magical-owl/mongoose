@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { diaryService } from '../services/DiaryService';
-import { DiaryEntry } from '../domain/DiaryEntry';
+import type { DiaryEntry, DiaryPhoto } from '../domain/DiaryEntry';
 import type { MemoryReaction } from '../domain/MemoryReaction';
 import { getCachedDiaryEntries, setCachedDiaryEntries } from '../services/DiaryEntryCache';
 import { useAppStore } from '@/stores/useAppStore';
@@ -139,8 +139,8 @@ export function useDiary() {
     return result;
   };
 
-  const addReflection = async (entryId: string, text: string) => {
-    const result = await diaryService.addReflection(entryId, text);
+  const addReflection = async (entryId: string, text: string, photo?: DiaryPhoto) => {
+    const result = await diaryService.addReflection(entryId, text, photo);
     if (result.success) {
       commitDiaryEntries(
         sortEntriesByDateDesc([

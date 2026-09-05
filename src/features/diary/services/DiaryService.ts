@@ -2,7 +2,7 @@ import type { Result } from '@/shared/types/architecture';
 import { failure, success } from '@/shared/utils/result';
 import { generateUUID } from '@/shared/utils/uuid';
 import { FREE_PLAN_LIMITS, countAddedStickers, getLocalDateKey, validateDiaryEntryPlanLimits } from '@/features/subscription/services/PlanLimitService';
-import { DiaryEntry, DiaryReflection } from '../domain/DiaryEntry';
+import { DiaryEntry, DiaryPhoto, DiaryReflection } from '../domain/DiaryEntry';
 import { MemoryReaction, toggleMemoryReactionSelection } from '../domain/MemoryReaction';
 import { IDiaryRepository } from '../repositories/IDiaryRepository';
 import { diaryRepository } from '../repositories/DiaryRepository';
@@ -122,7 +122,7 @@ export class DiaryService {
     return success(restored);
   }
 
-  public async addReflection(entryId: string, text: string): Promise<Result<DiaryEntry>> {
+  public async addReflection(entryId: string, text: string, photo?: DiaryPhoto): Promise<Result<DiaryEntry>> {
     const trimmed = text.trim();
     if (!trimmed) {
       return failure({
@@ -146,6 +146,7 @@ export class DiaryService {
       text: trimmed,
       createdAt: now,
       updatedAt: now,
+      ...(photo ? { photo } : {}),
     };
     const updated: DiaryEntry = {
       ...entryResult.data,
@@ -165,9 +166,21 @@ export class DiaryService {
       });
     }
 
+    const reflectionToDelete = entryResult.data.reflections.find((reflection) => reflection.id === reflectionId);
     const nextReflections = entryResult.data.reflections.filter((reflection) => reflection.id !== reflectionId);
     if (nextReflections.length === entryResult.data.reflections.length) {
       return success(entryResult.data);
+    }
+
+    if (reflectionToDelete?.photo) {
+      try {
+        await this.photoCleanup.deleteReflectionPhoto(reflectionToDelete);
+      } catch (error) {
+        return failure({
+          code: 'PHOTO_DELETE_FAILED',
+          message: error instanceof Error ? error.message : 'Failed to delete reflection photo',
+        });
+      }
     }
 
     const updated: DiaryEntry = {

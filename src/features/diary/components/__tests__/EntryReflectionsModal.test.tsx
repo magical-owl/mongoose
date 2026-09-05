@@ -96,7 +96,7 @@ describe('EntryReflectionsModal', () => {
     });
 
     await waitFor(() => {
-      expect(onAddReflection).toHaveBeenCalledWith(entry.id, 'One more note');
+      expect(onAddReflection).toHaveBeenCalledWith(entry.id, 'One more note', undefined);
     });
 
     fireEvent.press(getByLabelText('Delete reflection'));
@@ -117,5 +117,36 @@ describe('EntryReflectionsModal', () => {
     );
 
     expect(getByText('No reflections yet.')).toBeTruthy();
+  });
+
+  it('shows attached photos on reflection entries', async () => {
+    const { getByTestId } = await renderWithProviders(
+      <EntryReflectionsModal
+        visible
+        entry={{
+          ...entry,
+          reflections: [
+            {
+              ...entry.reflections[0]!,
+              photo: {
+                id: '33333333-3333-4333-8333-333333333333',
+                uri: 'file:///document/diary-photos/reflection.jpg',
+                width: 1200,
+                height: 800,
+                createdAt: '2026-08-29T02:13:00.000Z',
+              },
+            },
+          ],
+        }}
+        timeFormat="24-hour"
+        onDismiss={jest.fn()}
+        onAddReflection={jest.fn().mockResolvedValue(true)}
+        onDeleteReflection={jest.fn()}
+      />,
+    );
+
+    expect(getByTestId('entry-reflection-photo').props.source).toEqual({
+      uri: 'file:///document/diary-photos/reflection.jpg',
+    });
   });
 });

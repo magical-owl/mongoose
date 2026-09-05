@@ -25,9 +25,20 @@ class MemorySecureStorage implements ISecureStorageDataSource {
 
 class MockDiaryPhotoCleanupService implements IDiaryPhotoCleanupService {
   public readonly deletedEntryIds: string[] = [];
+  public readonly deletedPhotoIds: string[] = [];
+  public readonly deletedReflectionIds: string[] = [];
+
+  public async deletePhoto(photo: DiaryEntry['photos'][number]): Promise<void> {
+    this.deletedPhotoIds.push(photo.id);
+  }
 
   public async deleteEntryPhotos(entry: DiaryEntry): Promise<void> {
     this.deletedEntryIds.push(entry.id);
+  }
+
+  public async deleteReflectionPhoto(reflection: DiaryEntry['reflections'][number]): Promise<void> {
+    if (reflection.photo) this.deletedPhotoIds.push(reflection.photo.id);
+    this.deletedReflectionIds.push(reflection.id);
   }
 
   public async clearImportedPhotos(): Promise<void> {}
@@ -132,6 +143,31 @@ describe('DiaryService', () => {
     if (deleteResult.success) {
       expect(deleteResult.data.reflections).toHaveLength(0);
     }
+  });
+
+  it('should save and clean up one attached photo per reflection', async () => {
+    await service.saveEntry(mockEntry);
+    const photo = {
+      id: '99999999-9999-4999-8999-999999999999',
+      uri: 'file:///document/diary-photos/reflection.jpg',
+      width: 1200,
+      height: 800,
+      createdAt: '2026-08-29T02:13:00.000Z',
+    };
+
+    const addResult = await service.addReflection(mockEntry.id, 'A small image note.', photo);
+
+    expect(addResult.success).toBe(true);
+    if (!addResult.success) return;
+    const reflection = addResult.data.reflections[0];
+    expect(reflection?.photo).toEqual(photo);
+    if (!reflection) return;
+
+    const deleteResult = await service.deleteReflection(mockEntry.id, reflection.id);
+
+    expect(deleteResult.success).toBe(true);
+    expect(photoCleanup.deletedReflectionIds).toEqual([reflection.id]);
+    expect(photoCleanup.deletedPhotoIds).toEqual([photo.id]);
   });
 
   it('should toggle memory reactions on an entry', async () => {

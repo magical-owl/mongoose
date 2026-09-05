@@ -16,7 +16,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import type { CalendarDateFormat, EntryHierarchyMode, HomeViewMode } from '@/stores/useAppStore';
-import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
 import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import type { Profile } from '@/features/profile/domain/Profile';
 import type { Journal } from '@/features/journal/domain/Journal';
@@ -81,7 +81,7 @@ interface VirtualizedDiaryEntryListProps {
   readonly onEntryLayout?: (entryId: string, entryDate: string, y: number) => void;
   readonly onDateGroupLayout?: (date: string, y: number) => void;
   readonly onEntryRef?: (entryId: string, node: View | null) => void;
-  readonly onAddReflection?: (entryId: string, text: string) => Promise<boolean>;
+  readonly onAddReflection?: (entryId: string, text: string, photo?: DiaryPhoto) => Promise<boolean>;
   readonly onReflectionInputFocus?: (entryId: string) => void;
   readonly onReflectionSummaryPress?: (entryId: string) => void;
   readonly onToggleMemoryReaction?: (entryId: string, reaction: MemoryReaction) => Promise<boolean>;

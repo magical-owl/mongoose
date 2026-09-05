@@ -19,7 +19,9 @@ describe('DataDeletionService', () => {
       },
     };
     const photoCleanup: IDiaryPhotoCleanupService = {
+      deletePhoto: jest.fn().mockResolvedValue(undefined),
       deleteEntryPhotos: jest.fn(),
+      deleteReflectionPhoto: jest.fn().mockResolvedValue(undefined),
       clearImportedPhotos: jest.fn().mockResolvedValue(undefined),
     };
     const entry = {

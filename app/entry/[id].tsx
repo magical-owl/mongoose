@@ -507,11 +507,11 @@ export default function EntryDetailScreen() {
     }, 80);
   };
 
-  const handleAddReflection = async (entryId: string, text: string) => {
+  const handleAddReflection = async (entryId: string, text: string, photo?: DiaryPhoto) => {
     if (!entry || entry.id !== entryId) return false;
     const trimmed = text.trim();
     if (!trimmed) return false;
-    const result = await addReflection(entry.id, trimmed);
+    const result = await addReflection(entry.id, trimmed, photo);
     if (result.success) {
       setEntry(result.data);
       return true;

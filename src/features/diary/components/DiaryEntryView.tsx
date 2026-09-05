@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react';
-import { Image, ImageBackground, Keyboard, Pressable, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View, type ImageStyle, type StyleProp, type ViewStyle } from 'react-native';
+import { Alert, Image, ImageBackground, Keyboard, Pressable, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View, type ImageStyle, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { Text } from '@shared/components/Text';
 import { stripHtml } from '@shared/utils/html';
-import { getEntryManualMoods, getPrimaryManualMood, type DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import { getEntryManualMoods, getPrimaryManualMood, type DiaryEntry, type DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
 import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import type { Profile } from '@/features/profile/domain/Profile';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
@@ -19,7 +19,8 @@ import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import { reflectionCountLabel, useTranslation } from '@/localization/i18n';
-import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
+import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
+import { diaryPhotoService, getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
 import {
   getStickerBodyPreviewBottom,
 } from '@/features/diary/domain/StickerLayout';
@@ -33,7 +34,7 @@ interface DiaryEntryViewProps {
   readonly mode: DiaryEntryViewMode;
   readonly profile?: Pick<Profile, 'displayName' | 'avatarUri'> | null;
   readonly onPress: () => void | Promise<void>;
-  readonly onAddReflection?: (entryId: string, text: string) => Promise<boolean>;
+  readonly onAddReflection?: (entryId: string, text: string, photo?: DiaryPhoto) => Promise<boolean>;
   readonly onReflectionSummaryPress?: (entryId: string) => void;
   readonly onReflectionInputFocus?: (entryId: string) => void;
   readonly onToggleMemoryReaction?: (entryId: string, reaction: MemoryReaction) => Promise<boolean>;
@@ -102,7 +103,9 @@ export function DiaryEntryView({
   const timeFormat = useAppStore((state) => state.timeFormat);
   const t = useTranslation();
   const [reflectionText, setReflectionText] = useState('');
+  const [reflectionPhoto, setReflectionPhoto] = useState<DiaryPhoto | undefined>();
   const [isAddingReflection, setIsAddingReflection] = useState(false);
+  const [isPickingReflectionPhoto, setIsPickingReflectionPhoto] = useState(false);
   const [isReflectionFocused, setIsReflectionFocused] = useState(false);
   const [isMemoryReactionPickerVisible, setIsMemoryReactionPickerVisible] = useState(false);
   const [feedCanvasWidth, setFeedCanvasWidth] = useState(0);
@@ -139,9 +142,47 @@ export function DiaryEntryView({
     const trimmed = reflectionText.trim();
     if (!trimmed || !onAddReflection) return;
     setIsAddingReflection(true);
-    const saved = await onAddReflection(entry.id, trimmed);
-    if (saved) setReflectionText('');
+    const saved = await onAddReflection(entry.id, trimmed, reflectionPhoto);
+    if (saved) {
+      setReflectionText('');
+      setReflectionPhoto(undefined);
+    }
     setIsAddingReflection(false);
+  };
+
+  const deletePendingReflectionPhoto = (photo: DiaryPhoto | undefined) => {
+    if (!photo) return;
+    void diaryPhotoService.deletePhoto(photo);
+  };
+
+  const handleChooseInlineReflectionPhoto = async () => {
+    setIsPickingReflectionPhoto(true);
+    const result = await chooseDiaryPhoto();
+    if (!result.success) {
+      setIsPickingReflectionPhoto(false);
+      if (result.error === 'native-module-missing') {
+        Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
+        return;
+      }
+      Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage'));
+      return;
+    }
+
+    const asset = result.assets[0];
+    if (!asset) {
+      setIsPickingReflectionPhoto(false);
+      return;
+    }
+
+    try {
+      const importedPhoto = await diaryPhotoService.importAsset(asset);
+      deletePendingReflectionPhoto(reflectionPhoto);
+      setReflectionPhoto(importedPhoto);
+    } catch {
+      Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
+    } finally {
+      setIsPickingReflectionPhoto(false);
+    }
   };
 
   const handleOpenEntry = () => {
@@ -218,13 +259,24 @@ export function DiaryEntryView({
                   {formatFriendlyTimestamp(reflection.createdAt, timeFormat, friendlyTimestampLabels)}
                 </Text>
                 <Text preset="bodySmall" color="text" style={styles.timelineReflectionText}>{reflection.text}</Text>
+                {reflection.photo ? (
+                  <Image
+                    source={getDiaryPhotoImageSource(reflection.photo.uri)}
+                    style={styles.timelineReflectionPhoto}
+                    resizeMode="cover"
+                    accessibilityLabel={t('reflectionPhotoA11y')}
+                    accessibilityIgnoresInvertColors
+                    testID="entry-inline-reflection-photo"
+                  />
+                ) : null}
               </View>
             </View>
           ))}
         </View>
       ) : null}
       {onAddReflection ? (
-        <View
+        <>
+          <View
           style={[
             styles.timelineReflectionInputBox,
             isFeedMode && styles.feedReflectionInputBox,
@@ -237,6 +289,16 @@ export function DiaryEntryView({
           ]}
           testID={isFeedMode ? 'entry-feed-reflection-input' : 'entry-timeline-reflection-input'}
         >
+          <IconCircleButton
+            icon={reflectionPhoto ? 'image' : 'image-outline'}
+            onPress={() => { void handleChooseInlineReflectionPhoto(); }}
+            disabled={isPickingReflectionPhoto}
+            accessibilityLabel={reflectionPhoto ? t('reflectionChangePhotoA11y') : t('reflectionAddPhotoA11y')}
+            size="sm"
+            surface="transparent"
+            iconSize={18}
+            style={styles.timelineReflectionIconButton}
+          />
           <TextInput
             value={reflectionText}
             onChangeText={setReflectionText}
@@ -283,7 +345,39 @@ export function DiaryEntryView({
             iconSize={18}
             style={styles.timelineReflectionIconButton}
           />
-        </View>
+          </View>
+          {reflectionPhoto ? (
+            <View
+              style={[
+                styles.inlineReflectionPhotoPreview,
+                isFeedMode && styles.feedInlineReflectionPhotoPreview,
+                { borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
+              ]}
+              testID={isFeedMode ? 'entry-feed-reflection-photo-preview' : 'entry-timeline-reflection-photo-preview'}
+            >
+              <Image
+                source={getDiaryPhotoImageSource(reflectionPhoto.uri)}
+                style={styles.inlineReflectionPhotoImage}
+                resizeMode="cover"
+                accessibilityLabel={t('reflectionPhotoA11y')}
+                accessibilityIgnoresInvertColors
+                testID={isFeedMode ? 'entry-feed-selected-reflection-photo' : 'entry-timeline-selected-reflection-photo'}
+              />
+              <IconCircleButton
+                icon="close"
+                onPress={() => {
+                  deletePendingReflectionPhoto(reflectionPhoto);
+                  setReflectionPhoto(undefined);
+                }}
+                accessibilityLabel={t('reflectionRemovePhotoA11y')}
+                size="sm"
+                surface="overlay"
+                iconSize={16}
+                style={styles.inlineReflectionPhotoRemoveButton}
+              />
+            </View>
+          ) : null}
+        </>
       ) : null}
     </View>
   ) : null;
@@ -653,8 +747,13 @@ const styles = StyleSheet.create({
   timelineReflectionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   timelineReflectionItem: { flex: 1, borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
   timelineReflectionText: { lineHeight: 20, marginTop: 2 },
+  timelineReflectionPhoto: { width: '100%', height: 118, borderRadius: 8, marginTop: 8 },
   timelineReflectionInputBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, marginTop: 0, marginLeft: 8, paddingLeft: 12, paddingRight: 4 },
   timelineReflectionInputAfterContent: { marginTop: 10 },
   timelineReflectionInput: { flex: 1, paddingVertical: 0, paddingTop: 0, paddingBottom: 0, includeFontPadding: false, textAlignVertical: 'center' },
   timelineReflectionIconButton: { width: 32, height: 32 },
+  inlineReflectionPhotoPreview: { marginTop: 8, marginLeft: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, overflow: 'hidden' },
+  feedInlineReflectionPhotoPreview: { marginLeft: 0 },
+  inlineReflectionPhotoImage: { width: '100%', height: 112 },
+  inlineReflectionPhotoRemoveButton: { position: 'absolute', top: 8, right: 8, width: 28, height: 28 },
 });

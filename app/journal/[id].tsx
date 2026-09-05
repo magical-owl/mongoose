@@ -45,7 +45,7 @@ import { useScrollCollapse } from "@/shared/hooks/useScrollCollapse";
 import { useSubscription } from "@/features/subscription/hooks/useSubscription";
 import { APP_IDENTITY } from "@/config/appIdentity";
 import type { HomeViewMode } from "@/stores/useAppStore";
-import { getEntryManualMoods, type DiaryEntry, type ManualMood } from "@/features/diary/domain/DiaryEntry";
+import { getEntryManualMoods, type DiaryEntry, type DiaryPhoto, type ManualMood } from "@/features/diary/domain/DiaryEntry";
 import type { MemoryReaction } from "@/features/diary/domain/MemoryReaction";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
 import { premiumPaywallTitle, useTranslation } from "@/localization/i18n";
@@ -234,8 +234,8 @@ export default function JournalEntriesScreen() {
   const viewMode: HomeViewMode = selectableViewModes[viewModeIndex] ?? "detailed";
 
   const handleAddReflection = useCallback(
-    async (entryId: string, text: string) => {
-      const result = await addReflection(entryId, text);
+    async (entryId: string, text: string, photo?: DiaryPhoto) => {
+      const result = await addReflection(entryId, text, photo);
       if (!result.success) {
         Alert.alert(t("reflectionNotSavedTitle"), result.error.message);
         return false;

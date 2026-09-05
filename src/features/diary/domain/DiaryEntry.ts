@@ -100,14 +100,6 @@ export const SensoryDetailsSchema = z.object({
 });
 export type SensoryDetails = z.infer<typeof SensoryDetailsSchema>;
 
-export const DiaryReflectionSchema = z.object({
-  id: z.string().uuid(),
-  text: z.string().min(1).max(2000),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-});
-export type DiaryReflection = z.infer<typeof DiaryReflectionSchema>;
-
 export const DiaryPhotoSchema = z.object({
   id: z.string().uuid(),
   uri: z.string().min(1),
@@ -116,6 +108,15 @@ export const DiaryPhotoSchema = z.object({
   createdAt: z.string().datetime(),
 });
 export type DiaryPhoto = z.infer<typeof DiaryPhotoSchema>;
+
+export const DiaryReflectionSchema = z.object({
+  id: z.string().uuid(),
+  text: z.string().min(1).max(2000),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  photo: DiaryPhotoSchema.optional(),
+});
+export type DiaryReflection = z.infer<typeof DiaryReflectionSchema>;
 
 export const DiaryEntrySchema = z.object({
   id: z.string().uuid(),

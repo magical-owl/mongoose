@@ -1,7 +1,7 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import type { ImagePickerAsset } from 'expo-image-picker';
 import type { ImageSourcePropType } from 'react-native';
-import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
+import type { DiaryEntry, DiaryPhoto, DiaryReflection } from '@/features/diary/domain/DiaryEntry';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { getJournalCoverImageSource } from '@/features/journal/domain/JournalBackgrounds';
 import { generateUUID } from '@/shared/utils/uuid';
@@ -10,7 +10,9 @@ const PHOTO_DIRECTORY_NAME = 'diary-photos';
 const PHOTO_DIRECTORY_MARKER = `/${PHOTO_DIRECTORY_NAME}/`;
 
 export interface IDiaryPhotoCleanupService {
+  deletePhoto(photo: DiaryPhoto): Promise<void>;
   deleteEntryPhotos(entry: DiaryEntry): Promise<void>;
+  deleteReflectionPhoto(reflection: DiaryReflection): Promise<void>;
   clearImportedPhotos(): Promise<void>;
 }
 
@@ -37,6 +39,9 @@ export class DiaryPhotoService implements IDiaryPhotoCleanupService {
     const uris = new Set<string>();
     if (entry.coverPhoto) uris.add(entry.coverPhoto.uri);
     entry.photos.forEach((photo) => uris.add(photo.uri));
+    entry.reflections.forEach((reflection) => {
+      if (reflection.photo) uris.add(reflection.photo.uri);
+    });
     entry.stickers.forEach((sticker) => {
       if (sticker.imageUri) uris.add(sticker.imageUri);
     });
@@ -46,6 +51,16 @@ export class DiaryPhotoService implements IDiaryPhotoCleanupService {
         .filter((uri) => this.isImportedPhotoUri(uri))
         .map((uri) => this.deleteFileIfExists(uri))
     );
+  }
+
+  public async deletePhoto(photo: DiaryPhoto): Promise<void> {
+    if (!this.isImportedPhotoUri(photo.uri)) return;
+    await this.deleteFileIfExists(photo.uri);
+  }
+
+  public async deleteReflectionPhoto(reflection: DiaryReflection): Promise<void> {
+    if (!reflection.photo) return;
+    await this.deletePhoto(reflection.photo);
   }
 
   public async clearImportedPhotos(): Promise<void> {

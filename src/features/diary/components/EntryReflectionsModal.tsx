@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Modal } from '@shared/components/Modal';
 import { Text } from '@shared/components/Text';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import type { Profile } from '@/features/profile/domain/Profile';
-import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
+import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
+import { diaryPhotoService, getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
 import { type TimeFormat } from '@/stores/useAppStore';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useTranslation } from '@/localization/i18n';
@@ -17,7 +19,7 @@ interface EntryReflectionsModalProps {
   readonly profile?: Pick<Profile, 'displayName' | 'avatarUri'> | null;
   readonly timeFormat: TimeFormat;
   readonly onDismiss: () => void;
-  readonly onAddReflection: (entryId: string, text: string) => Promise<boolean>;
+  readonly onAddReflection: (entryId: string, text: string, photo?: DiaryPhoto) => Promise<boolean>;
   readonly onDeleteReflection: (entryId: string, reflectionId: string) => void;
 }
 
@@ -33,7 +35,9 @@ export function EntryReflectionsModal({
   const theme = useTheme();
   const t = useTranslation();
   const [reflectionText, setReflectionText] = useState('');
+  const [reflectionPhoto, setReflectionPhoto] = useState<DiaryPhoto | undefined>();
   const [isSavingReflection, setIsSavingReflection] = useState(false);
+  const [isPickingPhoto, setIsPickingPhoto] = useState(false);
   const friendlyTimestampLabels = useMemo(
     () => ({
       today: t('timeToday'),
@@ -48,18 +52,62 @@ export function EntryReflectionsModal({
   );
   const trimmedReflection = reflectionText.trim();
 
+  const deletePendingPhoto = (photo: DiaryPhoto | undefined) => {
+    if (!photo) return;
+    void diaryPhotoService.deletePhoto(photo);
+  };
+
+  const handleDismiss = () => {
+    deletePendingPhoto(reflectionPhoto);
+    setReflectionPhoto(undefined);
+    onDismiss();
+  };
+
+  const handleChoosePhoto = async () => {
+    setIsPickingPhoto(true);
+    const result = await chooseDiaryPhoto();
+    if (!result.success) {
+      setIsPickingPhoto(false);
+      if (result.error === 'native-module-missing') {
+        Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
+        return;
+      }
+      Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage'));
+      return;
+    }
+
+    const asset = result.assets[0];
+    if (!asset) {
+      setIsPickingPhoto(false);
+      return;
+    }
+
+    try {
+      const importedPhoto = await diaryPhotoService.importAsset(asset);
+      deletePendingPhoto(reflectionPhoto);
+      setReflectionPhoto(importedPhoto);
+    } catch {
+      Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
+    } finally {
+      setIsPickingPhoto(false);
+    }
+  };
+
   const handleAddReflection = async () => {
     if (!entry || !trimmedReflection) return;
     setIsSavingReflection(true);
-    const saved = await onAddReflection(entry.id, trimmedReflection);
+    const saved = await onAddReflection(entry.id, trimmedReflection, reflectionPhoto);
     setIsSavingReflection(false);
-    if (saved) setReflectionText('');
+    if (saved) {
+      setReflectionText('');
+      setReflectionPhoto(undefined);
+    }
   };
 
   return (
     <Modal
       visible={visible}
-      onDismiss={onDismiss}
+      onDismiss={handleDismiss}
       title={t('reflections')}
       accessibilityLabel={t('entryReflectionsA11y')}
       scrollable={false}
@@ -94,6 +142,16 @@ export function EntryReflectionsModal({
                       </TouchableOpacity>
                     </View>
                     <Text preset="bodySmall" color="text" style={styles.reflectionText}>{reflection.text}</Text>
+                    {reflection.photo ? (
+                      <Image
+                        source={getDiaryPhotoImageSource(reflection.photo.uri)}
+                        style={styles.reflectionPhoto}
+                        resizeMode="cover"
+                        accessibilityLabel={t('reflectionPhotoA11y')}
+                        accessibilityIgnoresInvertColors
+                        testID="entry-reflection-photo"
+                      />
+                    ) : null}
                   </View>
                 </View>
               ))}
@@ -110,6 +168,19 @@ export function EntryReflectionsModal({
             },
           ]}
         >
+          <TouchableOpacity
+            onPress={() => { void handleChoosePhoto(); }}
+            disabled={isPickingPhoto}
+            style={styles.reflectionPhotoButton}
+            accessibilityRole="button"
+            accessibilityLabel={reflectionPhoto ? t('reflectionChangePhotoA11y') : t('reflectionAddPhotoA11y')}
+          >
+            <MaterialCommunityIcons
+              name={reflectionPhoto ? 'image-edit-outline' : 'image-plus'}
+              size={18}
+              color={theme.colors.textSecondary}
+            />
+          </TouchableOpacity>
           <TextInput
             value={reflectionText}
             onChangeText={setReflectionText}
@@ -146,6 +217,29 @@ export function EntryReflectionsModal({
             />
           </TouchableOpacity>
         </View>
+        {reflectionPhoto ? (
+          <View style={[styles.selectedPhotoPreview, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+            <Image
+              source={getDiaryPhotoImageSource(reflectionPhoto.uri)}
+              style={styles.selectedPhotoImage}
+              resizeMode="cover"
+              accessibilityLabel={t('reflectionPhotoA11y')}
+              accessibilityIgnoresInvertColors
+              testID="entry-reflection-selected-photo"
+            />
+            <TouchableOpacity
+              onPress={() => {
+                deletePendingPhoto(reflectionPhoto);
+                setReflectionPhoto(undefined);
+              }}
+              style={[styles.selectedPhotoRemoveButton, { backgroundColor: theme.colors.overlay }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('reflectionRemovePhotoA11y')}
+            >
+              <MaterialCommunityIcons name="close" size={16} color={theme.colors.stickerControlText} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </View>
     </Modal>
   );
@@ -176,6 +270,12 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   reflectionText: { lineHeight: 20, marginTop: 2 },
+  reflectionPhoto: {
+    width: '100%',
+    height: 128,
+    borderRadius: 8,
+    marginTop: 8,
+  },
   reflectionInputBox: {
     minHeight: 38,
     flexDirection: 'row',
@@ -184,6 +284,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingLeft: 10,
     paddingRight: 4,
+  },
+  reflectionPhotoButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 4,
   },
   reflectionInput: {
     flex: 1,
@@ -197,6 +305,26 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedPhotoPreview: {
+    marginTop: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  selectedPhotoImage: {
+    width: '100%',
+    height: 112,
+  },
+  selectedPhotoRemoveButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
