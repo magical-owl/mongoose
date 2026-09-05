@@ -22,10 +22,13 @@ import {
   Platform,
   KeyboardAvoidingView,
   Keyboard,
+  Image,
   TextInput as NativeTextInput,
   StyleSheet,
   useWindowDimensions,
   ActivityIndicator,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
@@ -58,8 +61,9 @@ import { MemoryReactionButton } from '@/features/diary/components/MemoryReaction
 import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
 import { TagBadgeList } from '@/features/diary/components/TagBadgeList';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
+import { getNextDiaryEntry } from '@/features/diary/services/DiaryEntryNavigation';
 import { chooseDiaryPhoto, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
-import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
+import { createPlacedPhotoSticker, diaryPhotoService, getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
@@ -67,6 +71,7 @@ import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimitService';
 import { APP_IDENTITY } from '@/config/appIdentity';
+import { appLockService } from '@/services/AppLockService';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 import { getStickerBodyPreviewBottom } from '@/features/diary/domain/StickerLayout';
 import { DIARY_BODY_DEFAULT_FONT_FAMILY, normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
@@ -103,6 +108,13 @@ function entryDate(value: string): Date {
   return year && month && day ? new Date(year, month - 1, day, 12, 0, 0) : new Date();
 }
 
+async function preloadEntryCoverPhoto(photo?: DiaryPhoto): Promise<void> {
+  if (!photo) return;
+  const source = getDiaryPhotoImageSource(photo.uri);
+  if (!source || typeof source !== 'object' || !('uri' in source) || typeof source.uri !== 'string') return;
+  await Image.prefetch(source.uri).catch(() => false);
+}
+
 const FORMAT_ITEMS: readonly RichTextFormatItem[] = [
   { kind: 'bold',    icon: 'format-bold' },
   { kind: 'italic',  icon: 'format-italic' },
@@ -129,6 +141,10 @@ const ENTRY_BODY_MIN_HEIGHT = ENTRY_EDITOR_BODY_MIN_HEIGHT;
 const ENTRY_BODY_DEFAULT_VIEWPORT_RATIO = ENTRY_EDITOR_BODY_DEFAULT_VIEWPORT_RATIO;
 const ENTRY_BODY_EXTRA_STICKER_SPACE = ENTRY_EDITOR_BODY_EXTRA_STICKER_SPACE;
 const EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO = 0.5;
+const NEXT_ENTRY_SCROLL_THRESHOLD = 36;
+const NEXT_ENTRY_LOAD_DELAY_MS = 550;
+const NEXT_ENTRY_FADE_OUT_MS = 420;
+const NEXT_ENTRY_FADE_IN_MS = 520;
 
 export default function EntryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -144,6 +160,10 @@ export default function EntryDetailScreen() {
   const timeFormat = useAppStore((state) => state.timeFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const stickerBoundsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nextEntryLoadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasUserScrolledViewRef = useRef(false);
+  const isLoadingNextEntryRef = useRef(false);
+  const viewEntryOpacity = useRef(new Animated.Value(1)).current;
   const handleCoverScrollBeginDrag = useCallback(() => {
     editorRef.current?.dismissKeyboard();
     Keyboard.dismiss();
@@ -189,6 +209,7 @@ export default function EntryDetailScreen() {
   const [showFormattingTools, setShowFormattingTools] = useState(false);
   const [showReflections, setShowReflections] = useState(false);
   const [showMemoryReactionPicker, setShowMemoryReactionPicker] = useState(false);
+  const [isLoadingNextEntry, setIsLoadingNextEntry] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isStickerDragging, setIsStickerDragging] = useState(false);
@@ -208,6 +229,35 @@ export default function EntryDetailScreen() {
     setEditBodyFontFamily(normalizeDiaryBodyFontFamily(sourceEntry.bodyFontFamily));
     setEditBodyTextColor(normalizeDiaryBodyTextColor(sourceEntry.bodyTextColor));
   }, []);
+
+  const hydrateEntryState = useCallback((sourceEntry: DiaryEntry) => {
+    setEntry(sourceEntry);
+    setEditTitle(sourceEntry.title);
+    setEditContent(sourceEntry.content);
+    setEditDate(entryDate(sourceEntry.date));
+    setEditCoverPhoto(sourceEntry.coverPhoto);
+    setEditPaperBackgroundId(sourceEntry.paperBackgroundId ?? DEFAULT_DIARY_PAPER_BACKGROUND_ID);
+    resetEditableBodyStyle(sourceEntry);
+    setEditStickers([
+      ...sourceEntry.stickers,
+      ...sourceEntry.photos.map((photo, index) => createPlacedPhotoSticker(photo, sourceEntry.stickers.length + index)),
+    ]);
+    setEditCompanion(sourceEntry.companion);
+    setEditFavorite(sourceEntry.isFavorite);
+    setEditJournalIds(sourceEntry.journalIds ?? sourceEntry.collectionIds);
+    setEditTags(normalizeDiaryTags(sourceEntry.tags));
+    setEditMoods(getEntryManualMoods(sourceEntry));
+    setEditMoodWeather(sourceEntry.manualMoodWeather);
+    setEditWritingMode(sourceEntry.writingMode);
+    setEditLocation(sourceEntry.sensory.locationLabel);
+    setEditSounds(sourceEntry.sensory.sounds);
+    setEditSmells(sourceEntry.sensory.smells);
+    setEditEnergy(String(sourceEntry.sensory.energyLevel));
+    setEditBody(sourceEntry.sensory.bodyState);
+    setEditLockbox(sourceEntry.isLockbox);
+    setEditUnlockAt(sourceEntry.timeCapsuleUnlockAt ?? '');
+    setEditExpiresAt(sourceEntry.expiresAt ?? '');
+  }, [resetEditableBodyStyle]);
 
   const handleSelectTemplate = (template: Template) => {
     const trimmed = editContent
@@ -231,6 +281,7 @@ export default function EntryDetailScreen() {
 
   useEffect(() => () => {
     if (stickerBoundsTimer.current) clearTimeout(stickerBoundsTimer.current);
+    if (nextEntryLoadTimer.current) clearTimeout(nextEntryLoadTimer.current);
   }, []);
 
   const revealStickerBounds = useCallback(() => {
@@ -243,27 +294,19 @@ export default function EntryDetailScreen() {
   }, []);
 
   useEffect(() => {
+    hasUserScrolledViewRef.current = false;
+    isLoadingNextEntryRef.current = false;
     const timer = setTimeout(() => {
+      setIsLoadingNextEntry(false);
+      setShowMemoryReactionPicker(false);
       if (!id) return;
       const found = entries.find((e) => e.id === id);
       if (found) {
-        setEntry(found);
-        setEditTitle(found.title);
-        setEditContent(found.content);
-        setEditDate(entryDate(found.date));
-        setEditCoverPhoto(found.coverPhoto);
-        setEditPaperBackgroundId(found.paperBackgroundId ?? DEFAULT_DIARY_PAPER_BACKGROUND_ID);
-        resetEditableBodyStyle(found);
-        setEditStickers([...found.stickers, ...found.photos.map((photo, index) => createPlacedPhotoSticker(photo, found.stickers.length + index))]);
-        setEditCompanion(found.companion);
-        setEditFavorite(found.isFavorite);
-        setEditJournalIds(found.journalIds ?? found.collectionIds);
-        setEditTags(normalizeDiaryTags(found.tags));
-        setEditMoods(getEntryManualMoods(found)); setEditMoodWeather(found.manualMoodWeather); setEditWritingMode(found.writingMode); setEditLocation(found.sensory.locationLabel); setEditSounds(found.sensory.sounds); setEditSmells(found.sensory.smells); setEditEnergy(String(found.sensory.energyLevel)); setEditBody(found.sensory.bodyState); setEditLockbox(found.isLockbox); setEditUnlockAt(found.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(found.expiresAt ?? '');
+        hydrateEntryState(found);
       }
     }, 0);
     return () => clearTimeout(timer);
-  }, [id, entries, resetEditableBodyStyle]);
+  }, [id, entries, hydrateEntryState]);
 
   const navigateBack = useCallback(() => {
     if (router.canGoBack()) router.back();
@@ -273,36 +316,14 @@ export default function EntryDetailScreen() {
   const handleStartEdit = () => {
     if (!entry) return;
     resetScrollCollapse();
-    setEditTitle(entry.title);
-    setEditContent(entry.content);
-    setEditDate(entryDate(entry.date));
-    setEditCoverPhoto(entry.coverPhoto);
-    setEditPaperBackgroundId(entry.paperBackgroundId ?? DEFAULT_DIARY_PAPER_BACKGROUND_ID);
-    resetEditableBodyStyle(entry);
-    setEditStickers([...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))]);
-    setEditCompanion(entry.companion);
-    setEditFavorite(entry.isFavorite);
-    setEditJournalIds(entry.journalIds ?? entry.collectionIds);
-    setEditTags(normalizeDiaryTags(entry.tags));
-    setEditMoods(getEntryManualMoods(entry)); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
+    hydrateEntryState(entry);
     setIsEditing(true);
   };
 
   const handleCancelEdit = () => {
     if (!entry) return;
     resetScrollCollapse();
-    setEditTitle(entry.title);
-    setEditContent(entry.content);
-    setEditDate(entryDate(entry.date));
-    setEditCoverPhoto(entry.coverPhoto);
-    setEditPaperBackgroundId(entry.paperBackgroundId ?? DEFAULT_DIARY_PAPER_BACKGROUND_ID);
-    resetEditableBodyStyle(entry);
-    setEditStickers([...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))]);
-    setEditCompanion(entry.companion);
-    setEditFavorite(entry.isFavorite);
-    setEditJournalIds(entry.journalIds ?? entry.collectionIds);
-    setEditTags(normalizeDiaryTags(entry.tags));
-    setEditMoods(getEntryManualMoods(entry)); setEditMoodWeather(entry.manualMoodWeather); setEditWritingMode(entry.writingMode); setEditLocation(entry.sensory.locationLabel); setEditSounds(entry.sensory.sounds); setEditSmells(entry.sensory.smells); setEditEnergy(String(entry.sensory.energyLevel)); setEditBody(entry.sensory.bodyState); setEditLockbox(entry.isLockbox); setEditUnlockAt(entry.timeCapsuleUnlockAt ?? ''); setEditExpiresAt(entry.expiresAt ?? '');
+    hydrateEntryState(entry);
     setIsEditing(false);
   };
 
@@ -520,6 +541,60 @@ export default function EntryDetailScreen() {
   );
 
   const availableTags = useMemo(() => normalizeDiaryTags(entries.flatMap((item) => item.tags)), [entries]);
+  const nextEntry = useMemo(() => (
+    entry ? getNextDiaryEntry(entries, entry.id) : undefined
+  ), [entries, entry]);
+  const handleLoadNextEntry = useCallback(async () => {
+    if (isEditing || !nextEntry || isLoadingNextEntryRef.current) return;
+    isLoadingNextEntryRef.current = true;
+    setIsLoadingNextEntry(true);
+    viewEntryOpacity.stopAnimation();
+
+    if (nextEntry.isLockbox && !(await appLockService.authenticate())) {
+      isLoadingNextEntryRef.current = false;
+      setIsLoadingNextEntry(false);
+      viewEntryOpacity.setValue(1);
+      return;
+    }
+    await preloadEntryCoverPhoto(nextEntry.coverPhoto);
+
+    if (nextEntryLoadTimer.current) clearTimeout(nextEntryLoadTimer.current);
+    nextEntryLoadTimer.current = setTimeout(() => {
+      Animated.timing(viewEntryOpacity, {
+        toValue: 0,
+        duration: NEXT_ENTRY_FADE_OUT_MS,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsEditing(false);
+        setShowFormattingTools(false);
+        setShowReflections(false);
+        setShowMemoryReactionPicker(false);
+        hydrateEntryState(nextEntry);
+        resetScrollCollapse();
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+        router.setParams({ id: nextEntry.id });
+        nextEntryLoadTimer.current = null;
+        setIsLoadingNextEntry(false);
+        Animated.timing(viewEntryOpacity, {
+          toValue: 1,
+          duration: NEXT_ENTRY_FADE_IN_MS,
+          useNativeDriver: true,
+        }).start(() => {
+          isLoadingNextEntryRef.current = false;
+        });
+      });
+    }, NEXT_ENTRY_LOAD_DELAY_MS);
+  }, [hydrateEntryState, isEditing, nextEntry, resetScrollCollapse, router, scrollRef, viewEntryOpacity]);
+  const handleViewScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    handleEditorScroll(event);
+    if (isEditing || !hasUserScrolledViewRef.current || !nextEntry) return;
+
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
+    if (distanceFromBottom <= NEXT_ENTRY_SCROLL_THRESHOLD) {
+      void handleLoadNextEntry();
+    }
+  }, [handleEditorScroll, handleLoadNextEntry, isEditing, nextEntry]);
 
   if (!entry) {
     return (
@@ -719,46 +794,57 @@ export default function EntryDetailScreen() {
               : styles.coverHeaderFullBleed,
           ]}
         >
-          {isEditing ? (
-            <DiaryCoverPhotoPicker
-              photo={editCoverPhoto}
-              variant="entryHero"
-              height={editCoverExpandedHeight}
-              onTakePhoto={() => handleCoverPhotoPickerResult('camera')}
-              onChoosePhoto={() => handleCoverPhotoPickerResult('library')}
-              onRemovePhoto={() => setEditCoverPhoto(undefined)}
-              scrollY={coverScrollY}
-              containerStyle={hasEditCoverPhoto ? styles.viewCoverPicker : undefined}
-              actionAreaTopInset={hasEditCoverPhoto ? headerOnlyHeight : 0}
-            />
-          ) : (
-            <DiaryCoverPhotoPicker
-              photo={entry.coverPhoto}
-              editable={false}
-              variant="entryHero"
-              height={ENTRY_VIEW_COVER_EXPANDED_HEIGHT}
-              scrollY={coverScrollY}
-              containerStyle={styles.viewCoverPicker}
-            >
-              <Animated.View style={[styles.coverEntryOverlay, { opacity: viewCoverOverlayOpacity }]}>
-                <Text preset="h2" numberOfLines={2} style={[styles.coverTitle, { color: theme.colors.stickerControlText }]}>
-                  {entry.title}
-                </Text>
-                <Text preset="caption" numberOfLines={1} style={[styles.coverDateTime, { color: theme.colors.stickerControlText }]}>
-                  {viewDateTime}
-                </Text>
-              </Animated.View>
-            </DiaryCoverPhotoPicker>
-          )}
+          <Animated.View style={!isEditing ? { opacity: viewEntryOpacity } : undefined}>
+            {isEditing ? (
+              <DiaryCoverPhotoPicker
+                photo={editCoverPhoto}
+                variant="entryHero"
+                height={editCoverExpandedHeight}
+                onTakePhoto={() => handleCoverPhotoPickerResult('camera')}
+                onChoosePhoto={() => handleCoverPhotoPickerResult('library')}
+                onRemovePhoto={() => setEditCoverPhoto(undefined)}
+                scrollY={coverScrollY}
+                containerStyle={hasEditCoverPhoto ? styles.viewCoverPicker : undefined}
+                actionAreaTopInset={hasEditCoverPhoto ? headerOnlyHeight : 0}
+              />
+            ) : (
+              <DiaryCoverPhotoPicker
+                photo={entry.coverPhoto}
+                editable={false}
+                variant="entryHero"
+                height={ENTRY_VIEW_COVER_EXPANDED_HEIGHT}
+                scrollY={coverScrollY}
+                containerStyle={styles.viewCoverPicker}
+                transitionMode="replace"
+              >
+                <Animated.View style={[styles.coverEntryOverlay, { opacity: viewCoverOverlayOpacity }]}>
+                  <Text preset="h2" numberOfLines={2} style={[styles.coverTitle, { color: theme.colors.stickerControlText }]}>
+                    {entry.title}
+                  </Text>
+                  <Text preset="caption" numberOfLines={1} style={[styles.coverDateTime, { color: theme.colors.stickerControlText }]}>
+                    {viewDateTime}
+                  </Text>
+                </Animated.View>
+              </DiaryCoverPhotoPicker>
+            )}
+          </Animated.View>
         </View>
       ) : null}
 
-      <Animated.View pointerEvents="none" style={[styles.entryPaperBackdropFrame, { top: paperBackdropTop }]}>
-        <DiaryPaperCanvas
-          paperBackgroundId={isEditing ? editPaperBackgroundId : entry.paperBackgroundId}
-          style={styles.entryPaperBackdrop}
-          testID={isEditing ? 'entry-edit-paper-canvas' : 'entry-view-paper-canvas'}
-        />
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.entryPaperBackdropFrame,
+          { top: paperBackdropTop },
+        ]}
+      >
+        <View style={styles.entryPaperBackdrop}>
+          <DiaryPaperCanvas
+            paperBackgroundId={isEditing ? editPaperBackgroundId : entry.paperBackgroundId}
+            style={styles.entryPaperBackdrop}
+            testID={isEditing ? 'entry-edit-paper-canvas' : 'entry-view-paper-canvas'}
+          />
+        </View>
       </Animated.View>
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
@@ -784,8 +870,9 @@ export default function EntryDetailScreen() {
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          onScroll={handleEditorScroll}
+          onScroll={handleViewScroll}
           onScrollBeginDrag={() => {
+            if (!isEditing) hasUserScrolledViewRef.current = true;
             closeFormattingTools();
             handleEditorScrollBeginDrag();
           }}
@@ -926,6 +1013,11 @@ export default function EntryDetailScreen() {
                   onDeleteSticker={handleDeleteSticker}
                   onStickerDragStateChange={setIsStickerDragging}
                 />
+                {isLoadingNextEntry ? (
+                  <View style={styles.nextEntryLoader} testID="entry-view-next-loader">
+                    <ActivityIndicator color={theme.colors.tint} />
+                  </View>
+                ) : null}
 
               </>
             )}
@@ -1188,6 +1280,11 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 2,
     elevation: 2,
+  },
+  nextEntryLoader: {
+    minHeight: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   titleInput: {
     fontSize: 30,

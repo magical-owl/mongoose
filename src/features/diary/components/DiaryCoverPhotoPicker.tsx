@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, StyleSheet, TouchableOpacity, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 import type { ReactNode } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ interface DiaryCoverPhotoPickerProps {
   readonly children?: ReactNode;
   readonly containerStyle?: StyleProp<ViewStyle>;
   readonly actionAreaTopInset?: number;
+  readonly transitionMode?: 'preserve-previous' | 'replace';
 }
 
 export function DiaryCoverPhotoPicker({
@@ -33,12 +35,71 @@ export function DiaryCoverPhotoPicker({
   children,
   containerStyle,
   actionAreaTopInset = 0,
+  transitionMode = 'preserve-previous',
 }: DiaryCoverPhotoPickerProps) {
   const theme = useTheme();
   const t = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
+  const photoUri = photo?.uri;
+  const [displayedPhotoUri, setDisplayedPhotoUri] = useState(photoUri);
+  const [incomingPhotoUri, setIncomingPhotoUri] = useState<string | undefined>();
+  const activeIncomingPhotoUri = useRef<string | undefined>(undefined);
+  const incomingOpacity = useRef(new Animated.Value(1)).current;
   const photoSource = photo ? getDiaryPhotoImageSource(photo.uri) : undefined;
+  const displayedPhotoSource =
+    transitionMode === 'replace' ? photoSource : displayedPhotoUri ? getDiaryPhotoImageSource(displayedPhotoUri) : photoSource;
+  const incomingPhotoSource =
+    transitionMode === 'replace' ? undefined : incomingPhotoUri ? getDiaryPhotoImageSource(incomingPhotoUri) : undefined;
   const isEntryHero = variant === 'entryHero';
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!photoUri) {
+        activeIncomingPhotoUri.current = undefined;
+        setDisplayedPhotoUri(undefined);
+        setIncomingPhotoUri(undefined);
+        incomingOpacity.setValue(1);
+        return;
+      }
+
+      if (transitionMode === 'replace') {
+        activeIncomingPhotoUri.current = undefined;
+        setIncomingPhotoUri(undefined);
+        incomingOpacity.setValue(1);
+        return;
+      }
+
+      if (!displayedPhotoUri) {
+        activeIncomingPhotoUri.current = undefined;
+        setDisplayedPhotoUri(photoUri);
+        setIncomingPhotoUri(undefined);
+        incomingOpacity.setValue(1);
+        return;
+      }
+
+      if (photoUri !== displayedPhotoUri && photoUri !== incomingPhotoUri) {
+        activeIncomingPhotoUri.current = photoUri;
+        incomingOpacity.setValue(0);
+        setIncomingPhotoUri(photoUri);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [displayedPhotoUri, incomingOpacity, incomingPhotoUri, photoUri, transitionMode]);
+
+  const handleIncomingPhotoLoaded = (loadedPhotoUri: string | undefined) => {
+    if (!incomingPhotoUri || activeIncomingPhotoUri.current !== loadedPhotoUri || photoUri !== loadedPhotoUri) return;
+    Animated.timing(incomingOpacity, {
+      toValue: 1,
+      duration: 180,
+      useNativeDriver: true,
+    }).start(() => {
+      if (activeIncomingPhotoUri.current !== loadedPhotoUri) return;
+      activeIncomingPhotoUri.current = undefined;
+      setDisplayedPhotoUri(loadedPhotoUri);
+      setIncomingPhotoUri(undefined);
+    });
+  };
 
   if (!editable && !photo) return null;
 
@@ -81,13 +142,27 @@ export function DiaryCoverPhotoPicker({
       accessibilityLabel={photo ? t('entryCoverPhotoA11y') : undefined}
     >
       {photo ? (
-        <Image
-          source={photoSource}
-          style={styles.image}
-          resizeMode="cover"
-          accessibilityIgnoresInvertColors
-          testID="diary-cover-photo-image"
-        />
+        <>
+          {displayedPhotoSource ? (
+            <Image
+              source={displayedPhotoSource}
+              style={styles.image}
+              resizeMode="cover"
+              accessibilityIgnoresInvertColors
+              testID="diary-cover-photo-image"
+            />
+          ) : null}
+          {incomingPhotoSource ? (
+            <Animated.Image
+              source={incomingPhotoSource}
+              style={[styles.image, { opacity: incomingOpacity }]}
+              resizeMode="cover"
+              accessibilityIgnoresInvertColors
+              onLoadEnd={() => handleIncomingPhotoLoaded(incomingPhotoUri)}
+              testID="diary-cover-photo-image-incoming"
+            />
+          ) : null}
+        </>
       ) : (
         <TouchableOpacity
           style={[styles.emptyState, isEntryHero && { backgroundColor: 'transparent' }]}
