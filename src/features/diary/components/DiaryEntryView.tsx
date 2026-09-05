@@ -1,8 +1,7 @@
 import { useState, type ReactNode } from 'react';
-import { Alert, Image, ImageBackground, Keyboard, Pressable, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View, type ImageStyle, type StyleProp, type ViewStyle } from 'react-native';
+import { Image, ImageBackground, Pressable, StyleSheet, TouchableOpacity, useWindowDimensions, View, type ImageStyle, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
-import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { Text } from '@shared/components/Text';
 import { stripHtml } from '@shared/utils/html';
 import { getEntryManualMoods, getPrimaryManualMood, type DiaryEntry, type DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
@@ -19,13 +18,13 @@ import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import { reflectionCountLabel, useTranslation } from '@/localization/i18n';
-import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
-import { diaryPhotoService, getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
+import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
 import {
   getStickerBodyPreviewBottom,
 } from '@/features/diary/domain/StickerLayout';
 import { DiaryEntryBodyPreview } from './DiaryEntryBodyPreview';
 import { MemoryReactionButton } from './MemoryReactionButton';
+import { ReflectionComposer } from './ReflectionComposer';
 
 export type DiaryEntryViewMode = 'detailed' | 'timeline' | 'feed';
 
@@ -102,11 +101,6 @@ export function DiaryEntryView({
   const { width: windowWidth } = useWindowDimensions();
   const timeFormat = useAppStore((state) => state.timeFormat);
   const t = useTranslation();
-  const [reflectionText, setReflectionText] = useState('');
-  const [reflectionPhoto, setReflectionPhoto] = useState<DiaryPhoto | undefined>();
-  const [isAddingReflection, setIsAddingReflection] = useState(false);
-  const [isPickingReflectionPhoto, setIsPickingReflectionPhoto] = useState(false);
-  const [isReflectionFocused, setIsReflectionFocused] = useState(false);
   const [isMemoryReactionPickerVisible, setIsMemoryReactionPickerVisible] = useState(false);
   const [feedCanvasWidth, setFeedCanvasWidth] = useState(0);
   const entryMoods = getEntryManualMoods(entry);
@@ -136,53 +130,6 @@ export function DiaryEntryView({
   const fullWidthEntryFrame = {
     width: windowWidth,
     marginHorizontal: -theme.spacing.xl,
-  };
-
-  const handleAddInlineReflection = async () => {
-    const trimmed = reflectionText.trim();
-    if (!trimmed || !onAddReflection) return;
-    setIsAddingReflection(true);
-    const saved = await onAddReflection(entry.id, trimmed, reflectionPhoto);
-    if (saved) {
-      setReflectionText('');
-      setReflectionPhoto(undefined);
-    }
-    setIsAddingReflection(false);
-  };
-
-  const deletePendingReflectionPhoto = (photo: DiaryPhoto | undefined) => {
-    if (!photo) return;
-    void diaryPhotoService.deletePhoto(photo);
-  };
-
-  const handleChooseInlineReflectionPhoto = async () => {
-    setIsPickingReflectionPhoto(true);
-    const result = await chooseDiaryPhoto();
-    if (!result.success) {
-      setIsPickingReflectionPhoto(false);
-      if (result.error === 'native-module-missing') {
-        Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
-        return;
-      }
-      Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage'));
-      return;
-    }
-
-    const asset = result.assets[0];
-    if (!asset) {
-      setIsPickingReflectionPhoto(false);
-      return;
-    }
-
-    try {
-      const importedPhoto = await diaryPhotoService.importAsset(asset);
-      deletePendingReflectionPhoto(reflectionPhoto);
-      setReflectionPhoto(importedPhoto);
-    } catch {
-      Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
-    } finally {
-      setIsPickingReflectionPhoto(false);
-    }
   };
 
   const handleOpenEntry = () => {
@@ -275,109 +222,26 @@ export function DiaryEntryView({
         </View>
       ) : null}
       {onAddReflection ? (
-        <>
-          <View
-          style={[
+        <ReflectionComposer
+          onSubmit={(text, photo) => onAddReflection(entry.id, text, photo)}
+          onFocus={() => onReflectionInputFocus?.(entry.id)}
+          inputBoxStyle={[
             styles.timelineReflectionInputBox,
             isFeedMode && styles.feedReflectionInputBox,
             entry.reflections.length > 0 && styles.timelineReflectionInputAfterContent,
-            {
-              minHeight: Math.max(42, theme.fontSizes.sm * 2.9),
-              borderColor: isReflectionFocused ? theme.colors.tint : theme.colors.border,
-              backgroundColor: isFeedMode ? theme.colors.surface : theme.colors.card,
-            },
           ]}
-          testID={isFeedMode ? 'entry-feed-reflection-input' : 'entry-timeline-reflection-input'}
-        >
-          <IconCircleButton
-            icon={reflectionPhoto ? 'image' : 'image-outline'}
-            onPress={() => { void handleChooseInlineReflectionPhoto(); }}
-            disabled={isPickingReflectionPhoto}
-            accessibilityLabel={reflectionPhoto ? t('reflectionChangePhotoA11y') : t('reflectionAddPhotoA11y')}
-            size="sm"
-            surface="transparent"
-            iconSize={18}
-            style={styles.timelineReflectionIconButton}
-          />
-          <TextInput
-            value={reflectionText}
-            onChangeText={setReflectionText}
-            placeholder={t('addReflectionPlaceholder')}
-            placeholderTextColor={theme.colors.textSecondary}
-            style={[
-              styles.timelineReflectionInput,
-              {
-                height: Math.max(36, theme.fontSizes.sm * 2.5),
-                color: theme.colors.text,
-                fontFamily: theme.fontFamily,
-                fontSize: theme.fontSizes.sm,
-                lineHeight: theme.fontSizes.sm * 1.35,
-              },
-            ]}
-            returnKeyType="send"
-            onSubmitEditing={() => { void handleAddInlineReflection(); }}
-            onFocus={() => {
-              setIsReflectionFocused(true);
-              onReflectionInputFocus?.(entry.id);
-            }}
-            onBlur={() => setIsReflectionFocused(false)}
-            accessibilityLabel={t('reflectionAddA11y')}
-          />
-          {isReflectionFocused ? (
-            <IconCircleButton
-              icon="chevron-down"
-              onPress={Keyboard.dismiss}
-              accessibilityLabel={t('entryDismissKeyboardA11y')}
-              size="sm"
-              surface="transparent"
-              iconSize={18}
-              style={styles.timelineReflectionIconButton}
-            />
-          ) : null}
-          <IconCircleButton
-            icon="plus"
-            onPress={() => { void handleAddInlineReflection(); }}
-            disabled={!reflectionText.trim() || isAddingReflection}
-            accessibilityLabel={t('reflectionSaveA11y')}
-            active={Boolean(reflectionText.trim()) && !isAddingReflection}
-            size="sm"
-            surface={reflectionText.trim() && !isAddingReflection ? 'surface' : 'transparent'}
-            iconSize={18}
-            style={styles.timelineReflectionIconButton}
-          />
-          </View>
-          {reflectionPhoto ? (
-            <View
-              style={[
-                styles.inlineReflectionPhotoPreview,
-                isFeedMode && styles.feedInlineReflectionPhotoPreview,
-                { borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
-              ]}
-              testID={isFeedMode ? 'entry-feed-reflection-photo-preview' : 'entry-timeline-reflection-photo-preview'}
-            >
-              <Image
-                source={getDiaryPhotoImageSource(reflectionPhoto.uri)}
-                style={styles.inlineReflectionPhotoImage}
-                resizeMode="cover"
-                accessibilityLabel={t('reflectionPhotoA11y')}
-                accessibilityIgnoresInvertColors
-                testID={isFeedMode ? 'entry-feed-selected-reflection-photo' : 'entry-timeline-selected-reflection-photo'}
-              />
-              <IconCircleButton
-                icon="close"
-                onPress={() => {
-                  deletePendingReflectionPhoto(reflectionPhoto);
-                  setReflectionPhoto(undefined);
-                }}
-                accessibilityLabel={t('reflectionRemovePhotoA11y')}
-                size="sm"
-                surface="overlay"
-                iconSize={16}
-                style={styles.inlineReflectionPhotoRemoveButton}
-              />
-            </View>
-          ) : null}
-        </>
+          photoPreviewStyle={[
+            styles.inlineReflectionPhotoPreview,
+            isFeedMode && styles.feedInlineReflectionPhotoPreview,
+          ]}
+          inputBoxTestID={isFeedMode ? 'entry-feed-reflection-input' : 'entry-timeline-reflection-input'}
+          photoPreviewTestID={isFeedMode ? 'entry-feed-reflection-photo-preview' : 'entry-timeline-reflection-photo-preview'}
+          selectedPhotoTestID={isFeedMode ? 'entry-feed-selected-reflection-photo' : 'entry-timeline-selected-reflection-photo'}
+          showKeyboardDismissButton
+          submitSurface="subtle"
+          minHeight={Math.max(42, theme.fontSizes.sm * 2.9)}
+          backgroundColor={isFeedMode ? theme.colors.surface : theme.colors.card}
+        />
       ) : null}
     </View>
   ) : null;
@@ -750,10 +614,6 @@ const styles = StyleSheet.create({
   timelineReflectionPhoto: { width: '100%', height: 118, borderRadius: 8, marginTop: 8 },
   timelineReflectionInputBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, marginTop: 0, marginLeft: 8, paddingLeft: 12, paddingRight: 4 },
   timelineReflectionInputAfterContent: { marginTop: 10 },
-  timelineReflectionInput: { flex: 1, paddingVertical: 0, paddingTop: 0, paddingBottom: 0, includeFontPadding: false, textAlignVertical: 'center' },
-  timelineReflectionIconButton: { width: 32, height: 32 },
   inlineReflectionPhotoPreview: { marginTop: 8, marginLeft: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, overflow: 'hidden' },
   feedInlineReflectionPhotoPreview: { marginLeft: 0 },
-  inlineReflectionPhotoImage: { width: '100%', height: 112 },
-  inlineReflectionPhotoRemoveButton: { position: 'absolute', top: 8, right: 8, width: 28, height: 28 },
 });
