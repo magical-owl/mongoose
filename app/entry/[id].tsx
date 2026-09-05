@@ -66,7 +66,6 @@ import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { getNextDiaryEntry, getPreviousDiaryEntry } from '@/features/diary/services/DiaryEntryNavigation';
 import { chooseDiaryPhoto, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService, getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
-import { formatDisplayDate } from '@shared/utils/dateFormat';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
@@ -159,7 +158,6 @@ export default function EntryDetailScreen() {
   const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection, toggleMemoryReaction, recordEntryView } = useDiary();
   const { journals } = useJournals();
   const { profile } = useProfileForm();
-  const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const timeFormat = useAppStore((state) => state.timeFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const stickerBoundsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -724,7 +722,7 @@ export default function EntryDetailScreen() {
           outputRange: [ENTRY_VIEW_COVER_EXPANDED_HEIGHT, 0],
           extrapolate: 'clamp',
         })
-      : headerOverlayHeight;
+      : 0;
   const coverTopOffset = hasEditCoverPhoto ? 0 : headerOnlyHeight + ENTRY_COVER_TOP_GAP;
   const entryPlaceholderColor = theme.colors.stickerControlText;
 
@@ -785,17 +783,17 @@ export default function EntryDetailScreen() {
             hasViewCoverPhoto && styles.headerOnCover,
             {
               paddingTop: insets.top + 4,
-              backgroundColor: hasViewCoverPhoto ? 'transparent' : theme.colors.background,
-              borderBottomColor: hasViewCoverPhoto ? 'transparent' : theme.colors.border,
+              backgroundColor: 'transparent',
+              borderBottomColor: 'transparent',
             },
           ]}
         >
           <>
-            <IconCircleButton icon="chevron-left" onPress={navigateBack} accessibilityLabel={t('entryBackA11y')} surface={hasViewCoverPhoto ? 'overlay' : 'surface'} />
+            <IconCircleButton icon="chevron-left" onPress={navigateBack} accessibilityLabel={t('entryBackA11y')} surface="overlay" />
             <View style={styles.headerDateSpacer} />
             <View style={styles.headerActions}>
-              <IconCircleButton icon="pencil-outline" onPress={handleStartEdit} accessibilityLabel={t('entryEditA11y')} surface={hasViewCoverPhoto ? 'overlay' : 'surface'} />
-              <IconCircleButton icon="trash-can-outline" onPress={handleDelete} accessibilityLabel={t('entryDeleteA11y')} destructive surface={hasViewCoverPhoto ? 'overlay' : 'surface'} />
+              <IconCircleButton icon="pencil-outline" onPress={handleStartEdit} accessibilityLabel={t('entryEditA11y')} surface="overlay" />
+              <IconCircleButton icon="trash-can-outline" onPress={handleDelete} accessibilityLabel={t('entryDeleteA11y')} destructive surface="overlay" />
             </View>
           </>
         </View>
@@ -1009,34 +1007,28 @@ export default function EntryDetailScreen() {
                   </View>
                 ) : null}
                 {hasViewCoverPhoto ? null : (
-                  <>
-                    <Text
-                      preset="caption"
-                      color="textSecondary"
-                      style={{ marginBottom: 4, fontWeight: '600', marginTop: 4 }}
-                    >
-                      {formatDisplayDate(entry.date, calendarDateFormat)}
-                    </Text>
+                  <View style={styles.noCoverViewHeader} testID="entry-view-no-cover-header">
                     <Text
                       preset="h1"
-                      color="text"
-                      style={{
-                        fontSize: theme.fontSizes.xxxl,
-                        lineHeight: theme.fontSizes.xxxl * 1.25,
-                        marginBottom: 12,
-                      }}
+                      style={[
+                        styles.noCoverViewTitle,
+                        {
+                          color: theme.colors.stickerControlText,
+                          fontSize: theme.fontSizes.xxxl,
+                          lineHeight: theme.fontSizes.xxxl * 1.25,
+                        },
+                      ]}
                     >
                       {entry.title}
                     </Text>
                     <Text
                       preset="caption"
-                      color="textSecondary"
-                      style={styles.entryDateTime}
+                      style={[styles.entryDateTime, { color: theme.colors.stickerControlText }]}
                       numberOfLines={1}
                     >
                       {viewDateTime}
                     </Text>
-                  </>
+                  </View>
                 )}
                 <DiaryEntryBodyView
                   entry={entry}
@@ -1347,6 +1339,14 @@ const styles = StyleSheet.create({
   },
   headerActions: { minWidth: 98, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 10 },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  noCoverViewHeader: {
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  noCoverViewTitle: {
+    marginBottom: 12,
+    fontWeight: '800',
+  },
   entryDateTime: {
     marginTop: -8,
     marginBottom: 16,
