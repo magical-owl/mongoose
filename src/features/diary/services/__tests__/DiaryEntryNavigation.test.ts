@@ -1,4 +1,4 @@
-import { getNextDiaryEntry } from '@/features/diary/services/DiaryEntryNavigation';
+import { getNextDiaryEntry, getPreviousDiaryEntry } from '@/features/diary/services/DiaryEntryNavigation';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 
 function createEntry(id: string): DiaryEntry {
@@ -45,11 +45,44 @@ describe('getNextDiaryEntry', () => {
     expect(getNextDiaryEntry([first, second, third], second.id)).toBe(third);
   });
 
-  it('returns undefined at the end or for an unknown entry', () => {
+  it('wraps from the last entry to the first entry', () => {
     const first = createEntry('first');
     const second = createEntry('second');
 
-    expect(getNextDiaryEntry([first, second], second.id)).toBeUndefined();
+    expect(getNextDiaryEntry([first, second], second.id)).toBe(first);
+  });
+
+  it('returns undefined for an unknown entry or a single-entry list', () => {
+    const first = createEntry('first');
+    const second = createEntry('second');
+
     expect(getNextDiaryEntry([first, second], 'missing')).toBeUndefined();
+    expect(getNextDiaryEntry([first], first.id)).toBeUndefined();
+  });
+});
+
+describe('getPreviousDiaryEntry', () => {
+  it('returns the entry before the current entry in the provided order', () => {
+    const first = createEntry('first');
+    const second = createEntry('second');
+    const third = createEntry('third');
+
+    expect(getPreviousDiaryEntry([first, second, third], second.id)).toBe(first);
+    expect(getPreviousDiaryEntry([first, second, third], third.id)).toBe(second);
+  });
+
+  it('wraps from the first entry to the last entry', () => {
+    const first = createEntry('first');
+    const second = createEntry('second');
+
+    expect(getPreviousDiaryEntry([first, second], first.id)).toBe(second);
+  });
+
+  it('returns undefined for an unknown entry or a single-entry list', () => {
+    const first = createEntry('first');
+    const second = createEntry('second');
+
+    expect(getPreviousDiaryEntry([first, second], 'missing')).toBeUndefined();
+    expect(getPreviousDiaryEntry([first], first.id)).toBeUndefined();
   });
 });

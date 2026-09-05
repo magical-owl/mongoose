@@ -23,6 +23,7 @@ import {
   KeyboardAvoidingView,
   Keyboard,
   Image,
+  RefreshControl,
   TextInput as NativeTextInput,
   StyleSheet,
   useWindowDimensions,
@@ -61,7 +62,7 @@ import { MemoryReactionButton } from '@/features/diary/components/MemoryReaction
 import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
 import { TagBadgeList } from '@/features/diary/components/TagBadgeList';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
-import { getNextDiaryEntry } from '@/features/diary/services/DiaryEntryNavigation';
+import { getNextDiaryEntry, getPreviousDiaryEntry } from '@/features/diary/services/DiaryEntryNavigation';
 import { chooseDiaryPhoto, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService, getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
 import { formatDisplayDate } from '@shared/utils/dateFormat';
@@ -145,6 +146,7 @@ const NEXT_ENTRY_SCROLL_THRESHOLD = 36;
 const NEXT_ENTRY_LOAD_DELAY_MS = 550;
 const NEXT_ENTRY_FADE_OUT_MS = 420;
 const NEXT_ENTRY_FADE_IN_MS = 520;
+type AdjacentEntryDirection = 'previous' | 'next';
 
 export default function EntryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -160,9 +162,9 @@ export default function EntryDetailScreen() {
   const timeFormat = useAppStore((state) => state.timeFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const stickerBoundsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const nextEntryLoadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const adjacentEntryLoadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasUserScrolledViewRef = useRef(false);
-  const isLoadingNextEntryRef = useRef(false);
+  const isLoadingAdjacentEntryRef = useRef(false);
   const viewEntryOpacity = useRef(new Animated.Value(1)).current;
   const handleCoverScrollBeginDrag = useCallback(() => {
     editorRef.current?.dismissKeyboard();
@@ -209,7 +211,7 @@ export default function EntryDetailScreen() {
   const [showFormattingTools, setShowFormattingTools] = useState(false);
   const [showReflections, setShowReflections] = useState(false);
   const [showMemoryReactionPicker, setShowMemoryReactionPicker] = useState(false);
-  const [isLoadingNextEntry, setIsLoadingNextEntry] = useState(false);
+  const [loadingEntryDirection, setLoadingEntryDirection] = useState<AdjacentEntryDirection | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isStickerDragging, setIsStickerDragging] = useState(false);
@@ -281,7 +283,7 @@ export default function EntryDetailScreen() {
 
   useEffect(() => () => {
     if (stickerBoundsTimer.current) clearTimeout(stickerBoundsTimer.current);
-    if (nextEntryLoadTimer.current) clearTimeout(nextEntryLoadTimer.current);
+    if (adjacentEntryLoadTimer.current) clearTimeout(adjacentEntryLoadTimer.current);
   }, []);
 
   const revealStickerBounds = useCallback(() => {
@@ -295,9 +297,9 @@ export default function EntryDetailScreen() {
 
   useEffect(() => {
     hasUserScrolledViewRef.current = false;
-    isLoadingNextEntryRef.current = false;
+    isLoadingAdjacentEntryRef.current = false;
     const timer = setTimeout(() => {
-      setIsLoadingNextEntry(false);
+      setLoadingEntryDirection(null);
       setShowMemoryReactionPicker(false);
       if (!id) return;
       const found = entries.find((e) => e.id === id);
@@ -541,25 +543,28 @@ export default function EntryDetailScreen() {
   );
 
   const availableTags = useMemo(() => normalizeDiaryTags(entries.flatMap((item) => item.tags)), [entries]);
+  const previousEntry = useMemo(() => (
+    entry ? getPreviousDiaryEntry(entries, entry.id) : undefined
+  ), [entries, entry]);
   const nextEntry = useMemo(() => (
     entry ? getNextDiaryEntry(entries, entry.id) : undefined
   ), [entries, entry]);
-  const handleLoadNextEntry = useCallback(async () => {
-    if (isEditing || !nextEntry || isLoadingNextEntryRef.current) return;
-    isLoadingNextEntryRef.current = true;
-    setIsLoadingNextEntry(true);
+  const handleLoadAdjacentEntry = useCallback(async (targetEntry: DiaryEntry | undefined, direction: AdjacentEntryDirection) => {
+    if (isEditing || !targetEntry || isLoadingAdjacentEntryRef.current) return;
+    isLoadingAdjacentEntryRef.current = true;
+    setLoadingEntryDirection(direction);
     viewEntryOpacity.stopAnimation();
 
-    if (nextEntry.isLockbox && !(await appLockService.authenticate())) {
-      isLoadingNextEntryRef.current = false;
-      setIsLoadingNextEntry(false);
+    if (targetEntry.isLockbox && !(await appLockService.authenticate())) {
+      isLoadingAdjacentEntryRef.current = false;
+      setLoadingEntryDirection(null);
       viewEntryOpacity.setValue(1);
       return;
     }
-    await preloadEntryCoverPhoto(nextEntry.coverPhoto);
+    await preloadEntryCoverPhoto(targetEntry.coverPhoto);
 
-    if (nextEntryLoadTimer.current) clearTimeout(nextEntryLoadTimer.current);
-    nextEntryLoadTimer.current = setTimeout(() => {
+    if (adjacentEntryLoadTimer.current) clearTimeout(adjacentEntryLoadTimer.current);
+    adjacentEntryLoadTimer.current = setTimeout(() => {
       Animated.timing(viewEntryOpacity, {
         toValue: 0,
         duration: NEXT_ENTRY_FADE_OUT_MS,
@@ -569,22 +574,28 @@ export default function EntryDetailScreen() {
         setShowFormattingTools(false);
         setShowReflections(false);
         setShowMemoryReactionPicker(false);
-        hydrateEntryState(nextEntry);
+        hydrateEntryState(targetEntry);
         resetScrollCollapse();
         scrollRef.current?.scrollTo({ y: 0, animated: false });
-        router.setParams({ id: nextEntry.id });
-        nextEntryLoadTimer.current = null;
-        setIsLoadingNextEntry(false);
+        router.setParams({ id: targetEntry.id });
+        adjacentEntryLoadTimer.current = null;
+        setLoadingEntryDirection(null);
         Animated.timing(viewEntryOpacity, {
           toValue: 1,
           duration: NEXT_ENTRY_FADE_IN_MS,
           useNativeDriver: true,
         }).start(() => {
-          isLoadingNextEntryRef.current = false;
+          isLoadingAdjacentEntryRef.current = false;
         });
       });
     }, NEXT_ENTRY_LOAD_DELAY_MS);
-  }, [hydrateEntryState, isEditing, nextEntry, resetScrollCollapse, router, scrollRef, viewEntryOpacity]);
+  }, [hydrateEntryState, isEditing, resetScrollCollapse, router, scrollRef, viewEntryOpacity]);
+  const handleLoadPreviousEntry = useCallback(() => {
+    void handleLoadAdjacentEntry(previousEntry, 'previous');
+  }, [handleLoadAdjacentEntry, previousEntry]);
+  const handleLoadNextEntry = useCallback(() => {
+    void handleLoadAdjacentEntry(nextEntry, 'next');
+  }, [handleLoadAdjacentEntry, nextEntry]);
   const handleViewScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     handleEditorScroll(event);
     if (isEditing || !hasUserScrolledViewRef.current || !nextEntry) return;
@@ -592,7 +603,7 @@ export default function EntryDetailScreen() {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
     if (distanceFromBottom <= NEXT_ENTRY_SCROLL_THRESHOLD) {
-      void handleLoadNextEntry();
+      handleLoadNextEntry();
     }
   }, [handleEditorScroll, handleLoadNextEntry, isEditing, nextEntry]);
 
@@ -870,6 +881,15 @@ export default function EntryDetailScreen() {
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          refreshControl={!isEditing && previousEntry ? (
+            <RefreshControl
+              refreshing={loadingEntryDirection === 'previous'}
+              onRefresh={handleLoadPreviousEntry}
+              tintColor={theme.colors.tint}
+              colors={[theme.colors.tint]}
+              progressBackgroundColor={theme.colors.surface}
+            />
+          ) : undefined}
           onScroll={handleViewScroll}
           onScrollBeginDrag={() => {
             if (!isEditing) hasUserScrolledViewRef.current = true;
@@ -966,6 +986,11 @@ export default function EntryDetailScreen() {
             ) : (
               /* ── View mode ──────────────────────────────────────────────── */
               <>
+                {loadingEntryDirection === 'previous' ? (
+                  <View style={styles.previousEntryLoader} testID="entry-view-previous-loader">
+                    <ActivityIndicator color={theme.colors.tint} />
+                  </View>
+                ) : null}
                 {hasViewCoverPhoto ? null : (
                   <>
                     <Text
@@ -1013,7 +1038,7 @@ export default function EntryDetailScreen() {
                   onDeleteSticker={handleDeleteSticker}
                   onStickerDragStateChange={setIsStickerDragging}
                 />
-                {isLoadingNextEntry ? (
+                {loadingEntryDirection === 'next' ? (
                   <View style={styles.nextEntryLoader} testID="entry-view-next-loader">
                     <ActivityIndicator color={theme.colors.tint} />
                   </View>
@@ -1280,6 +1305,11 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 2,
     elevation: 2,
+  },
+  previousEntryLoader: {
+    minHeight: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   nextEntryLoader: {
     minHeight: 72,
