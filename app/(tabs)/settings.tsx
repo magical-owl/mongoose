@@ -63,7 +63,6 @@ function patternBackgroundLabelKey(variant: PatternBackgroundVariant) {
   if (variant === 'summer') return 'settingsBackgroundThemeSummer';
   if (variant === 'autumn') return 'settingsBackgroundThemeAutumn';
   if (variant === 'winter') return 'settingsBackgroundThemeWinter';
-  if (variant === 'star') return 'settingsBackgroundThemeStar';
   return 'settingsBackgroundThemeSpring';
 }
 

@@ -22,7 +22,6 @@ describe('PatternBackground', () => {
       'summer',
       'autumn',
       'winter',
-      'star',
     ]);
   });
 

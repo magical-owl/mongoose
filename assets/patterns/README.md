@@ -8,7 +8,6 @@ These wallpaper tiles are AI-generated raster assets created with the built-in i
 - `pattern-summer.png` - sparse sun-only pattern.
 - `pattern-autumn.png` - sparse leaf-only pattern.
 - `pattern-winter.png` - sparse snowflake-only pattern.
-- `pattern-star.png` - sparse star-only pattern.
 
 ## Provenance
 
