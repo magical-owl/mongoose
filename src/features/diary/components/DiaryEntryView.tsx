@@ -248,10 +248,9 @@ export function DiaryEntryView({
     const feedTimestamp = feedEntryDateTime ? (
       <Text
         preset="caption"
-        color={entry.coverPhoto ? undefined : 'textTertiary'}
         style={[
           styles.feedDateTime,
-          entry.coverPhoto && { color: theme.colors.stickerControlText },
+          { color: entry.coverPhoto ? theme.colors.stickerControlText : theme.colors.text },
         ]}
         numberOfLines={1}
         testID={entry.coverPhoto ? 'entry-feed-cover-timestamp' : 'entry-feed-timestamp'}
@@ -348,21 +347,21 @@ export function DiaryEntryView({
           >
             <View style={styles.feedTextLayer}>
               {entry.coverPhoto ? null : (
-                <View style={styles.feedInlineHeader}>
-                  <View style={styles.feedTitleRow}>
-                    <Text
-                      style={[
-                        styles.feedTitle,
-                        {
-                          color: theme.colors.text,
-                          fontSize: theme.fontSizes.xxxl,
-                          lineHeight: theme.fontSizes.xxxl * 1.25,
-                        },
-                      ]}
-                    >
-                      {entry.title}
-                    </Text>
-                  </View>
+                <View style={styles.feedCoverContent}>
+                  <Text
+                    style={[
+                      styles.feedTitle,
+                      styles.feedCoverTitle,
+                      {
+                        color: theme.colors.text,
+                        fontSize: theme.fontSizes.xxxl,
+                        lineHeight: theme.fontSizes.xxxl * 1.25,
+                      },
+                    ]}
+                    numberOfLines={3}
+                  >
+                    {entry.title}
+                  </Text>
                   {feedTimestamp}
                 </View>
               )}
@@ -567,7 +566,6 @@ const styles = StyleSheet.create({
   feedEntrySurface: { borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   feedCanvas: { position: 'relative', overflow: 'visible' },
   feedTextLayer: { position: 'relative', zIndex: 2 },
-  feedTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 10 },
   feedTitle: { flex: 1, fontWeight: '700' },
   feedCoverHeader: { minHeight: 168, justifyContent: 'flex-end', overflow: 'hidden' },
   feedCoverHeaderImage: { borderRadius: 0 },
@@ -576,7 +574,6 @@ const styles = StyleSheet.create({
   feedCoverTitle: { marginBottom: 2 },
   feedContentPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 0, paddingHorizontal: 12, paddingVertical: 12 },
   feedContentPanelMerged: { borderWidth: 0, borderRadius: 0, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 20 },
-  feedInlineHeader: { paddingHorizontal: 20 },
   feedFooterMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 20, paddingVertical: 10 },
   feedReactionButton: { flexShrink: 0 },
   feedMoodBadges: { maxWidth: '100%' },

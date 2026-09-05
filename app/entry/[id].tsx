@@ -1009,21 +1009,20 @@ export default function EntryDetailScreen() {
                 {hasViewCoverPhoto ? null : (
                   <View style={styles.noCoverViewHeader} testID="entry-view-no-cover-header">
                     <Text
-                      preset="h1"
+                      preset="h2"
                       style={[
-                        styles.noCoverViewTitle,
+                        styles.coverTitle,
                         {
                           color: theme.colors.stickerControlText,
-                          fontSize: theme.fontSizes.xxxl,
-                          lineHeight: theme.fontSizes.xxxl * 1.25,
                         },
                       ]}
+                      numberOfLines={2}
                     >
                       {entry.title}
                     </Text>
                     <Text
                       preset="caption"
-                      style={[styles.entryDateTime, { color: theme.colors.stickerControlText }]}
+                      style={[styles.coverDateTime, { color: theme.colors.stickerControlText }]}
                       numberOfLines={1}
                     >
                       {viewDateTime}
@@ -1340,17 +1339,8 @@ const styles = StyleSheet.create({
   headerActions: { minWidth: 98, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 10 },
   headerIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   noCoverViewHeader: {
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  noCoverViewTitle: {
-    marginBottom: 12,
-    fontWeight: '800',
-  },
-  entryDateTime: {
-    marginTop: -8,
-    marginBottom: 16,
-    fontWeight: '600',
+    paddingTop: 2,
+    paddingBottom: 12,
   },
   coverEntryOverlay: {
     position: 'absolute',
