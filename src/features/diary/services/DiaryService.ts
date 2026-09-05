@@ -196,6 +196,23 @@ export class DiaryService {
     return await this.repo.save(updated);
   }
 
+  public async recordEntryView(entryId: string): Promise<Result<DiaryEntry>> {
+    const entryResult = await this.repo.getById(entryId);
+    if (!entryResult.success) return entryResult;
+    if (!entryResult.data) {
+      return failure({
+        code: 'NOT_FOUND',
+        message: 'Diary entry not found',
+      });
+    }
+
+    const updated: DiaryEntry = {
+      ...entryResult.data,
+      viewCount: Math.max(0, entryResult.data.viewCount ?? 0) + 1,
+    };
+    return await this.repo.save(updated);
+  }
+
   /**
    * Calculates writing streaks.
    */

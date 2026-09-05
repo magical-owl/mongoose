@@ -58,6 +58,7 @@ import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/Dia
 import { EntryReflectionsModal } from '@/features/diary/components/EntryReflectionsModal';
 import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataModal';
 import { ReflectionSummaryButton } from '@/features/diary/components/ReflectionSummaryButton';
+import { EntryViewCountBadge } from '@/features/diary/components/EntryViewCountBadge';
 import { MemoryReactionButton } from '@/features/diary/components/MemoryReactionButton';
 import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
 import { TagBadgeList } from '@/features/diary/components/TagBadgeList';
@@ -155,7 +156,7 @@ export default function EntryDetailScreen() {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const t = useTranslation();
-  const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection, toggleMemoryReaction } = useDiary();
+  const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection, toggleMemoryReaction, recordEntryView } = useDiary();
   const { journals } = useJournals();
   const { profile } = useProfileForm();
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
@@ -163,6 +164,7 @@ export default function EntryDetailScreen() {
   const editorRef = useRef<RichTextEditorHandle>(null);
   const stickerBoundsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const adjacentEntryLoadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastRecordedViewedEntryId = useRef<string | null>(null);
   const hasUserScrolledViewRef = useRef(false);
   const isLoadingAdjacentEntryRef = useRef(false);
   const viewEntryOpacity = useRef(new Animated.Value(1)).current;
@@ -309,6 +311,12 @@ export default function EntryDetailScreen() {
     }, 0);
     return () => clearTimeout(timer);
   }, [id, entries, hydrateEntryState]);
+
+  useEffect(() => {
+    if (isEditing || !id || !entry || entry.id !== id || lastRecordedViewedEntryId.current === entry.id) return;
+    lastRecordedViewedEntryId.current = entry.id;
+    void recordEntryView(entry.id);
+  }, [entry, id, isEditing, recordEntryView]);
 
   const navigateBack = useCallback(() => {
     if (router.canGoBack()) router.back();
@@ -1056,6 +1064,12 @@ export default function EntryDetailScreen() {
           style={styles.viewFooter}
         >
           {renderViewFooterMoodAndTags()}
+            <EntryViewCountBadge
+              count={entry.viewCount ?? 0}
+              accessibilityLabel={t('entryViewCountA11y').replace('{count}', String(entry.viewCount ?? 0))}
+              style={styles.viewFooterButton}
+              testID="entry-view-count"
+            />
             <ReflectionSummaryButton
               count={entry.reflections.length}
               onPress={() => setShowReflections(true)}

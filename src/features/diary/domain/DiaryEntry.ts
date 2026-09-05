@@ -128,6 +128,7 @@ export const DiaryEntrySchema = z.object({
   stickers: z.array(PlacedStickerSchema).default([]),
   companion: CompanionTypeSchema.default('cat'),
   isFavorite: z.boolean().default(false),
+  viewCount: z.number().int().nonnegative().optional(),
   memoryReactions: z.array(MemoryReactionSchema).default([]),
   tags: z.array(z.string()).default([]),
   createdAt: z.string().datetime(),

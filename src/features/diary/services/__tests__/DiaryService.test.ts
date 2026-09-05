@@ -160,6 +160,30 @@ describe('DiaryService', () => {
     }
   });
 
+  it('should record entry views without marking the entry as edited', async () => {
+    const entry = { ...mockEntry, viewCount: 2 };
+    await service.saveEntry(entry);
+
+    const result = await service.recordEntryView(entry.id);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.viewCount).toBe(3);
+      expect(result.data.updatedAt).toBe(entry.updatedAt);
+    }
+  });
+
+  it('should default missing view counts before recording an entry view', async () => {
+    await service.saveEntry(mockEntry);
+
+    const result = await service.recordEntryView(mockEntry.id);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.viewCount).toBe(1);
+    }
+  });
+
   it('should soft-delete, restore, and permanently delete entries through the recovery flow', async () => {
     await service.saveEntry(mockEntry);
 

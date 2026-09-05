@@ -178,6 +178,17 @@ export function useDiary() {
     return result;
   };
 
+  const recordEntryView = async (entryId: string) => {
+    const result = await diaryService.recordEntryView(entryId);
+    if (result.success) {
+      commitDiaryEntries(
+        replaceDiaryEntryPreservingOrder(entriesRef.current, result.data),
+        deletedEntriesRef.current,
+      );
+    }
+    return result;
+  };
+
   const streakStats = useMemo(() => diaryService.calculateStreak(entries), [entries]);
 
   return {
@@ -197,6 +208,7 @@ export function useDiary() {
     addReflection,
     deleteReflection,
     toggleMemoryReaction,
+    recordEntryView,
     refresh: fetchEntries,
     streakStats,
   };
