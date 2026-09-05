@@ -1,16 +1,16 @@
 import { useMemo } from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Modal } from '@shared/components/Modal';
 import { Text } from '@shared/components/Text';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import type { Profile } from '@/features/profile/domain/Profile';
 import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
-import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
 import { type TimeFormat } from '@/stores/useAppStore';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useTranslation } from '@/localization/i18n';
 import { formatFriendlyTimestamp } from '@/shared/utils/timeFormat';
 import { ReflectionComposer } from './ReflectionComposer';
+import { ReflectionPhotoPreview } from './ReflectionPhotoPreview';
 
 interface EntryReflectionsModalProps {
   readonly visible: boolean;
@@ -85,12 +85,9 @@ export function EntryReflectionsModal({
                     </View>
                     <Text preset="bodySmall" color="text" style={styles.reflectionText}>{reflection.text}</Text>
                     {reflection.photo ? (
-                      <Image
-                        source={getDiaryPhotoImageSource(reflection.photo.uri)}
+                      <ReflectionPhotoPreview
+                        photo={reflection.photo}
                         style={styles.reflectionPhoto}
-                        resizeMode="cover"
-                        accessibilityLabel={t('reflectionPhotoA11y')}
-                        accessibilityIgnoresInvertColors
                         testID="entry-reflection-photo"
                       />
                     ) : null}

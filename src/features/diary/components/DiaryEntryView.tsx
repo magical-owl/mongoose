@@ -25,6 +25,7 @@ import {
 import { DiaryEntryBodyPreview } from './DiaryEntryBodyPreview';
 import { MemoryReactionButton } from './MemoryReactionButton';
 import { ReflectionComposer } from './ReflectionComposer';
+import { ReflectionPhotoPreview } from './ReflectionPhotoPreview';
 
 export type DiaryEntryViewMode = 'detailed' | 'timeline' | 'feed';
 
@@ -207,12 +208,9 @@ export function DiaryEntryView({
                 </Text>
                 <Text preset="bodySmall" color="text" style={styles.timelineReflectionText}>{reflection.text}</Text>
                 {reflection.photo ? (
-                  <Image
-                    source={getDiaryPhotoImageSource(reflection.photo.uri)}
+                  <ReflectionPhotoPreview
+                    photo={reflection.photo}
                     style={styles.timelineReflectionPhoto}
-                    resizeMode="cover"
-                    accessibilityLabel={t('reflectionPhotoA11y')}
-                    accessibilityIgnoresInvertColors
                     testID="entry-inline-reflection-photo"
                   />
                 ) : null}

@@ -119,8 +119,8 @@ describe('EntryReflectionsModal', () => {
     expect(getByText('No reflections yet.')).toBeTruthy();
   });
 
-  it('shows attached photos on reflection entries', async () => {
-    const { getByTestId } = await renderWithProviders(
+  it('opens attached photos in a centered preview', async () => {
+    const { getByLabelText, getByTestId, queryByTestId } = await renderWithProviders(
       <EntryReflectionsModal
         visible
         entry={{
@@ -147,6 +147,20 @@ describe('EntryReflectionsModal', () => {
 
     expect(getByTestId('entry-reflection-photo').props.source).toEqual({
       uri: 'file:///document/diary-photos/reflection.jpg',
+    });
+
+    fireEvent.press(getByLabelText('Open reflection photo'));
+
+    await waitFor(() => {
+      expect(getByTestId('entry-reflection-photo-viewer-image').props.source).toEqual({
+        uri: 'file:///document/diary-photos/reflection.jpg',
+      });
+    });
+
+    fireEvent.press(getByLabelText('Close reflection photo'));
+
+    await waitFor(() => {
+      expect(queryByTestId('entry-reflection-photo-viewer')).toBeNull();
     });
   });
 });

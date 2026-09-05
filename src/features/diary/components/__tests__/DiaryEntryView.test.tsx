@@ -397,7 +397,7 @@ describe('DiaryEntryView', () => {
       ],
     };
 
-    const { getByTestId, getByText, queryByTestId } = await renderWithProviders(
+    const { getByLabelText, getByTestId, getByText, queryByTestId } = await renderWithProviders(
       <DiaryEntryView
         entry={entryWithCoverAndReflection}
         mode="feed"
@@ -426,6 +426,12 @@ describe('DiaryEntryView', () => {
     expect(getByTestId('entry-feed-tags-daily')).toBeTruthy();
     expect(getByTestId('entry-inline-reflection-photo').props.source).toEqual({
       uri: 'file:///document/diary-photos/feed-reflection.jpg',
+    });
+    fireEvent.press(getByLabelText('Open reflection photo'));
+    await waitFor(() => {
+      expect(getByTestId('entry-inline-reflection-photo-viewer-image').props.source).toEqual({
+        uri: 'file:///document/diary-photos/feed-reflection.jpg',
+      });
     });
     expect(moodStyle.borderRadius).toBe(13);
     expect(moodStyle.borderWidth).toBe(1);
