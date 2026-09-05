@@ -10,6 +10,7 @@ import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { AppPatternBackground } from '@shared/components/AppPatternBackground';
 import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
 import { TagBadgeList } from '@/features/diary/components/TagBadgeList';
+import { EntryViewCountBadge } from '@/features/diary/components/EntryViewCountBadge';
 import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
 import { getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
 import { useDiary } from '@/features/diary/hooks/useDiary';
@@ -44,6 +45,8 @@ function MemoryCard({ entry, variant = 'compact', onPress, onShuffle }: MemoryCa
   const imageSource = displayPhoto ? getDiaryPhotoImageSource(displayPhoto.uri) : undefined;
   const isFeatured = variant === 'featured';
   const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
+  const viewCount = entry.viewCount ?? 0;
+  const viewCountA11y = t('entryViewCountA11y').replace('{count}', String(viewCount));
 
   return (
     <TouchableOpacity
@@ -76,6 +79,15 @@ function MemoryCard({ entry, variant = 'compact', onPress, onShuffle }: MemoryCa
             <Ionicons name="shuffle" size={21} color={theme.colors.stickerControlText} />
           </TouchableOpacity>
         ) : null}
+        <EntryViewCountBadge
+          count={viewCount}
+          accessibilityLabel={viewCountA11y}
+          height={26}
+          minWidth={44}
+          iconSize={15}
+          style={styles.memoryViewCountBadge}
+          testID="rediscover-entry-view-count"
+        />
         <View style={styles.memoryCoverCopy}>
           <View style={styles.memoryCoverMetaRow}>
             <Text preset="caption" numberOfLines={1} style={[styles.memoryCoverDate, { color: theme.colors.stickerControlText }]}>
@@ -448,10 +460,15 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.34)',
   },
+  memoryViewCountBadge: {
+    position: 'absolute',
+    right: 10,
+    bottom: 10,
+  },
   memoryCoverCopy: {
     position: 'absolute',
     left: 12,
-    right: 12,
+    right: 64,
     bottom: 10,
     gap: 5,
   },
