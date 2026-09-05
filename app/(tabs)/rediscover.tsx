@@ -213,7 +213,8 @@ export default function RediscoverScreen(): React.JSX.Element {
     || memories.favoriteEntries.length > 0
     || memories.reflectionEntries.length > 0
     || memories.sameMonthEntries.length > 0
-    || memories.moodRewindEntries.length > 0;
+    || memories.moodRewindEntries.length > 0
+    || memories.mostViewedEntries.length > 0;
   const drawerProfile = useMemo(
     () => ({
       displayName: profile?.displayName.trim() || t('profileFallbackName'),
@@ -274,6 +275,13 @@ export default function RediscoverScreen(): React.JSX.Element {
               title={t('rediscoverOnThisDayTitle')}
               icon="today-outline"
               entries={memories.onThisDayEntries}
+              horizontal
+              onEntryPress={handleEntryPress}
+            />
+            <MemorySection
+              title={t('rediscoverMostViewedTitle')}
+              icon="eye-outline"
+              entries={memories.mostViewedEntries}
               horizontal
               onEntryPress={handleEntryPress}
             />

@@ -370,7 +370,7 @@ export default function InsightsScreen() {
                   preset="label"
                   style={[styles.numberCardUnit, isFull && styles.numberCardFullUnit, { color: item.tone }]}
                   numberOfLines={1}
-                  adjustsFontSizeToFit
+                  adjustsFontSizeToFit={!isFull}
                   minimumFontScale={0.6}
                 >
                   {insightsMetricUnitLabel(item.unit, item.value, t)}
@@ -600,9 +600,9 @@ const styles = StyleSheet.create({
   numberCardValueColumn: { width: 72, alignItems: "center", justifyContent: "center" },
   numberCardValue: { fontSize: 32, lineHeight: 36, fontWeight: "800", fontVariant: ["tabular-nums"], textAlign: "center" },
   numberCardUnit: { width: 72, fontSize: 12, lineHeight: 16, fontWeight: "800", textAlign: "center" },
-  numberCardFullValueColumn: { width: 140 },
-  numberCardFullValue: { width: 132, fontSize: 46, lineHeight: 56 },
-  numberCardFullUnit: { width: 132, fontSize: 16, lineHeight: 21 },
+  numberCardFullValueColumn: { width: 160 },
+  numberCardFullValue: { width: 152, fontSize: 46, lineHeight: 56 },
+  numberCardFullUnit: { width: 152, fontSize: 16, lineHeight: 21 },
   sectionLabel: { fontWeight: "700", letterSpacing: 0.5, marginBottom: 10 },
   card: { borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 24 },
   compactCard: { padding: 12 },

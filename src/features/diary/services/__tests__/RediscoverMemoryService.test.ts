@@ -106,9 +106,59 @@ describe('RediscoverMemoryService', () => {
       manualMood: 'excited',
       manualMoods: ['excited', 'grateful'],
     });
+    const viewedEntries = [
+      createEntry({
+        id: '123e4567-e89b-42d3-a456-426614174013',
+        date: '2026-05-01',
+        title: 'Viewed once',
+        manualMood: 'neutral',
+        manualMoods: ['neutral'],
+        viewCount: 1,
+      }),
+      createEntry({
+        id: '123e4567-e89b-42d3-a456-426614174014',
+        date: '2026-05-02',
+        title: 'Viewed often',
+        manualMood: 'neutral',
+        manualMoods: ['neutral'],
+        viewCount: 7,
+      }),
+      createEntry({
+        id: '123e4567-e89b-42d3-a456-426614174015',
+        date: '2026-05-03',
+        title: 'Viewed three',
+        manualMood: 'neutral',
+        manualMoods: ['neutral'],
+        viewCount: 3,
+      }),
+      createEntry({
+        id: '123e4567-e89b-42d3-a456-426614174016',
+        date: '2026-05-04',
+        title: 'Viewed six',
+        manualMood: 'neutral',
+        manualMoods: ['neutral'],
+        viewCount: 6,
+      }),
+      createEntry({
+        id: '123e4567-e89b-42d3-a456-426614174017',
+        date: '2026-05-05',
+        title: 'Viewed two',
+        manualMood: 'neutral',
+        manualMoods: ['neutral'],
+        viewCount: 2,
+      }),
+      createEntry({
+        id: '123e4567-e89b-42d3-a456-426614174018',
+        date: '2026-05-06',
+        title: 'Viewed four',
+        manualMood: 'neutral',
+        manualMoods: ['neutral'],
+        viewCount: 4,
+      }),
+    ];
 
     const memories = buildRediscoverMemorySet(
-      [recent, oldPhoto, onThisDay, reflected, sameMonth, expressiveMood, oneYearAgo],
+      [recent, oldPhoto, onThisDay, reflected, sameMonth, expressiveMood, oneYearAgo, ...viewedEntries],
       now,
       1,
     );
@@ -127,6 +177,13 @@ describe('RediscoverMemoryService', () => {
       oldPhoto,
       oneYearAgo,
       onThisDay,
+    ]);
+    expect(memories.mostViewedEntries).toEqual([
+      viewedEntries[1],
+      viewedEntries[3],
+      viewedEntries[5],
+      viewedEntries[2],
+      viewedEntries[4],
     ]);
     expect(memories.surpriseEntry?.id).toBe(reflected.id);
   });

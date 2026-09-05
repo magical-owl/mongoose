@@ -7,6 +7,7 @@ const OLD_PHOTO_MIN_AGE_DAYS = 90;
 const ONE_YEAR_AGO_MIN_AGE_DAYS = 365;
 const TWO_YEARS_AGO_MIN_AGE_DAYS = 730;
 const SECTION_LIMIT = 6;
+const MOST_VIEWED_LIMIT = 5;
 
 export interface RediscoverMemorySet {
   readonly surpriseEntry: DiaryEntry | null;
@@ -18,6 +19,7 @@ export interface RediscoverMemorySet {
   readonly reflectionEntries: readonly DiaryEntry[];
   readonly sameMonthEntries: readonly DiaryEntry[];
   readonly moodRewindEntries: readonly DiaryEntry[];
+  readonly mostViewedEntries: readonly DiaryEntry[];
 }
 
 function entryDate(value: string): Date {
@@ -52,6 +54,14 @@ function isSameMonthBefore(entry: DiaryEntry, now: Date): boolean {
 
 function hasExpressiveMood(entry: DiaryEntry): boolean {
   return getEntryManualMoods(entry).some((mood) => mood !== 'neutral');
+}
+
+function sortEntriesByViewCountDesc(entries: readonly DiaryEntry[]): DiaryEntry[] {
+  return [...entries].sort((a, b) => {
+    const viewDelta = (b.viewCount ?? 0) - (a.viewCount ?? 0);
+    if (viewDelta !== 0) return viewDelta;
+    return b.date.localeCompare(a.date);
+  });
 }
 
 export function getRediscoverEligibleEntries(
@@ -103,5 +113,8 @@ export function buildRediscoverMemorySet(
     moodRewindEntries: eligibleEntries
       .filter(hasExpressiveMood)
       .slice(0, SECTION_LIMIT),
+    mostViewedEntries: sortEntriesByViewCountDesc(
+      eligibleEntries.filter((entry) => (entry.viewCount ?? 0) > 0),
+    ).slice(0, MOST_VIEWED_LIMIT),
   };
 }
