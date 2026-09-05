@@ -895,7 +895,7 @@ function leafShape(png, x, y, scale, color) {
 }
 
 function pattern(file, draw) {
-  const png = canvas(1024, 1024);
+  const png = canvas(768, 768);
   draw(png);
   applyHandmadeTexture(png, {
     salt: file.length * 59,
@@ -907,68 +907,142 @@ function pattern(file, draw) {
   save(png, `assets/patterns/${file}.png`);
 }
 
+function patternPositions(width, height) {
+  return [
+    [-34, 82, 0.78, -0.2],
+    [154, 132, 1.05, 0.12],
+    [382, 58, 0.72, -0.36],
+    [624, 116, 0.95, 0.26],
+    [792, 210, 0.8, -0.14],
+    [76, 342, 0.9, 0.34],
+    [305, 292, 0.68, -0.18],
+    [540, 356, 1.12, 0.08],
+    [708, 470, 0.74, -0.32],
+    [184, 596, 1, 0.22],
+    [430, 650, 0.84, -0.26],
+    [688, 704, 0.9, 0.16],
+    [-18, 724, 0.76, 0.1],
+  ].map(([x, y, scale, tilt]) => [x % width, y % height, scale, tilt]);
+}
+
+function drawPatternSun(png, x, y, scale, tilt = 0) {
+  const rayColor = rgba('#E3A23F', 118);
+  const bodyColor = rgba('#F2C767', 128);
+  const shadeColor = rgba('#C98245', 68);
+  for (let i = 0; i < 10; i += 1) {
+    const a = (Math.PI * 2 * i) / 10 + tilt;
+    line(
+      png,
+      x + Math.cos(a) * 28 * scale,
+      y + Math.sin(a) * 28 * scale,
+      x + Math.cos(a) * 43 * scale,
+      y + Math.sin(a) * 43 * scale,
+      5 * scale,
+      rayColor,
+    );
+  }
+  circle(png, x, y, 25 * scale, bodyColor);
+  polygon(
+    png,
+    [
+      [x - 14 * scale, y - 18 * scale],
+      [x + 22 * scale, y - 10 * scale],
+      [x + 8 * scale, y + 20 * scale],
+      [x - 22 * scale, y + 12 * scale],
+    ],
+    shadeColor,
+  );
+}
+
+function drawPatternSnowflake(png, x, y, scale, tilt = 0) {
+  const snow = rgba('#C2D8E0', 132);
+  const cream = rgba('#FFF8E9', 90);
+  for (let i = 0; i < 6; i += 1) {
+    const a = (Math.PI * 2 * i) / 6 + tilt;
+    const x1 = x - Math.cos(a) * 30 * scale;
+    const y1 = y - Math.sin(a) * 30 * scale;
+    const x2 = x + Math.cos(a) * 30 * scale;
+    const y2 = y + Math.sin(a) * 30 * scale;
+    line(png, x1, y1, x2, y2, 3 * scale, snow);
+    line(
+      png,
+      x2,
+      y2,
+      x2 - Math.cos(a + 0.72) * 12 * scale,
+      y2 - Math.sin(a + 0.72) * 12 * scale,
+      2 * scale,
+      cream,
+    );
+  }
+  circle(png, x, y, 5 * scale, cream);
+}
+
+function drawPatternBlossom(png, x, y, scale, tilt = 0) {
+  const petal = rgba('#E7A7B4', 116);
+  const petalShade = rgba('#C98693', 58);
+  const center = rgba('#D1A044', 108);
+  for (let i = 0; i < 5; i += 1) {
+    const a = (Math.PI * 2 * i) / 5 + tilt;
+    ellipse(png, x + Math.cos(a) * 17 * scale, y + Math.sin(a) * 17 * scale, 11 * scale, 18 * scale, petal);
+    ellipse(png, x + Math.cos(a) * 18 * scale, y + Math.sin(a) * 18 * scale, 6 * scale, 12 * scale, petalShade);
+  }
+  circle(png, x, y, 8 * scale, center);
+}
+
+function drawPatternLeaf(png, x, y, scale, tilt = 0) {
+  const leaf = rgba('#BD7445', 126);
+  const shade = rgba('#8F5E3F', 62);
+  const stem = rgba('#62452F', 92);
+  ellipse(png, x, y, 34 * scale, 17 * scale, leaf);
+  ellipse(png, x + Math.cos(tilt) * 6 * scale, y + Math.sin(tilt) * 6 * scale, 22 * scale, 11 * scale, shade);
+  line(png, x - 26 * scale, y + 12 * scale, x + 28 * scale, y - 13 * scale, 3 * scale, stem);
+}
+
+function drawPatternStar(png, x, y, scale, tilt = 0) {
+  const star = rgba('#D6A447', 128);
+  const shade = rgba('#9B6E3F', 70);
+  const points = [];
+  for (let i = 0; i < 10; i += 1) {
+    const radius = (i % 2 === 0 ? 34 : 15) * scale;
+    const a = -Math.PI / 2 + (Math.PI * 2 * i) / 10 + tilt;
+    points.push([x + Math.cos(a) * radius, y + Math.sin(a) * radius]);
+  }
+  polygon(png, points, star);
+  polygon(
+    png,
+    [
+      [x, y - 30 * scale],
+      [x + 8 * scale, y - 4 * scale],
+      [x + 28 * scale, y - 2 * scale],
+      [x + 10 * scale, y + 8 * scale],
+      [x + 15 * scale, y + 28 * scale],
+      [x, y + 12 * scale],
+    ],
+    shade,
+  );
+}
+
+function drawSingleMotifPattern(png, drawMotif) {
+  patternPositions(png.width, png.height).forEach(([x, y, scale, tilt], index) => {
+    drawMotif(png, x, y, scale, tilt + index * 0.05);
+  });
+}
+
 function generatePatternBackgrounds() {
   pattern('pattern-spring', (png) => {
-    const flowers = [[150, 145, 1], [520, 85, 0.8], [860, 210, 1.15], [330, 500, 0.9], [700, 660, 1], [90, 850, 0.75], [930, 910, 0.85]];
-    flowers.forEach(([x, y, s]) => petalFlower(png, x, y, s, '#F3B7BE', '#D9A83D'));
-    [[240, 330], [590, 290], [795, 470], [455, 840], [120, 600]].forEach(([x, y]) => leafShape(png, x, y, 0.8, '#7E9B6D'));
-    [[410, 210], [780, 805], [190, 720]].forEach(([x, y]) => {
-      ellipse(png, x, y, 22, 16, rgba('#D6A63E', 175));
-      line(png, x - 18, y, x + 18, y, 5, rgba('#5E4B35', 90));
-      circle(png, x + 22, y - 12, 8, rgba('#EEE5D6', 130));
-    });
+    drawSingleMotifPattern(png, drawPatternBlossom);
   });
   pattern('pattern-summer', (png) => {
-    [[120, 180], [700, 140], [520, 760], [910, 620]].forEach(([x, y]) => {
-      circle(png, x, y, 38, rgba('#F7BF43', 165));
-      for (let i = 0; i < 8; i += 1) {
-        const a = (Math.PI * 2 * i) / 8;
-        line(png, x + Math.cos(a) * 52, y + Math.sin(a) * 52, x + Math.cos(a) * 72, y + Math.sin(a) * 72, 5, rgba('#E49A35', 130));
-      }
-    });
-    [[300, 360], [820, 355], [245, 880], [660, 520]].forEach(([x, y]) => {
-      line(png, x - 55, y, x + 55, y, 11, rgba('#3198AE', 125));
-      line(png, x - 45, y + 24, x + 65, y + 24, 11, rgba('#69C5D0', 125));
-    });
-    [[505, 220], [120, 565], [900, 900]].forEach(([x, y]) => {
-      polygon(png, [[x - 18, y + 12], [x + 18, y + 12], [x, y + 70]], rgba('#C9955A', 165));
-      circle(png, x - 16, y, 20, rgba('#F2A2AD', 170));
-      circle(png, x + 16, y, 20, rgba('#F7D56C', 170));
-      circle(png, x, y - 20, 20, rgba('#8DC7A7', 170));
-    });
+    drawSingleMotifPattern(png, drawPatternSun);
   });
   pattern('pattern-autumn', (png) => {
-    [[120, 170], [520, 135], [860, 260], [310, 630], [720, 780], [90, 900], [945, 930]].forEach(([x, y], i) => {
-      ellipse(png, x, y, 36, 20, rgba(i % 2 ? '#C98035' : '#A95E37', 165));
-      line(png, x - 24, y + 12, x + 24, y - 12, 4, rgba('#5C442D', 105));
-    });
-    [[350, 330], [780, 530], [210, 785]].forEach(([x, y]) => {
-      circle(png, x - 24, y, 32, rgba('#C66D35', 155));
-      circle(png, x + 24, y, 32, rgba('#D47B38', 155));
-      rect(png, x - 6, y - 54, 12, 34, rgba('#60462B', 145));
-    });
-    [[625, 320], [440, 900], [910, 120]].forEach(([x, y]) => {
-      circle(png, x, y, 20, rgba('#9B6E3E', 160));
-      polygon(png, [[x - 20, y - 8], [x, y - 34], [x + 20, y - 8]], rgba('#5D4A34', 140));
-    });
+    drawSingleMotifPattern(png, drawPatternLeaf);
   });
   pattern('pattern-winter', (png) => {
-    [[160, 170], [530, 120], [840, 290], [270, 600], [690, 750], [100, 895], [940, 910]].forEach(([x, y]) => {
-      for (let i = 0; i < 6; i += 1) {
-        const a = (Math.PI * 2 * i) / 6;
-        line(png, x - Math.cos(a) * 36, y - Math.sin(a) * 36, x + Math.cos(a) * 36, y + Math.sin(a) * 36, 4, rgba('#B9D6E3', 145));
-      }
-      circle(png, x, y, 6, rgba('#DDEDF2', 175));
-    });
-    [[365, 350], [835, 575], [410, 850]].forEach(([x, y]) => {
-      rect(png, x - 44, y - 20, 88, 62, rgba('#8B614B', 150));
-      rect(png, x - 30, y - 8, 60, 38, rgba('#E88945', 150));
-      polygon(png, [[x - 54, y - 20], [x, y - 58], [x + 54, y - 20]], rgba('#5B4539', 160));
-    });
-    [[705, 240], [155, 455], [610, 560]].forEach(([x, y]) => {
-      line(png, x - 54, y, x + 54, y, 14, rgba('#B76565', 145));
-      line(png, x - 30, y + 24, x + 42, y + 24, 14, rgba('#E7D2B3', 135));
-    });
+    drawSingleMotifPattern(png, drawPatternSnowflake);
+  });
+  pattern('pattern-star', (png) => {
+    drawSingleMotifPattern(png, drawPatternStar);
   });
 }
 
@@ -1104,8 +1178,20 @@ function generateAppIdentityAssets() {
   save(splash, 'assets/splash-placeholder.png');
 }
 
-generateJournalBackgrounds();
-generateStickers();
-generatePatternBackgrounds();
-generateDiaryPaperBackgrounds();
-generateAppIdentityAssets();
+const selectedTargets = new Set(process.argv.slice(2));
+
+if (selectedTargets.size === 0 || selectedTargets.has('journal-backgrounds')) {
+  generateJournalBackgrounds();
+}
+if (selectedTargets.size === 0 || selectedTargets.has('stickers')) {
+  generateStickers();
+}
+if (selectedTargets.size === 0 || selectedTargets.has('patterns')) {
+  generatePatternBackgrounds();
+}
+if (selectedTargets.size === 0 || selectedTargets.has('diary-paper')) {
+  generateDiaryPaperBackgrounds();
+}
+if (selectedTargets.size === 0 || selectedTargets.has('app-identity')) {
+  generateAppIdentityAssets();
+}
