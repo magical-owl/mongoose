@@ -12,18 +12,13 @@ const WEATHER = ['sunny', 'calm', 'neutral', 'cloudy', 'stormy'];
 const COMPANIONS = ['cat', 'dog', 'alien', 'girl', 'man'];
 const WRITING_MODES = ['free-write', 'one-line', 'five-minute', 'gratitude', 'travel', 'dream', 'evening-review'];
 const COVER_IMAGES = [
-  { uri: 'builtin://journal-background/winter', width: 1672, height: 940 },
-  { uri: 'builtin://journal-background/spring', width: 1672, height: 941 },
+  { uri: 'builtin://journal-background/meadow-day', width: 1672, height: 941 },
+  { uri: 'builtin://journal-background/meadow-sunset', width: 1672, height: 941 },
+  { uri: 'builtin://journal-background/meadow-night', width: 1672, height: 941 },
+  { uri: 'builtin://journal-background/winter', width: 1672, height: 941 },
   { uri: 'builtin://journal-background/summer', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/fall', width: 1672, height: 941 },
   { uri: 'builtin://journal-background/moonlit-lake', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/cozy-reading-nook', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/school', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/office', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/rainy-window', width: 1672, height: 941 },
   { uri: 'builtin://journal-background/mountain-sunrise', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/greenhouse', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/cafe-morning', width: 1672, height: 941 },
 ];
 const JOURNAL_TITLES = [
   'Everyday Notes',

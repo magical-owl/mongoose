@@ -8,18 +8,13 @@ import {
 describe('JournalBackgrounds', () => {
   it('defines the bundled journal background choices', () => {
     expect(BUILTIN_JOURNAL_BACKGROUNDS.map((background) => background.id)).toEqual([
+      'meadow-day',
+      'meadow-sunset',
+      'meadow-night',
       'winter',
-      'spring',
       'summer',
-      'fall',
       'moonlit-lake',
-      'cozy-reading-nook',
-      'school',
-      'office',
-      'rainy-window',
       'mountain-sunrise',
-      'greenhouse',
-      'cafe-morning',
     ]);
     expect(BUILTIN_JOURNAL_BACKGROUNDS.every((background) => background.uri.startsWith(BUILTIN_JOURNAL_COVER_PREFIX))).toBe(true);
   });
