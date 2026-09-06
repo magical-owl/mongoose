@@ -19,7 +19,10 @@ import { useDiary } from "@/features/diary/hooks/useDiary";
 import { useJournals } from "@/features/journal/hooks/useJournals";
 import { useProfileForm } from "@/features/profile/hooks/useProfileForm";
 import { resolveImportedProfilePhotoUri } from "@/features/profile/services/ProfilePhotoService";
-import { getJournalCoverImageSource } from "@/features/journal/domain/JournalBackgrounds";
+import {
+  DEFAULT_JOURNAL_BACKGROUND_URI,
+  getJournalCoverImageSource,
+} from "@/features/journal/domain/JournalBackgrounds";
 import { stripHtml } from "@shared/utils/html";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
 import {
@@ -141,7 +144,11 @@ export default function JournalEntriesScreen() {
     : journalId === UNASSIGNED_JOURNAL_ID
       ? syntheticJournalCovers.unassigned
       : undefined;
-  const journalCoverImageUri = selectedJournal?.coverImageUri ?? syntheticJournalCover?.coverImageUri;
+  const journalCoverImageUri = selectedJournal?.coverImageUri ?? syntheticJournalCover?.coverImageUri ?? (
+    journalId === ALL_ENTRIES_JOURNAL_ID || journalId === UNASSIGNED_JOURNAL_ID
+      ? DEFAULT_JOURNAL_BACKGROUND_URI
+      : undefined
+  );
   const journalCoverImageSource = getJournalCoverImageSource(journalCoverImageUri);
   const drawerProfile = useMemo(
     () => ({

@@ -1,6 +1,10 @@
 import type { ImageSourcePropType } from "react-native";
 
 export const BUILTIN_JOURNAL_COVER_PREFIX = "builtin://journal-background/";
+export const DEFAULT_JOURNAL_BACKGROUND_ID = "default-journal";
+export const DEFAULT_JOURNAL_BACKGROUND_URI = `${BUILTIN_JOURNAL_COVER_PREFIX}${DEFAULT_JOURNAL_BACKGROUND_ID}`;
+export const DEFAULT_JOURNAL_BACKGROUND_WIDTH = 1672;
+export const DEFAULT_JOURNAL_BACKGROUND_HEIGHT = 941;
 
 export interface BuiltinJournalBackground {
   readonly id: string;
@@ -13,6 +17,14 @@ export interface BuiltinJournalBackground {
 
 export const BUILTIN_JOURNAL_BACKGROUNDS: readonly BuiltinJournalBackground[] =
   [
+    {
+      id: DEFAULT_JOURNAL_BACKGROUND_ID,
+      title: "Default Journal",
+      uri: DEFAULT_JOURNAL_BACKGROUND_URI,
+      width: DEFAULT_JOURNAL_BACKGROUND_WIDTH,
+      height: DEFAULT_JOURNAL_BACKGROUND_HEIGHT,
+      source: require("../../../../assets/journal-backgrounds/default-journal.png"),
+    },
     {
       id: "meadow-day",
       title: "Meadow - Day",

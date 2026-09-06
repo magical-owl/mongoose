@@ -8,6 +8,7 @@ import {
 describe('JournalBackgrounds', () => {
   it('defines the bundled journal background choices', () => {
     expect(BUILTIN_JOURNAL_BACKGROUNDS.map((background) => background.id)).toEqual([
+      'default-journal',
       'meadow-day',
       'meadow-sunset',
       'meadow-night',

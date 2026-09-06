@@ -24,7 +24,12 @@ import { useAppStore } from '@/stores/useAppStore';
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { premiumPaywallTitle, useTranslation, type TranslationKey } from '@/localization/i18n';
 import type { Journal } from '@/features/journal/domain/Journal';
-import { BUILTIN_JOURNAL_BACKGROUNDS } from '@/features/journal/domain/JournalBackgrounds';
+import {
+  BUILTIN_JOURNAL_BACKGROUNDS,
+  DEFAULT_JOURNAL_BACKGROUND_HEIGHT,
+  DEFAULT_JOURNAL_BACKGROUND_URI,
+  DEFAULT_JOURNAL_BACKGROUND_WIDTH,
+} from '@/features/journal/domain/JournalBackgrounds';
 import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import type { CreateJournalInput } from '@/features/journal/services/JournalService';
@@ -35,6 +40,11 @@ const PREMIUM_REMINDER_ENTRY_THRESHOLD = 5;
 const PREMIUM_REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const ALL_ENTRIES_JOURNAL_ID = 'all';
 const UNASSIGNED_JOURNAL_ID = 'unassigned';
+const DEFAULT_SYNTHETIC_JOURNAL_COVER = {
+  coverImageUri: DEFAULT_JOURNAL_BACKGROUND_URI,
+  coverImageWidth: DEFAULT_JOURNAL_BACKGROUND_WIDTH,
+  coverImageHeight: DEFAULT_JOURNAL_BACKGROUND_HEIGHT,
+} as const;
 const JOURNAL_GRID_GAP = 12;
 const JOURNAL_GRID_HORIZONTAL_PADDING = 40;
 const journalColumnOptions: readonly { readonly count: JournalColumnCount; readonly labelKey: TranslationKey }[] = [
@@ -181,9 +191,9 @@ export default function JournalsScreen(): React.JSX.Element {
         title: t('journalAllEntriesTitle'),
         count: visibleEntries.length,
         canRename: false,
-        coverImageUri: syntheticJournalCovers.all?.coverImageUri,
-        coverImageWidth: syntheticJournalCovers.all?.coverImageWidth,
-        coverImageHeight: syntheticJournalCovers.all?.coverImageHeight,
+        coverImageUri: syntheticJournalCovers.all?.coverImageUri ?? DEFAULT_SYNTHETIC_JOURNAL_COVER.coverImageUri,
+        coverImageWidth: syntheticJournalCovers.all?.coverImageWidth ?? DEFAULT_SYNTHETIC_JOURNAL_COVER.coverImageWidth,
+        coverImageHeight: syntheticJournalCovers.all?.coverImageHeight ?? DEFAULT_SYNTHETIC_JOURNAL_COVER.coverImageHeight,
       },
     ] : [];
 
@@ -197,9 +207,9 @@ export default function JournalsScreen(): React.JSX.Element {
         title: t('journalUnassignedTitle'),
         count: unassignedEntries.length,
         canRename: false,
-        coverImageUri: syntheticJournalCovers.unassigned?.coverImageUri,
-        coverImageWidth: syntheticJournalCovers.unassigned?.coverImageWidth,
-        coverImageHeight: syntheticJournalCovers.unassigned?.coverImageHeight,
+        coverImageUri: syntheticJournalCovers.unassigned?.coverImageUri ?? DEFAULT_SYNTHETIC_JOURNAL_COVER.coverImageUri,
+        coverImageWidth: syntheticJournalCovers.unassigned?.coverImageWidth ?? DEFAULT_SYNTHETIC_JOURNAL_COVER.coverImageWidth,
+        coverImageHeight: syntheticJournalCovers.unassigned?.coverImageHeight ?? DEFAULT_SYNTHETIC_JOURNAL_COVER.coverImageHeight,
       }] : []),
     ];
   }, [entryCountsByJournalId, journals, showPermanentJournals, syntheticJournalCovers, t, unassignedEntries.length, visibleEntries.length]);

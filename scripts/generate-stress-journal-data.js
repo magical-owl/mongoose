@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const CURRENT_DIARY_SCHEMA_VERSION = 6;
+const CURRENT_DIARY_SCHEMA_VERSION = 7;
 const JOURNAL_STORAGE_VERSION = 1;
 const DEFAULT_OUTPUT = path.join('generated', 'stress-data', 'journal-entry-stress-data.json');
 
@@ -11,7 +11,9 @@ const MOODS = ['excited', 'happy', 'grateful', 'calm', 'neutral', 'tired', 'anxi
 const WEATHER = ['sunny', 'calm', 'neutral', 'cloudy', 'stormy'];
 const COMPANIONS = ['cat', 'dog', 'alien', 'girl', 'man'];
 const WRITING_MODES = ['free-write', 'one-line', 'five-minute', 'gratitude', 'travel', 'dream', 'evening-review'];
+const MEMORY_REACTIONS = ['cherish', 'treasure', 'smile', 'heavy', 'tender', 'stormy', 'wonder'];
 const COVER_IMAGES = [
+  { uri: 'builtin://journal-background/default-journal', width: 1672, height: 941 },
   { uri: 'builtin://journal-background/meadow-day', width: 1672, height: 941 },
   { uri: 'builtin://journal-background/meadow-sunset', width: 1672, height: 941 },
   { uri: 'builtin://journal-background/meadow-night', width: 1672, height: 941 },
@@ -212,6 +214,8 @@ function createEntry({ date, entryIndex, sequence, journal, random }) {
     stickers: [],
     companion: COMPANIONS[randomInt(random, 0, COMPANIONS.length - 1)],
     isFavorite: random() > 0.82,
+    viewCount: random() > 0.22 ? randomInt(random, 1, 24) : 0,
+    memoryReactions: random() > 0.62 ? [MEMORY_REACTIONS[randomInt(random, 0, MEMORY_REACTIONS.length - 1)]] : [],
     tags: sample(TAGS, tagCount, random),
     createdAt,
     updatedAt: createdAt,
