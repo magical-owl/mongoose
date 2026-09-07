@@ -22,14 +22,11 @@ import {
   Platform,
   KeyboardAvoidingView,
   Keyboard,
-  Image,
   RefreshControl,
   TextInput as NativeTextInput,
   StyleSheet,
   useWindowDimensions,
   ActivityIndicator,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
@@ -57,15 +54,11 @@ import { DiaryPaperCanvas } from '@/features/diary/components/DiaryPaperCanvas';
 import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/DiaryPaperBackgroundPickerModal';
 import { EntryReflectionsModal } from '@/features/diary/components/EntryReflectionsModal';
 import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataModal';
-import { ReflectionSummaryButton } from '@/features/diary/components/ReflectionSummaryButton';
 import { EntryViewCountBadge } from '@/features/diary/components/EntryViewCountBadge';
-import { MemoryReactionButton } from '@/features/diary/components/MemoryReactionButton';
-import { MoodBadgeList } from '@/features/diary/components/MoodBadgeList';
-import { TagBadgeList } from '@/features/diary/components/TagBadgeList';
+import { EntryMetaRow } from '@/features/diary/components/EntryMetaRow';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
-import { getNextDiaryEntry, getPreviousDiaryEntry } from '@/features/diary/services/DiaryEntryNavigation';
 import { chooseDiaryPhoto, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
-import { createPlacedPhotoSticker, diaryPhotoService, getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
+import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
@@ -98,6 +91,7 @@ import {
   ENTRY_EDITOR_FOOTER_BOTTOM_OFFSET,
 } from '@/features/diary/components/DiaryEntryEditorChrome';
 import { DEFAULT_DIARY_PAPER_BACKGROUND_ID } from '@/features/diary/domain/DiaryPaperBackgrounds';
+import { useEntryDetailNavigation } from '@/features/diary/hooks/useEntryDetailNavigation';
 
 function countWords(text: string): number {
   const clean = text.replace(/[*#`>•\-_]/g, '').trim();
@@ -107,13 +101,6 @@ function countWords(text: string): number {
 function entryDate(value: string): Date {
   const [year, month, day] = value.split('-').map(Number);
   return year && month && day ? new Date(year, month - 1, day, 12, 0, 0) : new Date();
-}
-
-async function preloadEntryCoverPhoto(photo?: DiaryPhoto): Promise<void> {
-  if (!photo) return;
-  const source = getDiaryPhotoImageSource(photo.uri);
-  if (!source || typeof source !== 'object' || !('uri' in source) || typeof source.uri !== 'string') return;
-  await Image.prefetch(source.uri).catch(() => false);
 }
 
 const FORMAT_ITEMS: readonly RichTextFormatItem[] = [
@@ -142,12 +129,6 @@ const ENTRY_BODY_MIN_HEIGHT = ENTRY_EDITOR_BODY_MIN_HEIGHT;
 const ENTRY_BODY_DEFAULT_VIEWPORT_RATIO = ENTRY_EDITOR_BODY_DEFAULT_VIEWPORT_RATIO;
 const ENTRY_BODY_EXTRA_STICKER_SPACE = ENTRY_EDITOR_BODY_EXTRA_STICKER_SPACE;
 const EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO = 0.5;
-const NEXT_ENTRY_SCROLL_THRESHOLD = 36;
-const NEXT_ENTRY_LOAD_DELAY_MS = 550;
-const NEXT_ENTRY_FADE_OUT_MS = 420;
-const NEXT_ENTRY_FADE_IN_MS = 520;
-type AdjacentEntryDirection = 'previous' | 'next';
-
 export default function EntryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -161,11 +142,7 @@ export default function EntryDetailScreen() {
   const timeFormat = useAppStore((state) => state.timeFormat);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const stickerBoundsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const adjacentEntryLoadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastRecordedViewedEntryId = useRef<string | null>(null);
-  const hasUserScrolledViewRef = useRef(false);
-  const isLoadingAdjacentEntryRef = useRef(false);
-  const viewEntryOpacity = useRef(new Animated.Value(1)).current;
   const handleCoverScrollBeginDrag = useCallback(() => {
     editorRef.current?.dismissKeyboard();
     Keyboard.dismiss();
@@ -211,7 +188,6 @@ export default function EntryDetailScreen() {
   const [showFormattingTools, setShowFormattingTools] = useState(false);
   const [showReflections, setShowReflections] = useState(false);
   const [showMemoryReactionPicker, setShowMemoryReactionPicker] = useState(false);
-  const [loadingEntryDirection, setLoadingEntryDirection] = useState<AdjacentEntryDirection | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isStickerDragging, setIsStickerDragging] = useState(false);
@@ -283,7 +259,6 @@ export default function EntryDetailScreen() {
 
   useEffect(() => () => {
     if (stickerBoundsTimer.current) clearTimeout(stickerBoundsTimer.current);
-    if (adjacentEntryLoadTimer.current) clearTimeout(adjacentEntryLoadTimer.current);
   }, []);
 
   const revealStickerBounds = useCallback(() => {
@@ -294,21 +269,6 @@ export default function EntryDetailScreen() {
       stickerBoundsTimer.current = null;
     }, 3500);
   }, []);
-
-  useEffect(() => {
-    hasUserScrolledViewRef.current = false;
-    isLoadingAdjacentEntryRef.current = false;
-    const timer = setTimeout(() => {
-      setLoadingEntryDirection(null);
-      setShowMemoryReactionPicker(false);
-      if (!id) return;
-      const found = entries.find((e) => e.id === id);
-      if (found) {
-        hydrateEntryState(found);
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [id, entries, hydrateEntryState]);
 
   useEffect(() => {
     if (isEditing || !id || !entry || entry.id !== id || lastRecordedViewedEntryId.current === entry.id) return;
@@ -549,69 +509,44 @@ export default function EntryDetailScreen() {
   );
 
   const availableTags = useMemo(() => normalizeDiaryTags(entries.flatMap((item) => item.tags)), [entries]);
-  const previousEntry = useMemo(() => (
-    entry ? getPreviousDiaryEntry(entries, entry.id) : undefined
-  ), [entries, entry]);
-  const nextEntry = useMemo(() => (
-    entry ? getNextDiaryEntry(entries, entry.id) : undefined
-  ), [entries, entry]);
-  const handleLoadAdjacentEntry = useCallback(async (targetEntry: DiaryEntry | undefined, direction: AdjacentEntryDirection) => {
-    if (isEditing || !targetEntry || isLoadingAdjacentEntryRef.current) return;
-    isLoadingAdjacentEntryRef.current = true;
-    setLoadingEntryDirection(direction);
-    viewEntryOpacity.stopAnimation();
+  const {
+    previousEntry,
+    loadingEntryDirection,
+    viewEntryOpacity,
+    handleLoadPreviousEntry,
+    handleViewScroll,
+    markViewScrollStarted,
+    resetAdjacentEntryNavigation,
+  } = useEntryDetailNavigation({
+    entries,
+    entry,
+    isEditing,
+    scrollRef,
+    hydrateEntryState,
+    resetScrollCollapse,
+    onScroll: handleEditorScroll,
+    onRouteEntryChange: (entryId) => router.setParams({ id: entryId }),
+    onRequireLockboxAccess: () => appLockService.authenticate(),
+    onResetTransientUi: () => {
+      setIsEditing(false);
+      setShowFormattingTools(false);
+      setShowReflections(false);
+      setShowMemoryReactionPicker(false);
+    },
+  });
 
-    if (targetEntry.isLockbox && !(await appLockService.authenticate())) {
-      isLoadingAdjacentEntryRef.current = false;
-      setLoadingEntryDirection(null);
-      viewEntryOpacity.setValue(1);
-      return;
-    }
-    await preloadEntryCoverPhoto(targetEntry.coverPhoto);
-
-    if (adjacentEntryLoadTimer.current) clearTimeout(adjacentEntryLoadTimer.current);
-    adjacentEntryLoadTimer.current = setTimeout(() => {
-      Animated.timing(viewEntryOpacity, {
-        toValue: 0,
-        duration: NEXT_ENTRY_FADE_OUT_MS,
-        useNativeDriver: true,
-      }).start(() => {
-        setIsEditing(false);
-        setShowFormattingTools(false);
-        setShowReflections(false);
-        setShowMemoryReactionPicker(false);
-        hydrateEntryState(targetEntry);
-        resetScrollCollapse();
-        scrollRef.current?.scrollTo({ y: 0, animated: false });
-        router.setParams({ id: targetEntry.id });
-        adjacentEntryLoadTimer.current = null;
-        setLoadingEntryDirection(null);
-        Animated.timing(viewEntryOpacity, {
-          toValue: 1,
-          duration: NEXT_ENTRY_FADE_IN_MS,
-          useNativeDriver: true,
-        }).start(() => {
-          isLoadingAdjacentEntryRef.current = false;
-        });
-      });
-    }, NEXT_ENTRY_LOAD_DELAY_MS);
-  }, [hydrateEntryState, isEditing, resetScrollCollapse, router, scrollRef, viewEntryOpacity]);
-  const handleLoadPreviousEntry = useCallback(() => {
-    void handleLoadAdjacentEntry(previousEntry, 'previous');
-  }, [handleLoadAdjacentEntry, previousEntry]);
-  const handleLoadNextEntry = useCallback(() => {
-    void handleLoadAdjacentEntry(nextEntry, 'next');
-  }, [handleLoadAdjacentEntry, nextEntry]);
-  const handleViewScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    handleEditorScroll(event);
-    if (isEditing || !hasUserScrolledViewRef.current || !nextEntry) return;
-
-    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
-    if (distanceFromBottom <= NEXT_ENTRY_SCROLL_THRESHOLD) {
-      handleLoadNextEntry();
-    }
-  }, [handleEditorScroll, handleLoadNextEntry, isEditing, nextEntry]);
+  useEffect(() => {
+    resetAdjacentEntryNavigation();
+    const timer = setTimeout(() => {
+      setShowMemoryReactionPicker(false);
+      if (!id) return;
+      const found = entries.find((e) => e.id === id);
+      if (found) {
+        hydrateEntryState(found);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [id, entries, hydrateEntryState, resetAdjacentEntryNavigation]);
 
   if (!entry) {
     return (
@@ -647,33 +582,23 @@ export default function EntryDetailScreen() {
   };
   const viewDateTime = formatFriendlyTimestamp(entry.createdAt, timeFormat, friendlyTimestampLabels);
   const renderViewFooterMoodAndTags = () => (
-    <View style={styles.viewFooterMeta} testID="entry-view-footer-meta">
-      <MemoryReactionButton
-        reactions={entry.memoryReactions}
-        visible={showMemoryReactionPicker}
-        onOpen={() => setShowMemoryReactionPicker(true)}
-        onDismiss={() => setShowMemoryReactionPicker(false)}
-        onToggleReaction={handleToggleMemoryReaction}
-        style={styles.viewFooterReactionButton}
-        testID="entry-view-memory-reaction"
-      />
-      {viewMoods.length > 0 ? (
-        <MoodBadgeList
-          moods={viewMoods}
-          maxVisible={1}
-          overflowPopup
-          style={styles.viewFooterMoodBadges}
-          testID="entry-view-footer-mood"
-        />
-      ) : null}
-      <TagBadgeList
-        tags={entry.tags}
-        maxVisible={1}
-        overflowPopup
-        style={styles.viewFooterTagBadges}
-        testID="entry-view-footer-tags"
-      />
-    </View>
+    <EntryMetaRow
+      variant="viewFooter"
+      moods={viewMoods}
+      tags={entry.tags}
+      memoryReactions={entry.memoryReactions}
+      isMemoryReactionPickerVisible={showMemoryReactionPicker}
+      onOpenMemoryReactionPicker={() => setShowMemoryReactionPicker(true)}
+      onDismissMemoryReactionPicker={() => setShowMemoryReactionPicker(false)}
+      onToggleMemoryReaction={handleToggleMemoryReaction}
+      reflectionCount={entry.reflections.length}
+      onReflectionPress={() => setShowReflections(true)}
+      reflectionAccessibilityLabel={`${t('entryOpenReflectionsA11y')} ${entry.reflections.length} ${t('entrySavedA11y')}`}
+      testID="entry-view-footer-meta"
+      memoryReactionTestID="entry-view-memory-reaction"
+      moodTestID="entry-view-footer-mood"
+      tagTestID="entry-view-footer-tags"
+    />
   );
 
   const TOOLBAR_H = ENTRY_EDITOR_TOOLBAR_HEIGHT;
@@ -907,7 +832,7 @@ export default function EntryDetailScreen() {
           ) : undefined}
           onScroll={handleViewScroll}
           onScrollBeginDrag={() => {
-            if (!isEditing) hasUserScrolledViewRef.current = true;
+            if (!isEditing) markViewScrollStarted();
             closeFormattingTools();
             handleEditorScrollBeginDrag();
           }}
@@ -1064,15 +989,6 @@ export default function EntryDetailScreen() {
           style={styles.viewFooter}
         >
           {renderViewFooterMoodAndTags()}
-            <ReflectionSummaryButton
-              count={entry.reflections.length}
-              onPress={() => setShowReflections(true)}
-              accessibilityLabel={`${t('entryOpenReflectionsA11y')} ${entry.reflections.length} ${t('entrySavedA11y')}`}
-              iconSize={21}
-              height={38}
-              minWidth={62}
-              style={styles.viewFooterButton}
-            />
         </DiaryEntryEditorFooter>
       )}
 
@@ -1369,13 +1285,5 @@ const styles = StyleSheet.create({
   },
   viewFooter: {
     paddingHorizontal: 12,
-  },
-  viewFooterMeta: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  viewFooterReactionButton: { flexShrink: 0 },
-  viewFooterMoodBadges: { maxWidth: 116 },
-  viewFooterTagBadges: { flex: 1, maxWidth: '100%' },
-  viewFooterButton: {
-    flexShrink: 0,
-    gap: 8,
   },
 });

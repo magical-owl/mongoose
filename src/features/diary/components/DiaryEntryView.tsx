@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Image, ImageBackground, Pressable, StyleSheet, TouchableOpacity, useWindowDimensions, View, type ImageStyle, type StyleProp, type ViewStyle } from 'react-native';
+import { Image, Pressable, StyleSheet, TouchableOpacity, useWindowDimensions, View, type ImageStyle, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
@@ -9,9 +9,6 @@ import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import type { Profile } from '@/features/profile/domain/Profile';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import { diaryEntryListTitle } from './diaryEntryTypography';
-import { MoodBadgeList } from './MoodBadgeList';
-import { TagBadgeList } from './TagBadgeList';
-import { ReflectionSummaryButton } from './ReflectionSummaryButton';
 import { EntryViewCountBadge } from './EntryViewCountBadge';
 import { DiaryPaperCanvas } from './DiaryPaperCanvas';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
@@ -23,9 +20,9 @@ import {
   getStickerBodyPreviewBottom,
 } from '@/features/diary/domain/StickerLayout';
 import { DiaryEntryBodyPreview } from './DiaryEntryBodyPreview';
-import { MemoryReactionButton } from './MemoryReactionButton';
-import { ReflectionComposer } from './ReflectionComposer';
-import { ReflectionPhotoPreview } from './ReflectionPhotoPreview';
+import { EntryMetaRow } from './EntryMetaRow';
+import { EntryCoverSummary } from './EntryCoverSummary';
+import { EntryReflectionSection } from './EntryReflectionSection';
 
 export type DiaryEntryViewMode = 'detailed' | 'timeline' | 'feed';
 
@@ -121,7 +118,6 @@ export function DiaryEntryView({
   const feedEntryDateTime = entryTime;
   const viewCount = entry.viewCount ?? 0;
   const viewCountA11y = t('entryViewCountA11y').replace('{count}', String(viewCount));
-  const isFeedMode = mode === 'feed';
   const showReflectionSummaryAction = mode !== 'timeline' && Boolean(onReflectionSummaryPress);
   const showMemoryReactionControl = Boolean(onToggleMemoryReaction);
   const reflectionSummaryLabel = entry.reflections.length > 0 ? reflectionCountLabel(entry.reflections.length, t) : t('reflectOnThis');
@@ -149,20 +145,15 @@ export function DiaryEntryView({
         )),
       )
     : 0;
-  const renderMemoryReactionButton = (testID: string, style: StyleProp<ViewStyle>, compact = true) => (
-    <MemoryReactionButton
-      reactions={entry.memoryReactions}
-      visible={isMemoryReactionPickerVisible}
-      onOpen={() => setIsMemoryReactionPickerVisible(true)}
-      onDismiss={() => setIsMemoryReactionPickerVisible(false)}
-      onToggleReaction={async (reaction) => {
-        await onToggleMemoryReaction?.(entry.id, reaction);
-      }}
-      compact={compact}
-      style={style}
-      testID={testID}
-    />
-  );
+  const memoryReactionRowProps = onToggleMemoryReaction ? {
+    memoryReactions: entry.memoryReactions,
+    isMemoryReactionPickerVisible,
+    onOpenMemoryReactionPicker: () => setIsMemoryReactionPickerVisible(true),
+    onDismissMemoryReactionPicker: () => setIsMemoryReactionPickerVisible(false),
+    onToggleMemoryReaction: async (reaction: MemoryReaction) => {
+      await onToggleMemoryReaction(entry.id, reaction);
+    },
+  } : {};
   const renderViewCountBadge = (testID: string, style?: StyleProp<ViewStyle>) => (
     <EntryViewCountBadge
       count={viewCount}
@@ -175,124 +166,35 @@ export function DiaryEntryView({
     />
   );
 
-  const hasInlineReflectionContent = entry.reflections.length > 0 || Boolean(onAddReflection);
-  const inlineReflectionSection = hasInlineReflectionContent ? (
-    <View
-      style={[
-        !isFeedMode && styles.timelineReflectionSection,
-        isFeedMode && styles.feedReflectionPanel,
-        isFeedMode && { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
-      ]}
-      testID={isFeedMode ? 'entry-feed-reflection-panel' : 'entry-timeline-reflection-section'}
-    >
-      {entry.reflections.length > 0 ? (
-        <View
-          style={[
-            styles.timelineReflections,
-            isFeedMode && styles.feedInlineReflections,
-            { borderLeftColor: theme.colors.tint + '88' },
-          ]}
-          testID="entry-timeline-reflections"
-        >
-          {entry.reflections.map((reflection) => (
-            <View key={reflection.id} style={styles.timelineReflectionRow}>
-              <ProfileAvatar
-                profile={profile}
-                size={24}
-                accessibilityLabel={t('profileAvatarA11y')}
-                testID="entry-reflection-avatar"
-              />
-              <View style={[styles.timelineReflectionItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} testID="entry-timeline-reflection-item">
-                <Text preset="caption" color="textTertiary" numberOfLines={1}>
-                  {formatFriendlyTimestamp(reflection.createdAt, timeFormat, friendlyTimestampLabels)}
-                </Text>
-                <Text preset="bodySmall" color="text" style={styles.timelineReflectionText}>{reflection.text}</Text>
-                {reflection.photo ? (
-                  <ReflectionPhotoPreview
-                    photo={reflection.photo}
-                    style={styles.timelineReflectionPhoto}
-                    testID="entry-inline-reflection-photo"
-                  />
-                ) : null}
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : null}
-      {onAddReflection ? (
-        <ReflectionComposer
-          onSubmit={(text, photo) => onAddReflection(entry.id, text, photo)}
-          onFocus={() => onReflectionInputFocus?.(entry.id)}
-          inputBoxStyle={[
-            styles.timelineReflectionInputBox,
-            isFeedMode && styles.feedReflectionInputBox,
-            entry.reflections.length > 0 && styles.timelineReflectionInputAfterContent,
-          ]}
-          photoPreviewStyle={[
-            styles.inlineReflectionPhotoPreview,
-            isFeedMode && styles.feedInlineReflectionPhotoPreview,
-          ]}
-          inputBoxTestID={isFeedMode ? 'entry-feed-reflection-input' : 'entry-timeline-reflection-input'}
-          photoPreviewTestID={isFeedMode ? 'entry-feed-reflection-photo-preview' : 'entry-timeline-reflection-photo-preview'}
-          selectedPhotoTestID={isFeedMode ? 'entry-feed-selected-reflection-photo' : 'entry-timeline-selected-reflection-photo'}
-          showKeyboardDismissButton
-          submitSurface="subtle"
-          minHeight={Math.max(42, theme.fontSizes.sm * 2.9)}
-          backgroundColor={isFeedMode ? theme.colors.surface : theme.colors.card}
-        />
-      ) : null}
-    </View>
-  ) : null;
+  const renderInlineReflectionSection = (variant: 'feed' | 'timeline') => (
+    <EntryReflectionSection
+      entryId={entry.id}
+      reflections={entry.reflections}
+      variant={variant}
+      profile={profile}
+      onAddReflection={onAddReflection}
+      onReflectionInputFocus={onReflectionInputFocus}
+    />
+  );
 
   if (mode === 'feed') {
-    const feedTimestamp = feedEntryDateTime ? (
-      <Text
-        preset="caption"
-        style={[
-          styles.feedDateTime,
-          { color: entry.coverPhoto ? theme.colors.stickerControlText : theme.colors.text },
-        ]}
-        numberOfLines={1}
-        testID={entry.coverPhoto ? 'entry-feed-cover-timestamp' : 'entry-feed-timestamp'}
-      >
-        {feedEntryDateTime}
-      </Text>
-    ) : null;
-    const feedFooterMeta = showMemoryReactionControl || hasMood || entry.tags.length > 0 || showReflectionSummaryAction ? (
-      <View
-        style={[
-          styles.feedFooterMetaRow,
-          { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
-        ]}
+    const feedTimestamp = feedEntryDateTime;
+    const feedFooterMeta = (
+      <EntryMetaRow
+        variant="feed"
+        moods={entryMoods}
+        tags={entry.tags}
+        {...memoryReactionRowProps}
+        reflectionCount={showReflectionSummaryAction ? entry.reflections.length : undefined}
+        onReflectionPress={showReflectionSummaryAction ? () => onReflectionSummaryPress?.(entry.id) : undefined}
+        reflectionAccessibilityLabel={showReflectionSummaryAction ? reflectionSummaryLabel : undefined}
         testID="entry-feed-footer-meta"
-      >
-        {showMemoryReactionControl ? renderMemoryReactionButton('entry-feed-memory-reaction', styles.feedReactionButton, false) : null}
-        {hasMood ? (
-          <MoodBadgeList
-            moods={entryMoods}
-            maxVisible={1}
-            overflowPopup
-            style={styles.feedMoodBadges}
-            testID="entry-feed-mood"
-          />
-        ) : null}
-        <TagBadgeList
-          tags={entry.tags}
-          maxVisible={1}
-          overflowPopup
-          style={styles.feedTagBadges}
-          testID="entry-feed-tags"
-        />
-        {showReflectionSummaryAction ? (
-          <ReflectionSummaryButton
-            count={entry.reflections.length}
-            onPress={() => onReflectionSummaryPress?.(entry.id)}
-            accessibilityLabel={reflectionSummaryLabel}
-            testID="entry-feed-reflection-button"
-          />
-        ) : null}
-      </View>
-    ) : null;
+        memoryReactionTestID="entry-feed-memory-reaction"
+        moodTestID="entry-feed-mood"
+        tagTestID="entry-feed-tags"
+        reflectionTestID="entry-feed-reflection-button"
+      />
+    );
     return (
       <View style={[styles.feedCard, fullWidthEntryFrame]} testID="entry-feed-card">
         <TouchableOpacity
@@ -309,32 +211,16 @@ export function DiaryEntryView({
           ]}
         >
           {entry.coverPhoto ? (
-            <ImageBackground
-              source={getDiaryPhotoImageSource(entry.coverPhoto.uri)}
-              style={styles.feedCoverHeader}
-              imageStyle={styles.feedCoverHeaderImage}
-              resizeMode="cover"
-            >
-              <View style={[styles.feedCoverScrim, { backgroundColor: theme.colors.overlay }]} />
-              <View style={styles.feedCoverContent}>
-                <Text
-                  style={[
-                    styles.feedTitle,
-                    styles.feedCoverTitle,
-                    {
-                      fontSize: theme.fontSizes.xxxl,
-                      lineHeight: theme.fontSizes.xxxl * 1.25,
-                      color: theme.colors.stickerControlText,
-                    },
-                  ]}
-                  numberOfLines={3}
-                >
-                  {entry.title}
-                </Text>
-                {feedTimestamp}
-              </View>
-              {renderViewCountBadge('entry-feed-view-count', styles.coverViewCountBadge)}
-            </ImageBackground>
+            <EntryCoverSummary
+              variant="feed"
+              title={entry.title}
+              timestamp={feedTimestamp}
+              imageSource={getDiaryPhotoImageSource(entry.coverPhoto.uri)}
+              viewCount={viewCount}
+              viewCountAccessibilityLabel={viewCountA11y}
+              viewCountTestID="entry-feed-view-count"
+              timestampTestID="entry-feed-cover-timestamp"
+            />
           ) : null}
           <DiaryPaperCanvas
             paperBackgroundId={entry.paperBackgroundId}
@@ -362,7 +248,16 @@ export function DiaryEntryView({
                   >
                     {entry.title}
                   </Text>
-                  {feedTimestamp}
+                  {feedTimestamp ? (
+                    <Text
+                      preset="caption"
+                      style={[styles.feedDateTime, { color: theme.colors.text }]}
+                      numberOfLines={1}
+                      testID="entry-feed-timestamp"
+                    >
+                      {feedTimestamp}
+                    </Text>
+                  ) : null}
                 </View>
               )}
               <View
@@ -389,7 +284,7 @@ export function DiaryEntryView({
           </DiaryPaperCanvas>
         </TouchableOpacity>
         {feedFooterMeta}
-        {inlineReflectionSection}
+        {renderInlineReflectionSection('feed')}
       </View>
     );
   }
@@ -424,74 +319,42 @@ export function DiaryEntryView({
             <View style={styles.timelinePreviewRow}>
               <View style={styles.timelineTextPreview}>
                 <Text style={[styles.timelineContent, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
-                {(showMemoryReactionControl || hasMood || entry.tags.length > 0) && (
-                  <View style={styles.timelineMetaRow} testID="entry-timeline-meta-row">
-                    {showMemoryReactionControl ? renderMemoryReactionButton('entry-timeline-memory-reaction', styles.timelineReactionButton) : null}
-                    {hasMood ? (
-                      <MoodBadgeList
-                        moods={entryMoods}
-                        maxVisible={1}
-                        compact
-                        overflowPopup
-                        style={styles.timelineMoodBadges}
-                        testID="entry-timeline-mood"
-                      />
-                    ) : null}
-                    {entry.tags.length > 0 ? (
-                      <TagBadgeList
-                        tags={entry.tags}
-                        maxVisible={1}
-                        compact
-                        overflowPopup
-                        style={styles.timelineTagBadges}
-                        testID="entry-timeline-tags"
-                      />
-                    ) : null}
-                  </View>
-                )}
+                <EntryMetaRow
+                  variant="timeline"
+                  moods={entryMoods}
+                  tags={entry.tags}
+                  {...memoryReactionRowProps}
+                  testID="entry-timeline-meta-row"
+                  memoryReactionTestID="entry-timeline-memory-reaction"
+                  moodTestID="entry-timeline-mood"
+                  tagTestID="entry-timeline-tags"
+                />
               </View>
             </View>
           </Pressable>
-          {inlineReflectionSection}
+          {renderInlineReflectionSection('timeline')}
         </View>
       </View>
     );
   }
 
   const cardDate = formatCardDay(entry.date);
-  const cardFooterContent = showMemoryReactionControl || hasMood || entry.tags.length > 0 || showReflectionSummaryAction ? (
-    <View style={styles.cardFooter} testID="entry-card-footer">
-      {showMemoryReactionControl ? renderMemoryReactionButton('entry-card-memory-reaction', styles.cardFooterReactionButton) : null}
-      {hasMood ? (
-        <MoodBadgeList
-          moods={entryMoods}
-          maxVisible={1}
-          compact
-          overflowPopup
-          style={styles.cardFooterMoodBadges}
-          testID="entry-card-mood"
-        />
-      ) : null}
-      {entry.tags.length > 0 ? (
-        <TagBadgeList
-          tags={entry.tags}
-          maxVisible={1}
-          compact
-          overflowPopup
-          style={styles.cardFooterTagBadges}
-          testID="entry-card-tags"
-        />
-      ) : null}
-      {showReflectionSummaryAction ? (
-        <ReflectionSummaryButton
-          count={entry.reflections.length}
-          onPress={() => onReflectionSummaryPress?.(entry.id)}
-          accessibilityLabel={reflectionSummaryLabel}
-          testID="entry-card-reflection-button"
-        />
-      ) : null}
-    </View>
-  ) : null;
+  const cardFooterContent = (
+    <EntryMetaRow
+      variant="card"
+      moods={entryMoods}
+      tags={entry.tags}
+      {...memoryReactionRowProps}
+      reflectionCount={showReflectionSummaryAction ? entry.reflections.length : undefined}
+      onReflectionPress={showReflectionSummaryAction ? () => onReflectionSummaryPress?.(entry.id) : undefined}
+      reflectionAccessibilityLabel={showReflectionSummaryAction ? reflectionSummaryLabel : undefined}
+      testID="entry-card-footer"
+      memoryReactionTestID="entry-card-memory-reaction"
+      moodTestID="entry-card-mood"
+      tagTestID="entry-card-tags"
+      reflectionTestID="entry-card-reflection-button"
+    />
+  );
 
   return (
     <TouchableOpacity
@@ -558,30 +421,16 @@ const styles = StyleSheet.create({
   cardTextPreview: { flex: 1, minWidth: 0 },
   cardCoverPhoto: { width: 58, height: 58, borderRadius: 6 },
   cardHeroCoverPhoto: { width: '100%', height: 138, borderRadius: 0 },
-  cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  cardFooterReactionButton: { flexShrink: 0 },
-  cardFooterMoodBadges: { maxWidth: 140 },
-  cardFooterTagBadges: { flex: 1, maxWidth: '100%' },
   feedCard: { paddingVertical: 0, marginBottom: 0 },
   feedEntrySurface: { borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   feedCanvas: { position: 'relative', overflow: 'visible' },
   feedTextLayer: { position: 'relative', zIndex: 2 },
   feedTitle: { flex: 1, fontWeight: '700' },
-  feedCoverHeader: { minHeight: 168, justifyContent: 'flex-end', overflow: 'hidden' },
-  feedCoverHeaderImage: { borderRadius: 0 },
-  feedCoverScrim: { ...StyleSheet.absoluteFill, opacity: 0.28 },
   feedCoverContent: { paddingLeft: 20, paddingRight: 78, paddingTop: 42, paddingBottom: 12 },
   feedCoverTitle: { marginBottom: 2 },
   feedContentPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 0, paddingHorizontal: 12, paddingVertical: 12 },
   feedContentPanelMerged: { borderWidth: 0, borderRadius: 0, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 20 },
-  feedFooterMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 20, paddingVertical: 10 },
-  feedReactionButton: { flexShrink: 0 },
-  feedMoodBadges: { maxWidth: '100%' },
-  feedTagBadges: { flex: 1, maxWidth: '100%' },
   feedDateTime: { flexShrink: 0, fontWeight: '700', marginTop: 2 },
-  feedReflectionPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 0, marginTop: 0, marginHorizontal: 0, padding: 12 },
-  feedInlineReflections: { marginTop: 0, marginLeft: 0, paddingLeft: 0, borderLeftWidth: 0 },
-  feedReflectionInputBox: { marginLeft: 0 },
   timelineEntry: { position: 'relative', minHeight: 82, marginBottom: 18, paddingLeft: 42, paddingRight: 20 },
   timelineSpine: { position: 'absolute', top: 0, bottom: -18, left: 6, width: 1 },
   timelineDot: { position: 'absolute', top: 13, left: 1, width: 11, height: 11, borderRadius: 6, borderWidth: 2 },
@@ -597,18 +446,4 @@ const styles = StyleSheet.create({
   timelineCoverPhoto: { width: 62, height: 48, borderRadius: 6 },
   timelineHeroCoverPhoto: { width: '100%', height: 138, borderRadius: 0, marginBottom: 10 },
   timelineContent: { fontSize: 14, lineHeight: 20, marginBottom: 5 },
-  timelineMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  timelineReactionButton: { flexShrink: 0 },
-  timelineMoodBadges: { maxWidth: 140 },
-  timelineTagBadges: { flex: 1, maxWidth: '100%' },
-  timelineReflectionSection: { marginRight: 0 },
-  timelineReflections: { gap: 7, marginTop: 0, marginLeft: 8, paddingLeft: 10, borderLeftWidth: 1 },
-  timelineReflectionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  timelineReflectionItem: { flex: 1, borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
-  timelineReflectionText: { lineHeight: 20, marginTop: 2 },
-  timelineReflectionPhoto: { width: '100%', height: 118, borderRadius: 8, marginTop: 8 },
-  timelineReflectionInputBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, marginTop: 0, marginLeft: 8, paddingLeft: 12, paddingRight: 4 },
-  timelineReflectionInputAfterContent: { marginTop: 10 },
-  inlineReflectionPhotoPreview: { marginTop: 8, marginLeft: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, overflow: 'hidden' },
-  feedInlineReflectionPhotoPreview: { marginLeft: 0 },
 });
