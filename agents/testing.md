@@ -255,6 +255,8 @@ it('calls onLogin when the login button is pressed', () => {
 - Do not wrap plain `fireEvent` calls in `act()` by default; RNTL already handles synchronous event wrapping.
 - Use `await act(async () => ...)` only when the action starts async React state updates that must finish before assertions.
 - Prefer `waitFor` for assertions that depend on effects, promise resolution, animations mocked with callbacks, or async provider updates.
+- For React Native `Animated`, Reanimated, `Modal`, and timer-driven UI, prefer one shared mock/test utility over per-test wrapper tweaks. Local `act()` changes can make tests pass alone but fail by order when async cleanup overlaps.
+- Do not suppress broad `act()` warnings with `console.error` filters unless the suite has a documented upstream/library false positive and a separate test still fails on real unwrapped state updates.
 - Treat persistent console warnings as test debt. A passing suite with noisy warnings can hide real regressions.
 - If a warning appears across many tests, inspect shared helpers and mocks before adding local wrappers to every test.
 
