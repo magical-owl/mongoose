@@ -11,8 +11,27 @@ Extract a component when at least one of these is true:
 - The component can be described by domain data and callbacks rather than a specific route.
 - The component is likely to be reused by a new app built from this template.
 - A screen file is approaching the 300-line component limit.
+- A route file is over 400 lines and the requested change adds behavior, modal state, gesture state, keyboard state, animation state, or another reusable visual section.
 
 Do not extract a one-off wrapper only to reduce line count. Keep screen-specific composition in the screen until the boundary is clear.
+
+## Screen Bloat Guardrails
+
+Use route files as composition roots, not feature containers.
+
+- `300+ lines`: inspect whether visual sections should become feature components.
+- `400+ lines`: avoid adding new behavior directly to the route when a component or hook boundary is clear.
+- `500+ lines`: extract first for non-trivial UI or state changes.
+- `700+ lines`: treat further feature work as risky until the route is reduced or a clear reason is documented.
+
+Adding a single spacing, color-token, label, or icon fix may still stay in the route when it is clearly local and reversible.
+
+Prefer these extraction shapes:
+
+- Presentational component for a visual section with props and callbacks.
+- Custom hook for modal, keyboard, gesture, navigation, edit-draft, or async action state.
+- Service/domain helper for non-React business rules.
+- Shared component only when the pattern is domain-neutral and reused across features.
 
 ## Component Boundaries
 
@@ -67,6 +86,7 @@ Extract these incrementally. Preserve existing behavior first, then move duplica
 - [ ] Component has a single visual responsibility.
 - [ ] Props and callback types are explicit; no `any`.
 - [ ] Screen retains navigation, hooks, services, and side effects.
+- [ ] Screen does not gain unrelated modal, keyboard, gesture, or animation state.
 - [ ] Styles use theme tokens and are defined outside render.
 - [ ] Accessibility roles, labels, and states move with the control.
 - [ ] Loading, empty, error, selected, and disabled states are defined where applicable.

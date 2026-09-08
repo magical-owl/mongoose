@@ -1,4 +1,4 @@
-import { act, fireEvent, waitFor } from '@testing-library/react-native';
+import { fireEvent, waitFor } from '@testing-library/react-native';
 import { StyleSheet, Text } from 'react-native';
 import { withTiming } from 'react-native-reanimated';
 import { SlidingDrawer } from '../SlidingDrawer';
@@ -108,12 +108,8 @@ describe('SlidingDrawer', () => {
 
     await waitFor(() => expect(getByTestId('drawer-profile')).toBeTruthy());
 
-    await act(async () => {
-      fireEvent.press(getByTestId('drawer-profile'));
-    });
-    await act(async () => {
-      fireEvent.press(getByTestId('drawer-close'));
-    });
+    fireEvent.press(getByTestId('drawer-profile'));
+    fireEvent.press(getByTestId('drawer-close'));
 
     expect(getByText('Sarah Meadow')).toBeTruthy();
     expect(StyleSheet.flatten(getByTestId('drawer-profile').props.style).borderRadius).toBe(8);

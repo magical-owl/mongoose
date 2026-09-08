@@ -1,6 +1,7 @@
 import { EntryViewBodyContent } from '@/features/diary/components/EntryViewBodyContent';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { renderWithProviders } from '@tests/helpers';
+import { buildDiaryEntry } from '@tests/fixtures/domain';
 
 jest.mock('@/features/diary/components/DiaryEntryBodyView', () => {
   const { Text, View } = jest.requireActual<typeof import('react-native')>('react-native');
@@ -14,36 +15,10 @@ jest.mock('@/features/diary/components/DiaryEntryBodyView', () => {
   };
 });
 
-const entry: DiaryEntry = {
-  id: '11111111-1111-4111-8111-111111111111',
-  title: 'A quiet morning',
+const entry = buildDiaryEntry({
   content: '<p>Body</p>',
-  date: '2026-08-29',
   paperBackgroundId: 'vintage-parchment',
-  bodyFontFamily: 'system',
-  stickers: [],
-  companion: 'cat',
-  isFavorite: false,
-  memoryReactions: [],
-  tags: [],
-  createdAt: '2026-08-29T01:58:00.000Z',
-  updatedAt: '2026-08-29T01:58:00.000Z',
-  manualMoodWeather: 'neutral',
-  manualMoods: ['neutral'],
-  writingMode: 'free-write',
-  isLockbox: false,
-  sensory: {
-    locationLabel: '',
-    sounds: '',
-    smells: '',
-    energyLevel: 5,
-    bodyState: '',
-  },
-  collectionIds: [],
-  journalIds: [],
-  photos: [],
-  reflections: [],
-};
+});
 
 describe('EntryViewBodyContent', () => {
   it('shows the no-cover header above the diary body', async () => {

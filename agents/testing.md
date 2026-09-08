@@ -75,6 +75,26 @@ describe('<ModuleName>')
 
 ## Mocking
 
+## Shared Test Fixtures
+
+Use fixture builders for domain models that appear in many tests. This avoids scattered hand-written objects drifting when the model changes.
+
+- Put builders near the feature tests or in a shared test helper when reused broadly.
+- Name builders with `build`, such as `buildDiaryEntry()`, `buildJournal()`, or `buildProfile()`.
+- Include current required defaults, including migration-era fields such as counters, arrays, and optional media fields.
+- Let tests override only the fields that matter to the behavior under test.
+- Update the builder once when the domain schema changes instead of patching many unrelated fixtures.
+
+Example:
+
+```typescript
+const entry = buildDiaryEntry({
+  title: 'Stress Entry',
+  tags: ['stress'],
+  viewCount: 0,
+});
+```
+
 ### Repository Mocks
 
 ```typescript
@@ -229,6 +249,14 @@ it('calls onLogin when the login button is pressed', () => {
   expect(onLogin).toHaveBeenCalledTimes(1);
 });
 ```
+
+### React Native `act()` Hygiene
+
+- Do not wrap plain `fireEvent` calls in `act()` by default; RNTL already handles synchronous event wrapping.
+- Use `await act(async () => ...)` only when the action starts async React state updates that must finish before assertions.
+- Prefer `waitFor` for assertions that depend on effects, promise resolution, animations mocked with callbacks, or async provider updates.
+- Treat persistent console warnings as test debt. A passing suite with noisy warnings can hide real regressions.
+- If a warning appears across many tests, inspect shared helpers and mocks before adding local wrappers to every test.
 
 ## What NOT to Test
 

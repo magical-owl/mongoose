@@ -3,6 +3,7 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { useRef, useState } from 'react';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { useEntryDetailNavigation } from '@/features/diary/hooks/useEntryDetailNavigation';
+import { buildDiaryEntry } from '@tests/fixtures/domain';
 
 jest.mock('@/features/diary/services/DiaryPhotoService', () => ({
   getDiaryPhotoImageSource: (uri: string) => ({ uri }),
@@ -19,37 +20,11 @@ jest.spyOn(Animated, 'timing').mockImplementation((value, config) => ({
 }));
 
 function createEntry(id: string, isLockbox = false): DiaryEntry {
-  return {
+  return buildDiaryEntry({
     id,
     title: id,
-    content: '<p>Entry body.</p>',
-    date: '2026-08-29',
-    paperBackgroundId: 'blank',
-    bodyFontFamily: 'system',
-    stickers: [],
-    companion: 'cat',
-    isFavorite: false,
-    memoryReactions: [],
-    tags: [],
-    createdAt: '2026-08-29T01:00:00.000Z',
-    updatedAt: '2026-08-29T01:00:00.000Z',
-    manualMoodWeather: 'neutral',
-    manualMood: 'neutral',
-    manualMoods: ['neutral'],
-    writingMode: 'free-write',
     isLockbox,
-    sensory: {
-      locationLabel: '',
-      sounds: '',
-      smells: '',
-      energyLevel: 5,
-      bodyState: '',
-    },
-    collectionIds: [],
-    journalIds: [],
-    photos: [],
-    reflections: [],
-  };
+  });
 }
 
 function NavigationHarness({
@@ -138,9 +113,6 @@ describe('useEntryDetailNavigation', () => {
 
     await act(async () => {
       fireEvent.press(getByTestId('bottom-scroll'));
-    });
-
-    await act(async () => {
       await Promise.resolve();
       await jest.runOnlyPendingTimersAsync();
     });
@@ -164,9 +136,6 @@ describe('useEntryDetailNavigation', () => {
 
     await act(async () => {
       fireEvent.press(getByTestId('previous-entry'));
-    });
-
-    await act(async () => {
       await Promise.resolve();
       await jest.runOnlyPendingTimersAsync();
     });
@@ -190,9 +159,6 @@ describe('useEntryDetailNavigation', () => {
 
     await act(async () => {
       fireEvent.press(getByTestId('next-entry'));
-    });
-
-    await act(async () => {
       await Promise.resolve();
       await jest.runOnlyPendingTimersAsync();
     });

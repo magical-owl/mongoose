@@ -2,6 +2,7 @@ import { Text, TouchableOpacity } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { appendTemplateToEntryContent, useEntryEditDraft } from '@/features/diary/hooks/useEntryEditDraft';
+import { buildDiaryEntry, buildDiaryPhoto } from '@tests/fixtures/domain';
 
 jest.mock('@/features/diary/services/DiaryPhotoService', () => ({
   createPlacedPhotoSticker: (photo: { id: string }, index: number) => ({
@@ -19,25 +20,16 @@ jest.mock('@/features/diary/services/DiaryPhotoService', () => ({
 }));
 
 function createEntry(): DiaryEntry {
-  return {
-    id: '11111111-1111-4111-8111-111111111111',
+  return buildDiaryEntry({
     title: 'Original title',
     content: '<p>Original body.</p>',
-    date: '2026-08-29',
     paperBackgroundId: 'lined-paper',
     bodyFontFamily: 'lora',
     bodyTextColor: '#FFF7E6',
-    stickers: [],
-    companion: 'cat',
     isFavorite: true,
-    memoryReactions: [],
     tags: ['Daily', 'daily', 'Weekend'],
-    createdAt: '2026-08-29T01:00:00.000Z',
-    updatedAt: '2026-08-29T01:00:00.000Z',
-    manualMoodWeather: 'calm',
     manualMood: 'happy',
     manualMoods: ['happy', 'grateful'],
-    writingMode: 'gratitude',
     isLockbox: true,
     sensory: {
       locationLabel: 'Desk',
@@ -46,26 +38,17 @@ function createEntry(): DiaryEntry {
       energyLevel: 7,
       bodyState: 'Rested',
     },
-    collectionIds: [],
     journalIds: ['22222222-2222-4222-8222-222222222222'],
-    coverPhoto: {
-      id: '33333333-3333-4333-8333-333333333333',
+    coverPhoto: buildDiaryPhoto({
       uri: 'file:///cover.jpg',
-      width: 1200,
-      height: 800,
-      createdAt: '2026-08-29T01:00:00.000Z',
-    },
+    }),
     photos: [
-      {
+      buildDiaryPhoto({
         id: '44444444-4444-4444-8444-444444444444',
         uri: 'file:///photo.jpg',
-        width: 1200,
-        height: 800,
-        createdAt: '2026-08-29T01:00:00.000Z',
-      },
+      }),
     ],
-    reflections: [],
-  };
+  });
 }
 
 function DraftHarness({ sourceEntry }: { readonly sourceEntry: DiaryEntry }) {

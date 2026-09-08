@@ -138,9 +138,7 @@ describe('EntryMetadataModal', () => {
 
     expect(getByText('Add a mood, journal, or tags before saving.')).toBeTruthy();
 
-    await act(async () => {
-      fireEvent.press(getByText('Save entry'));
-    });
+    fireEvent.press(getByText('Save entry'));
 
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });

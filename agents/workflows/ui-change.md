@@ -23,12 +23,36 @@ Add `agents/13-responsive-layout-reviewer.md` when the change affects tablet, la
 
 1. Identify the affected screen, component, and primary workflow.
 2. Inspect adjacent screens for existing header, drawer, footer, card, picker, modal, and toolbar patterns.
-3. Decide whether the change belongs in a route file, feature component, or shared component.
-4. Preserve existing behavior before changing visual structure.
-5. Use theme values and localized strings for user-facing UI.
-6. Update or add focused component tests when behavior, public props, or reusable components change.
-7. Run validation.
-8. Apply `agents/review-checklist.md` before reporting completion.
+3. Run the UI placement check before writing code:
+   - Does this belong in a route file, feature component, shared component, hook, service, or domain model?
+   - Does an existing component already represent this pattern?
+   - Will this appear in more than one entry surface such as timeline, card, feed, view, edit, calendar, or rediscover?
+   - Will this add more than one new state variable to a route file?
+4. If the target route is already over 400 lines, prefer extracting a component or hook before adding behavior. If it is over 500 lines, extraction is the default unless the change is a tiny token/copy fix.
+5. Preserve existing behavior before changing visual structure.
+6. Use theme values and localized strings for user-facing UI.
+7. Update or add focused component tests when behavior, public props, or reusable components change.
+8. Run validation.
+9. Apply `agents/review-checklist.md` before reporting completion.
+
+## UI Consistency Pass
+
+When a change affects diary entry presentation, check every surface that renders the same concept:
+
+- Timeline view
+- Card view
+- Feed view
+- View diary screen
+- Edit diary screen
+- Calendar and rediscover cards when entry metadata, cover images, reactions, reflections, or body previews are involved
+
+When a change affects app chrome, check every matching chrome surface:
+
+- Main footer navigation
+- Create and edit footers
+- Header buttons
+- Drawer controls
+- Settings/onboarding selectors
 
 ## Required Checks
 

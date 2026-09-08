@@ -1,38 +1,11 @@
 import { getNextDiaryEntry, getPreviousDiaryEntry } from '@/features/diary/services/DiaryEntryNavigation';
-import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import { buildDiaryEntry } from '@tests/fixtures/domain';
 
-function createEntry(id: string): DiaryEntry {
-  return {
+function createEntry(id: string) {
+  return buildDiaryEntry({
     id,
     title: id,
-    content: '<p>Entry body.</p>',
-    date: '2026-08-29',
-    paperBackgroundId: 'blank',
-    bodyFontFamily: 'system',
-    stickers: [],
-    companion: 'cat',
-    isFavorite: false,
-    memoryReactions: [],
-    tags: [],
-    createdAt: '2026-08-29T01:00:00.000Z',
-    updatedAt: '2026-08-29T01:00:00.000Z',
-    manualMoodWeather: 'neutral',
-    manualMood: 'neutral',
-    manualMoods: ['neutral'],
-    writingMode: 'free-write',
-    isLockbox: false,
-    sensory: {
-      locationLabel: '',
-      sounds: '',
-      smells: '',
-      energyLevel: 5,
-      bodyState: '',
-    },
-    collectionIds: [],
-    journalIds: [],
-    photos: [],
-    reflections: [],
-  };
+  });
 }
 
 describe('getNextDiaryEntry', () => {

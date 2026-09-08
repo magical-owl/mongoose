@@ -1,6 +1,6 @@
 import { DiaryRepository } from '../DiaryRepository';
-import { DiaryEntry } from '../../domain/DiaryEntry';
 import type { ISecureStorageDataSource } from '@/database/SecureStorageDataSource';
+import { buildDiaryEntry } from '@tests/fixtures/domain';
 
 class MockSecureStorage implements ISecureStorageDataSource {
   private store = new Map<string, string>();
@@ -22,13 +22,12 @@ describe('DiaryRepository', () => {
   let repository: DiaryRepository;
   let mockStorage: MockSecureStorage;
 
-  const mockEntry: DiaryEntry = {
+  const mockEntry = buildDiaryEntry({
     id: '123e4567-e89b-12d3-a456-426614174000',
     title: 'Test Entry',
     content: 'Today was a wonderful day.',
     date: '2026-08-13',
     paperBackgroundId: 'vintage-parchment',
-    bodyFontFamily: 'system',
     stickers: [
       {
         id: '987e6543-e89b-12d3-a456-426614174000',
@@ -42,22 +41,12 @@ describe('DiaryRepository', () => {
         behindText: false,
       },
     ],
-    companion: 'cat',
-    isFavorite: false,
-    memoryReactions: [],
     tags: ['test', 'gratitude'],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     manualMoodWeather: 'calm',
     manualMoods: [],
-    writingMode: 'free-write',
-    sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' },
-    isLockbox: false,
-    collectionIds: [],
-    journalIds: [],
-    photos: [],
-    reflections: [],
-  };
+  });
 
   beforeEach(() => {
     mockStorage = new MockSecureStorage();

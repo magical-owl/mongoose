@@ -4,6 +4,7 @@ import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry'
 import { useEntryDetailActions } from '@/features/diary/hooks/useEntryDetailActions';
 import type { useDiary } from '@/features/diary/hooks/useDiary';
 import type { useTranslation } from '@/localization/i18n';
+import { buildDiaryEntry, buildDiaryPhoto, buildDiaryReflection } from '@tests/fixtures/domain';
 
 type DiaryActions = Pick<
   ReturnType<typeof useDiary>,
@@ -13,47 +14,17 @@ type DiaryActions = Pick<
 const t = ((key: string) => key) as ReturnType<typeof useTranslation>;
 
 function createEntry(overrides: Partial<DiaryEntry> = {}): DiaryEntry {
-  const entry: DiaryEntry = {
-    id: '11111111-1111-4111-8111-111111111111',
+  return buildDiaryEntry({
     title: 'Original title',
     content: '<p>Original body.</p>',
-    date: '2026-08-29',
     paperBackgroundId: 'lined-paper',
-    bodyFontFamily: 'system',
-    stickers: [],
-    companion: 'cat',
-    isFavorite: false,
-    memoryReactions: [],
-    tags: [],
-    createdAt: '2026-08-29T01:00:00.000Z',
-    updatedAt: '2026-08-29T01:00:00.000Z',
-    manualMoodWeather: 'neutral',
-    manualMoods: ['neutral'],
-    writingMode: 'free-write',
-    sensory: {
-      locationLabel: '',
-      sounds: '',
-      smells: '',
-      energyLevel: 5,
-      bodyState: '',
-    },
-    isLockbox: false,
-    collectionIds: [],
-    journalIds: [],
-    photos: [],
-    reflections: [],
-  };
-  Object.assign(entry, overrides);
-  return entry;
+    ...overrides,
+  });
 }
 
-const reflectionPhoto: DiaryPhoto = {
-  id: '33333333-3333-4333-8333-333333333333',
+const reflectionPhoto: DiaryPhoto = buildDiaryPhoto({
   uri: 'file:///reflection.jpg',
-  width: 1200,
-  height: 800,
-  createdAt: '2026-08-29T01:00:00.000Z',
-};
+});
 
 function ActionsHarness({
   initialEntry = createEntry(),
@@ -138,9 +109,7 @@ describe('useEntryDetailActions', () => {
     saveDiaryEntry.mockResolvedValue({ success: true, data: createEntry({ title: 'Updated title' }) });
     const { getByTestId } = await render(<ActionsHarness saveDiaryEntry={saveDiaryEntry} />);
 
-    await act(async () => {
-      fireEvent.press(getByTestId('save-entry'));
-    });
+    fireEvent.press(getByTestId('save-entry'));
 
     expect(saveDiaryEntry).toHaveBeenCalledWith(expect.objectContaining({ title: 'Updated title' }));
   });
@@ -149,23 +118,21 @@ describe('useEntryDetailActions', () => {
     const saveDiaryEntry = jest.fn<ReturnType<DiaryActions['saveDiaryEntry']>, Parameters<DiaryActions['saveDiaryEntry']>>();
     const { getByTestId } = await render(<ActionsHarness editTitle="  " saveDiaryEntry={saveDiaryEntry} />);
 
-    await act(async () => {
-      fireEvent.press(getByTestId('save-entry'));
-    });
+    fireEvent.press(getByTestId('save-entry'));
 
     expect(saveDiaryEntry).not.toHaveBeenCalled();
     expect(Alert.alert).toHaveBeenCalledWith('entryTitleRequiredTitle', 'entryEditTitleRequiredMessage');
   });
 
   it('adds a trimmed reflection with the selected photo', async () => {
-    const updatedEntry = createEntry({ reflections: [{ id: '22222222-2222-4222-8222-222222222222', text: 'A thought.', createdAt: '2026-08-29T01:00:00.000Z', updatedAt: '2026-08-29T01:00:00.000Z', photo: reflectionPhoto }] });
+    const updatedEntry = createEntry({
+      reflections: [buildDiaryReflection({ text: 'A thought.', photo: reflectionPhoto })],
+    });
     const addReflection = jest.fn<ReturnType<DiaryActions['addReflection']>, Parameters<DiaryActions['addReflection']>>();
     addReflection.mockResolvedValue({ success: true, data: updatedEntry });
     const { getByTestId } = await render(<ActionsHarness addReflection={addReflection} />);
 
-    await act(async () => {
-      fireEvent.press(getByTestId('add-reflection'));
-    });
+    fireEvent.press(getByTestId('add-reflection'));
 
     expect(addReflection).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', 'A thought.', reflectionPhoto);
   });
@@ -176,9 +143,7 @@ describe('useEntryDetailActions', () => {
     toggleMemoryReaction.mockResolvedValue({ success: true, data: updatedEntry });
     const { getByTestId } = await render(<ActionsHarness toggleMemoryReaction={toggleMemoryReaction} />);
 
-    await act(async () => {
-      fireEvent.press(getByTestId('toggle-reaction'));
-    });
+    fireEvent.press(getByTestId('toggle-reaction'));
 
     expect(toggleMemoryReaction).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', 'cherish');
   });
@@ -189,9 +154,7 @@ describe('useEntryDetailActions', () => {
     const navigateBack = jest.fn();
     const { getByTestId } = await render(<ActionsHarness deleteDiaryEntry={deleteDiaryEntry} navigateBack={navigateBack} />);
 
-    await act(async () => {
-      fireEvent.press(getByTestId('delete-entry'));
-    });
+    fireEvent.press(getByTestId('delete-entry'));
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith(

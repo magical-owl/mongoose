@@ -1,8 +1,8 @@
 import { act, fireEvent, waitFor } from '@testing-library/react-native';
 import type React from 'react';
 import { EntryReflectionsModal } from '@/features/diary/components/EntryReflectionsModal';
-import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { renderWithProviders } from '@tests/helpers';
+import { buildDiaryEntry, buildDiaryPhoto, buildDiaryReflection } from '@tests/fixtures/domain';
 
 jest.mock('@shared/components/Modal', () => {
   const { View } = jest.requireActual<typeof import('react-native')>('react-native');
@@ -20,44 +20,24 @@ jest.mock('@shared/components/Modal', () => {
   };
 });
 
-const entry: DiaryEntry = {
-  id: '11111111-1111-4111-8111-111111111111',
+const entry = buildDiaryEntry({
   title: 'Morning notes',
   content: '<p>A short entry for today.</p>',
-  date: '2026-08-29',
   paperBackgroundId: 'vintage-parchment',
-  bodyFontFamily: 'system',
-  stickers: [],
-  companion: 'cat',
-  isFavorite: false,
-  memoryReactions: [],
   tags: ['daily'],
   createdAt: '2026-08-29T01:58:00.000Z',
   updatedAt: '2026-08-29T01:58:00.000Z',
-  manualMoodWeather: 'neutral',
   manualMood: 'calm',
   manualMoods: ['calm'],
-  writingMode: 'free-write',
-  isLockbox: false,
-  sensory: {
-    locationLabel: '',
-    sounds: '',
-    smells: '',
-    energyLevel: 5,
-    bodyState: '',
-  },
-  collectionIds: [],
-  journalIds: [],
-  photos: [],
   reflections: [
-    {
+    buildDiaryReflection({
       id: '22222222-2222-4222-8222-222222222222',
       text: 'A follow-up reflection.',
       createdAt: '2026-08-29T02:12:00.000Z',
       updatedAt: '2026-08-29T02:12:00.000Z',
-    },
+    }),
   ],
-};
+});
 
 const profile = {
   displayName: 'Sarah Meadow',
@@ -128,13 +108,11 @@ describe('EntryReflectionsModal', () => {
           reflections: [
             {
               ...entry.reflections[0]!,
-              photo: {
+              photo: buildDiaryPhoto({
                 id: '33333333-3333-4333-8333-333333333333',
                 uri: 'file:///document/diary-photos/reflection.jpg',
-                width: 1200,
-                height: 800,
                 createdAt: '2026-08-29T02:13:00.000Z',
-              },
+              }),
             },
           ],
         }}

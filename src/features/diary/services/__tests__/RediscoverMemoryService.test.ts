@@ -3,41 +3,23 @@ import {
   buildRediscoverMemorySet,
   getRediscoverEligibleEntries,
 } from '../RediscoverMemoryService';
+import { buildDiaryEntry, buildDiaryPhoto, buildDiaryReflection } from '@tests/fixtures/domain';
 
 function createEntry(overrides: Partial<DiaryEntry> = {}): DiaryEntry {
   const date = overrides.date ?? '2025-08-31';
-  return {
-    id: overrides.id ?? '123e4567-e89b-42d3-a456-426614174000',
-    title: overrides.title ?? 'Memory',
-    content: overrides.content ?? '<p>A remembered day.</p>',
+  return buildDiaryEntry({
+    id: '123e4567-e89b-42d3-a456-426614174000',
+    title: 'Memory',
+    content: '<p>A remembered day.</p>',
     date,
     paperBackgroundId: 'vintage-parchment',
-    bodyFontFamily: overrides.bodyFontFamily ?? 'system',
-    stickers: [],
-    companion: 'cat',
-    isFavorite: false,
-    memoryReactions: [],
-    tags: [],
     createdAt: `${date}T08:00:00.000Z`,
     updatedAt: `${date}T08:00:00.000Z`,
     manualMoodWeather: 'calm',
     manualMood: 'calm',
     manualMoods: ['calm'],
-    writingMode: 'free-write',
-    isLockbox: false,
-    sensory: {
-      locationLabel: '',
-      sounds: '',
-      smells: '',
-      energyLevel: 5,
-      bodyState: '',
-    },
-    collectionIds: [],
-    journalIds: [],
-    photos: [],
-    reflections: [],
     ...overrides,
-  };
+  });
 }
 
 describe('RediscoverMemoryService', () => {
@@ -64,11 +46,11 @@ describe('RediscoverMemoryService', () => {
       id: '123e4567-e89b-42d3-a456-426614174005',
       date: '2026-01-10',
       title: 'Photo memory',
-      coverPhoto: {
+      coverPhoto: buildDiaryPhoto({
         id: '123e4567-e89b-42d3-a456-426614174006',
         uri: 'file:///photo.jpg',
         createdAt: '2026-01-10T08:00:00.000Z',
-      },
+      }),
     });
     const oneYearAgo = createEntry({
       id: '123e4567-e89b-42d3-a456-426614174012',
@@ -86,12 +68,12 @@ describe('RediscoverMemoryService', () => {
       date: '2026-07-15',
       title: 'With reflection',
       reflections: [
-        {
+        buildDiaryReflection({
           id: '123e4567-e89b-42d3-a456-426614174009',
           text: 'Worth revisiting.',
           createdAt: '2026-07-16T08:00:00.000Z',
           updatedAt: '2026-07-16T08:00:00.000Z',
-        },
+        }),
       ],
     });
     const sameMonth = createEntry({

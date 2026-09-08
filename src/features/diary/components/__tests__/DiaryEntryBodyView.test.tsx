@@ -1,40 +1,18 @@
 import { DiaryEntryBodyView } from '@/features/diary/components/DiaryEntryBodyView';
-import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { renderWithProviders } from '@tests/helpers';
 import { StyleSheet } from 'react-native';
+import { buildDiaryEntry } from '@tests/fixtures/domain';
 
-const entry: DiaryEntry = {
-  id: '11111111-1111-4111-8111-111111111111',
+const entry = buildDiaryEntry({
   title: 'Morning notes',
   content: '<p>A <strong>bold</strong> <span style="color: rgb(243, 198, 193);">thought</span>.</p><a href="https://example.com">link</a><script>alert("x")</script>',
-  date: '2026-08-29',
   paperBackgroundId: 'vintage-parchment',
   bodyFontFamily: 'lora',
   bodyTextColor: '#F3C6C1',
-  stickers: [],
-  companion: 'cat',
-  isFavorite: false,
-  memoryReactions: [],
   tags: ['daily'],
-  createdAt: '2026-08-29T01:58:00.000Z',
-  updatedAt: '2026-08-29T01:58:00.000Z',
-  manualMoodWeather: 'neutral',
   manualMood: 'calm',
   manualMoods: ['calm'],
-  writingMode: 'free-write',
-  isLockbox: false,
-  sensory: {
-    locationLabel: '',
-    sounds: '',
-    smells: '',
-    energyLevel: 5,
-    bodyState: '',
-  },
-  collectionIds: [],
-  journalIds: [],
-  photos: [],
-  reflections: [],
-};
+});
 
 describe('DiaryEntryBodyView', () => {
   it('renders saved rich body formatting in read-only view mode', async () => {

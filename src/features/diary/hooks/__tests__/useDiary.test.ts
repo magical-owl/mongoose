@@ -1,30 +1,14 @@
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { replaceDiaryEntryPreservingOrder } from '@/features/diary/hooks/useDiary';
+import { buildDiaryEntry } from '@tests/fixtures/domain';
 
-const baseEntry: DiaryEntry = {
-  id: '11111111-1111-4111-8111-111111111111',
+const baseEntry = buildDiaryEntry({
   title: 'First',
   content: 'Entry',
-  date: '2026-08-29',
   paperBackgroundId: 'vintage-parchment',
-  bodyFontFamily: 'system',
-  stickers: [],
-  companion: 'cat',
-  isFavorite: false,
-  memoryReactions: [],
-  tags: [],
   createdAt: '2026-08-29T00:00:00.000Z',
   updatedAt: '2026-08-29T00:00:00.000Z',
-  manualMoodWeather: 'neutral',
-  manualMoods: ['neutral'],
-  writingMode: 'free-write',
-  sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' },
-  isLockbox: false,
-  collectionIds: [],
-  journalIds: [],
-  photos: [],
-  reflections: [],
-};
+});
 
 describe('replaceDiaryEntryPreservingOrder', () => {
   it('updates an entry without moving it in same-day lists', () => {

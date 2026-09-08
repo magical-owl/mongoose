@@ -5,38 +5,18 @@ import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { renderWithProviders } from '@tests/helpers';
 import { accentColors } from '@theme/accents';
 import { palette } from '@theme/colors';
+import { buildDiaryEntry, buildDiaryPhoto, buildDiaryReflection } from '@tests/fixtures/domain';
 
-const baseEntry: DiaryEntry = {
-  id: '11111111-1111-4111-8111-111111111111',
+const baseEntry = buildDiaryEntry({
   title: 'Morning notes',
   content: '<p>A short entry for today.</p>',
-  date: '2026-08-29',
   paperBackgroundId: 'vintage-parchment',
-  bodyFontFamily: 'system',
-  stickers: [],
-  companion: 'cat',
-  isFavorite: false,
-  memoryReactions: [],
   tags: ['daily'],
   createdAt: '2026-08-29T01:58:00.000Z',
   updatedAt: '2026-08-29T01:58:00.000Z',
-  manualMoodWeather: 'neutral',
   manualMood: 'calm',
   manualMoods: ['calm'],
-  writingMode: 'free-write',
-  isLockbox: false,
-  sensory: {
-    locationLabel: '',
-    sounds: '',
-    smells: '',
-    energyLevel: 5,
-    bodyState: '',
-  },
-  collectionIds: [],
-  journalIds: [],
-  photos: [],
-  reflections: [],
-};
+});
 
 const profile = {
   displayName: 'Sarah Meadow',
@@ -50,18 +30,18 @@ describe('DiaryEntryView', () => {
       tags: ['daily', 'work'],
       manualMoods: ['calm', 'happy', 'sad'],
       reflections: [
-        {
+        buildDiaryReflection({
           id: '22222222-2222-4222-8222-222222222222',
           text: 'A follow-up reflection.',
           createdAt: '2026-08-29T02:12:00.000Z',
           updatedAt: '2026-08-29T02:12:00.000Z',
-        },
-        {
+        }),
+        buildDiaryReflection({
           id: '33333333-3333-4333-8333-333333333333',
           text: 'Another reflection.',
           createdAt: '2026-08-29T02:20:00.000Z',
           updatedAt: '2026-08-29T02:20:00.000Z',
-        },
+        }),
       ],
     };
     const { getByTestId, getByText, queryByText } = await renderWithProviders(
@@ -139,27 +119,22 @@ describe('DiaryEntryView', () => {
       ...baseEntry,
       tags: ['daily', 'work', 'family'],
       manualMoods: ['calm', 'happy', 'sad'],
-      coverPhoto: {
-        id: '33333333-3333-4333-8333-333333333333',
+      coverPhoto: buildDiaryPhoto({
         uri: 'file:///timeline-cover.jpg',
-        width: 1200,
-        height: 800,
         createdAt: '2026-08-29T01:50:00.000Z',
-      },
+      }),
       reflections: [
-        {
+        buildDiaryReflection({
           id: '22222222-2222-4222-8222-222222222222',
           text: 'A follow-up reflection.',
           createdAt: '2026-08-29T02:12:00.000Z',
           updatedAt: '2026-08-29T02:12:00.000Z',
-          photo: {
+          photo: buildDiaryPhoto({
             id: '44444444-4444-4444-8444-444444444444',
             uri: 'file:///document/diary-photos/timeline-reflection.jpg',
-            width: 1200,
-            height: 800,
             createdAt: '2026-08-29T02:13:00.000Z',
-          },
-        },
+          }),
+        }),
       ],
     };
 
@@ -371,29 +346,24 @@ describe('DiaryEntryView', () => {
   it('renders feed view with stronger cover and reflection structure', async () => {
     const entryWithCoverAndReflection: DiaryEntry = {
       ...baseEntry,
-      coverPhoto: {
-        id: '33333333-3333-4333-8333-333333333333',
+      coverPhoto: buildDiaryPhoto({
         uri: 'file:///cover.jpg',
-        width: 1200,
-        height: 800,
         createdAt: '2026-08-29T01:50:00.000Z',
-      },
+      }),
       tags: ['daily', 'travel', 'family'],
       manualMoods: ['calm', 'happy', 'sad'],
       reflections: [
-        {
+        buildDiaryReflection({
           id: '44444444-4444-4444-8444-444444444444',
           text: 'A feed reflection.',
           createdAt: '2026-08-29T02:12:00.000Z',
           updatedAt: '2026-08-29T02:12:00.000Z',
-          photo: {
+          photo: buildDiaryPhoto({
             id: '55555555-5555-4555-8555-555555555555',
             uri: 'file:///document/diary-photos/feed-reflection.jpg',
-            width: 1200,
-            height: 800,
             createdAt: '2026-08-29T02:13:00.000Z',
-          },
-        },
+          }),
+        }),
       ],
     };
 

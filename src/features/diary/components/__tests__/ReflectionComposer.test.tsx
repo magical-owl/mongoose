@@ -83,7 +83,9 @@ describe('ReflectionComposer', () => {
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith('A small visual note', importedPhoto);
     });
-    expect(queryByTestId('reflection-photo-preview')).toBeNull();
+    await waitFor(() => {
+      expect(queryByTestId('reflection-photo-preview')).toBeNull();
+    });
     expect(mockDeletePhoto).not.toHaveBeenCalled();
   });
 

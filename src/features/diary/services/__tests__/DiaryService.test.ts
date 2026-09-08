@@ -6,6 +6,7 @@ import { PlanUsageRepository } from '@/features/subscription/repositories/PlanUs
 import type { ISecureStorageDataSource } from '@/database/SecureStorageDataSource';
 import { getLocalDateKey } from '@/features/subscription/services/PlanLimitService';
 import type { IDiaryPhotoCleanupService } from '../DiaryPhotoService';
+import { buildDiaryEntry, buildDiaryPhoto } from '@tests/fixtures/domain';
 
 class MemorySecureStorage implements ISecureStorageDataSource {
   private readonly items = new Map<string, string>();
@@ -54,30 +55,20 @@ describe('DiaryService', () => {
     return new Date(Date.now() - days * 86400000).toISOString().split('T')[0]!;
   };
 
-  const mockEntry: DiaryEntry = {
+  const mockEntry = buildDiaryEntry({
     id: '123e4567-e89b-12d3-a456-426614174000',
     title: 'Sunny Morning',
     content: 'Had a wonderful and happy day outdoors!',
     date: dateOffset(0),
     paperBackgroundId: 'vintage-parchment',
-    bodyFontFamily: 'system',
-    stickers: [],
-    companion: 'cat',
     isFavorite: true,
-    memoryReactions: [],
     tags: ['sunny'],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     manualMoodWeather: 'calm',
+    manualMood: undefined,
     manualMoods: [],
-    writingMode: 'free-write',
-    sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' },
-    isLockbox: false,
-    collectionIds: [],
-    journalIds: [],
-    photos: [],
-    reflections: [],
-  };
+  });
 
   const entryForDate = (id: string, date: string, stickers = 0): DiaryEntry => ({
     ...mockEntry,
@@ -147,13 +138,11 @@ describe('DiaryService', () => {
 
   it('should save and clean up one attached photo per reflection', async () => {
     await service.saveEntry(mockEntry);
-    const photo = {
+    const photo = buildDiaryPhoto({
       id: '99999999-9999-4999-8999-999999999999',
       uri: 'file:///document/diary-photos/reflection.jpg',
-      width: 1200,
-      height: 800,
       createdAt: '2026-08-29T02:13:00.000Z',
-    };
+    });
 
     const addResult = await service.addReflection(mockEntry.id, 'A small image note.', photo);
 

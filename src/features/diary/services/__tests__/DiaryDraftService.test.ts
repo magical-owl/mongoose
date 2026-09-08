@@ -1,6 +1,7 @@
 import { secureStorageKeys } from '@/constants/secureStorageKeys';
 import type { ISecureStorageDataSource } from '@/database/SecureStorageDataSource';
 import { DiaryDraftService, type DiaryDraft } from '@/features/diary/services/DiaryDraftService';
+import { buildDiaryDraft } from '@tests/fixtures/domain';
 
 class MemorySecureStorage implements ISecureStorageDataSource {
   private readonly values = new Map<string, string>();
@@ -19,30 +20,10 @@ class MemorySecureStorage implements ISecureStorageDataSource {
 }
 
 function createDraft(content: string): DiaryDraft {
-  return {
-    title: '',
+  return buildDiaryDraft({
     content,
-    date: '2026-08-29',
-    companion: 'cat',
-    stickers: [],
     paperBackgroundId: 'vintage-parchment',
-    bodyFontFamily: 'system',
-    photos: [],
-    tags: [],
-    manualMoodWeather: 'neutral',
-    manualMood: 'neutral',
-    manualMoods: ['neutral'],
-    writingMode: 'free-write',
-    sensory: {
-      locationLabel: '',
-      sounds: '',
-      smells: '',
-      energyLevel: 5,
-      bodyState: '',
-    },
-    isLockbox: false,
-    savedAt: '2026-08-29T00:00:00.000Z',
-  };
+  });
 }
 
 describe('DiaryDraftService', () => {

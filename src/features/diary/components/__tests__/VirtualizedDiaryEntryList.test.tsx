@@ -1,41 +1,19 @@
 import { fireEvent } from '@testing-library/react-native';
 
 import { VirtualizedDiaryEntryList } from '@/features/diary/components/VirtualizedDiaryEntryList';
-import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { renderWithProviders } from '@tests/helpers';
+import { buildDiaryEntry } from '@tests/fixtures/domain';
 
-function createEntry(id: string, title: string, date: string): DiaryEntry {
-  return {
+function createEntry(id: string, title: string, date: string) {
+  return buildDiaryEntry({
     id,
     title,
     content: '<p>A short entry.</p>',
     date,
     paperBackgroundId: 'vintage-parchment',
-    bodyFontFamily: 'system',
-    stickers: [],
-    companion: 'cat',
-    isFavorite: false,
-    memoryReactions: [],
-    tags: [],
     createdAt: `${date}T01:00:00.000Z`,
     updatedAt: `${date}T01:00:00.000Z`,
-    manualMoodWeather: 'neutral',
-    manualMood: 'neutral',
-    manualMoods: ['neutral'],
-    writingMode: 'free-write',
-    isLockbox: false,
-    sensory: {
-      locationLabel: '',
-      sounds: '',
-      smells: '',
-      energyLevel: 5,
-      bodyState: '',
-    },
-    collectionIds: [],
-    journalIds: [],
-    photos: [],
-    reflections: [],
-  };
+  });
 }
 
 const baseProps = {

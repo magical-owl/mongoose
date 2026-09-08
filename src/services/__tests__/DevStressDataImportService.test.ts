@@ -4,6 +4,7 @@ import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import type { IDiaryRepository } from '@/features/diary/repositories/IDiaryRepository';
 import type { Journal } from '@/features/journal/domain/Journal';
 import type { IJournalRepository } from '@/features/journal/repositories/IJournalRepository';
+import { buildDiaryEntry, buildDiaryPhoto, buildJournal } from '@tests/fixtures/domain';
 import { DevStressDataImportService } from '../DevStressDataImportService';
 
 class MemoryDiaryRepository implements IDiaryRepository {
@@ -78,51 +79,38 @@ class MemoryJournalRepository implements IJournalRepository {
   }
 }
 
-const journal: Journal = {
+const journal = buildJournal({
   id: '11111111-0000-4000-8000-000000000001',
   title: 'Stress Journal',
   description: 'Synthetic data',
-  color: '#4ECDC4',
   coverImageUri: 'builtin://journal-background/summer',
   coverImageWidth: 1672,
   coverImageHeight: 941,
   createdAt: '2026-08-31T00:00:00.000Z',
   updatedAt: '2026-08-31T00:00:00.000Z',
-};
+});
 
-const entry: DiaryEntry = {
+const entry = buildDiaryEntry({
   id: '22222222-0000-4000-8000-000000000001',
   title: 'Stress Entry',
   content: '<p>Synthetic entry.</p>',
   date: '2026-05-01',
   paperBackgroundId: 'vintage-parchment',
-  bodyFontFamily: 'system',
-  stickers: [],
-  companion: 'cat',
-  isFavorite: false,
-  viewCount: 0,
-  memoryReactions: [],
   tags: ['stress'],
   createdAt: '2026-05-01T08:00:00.000Z',
   updatedAt: '2026-05-01T08:00:00.000Z',
   manualMoodWeather: 'sunny',
   manualMood: 'happy',
   manualMoods: ['happy', 'grateful'],
-  writingMode: 'free-write',
-  sensory: { locationLabel: '', sounds: '', smells: '', energyLevel: 5, bodyState: '' },
-  isLockbox: false,
-  collectionIds: [],
   journalIds: [journal.id],
-  coverPhoto: {
+  coverPhoto: buildDiaryPhoto({
     id: '33333333-0000-4000-8000-000000000001',
     uri: 'builtin://journal-background/summer',
     width: 1672,
     height: 941,
     createdAt: '2026-05-01T08:00:00.000Z',
-  },
-  photos: [],
-  reflections: [],
-};
+  }),
+});
 
 describe('DevStressDataImportService', () => {
   it('replaces local diary entries and journals from generated stress data', async () => {

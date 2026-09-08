@@ -1,8 +1,8 @@
 import { fireEvent } from '@testing-library/react-native';
-import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { EntryDetailModals } from '@/features/diary/components/EntryDetailModals';
 import type { RichTextFormatItem } from '@/features/diary/components/RichTextFormattingDrawer';
 import { renderWithProviders } from '@tests/helpers';
+import { buildDiaryEntry } from '@tests/fixtures/domain';
 
 jest.mock('@/features/diary/components/RichTextFormattingDrawer', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -82,36 +82,12 @@ const formatItems: readonly RichTextFormatItem[] = [
   { kind: 'bold', icon: 'format-bold' },
 ];
 
-const entry: DiaryEntry = {
-  id: '11111111-1111-4111-8111-111111111111',
-  title: 'A quiet morning',
+const entry = buildDiaryEntry({
   content: '<p>Body</p>',
-  date: '2026-08-29',
   paperBackgroundId: 'vintage-parchment',
-  bodyFontFamily: 'system',
-  stickers: [],
-  companion: 'cat',
-  isFavorite: false,
-  memoryReactions: [],
-  tags: [],
   createdAt: '2026-08-29T01:58:00.000Z',
   updatedAt: '2026-08-29T01:58:00.000Z',
-  manualMoodWeather: 'neutral',
-  manualMoods: ['neutral'],
-  writingMode: 'free-write',
-  isLockbox: false,
-  sensory: {
-    locationLabel: '',
-    sounds: '',
-    smells: '',
-    energyLevel: 5,
-    bodyState: '',
-  },
-  collectionIds: [],
-  journalIds: [],
-  photos: [],
-  reflections: [],
-};
+});
 
 describe('EntryDetailModals', () => {
   it('renders modal surfaces and routes formatting callbacks', async () => {

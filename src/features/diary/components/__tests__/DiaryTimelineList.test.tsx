@@ -1,41 +1,19 @@
 import { DiaryTimelineList } from '@/features/diary/components/DiaryTimelineList';
-import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { renderWithProviders } from '@tests/helpers';
 import { fireEvent, waitFor } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
+import { buildDiaryEntry } from '@tests/fixtures/domain';
 
-function createEntry(id: string, title: string, date: string): DiaryEntry {
-  return {
+function createEntry(id: string, title: string, date: string) {
+  return buildDiaryEntry({
     id,
     title,
     content: '<p>A short entry.</p>',
     date,
     paperBackgroundId: 'vintage-parchment',
-    bodyFontFamily: 'system',
-    stickers: [],
-    companion: 'cat',
-    isFavorite: false,
-    memoryReactions: [],
-    tags: [],
     createdAt: `${date}T01:00:00.000Z`,
     updatedAt: `${date}T01:00:00.000Z`,
-    manualMoodWeather: 'neutral',
-    manualMood: 'neutral',
-    manualMoods: ['neutral'],
-    writingMode: 'free-write',
-    isLockbox: false,
-    sensory: {
-      locationLabel: '',
-      sounds: '',
-      smells: '',
-      energyLevel: 5,
-      bodyState: '',
-    },
-    collectionIds: [],
-    journalIds: [],
-    photos: [],
-    reflections: [],
-  };
+  });
 }
 
 const firstEntry = createEntry('11111111-1111-4111-8111-111111111111', 'First', '2026-08-29');
