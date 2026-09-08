@@ -1,4 +1,4 @@
-import { act, fireEvent } from '@testing-library/react-native';
+import { fireEvent } from '@testing-library/react-native';
 import type React from 'react';
 import { RichTextFormattingDrawer } from '@/features/diary/components/RichTextFormattingDrawer';
 import { renderWithProviders } from '@tests/helpers';
@@ -51,19 +51,13 @@ describe('RichTextFormattingDrawer', () => {
     expect(getByText('Body font')).toBeTruthy();
     expect(getByText('Formatting')).toBeTruthy();
 
-    await act(async () => {
-      fireEvent.press(getByTestId('rich-text-color-option-rose'));
-    });
+    fireEvent.press(getByTestId('rich-text-color-option-rose'));
     expect(onSelectTextColor).toHaveBeenCalledWith('#F3C6C1');
 
-    await act(async () => {
-      fireEvent.press(getByTestId('rich-text-font-option-lora'));
-    });
+    fireEvent.press(getByTestId('rich-text-font-option-lora'));
     expect(onSelectFontFamily).toHaveBeenCalledWith('lora');
 
-    await act(async () => {
-      fireEvent.press(getByTestId('rich-text-format-bold-button'));
-    });
+    fireEvent.press(getByTestId('rich-text-format-bold-button'));
     expect(onSelect).toHaveBeenCalledWith('bold');
   });
 });

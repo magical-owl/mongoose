@@ -1,5 +1,7 @@
 import '@testing-library/jest-native/extend-expect';
 
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
 // Mock MMKV
 jest.mock('react-native-mmkv', () => {
   const mockStorage: Record<string, string> = {};
