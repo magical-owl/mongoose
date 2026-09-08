@@ -109,7 +109,7 @@ describe('useEntryDetailActions', () => {
     saveDiaryEntry.mockResolvedValue({ success: true, data: createEntry({ title: 'Updated title' }) });
     const { getByTestId } = await render(<ActionsHarness saveDiaryEntry={saveDiaryEntry} />);
 
-    fireEvent.press(getByTestId('save-entry'));
+    await fireEvent.press(getByTestId('save-entry'));
 
     expect(saveDiaryEntry).toHaveBeenCalledWith(expect.objectContaining({ title: 'Updated title' }));
   });
@@ -118,7 +118,7 @@ describe('useEntryDetailActions', () => {
     const saveDiaryEntry = jest.fn<ReturnType<DiaryActions['saveDiaryEntry']>, Parameters<DiaryActions['saveDiaryEntry']>>();
     const { getByTestId } = await render(<ActionsHarness editTitle="  " saveDiaryEntry={saveDiaryEntry} />);
 
-    fireEvent.press(getByTestId('save-entry'));
+    await fireEvent.press(getByTestId('save-entry'));
 
     expect(saveDiaryEntry).not.toHaveBeenCalled();
     expect(Alert.alert).toHaveBeenCalledWith('entryTitleRequiredTitle', 'entryEditTitleRequiredMessage');
@@ -132,7 +132,7 @@ describe('useEntryDetailActions', () => {
     addReflection.mockResolvedValue({ success: true, data: updatedEntry });
     const { getByTestId } = await render(<ActionsHarness addReflection={addReflection} />);
 
-    fireEvent.press(getByTestId('add-reflection'));
+    await fireEvent.press(getByTestId('add-reflection'));
 
     expect(addReflection).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', 'A thought.', reflectionPhoto);
   });
@@ -143,7 +143,7 @@ describe('useEntryDetailActions', () => {
     toggleMemoryReaction.mockResolvedValue({ success: true, data: updatedEntry });
     const { getByTestId } = await render(<ActionsHarness toggleMemoryReaction={toggleMemoryReaction} />);
 
-    fireEvent.press(getByTestId('toggle-reaction'));
+    await fireEvent.press(getByTestId('toggle-reaction'));
 
     expect(toggleMemoryReaction).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', 'cherish');
   });
@@ -154,7 +154,7 @@ describe('useEntryDetailActions', () => {
     const navigateBack = jest.fn();
     const { getByTestId } = await render(<ActionsHarness deleteDiaryEntry={deleteDiaryEntry} navigateBack={navigateBack} />);
 
-    fireEvent.press(getByTestId('delete-entry'));
+    await fireEvent.press(getByTestId('delete-entry'));
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith(

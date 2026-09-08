@@ -23,7 +23,7 @@ describe('SegmentedControl', () => {
       />,
     );
 
-    fireEvent.press(getSegmentTab(getAllByLabelText('Feed')));
+    await fireEvent.press(getSegmentTab(getAllByLabelText('Feed')));
 
     expect(onSelect).toHaveBeenCalledWith(2);
   });
@@ -39,7 +39,7 @@ describe('SegmentedControl', () => {
       />,
     );
 
-    fireEvent(getByTestId('entry-view-mode'), 'layout', {
+    await fireEvent(getByTestId('entry-view-mode'), 'layout', {
       nativeEvent: { layout: { width: 300, height: 44 } },
     });
 

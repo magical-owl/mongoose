@@ -12,7 +12,7 @@ describe('IconCircleButton', () => {
       <IconCircleButton icon="star-outline" accessibilityLabel="Favorite entry" onPress={handlePress} />,
     );
 
-    fireEvent.press(getByLabelText('Favorite entry'));
+    await fireEvent.press(getByLabelText('Favorite entry'));
 
     expect(handlePress).toHaveBeenCalledTimes(1);
   });
@@ -23,7 +23,7 @@ describe('IconCircleButton', () => {
       <IconCircleButton icon="star-outline" accessibilityLabel="Favorite entry" onPress={handlePress} disabled />,
     );
 
-    fireEvent.press(getByLabelText('Favorite entry'));
+    await fireEvent.press(getByLabelText('Favorite entry'));
 
     expect(handlePress).not.toHaveBeenCalled();
   });

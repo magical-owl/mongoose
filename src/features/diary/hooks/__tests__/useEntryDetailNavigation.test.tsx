@@ -112,7 +112,7 @@ describe('useEntryDetailNavigation', () => {
     );
 
     await act(async () => {
-      fireEvent.press(getByTestId('bottom-scroll'));
+      await fireEvent.press(getByTestId('bottom-scroll'));
       await Promise.resolve();
       await jest.runOnlyPendingTimersAsync();
     });
@@ -135,7 +135,7 @@ describe('useEntryDetailNavigation', () => {
     );
 
     await act(async () => {
-      fireEvent.press(getByTestId('previous-entry'));
+      await fireEvent.press(getByTestId('previous-entry'));
       await Promise.resolve();
       await jest.runOnlyPendingTimersAsync();
     });
@@ -158,7 +158,7 @@ describe('useEntryDetailNavigation', () => {
     );
 
     await act(async () => {
-      fireEvent.press(getByTestId('next-entry'));
+      await fireEvent.press(getByTestId('next-entry'));
       await Promise.resolve();
       await jest.runOnlyPendingTimersAsync();
     });

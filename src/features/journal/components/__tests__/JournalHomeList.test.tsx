@@ -48,7 +48,7 @@ describe('JournalHomeList', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.press(getByLabelText('Open journal options'));
+    await fireEvent.press(getByLabelText('Open journal options'));
 
     expect(onToggleOptions).toHaveBeenCalledWith('journal-1');
   });

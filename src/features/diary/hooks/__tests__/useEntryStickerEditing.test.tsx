@@ -143,7 +143,7 @@ describe('useEntryStickerEditing', () => {
   it('adds, updates, and deletes regular stickers', async () => {
     const { getByTestId } = await render(<TestContainer />);
 
-    fireEvent.press(getByTestId('add-sticker'));
+    await fireEvent.press(getByTestId('add-sticker'));
 
     await waitFor(() => expect(getByTestId('sticker-count').props.children).toBe(1));
     expect(getByTestId('first-sticker-category').props.children).toBe('cat');
@@ -152,17 +152,17 @@ describe('useEntryStickerEditing', () => {
     expect(getByTestId('first-sticker-scale').props.children).toBe(2.25);
     expect(getByTestId('show-sticker-bounds').props.children).toBe('visible');
 
-    fireEvent.press(getByTestId('update-sticker'));
+    await fireEvent.press(getByTestId('update-sticker'));
     await waitFor(() => expect(getByTestId('first-sticker-x').props.children).toBe(240));
 
-    fireEvent.press(getByTestId('delete-sticker'));
+    await fireEvent.press(getByTestId('delete-sticker'));
     await waitFor(() => expect(getByTestId('sticker-count').props.children).toBe(0));
   });
 
   it('adds text stickers with text defaults', async () => {
     const { getByTestId } = await render(<TestContainer />);
 
-    fireEvent.press(getByTestId('add-text-sticker'));
+    await fireEvent.press(getByTestId('add-text-sticker'));
 
     await waitFor(() => expect(getByTestId('sticker-count').props.children).toBe(1));
     expect(getByTestId('first-sticker-category').props.children).toBe('text');
@@ -176,7 +176,7 @@ describe('useEntryStickerEditing', () => {
     const { getByTestId } = await render(<TestContainer />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('add-photo-sticker'));
+      await fireEvent.press(getByTestId('add-photo-sticker'));
     });
 
     await waitFor(() => expect(getByTestId('sticker-count').props.children).toBe(1));
@@ -190,7 +190,7 @@ describe('useEntryStickerEditing', () => {
     const { getByTestId } = await render(<TestContainer onNativeModuleMissing={onNativeModuleMissing} />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('add-photo-sticker'));
+      await fireEvent.press(getByTestId('add-photo-sticker'));
     });
 
     expect(onNativeModuleMissing).toHaveBeenCalled();

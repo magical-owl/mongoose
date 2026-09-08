@@ -25,7 +25,7 @@ describe('AppFooterNavigation', () => {
     const toolbarStyle = StyleSheet.flatten(getByTestId('app-footer-navigation').props.style);
 
     expect(toolbarStyle.borderRadius).toBe(28);
-    fireEvent(getByTestId('app-footer-navigation-track'), 'layout', {
+    await fireEvent(getByTestId('app-footer-navigation-track'), 'layout', {
       nativeEvent: { layout: { width: 300, height: 42 } },
     });
 
@@ -44,7 +44,7 @@ describe('AppFooterNavigation', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent(getByTestId('app-footer-navigation-track'), 'layout', {
+    await fireEvent(getByTestId('app-footer-navigation-track'), 'layout', {
       nativeEvent: { layout: { width: 300, height: 42 } },
     });
 

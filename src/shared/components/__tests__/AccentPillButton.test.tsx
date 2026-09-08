@@ -11,7 +11,7 @@ describe('AccentPillButton', () => {
       <AccentPillButton label="Save" onPress={handlePress} testID="save-button" />,
     );
 
-    fireEvent.press(getByTestId('save-button'));
+    await fireEvent.press(getByTestId('save-button'));
 
     expect(handlePress).toHaveBeenCalledTimes(1);
   });

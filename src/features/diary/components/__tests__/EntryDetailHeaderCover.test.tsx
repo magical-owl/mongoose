@@ -102,8 +102,8 @@ describe('EntryDetailHeaderCover', () => {
       onChooseCoverPhoto,
     });
 
-    fireEvent.press(getByText('Save'));
-    fireEvent.press(getByText('Choose cover'));
+    await fireEvent.press(getByText('Save'));
+    await fireEvent.press(getByText('Choose cover'));
 
     expect(onSaveEdit).toHaveBeenCalled();
     expect(onChooseCoverPhoto).toHaveBeenCalled();

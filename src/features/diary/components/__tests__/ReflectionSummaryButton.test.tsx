@@ -10,7 +10,7 @@ describe('ReflectionSummaryButton', () => {
       <ReflectionSummaryButton count={2} onPress={onPress} accessibilityLabel="Open reflections" />,
     );
 
-    fireEvent.press(getByLabelText('Open reflections'));
+    await fireEvent.press(getByLabelText('Open reflections'));
 
     expect(getByText('2')).toBeTruthy();
     expect(onPress).toHaveBeenCalledTimes(1);

@@ -140,9 +140,9 @@ describe('EntryDetailModals', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.press(getByText('Bold action'));
-    fireEvent.press(getByText('Font action'));
-    fireEvent.press(getByText('Color action'));
+    await fireEvent.press(getByText('Bold action'));
+    await fireEvent.press(getByText('Font action'));
+    await fireEvent.press(getByText('Color action'));
 
     expect(getByTestId('mock-formatting-drawer')).toBeTruthy();
     expect(getByText('formatting-visible')).toBeTruthy();

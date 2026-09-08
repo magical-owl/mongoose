@@ -24,15 +24,15 @@ describe('ManualMoodPicker', () => {
 
     const { getByLabelText } = await renderWithProviders(<StatefulPicker />, { wrapperOptions: { initialThemeMode: 'dark' } });
 
-    fireEvent.press(getByLabelText(/Happy emotion/i));
+    await fireEvent.press(getByLabelText(/Happy emotion/i));
     expect(onChangeValues).toHaveBeenLastCalledWith(['happy']);
     await waitFor(() => expect(getByLabelText(/Happy emotion, selected/i)).toBeTruthy());
 
-    fireEvent.press(getByLabelText(/Grateful emotion/i));
+    await fireEvent.press(getByLabelText(/Grateful emotion/i));
     expect(onChangeValues).toHaveBeenLastCalledWith(['happy', 'grateful']);
     await waitFor(() => expect(getByLabelText(/Grateful emotion, selected/i)).toBeTruthy());
 
-    fireEvent.press(getByLabelText(/Neutral emotion/i));
+    await fireEvent.press(getByLabelText(/Neutral emotion/i));
     expect(onChangeValues).toHaveBeenLastCalledWith(['neutral']);
   });
 });

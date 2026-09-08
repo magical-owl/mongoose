@@ -66,20 +66,20 @@ describe('EntryReflectionsModal', () => {
     expect(getByText('A follow-up reflection.')).toBeTruthy();
 
     let reflectionInput = getByLabelText('Reflection text');
-    fireEvent.changeText(reflectionInput, 'One more note');
+    await fireEvent.changeText(reflectionInput, 'One more note');
     await waitFor(() => {
       expect(getByLabelText('Reflection text').props.value).toBe('One more note');
     });
     reflectionInput = getByLabelText('Reflection text');
     await act(async () => {
-      fireEvent(reflectionInput, 'submitEditing');
+      await fireEvent(reflectionInput, 'submitEditing');
     });
 
     await waitFor(() => {
       expect(onAddReflection).toHaveBeenCalledWith(entry.id, 'One more note', undefined);
     });
 
-    fireEvent.press(getByLabelText('Delete reflection'));
+    await fireEvent.press(getByLabelText('Delete reflection'));
 
     expect(onDeleteReflection).toHaveBeenCalledWith(entry.id, '22222222-2222-4222-8222-222222222222');
   });
@@ -127,7 +127,7 @@ describe('EntryReflectionsModal', () => {
       uri: 'file:///document/diary-photos/reflection.jpg',
     });
 
-    fireEvent.press(getByLabelText('Open reflection photo'));
+    await fireEvent.press(getByLabelText('Open reflection photo'));
 
     await waitFor(() => {
       expect(getByTestId('entry-reflection-photo-viewer-image').props.source).toEqual({
@@ -135,7 +135,7 @@ describe('EntryReflectionsModal', () => {
       });
     });
 
-    fireEvent.press(getByLabelText('Close reflection photo'));
+    await fireEvent.press(getByLabelText('Close reflection photo'));
 
     await waitFor(() => {
       expect(queryByTestId('entry-reflection-photo-viewer')).toBeNull();

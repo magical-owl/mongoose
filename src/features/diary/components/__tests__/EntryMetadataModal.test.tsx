@@ -105,9 +105,9 @@ describe('EntryMetadataModal', () => {
     expect(getByText('TAGS')).toBeTruthy();
 
     await act(async () => {
-      fireEvent.press(getByLabelText('Pick mood'));
-      fireEvent.press(getByLabelText('Pick journal'));
-      fireEvent.press(getByLabelText('Pick tag'));
+      await fireEvent.press(getByLabelText('Pick mood'));
+      await fireEvent.press(getByLabelText('Pick journal'));
+      await fireEvent.press(getByLabelText('Pick tag'));
     });
 
     expect(onChangeMoods).toHaveBeenCalledWith(['happy']);
@@ -138,7 +138,7 @@ describe('EntryMetadataModal', () => {
 
     expect(getByText('Add a mood, journal, or tags before saving.')).toBeTruthy();
 
-    fireEvent.press(getByText('Save entry'));
+    await fireEvent.press(getByText('Save entry'));
 
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });

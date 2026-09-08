@@ -51,13 +51,13 @@ describe('RichTextFormattingDrawer', () => {
     expect(getByText('Body font')).toBeTruthy();
     expect(getByText('Formatting')).toBeTruthy();
 
-    fireEvent.press(getByTestId('rich-text-color-option-rose'));
+    await fireEvent.press(getByTestId('rich-text-color-option-rose'));
     expect(onSelectTextColor).toHaveBeenCalledWith('#F3C6C1');
 
-    fireEvent.press(getByTestId('rich-text-font-option-lora'));
+    await fireEvent.press(getByTestId('rich-text-font-option-lora'));
     expect(onSelectFontFamily).toHaveBeenCalledWith('lora');
 
-    fireEvent.press(getByTestId('rich-text-format-bold-button'));
+    await fireEvent.press(getByTestId('rich-text-format-bold-button'));
     expect(onSelect).toHaveBeenCalledWith('bold');
   });
 });

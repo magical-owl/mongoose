@@ -48,24 +48,24 @@ describe('useEntryDetailUiState', () => {
   it('groups transient entry detail UI state controls', async () => {
     const { getByTestId } = await render(<UiStateHarness />);
 
-    fireEvent.press(getByTestId('open-formatting'));
+    await fireEvent.press(getByTestId('open-formatting'));
     await waitFor(() => {
       expect(getByTestId('formatting-state').props.children).toBe('open');
     });
 
-    fireEvent.press(getByTestId('open-transient'));
+    await fireEvent.press(getByTestId('open-transient'));
     await waitFor(() => {
       expect(getByTestId('reflections-state').props.children).toBe('open');
       expect(getByTestId('reaction-state').props.children).toBe('open');
     });
 
-    fireEvent.press(getByTestId('reset-transient'));
+    await fireEvent.press(getByTestId('reset-transient'));
     await waitFor(() => {
       expect(getByTestId('formatting-state').props.children).toBe('closed');
       expect(getByTestId('reflections-state').props.children).toBe('closed');
       expect(getByTestId('reaction-state').props.children).toBe('closed');
     });
 
-    fireEvent.press(getByTestId('dismiss-keyboard'));
+    await fireEvent.press(getByTestId('dismiss-keyboard'));
   });
 });

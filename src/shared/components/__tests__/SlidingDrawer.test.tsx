@@ -4,39 +4,6 @@ import { withTiming } from 'react-native-reanimated';
 import { SlidingDrawer } from '../SlidingDrawer';
 import { renderWithProviders } from '@tests/helpers';
 
-jest.mock('react-native-reanimated', () => {
-  const { View } = jest.requireActual('react-native');
-  const cancelAnimation = jest.fn();
-  const withSpring = jest.fn((toValue: number) => toValue);
-  const withTiming = jest.fn((
-    toValue: number,
-    _config?: { readonly duration?: number },
-    callback?: (finished: boolean) => void,
-  ) => {
-    callback?.(true);
-    return toValue;
-  });
-
-  return {
-    __esModule: true,
-    default: { View },
-    cancelAnimation,
-    runOnJS: (callback: (value: boolean) => void) => callback,
-    useAnimatedStyle: (callback: () => Record<string, unknown>) => callback(),
-    useSharedValue: (initialValue: number) => {
-      let currentValue = initialValue;
-      return {
-        get: () => currentValue,
-        set: (nextValue: number) => {
-          currentValue = nextValue;
-        },
-      };
-    },
-    withSpring,
-    withTiming,
-  };
-});
-
 describe('SlidingDrawer', () => {
   afterEach(() => {
     jest.clearAllMocks();
@@ -108,8 +75,8 @@ describe('SlidingDrawer', () => {
 
     await waitFor(() => expect(getByTestId('drawer-profile')).toBeTruthy());
 
-    fireEvent.press(getByTestId('drawer-profile'));
-    fireEvent.press(getByTestId('drawer-close'));
+    await fireEvent.press(getByTestId('drawer-profile'));
+    await fireEvent.press(getByTestId('drawer-close'));
 
     expect(getByText('Sarah Meadow')).toBeTruthy();
     expect(StyleSheet.flatten(getByTestId('drawer-profile').props.style).borderRadius).toBe(8);

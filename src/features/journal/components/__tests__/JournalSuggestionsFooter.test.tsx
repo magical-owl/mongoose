@@ -45,11 +45,11 @@ describe('JournalSuggestionsFooter', () => {
     expect(getByText('Summer Trip')).toBeTruthy();
     expect(getByText('3 entries')).toBeTruthy();
 
-    fireEvent.press(getByText('Summer Trip'));
+    await fireEvent.press(getByText('Summer Trip'));
 
     expect(onPressJournal).toHaveBeenCalledWith(journals[1]);
 
-    fireEvent.press(getByText('More from your journals'));
+    await fireEvent.press(getByText('More from your journals'));
 
     expect(onPressTitle).toHaveBeenCalledTimes(1);
   });

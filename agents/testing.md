@@ -252,6 +252,7 @@ it('calls onLogin when the login button is pressed', () => {
 
 ### React Native `act()` Hygiene
 
+- In this project, `@testing-library/react-native` v14 exposes async `render`, `rerender`, `unmount`, and `fireEvent` helpers. Always `await` them in component and hook tests.
 - Do not wrap plain `fireEvent` calls in `act()` by default; RNTL already handles synchronous event wrapping.
 - Use `await act(async () => ...)` only when the action starts async React state updates that must finish before assertions.
 - Prefer `waitFor` for assertions that depend on effects, promise resolution, animations mocked with callbacks, or async provider updates.

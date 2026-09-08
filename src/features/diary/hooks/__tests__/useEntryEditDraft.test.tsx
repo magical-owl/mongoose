@@ -97,7 +97,7 @@ describe('useEntryEditDraft', () => {
     const sourceEntry = createEntry();
     const { getByTestId } = await render(<DraftHarness sourceEntry={sourceEntry} />);
 
-    fireEvent.press(getByTestId('hydrate-draft'));
+    await fireEvent.press(getByTestId('hydrate-draft'));
 
     await waitFor(() => {
       expect(getByTestId('draft-title').props.children).toBe('Original title');
@@ -106,10 +106,10 @@ describe('useEntryEditDraft', () => {
     expect(getByTestId('draft-sticker-count').props.children).toBe(1);
 
     await act(async () => {
-      fireEvent.press(getByTestId('edit-and-build'));
+      await fireEvent.press(getByTestId('edit-and-build'));
     });
     await act(async () => {
-      fireEvent.press(getByTestId('build-entry'));
+      await fireEvent.press(getByTestId('build-entry'));
     });
 
     await waitFor(() => {

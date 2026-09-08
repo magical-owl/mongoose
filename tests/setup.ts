@@ -1,6 +1,11 @@
 import '@testing-library/jest-native/extend-expect';
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+globalThis.requestAnimationFrame = (callback: (time: number) => void): number => {
+  callback(Date.now());
+  return 0;
+};
+globalThis.cancelAnimationFrame = jest.fn();
 
 // Mock MMKV
 jest.mock('react-native-mmkv', () => {
@@ -212,6 +217,8 @@ jest.mock('react-native-webview', () => {
     default: MockWebView,
   };
 });
+
+jest.mock('react-native-reanimated', () => jest.requireActual('./mocks/reanimated'));
 
 // Suppress noisy React Native warnings in test output
 const originalWarn = console.warn;

@@ -28,7 +28,7 @@ describe('DiaryDatePicker', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.press(getByTestId('entry-date-button'));
+    await fireEvent.press(getByTestId('entry-date-button'));
 
     await waitFor(() => {
       expect(getByTestId('native-date-picker').props.themeVariant).toBe('dark');

@@ -67,9 +67,9 @@ describe('DiaryTimelineList', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.press(getByTestId('entry-timeline-memory-reaction'));
+    await fireEvent.press(getByTestId('entry-timeline-memory-reaction'));
     await waitFor(() => expect(getByTestId('entry-timeline-memory-reaction-cherish')).toBeTruthy());
-    fireEvent.press(getByTestId('entry-timeline-memory-reaction-cherish'));
+    await fireEvent.press(getByTestId('entry-timeline-memory-reaction-cherish'));
 
     expect(onToggleMemoryReaction).toHaveBeenCalledWith(firstEntry.id, 'cherish');
   });

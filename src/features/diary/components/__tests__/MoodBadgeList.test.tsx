@@ -44,7 +44,7 @@ describe('MoodBadgeList', () => {
       { wrapperOptions: { initialThemeMode: 'light' } },
     );
 
-    fireEvent.press(getByTestId('moods-happy'));
+    await fireEvent.press(getByTestId('moods-happy'));
 
     expect(await findByText('MOOD')).toBeTruthy();
     expect(await findByText('Happy')).toBeTruthy();

@@ -52,7 +52,7 @@ describe('VirtualizedDiaryEntryList', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.press(getByText('2026'));
+    await fireEvent.press(getByText('2026'));
 
     expect(getByText('August')).toBeTruthy();
     expect(getByText('Aug 29, 2026')).toBeTruthy();
@@ -90,7 +90,7 @@ describe('VirtualizedDiaryEntryList', () => {
     );
 
     expect(cardView.getByTestId('entry-card-memory-reaction')).toBeTruthy();
-    cardView.unmount();
+    await cardView.unmount();
 
     const feedView = await renderWithProviders(
       <VirtualizedDiaryEntryList

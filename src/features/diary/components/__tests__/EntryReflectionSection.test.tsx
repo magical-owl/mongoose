@@ -53,7 +53,7 @@ describe('EntryReflectionSection', () => {
       uri: 'file:///document/diary-photos/reflection.jpg',
     });
 
-    fireEvent.press(getByLabelText('Open reflection photo'));
+    await fireEvent.press(getByLabelText('Open reflection photo'));
 
     await waitFor(() => {
       expect(getByTestId('entry-inline-reflection-photo-viewer-image').props.source).toEqual({
@@ -76,15 +76,15 @@ describe('EntryReflectionSection', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent(getByLabelText('Reflection text'), 'focus');
-    fireEvent.changeText(getByLabelText('Reflection text'), 'A quieter follow-up');
+    await fireEvent(getByLabelText('Reflection text'), 'focus');
+    await fireEvent.changeText(getByLabelText('Reflection text'), 'A quieter follow-up');
 
     await waitFor(() => {
       expect(getByLabelText('Reflection text').props.value).toBe('A quieter follow-up');
     });
 
     await act(async () => {
-      fireEvent.press(getByLabelText('Save reflection'));
+      await fireEvent.press(getByLabelText('Save reflection'));
     });
 
     expect(onReflectionInputFocus).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111');

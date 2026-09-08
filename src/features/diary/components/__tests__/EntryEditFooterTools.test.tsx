@@ -27,9 +27,9 @@ describe('EntryEditFooterTools', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.press(getByTestId('entry-edit-metadata-button'));
-    fireEvent.press(getByTestId('entry-edit-paper-background-button'));
-    fireEvent.press(getByTestId('entry-edit-add-photo-sticker-button'));
+    await fireEvent.press(getByTestId('entry-edit-metadata-button'));
+    await fireEvent.press(getByTestId('entry-edit-paper-background-button'));
+    await fireEvent.press(getByTestId('entry-edit-add-photo-sticker-button'));
 
     expect(getByText('42w')).toBeTruthy();
     expect(onOpenMetadata).toHaveBeenCalled();

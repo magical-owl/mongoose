@@ -33,7 +33,7 @@ describe('DiaryPaperBackgroundPickerModal', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.press(getByTestId('entry-paper-background-soft-lined-paper'));
+    await fireEvent.press(getByTestId('entry-paper-background-soft-lined-paper'));
 
     expect(onSelect).toHaveBeenCalledWith('soft-lined-paper');
     expect(onDismiss).toHaveBeenCalledTimes(1);
@@ -52,7 +52,7 @@ describe('DiaryPaperBackgroundPickerModal', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.press(getByTestId('entry-paper-background-blank'));
+    await fireEvent.press(getByTestId('entry-paper-background-blank'));
 
     expect(onSelect).toHaveBeenCalledWith('blank');
     expect(onDismiss).toHaveBeenCalledTimes(1);

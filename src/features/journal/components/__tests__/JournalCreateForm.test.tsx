@@ -18,16 +18,16 @@ describe('JournalCreateForm', () => {
     );
 
     await act(async () => {
-      fireEvent.changeText(getByTestId('journal-create-title-input'), 'Summer Trip');
+      await fireEvent.changeText(getByTestId('journal-create-title-input'), 'Summer Trip');
     });
     await act(async () => {
-      fireEvent.changeText(getByTestId('journal-create-description-input'), 'Beach notes and photos.');
+      await fireEvent.changeText(getByTestId('journal-create-description-input'), 'Beach notes and photos.');
     });
     await act(async () => {
-      fireEvent.press(getByTestId(`journal-create-cover-option-${background.id}`));
+      await fireEvent.press(getByTestId(`journal-create-cover-option-${background.id}`));
     });
     await act(async () => {
-      fireEvent.press(getByTestId('journal-create-submit-button'));
+      await fireEvent.press(getByTestId('journal-create-submit-button'));
     });
 
     expect(onSubmit).toHaveBeenCalledWith({
@@ -64,10 +64,10 @@ describe('JournalCreateForm', () => {
     expect(getByTestId('journal-create-cover-preview')).toBeTruthy();
 
     await act(async () => {
-      fireEvent.press(getByTestId('journal-create-remove-cover-button'));
+      await fireEvent.press(getByTestId('journal-create-remove-cover-button'));
     });
     await act(async () => {
-      fireEvent.press(getByTestId('journal-create-submit-button'));
+      await fireEvent.press(getByTestId('journal-create-submit-button'));
     });
 
     expect(queryByTestId('journal-create-cover-preview')).toBeNull();

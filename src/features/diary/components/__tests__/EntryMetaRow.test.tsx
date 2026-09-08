@@ -34,10 +34,10 @@ describe('EntryMetaRow', () => {
     expect(getByText('Happy +1')).toBeTruthy();
     expect(getByText('#family +1')).toBeTruthy();
 
-    fireEvent.press(getByTestId('entry-meta-reaction'));
+    await fireEvent.press(getByTestId('entry-meta-reaction'));
     expect(onOpen).toHaveBeenCalled();
 
-    fireEvent.press(getByTestId('entry-meta-reflections'));
+    await fireEvent.press(getByTestId('entry-meta-reflections'));
     expect(onReflectionPress).toHaveBeenCalled();
   });
 

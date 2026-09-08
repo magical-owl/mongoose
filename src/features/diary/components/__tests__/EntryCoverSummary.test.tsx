@@ -32,7 +32,7 @@ describe('EntryCoverSummary', () => {
     expect(getByText('#family +1')).toBeTruthy();
     expect(getByTestId('entry-cover-summary-view-count')).toBeTruthy();
 
-    fireEvent.press(getByLabelText('Shuffle memory'));
+    await fireEvent.press(getByLabelText('Shuffle memory'));
     expect(onShuffle).toHaveBeenCalled();
   });
 });

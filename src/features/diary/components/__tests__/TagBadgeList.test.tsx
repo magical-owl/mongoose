@@ -41,7 +41,7 @@ describe('TagBadgeList', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.press(getByTestId('tags-work'));
+    await fireEvent.press(getByTestId('tags-work'));
 
     expect(await findByText('TAGS')).toBeTruthy();
     expect(await findByText('#family')).toBeTruthy();

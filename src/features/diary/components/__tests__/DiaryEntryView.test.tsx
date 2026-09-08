@@ -222,10 +222,10 @@ describe('DiaryEntryView', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.press(getByTestId('entry-timeline-memory-reaction'));
+    await fireEvent.press(getByTestId('entry-timeline-memory-reaction'));
     await waitFor(() => expect(getByTestId('entry-timeline-memory-reaction-tray')).toBeTruthy());
 
-    fireEvent.press(getByTestId('entry-timeline-press-area'));
+    await fireEvent.press(getByTestId('entry-timeline-press-area'));
 
     expect(onPress).not.toHaveBeenCalled();
     await waitFor(() => expect(queryByTestId('entry-timeline-memory-reaction-tray')).toBeNull());
@@ -244,11 +244,11 @@ describe('DiaryEntryView', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent(getByTestId('entry-card'), 'longPress');
+    await fireEvent(getByTestId('entry-card'), 'longPress');
 
     await waitFor(() => expect(getByTestId('entry-card-memory-reaction-tray')).toBeTruthy());
 
-    fireEvent.press(getByTestId('entry-card'));
+    await fireEvent.press(getByTestId('entry-card'));
 
     expect(onPress).not.toHaveBeenCalled();
     await waitFor(() => expect(queryByTestId('entry-card-memory-reaction-tray')).toBeNull());
@@ -267,11 +267,11 @@ describe('DiaryEntryView', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent(getByTestId('entry-feed-surface'), 'longPress');
+    await fireEvent(getByTestId('entry-feed-surface'), 'longPress');
 
     await waitFor(() => expect(getByTestId('entry-feed-memory-reaction-tray')).toBeTruthy());
 
-    fireEvent.press(getByTestId('entry-feed-surface'));
+    await fireEvent.press(getByTestId('entry-feed-surface'));
 
     expect(onPress).not.toHaveBeenCalled();
     await waitFor(() => expect(queryByTestId('entry-feed-memory-reaction-tray')).toBeNull());
@@ -397,7 +397,7 @@ describe('DiaryEntryView', () => {
     expect(getByTestId('entry-inline-reflection-photo').props.source).toEqual({
       uri: 'file:///document/diary-photos/feed-reflection.jpg',
     });
-    fireEvent.press(getByLabelText('Open reflection photo'));
+    await fireEvent.press(getByLabelText('Open reflection photo'));
     await waitFor(() => {
       expect(getByTestId('entry-inline-reflection-photo-viewer-image').props.source).toEqual({
         uri: 'file:///document/diary-photos/feed-reflection.jpg',

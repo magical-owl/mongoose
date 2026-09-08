@@ -112,8 +112,8 @@ describe('EntryEditBodyForm', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.changeText(getByPlaceholderText('Entry title...'), 'Changed title');
-    fireEvent.press(getByTestId('mock-entry-edit-rich-text-editor'));
+    await fireEvent.changeText(getByPlaceholderText('Entry title...'), 'Changed title');
+    await fireEvent.press(getByTestId('mock-entry-edit-rich-text-editor'));
 
     expect(onChangeTitle).toHaveBeenCalledWith('Changed title');
     expect(onChangeContent).toHaveBeenCalledWith('<p>Updated body.</p>');

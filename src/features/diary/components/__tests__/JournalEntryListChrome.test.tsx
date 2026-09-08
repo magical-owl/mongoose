@@ -3,36 +3,6 @@ import { fireEvent } from '@testing-library/react-native';
 import { JournalEntryListChrome } from '@/features/diary/components/JournalEntryListChrome';
 import { renderWithProviders } from '@tests/helpers';
 
-jest.mock('react-native-reanimated', () => {
-  const { View } = jest.requireActual('react-native');
-
-  return {
-    __esModule: true,
-    default: { View },
-    cancelAnimation: jest.fn(),
-    runOnJS: (callback: (value: boolean) => void) => callback,
-    useAnimatedStyle: (callback: () => Record<string, unknown>) => callback(),
-    useSharedValue: (initialValue: number) => {
-      let currentValue = initialValue;
-      return {
-        get: () => currentValue,
-        set: (nextValue: number) => {
-          currentValue = nextValue;
-        },
-      };
-    },
-    withSpring: jest.fn((toValue: number) => toValue),
-    withTiming: jest.fn((
-      toValue: number,
-      _config?: { readonly duration?: number },
-      callback?: (finished: boolean) => void,
-    ) => {
-      callback?.(true);
-      return toValue;
-    }),
-  };
-});
-
 const baseProps = {
   isDrawerOpen: true,
   drawerProfile: { displayName: 'Miming' },
@@ -86,7 +56,7 @@ describe('JournalEntryListChrome', () => {
 
     const feedControls = getAllByLabelText('Feed');
     expect(feedControls.length).toBeGreaterThan(0);
-    fireEvent.press(feedControls[0]!);
+    await fireEvent.press(feedControls[0]!);
 
     expect(onSelectViewMode).toHaveBeenCalledWith(2, 'feed');
   });
@@ -103,8 +73,8 @@ describe('JournalEntryListChrome', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.press(getByLabelText('Filter by Date'));
-    fireEvent.press(getByText('Clear all filters'));
+    await fireEvent.press(getByLabelText('Filter by Date'));
+    await fireEvent.press(getByText('Clear all filters'));
 
     expect(onChangeExpandedFilter).toHaveBeenCalledWith('date');
     expect(onClearFilters).toHaveBeenCalledTimes(1);

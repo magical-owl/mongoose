@@ -85,7 +85,7 @@ describe('useDiaryCoverPhotoEditing', () => {
     const { getByTestId } = await render(<CoverPhotoHarness />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('choose-cover-photo'));
+      await fireEvent.press(getByTestId('choose-cover-photo'));
     });
 
     await waitFor(() => {
@@ -98,7 +98,7 @@ describe('useDiaryCoverPhotoEditing', () => {
     const { getByTestId } = await render(<CoverPhotoHarness />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('take-cover-photo'));
+      await fireEvent.press(getByTestId('take-cover-photo'));
     });
 
     await waitFor(() => {
@@ -110,12 +110,12 @@ describe('useDiaryCoverPhotoEditing', () => {
     const { getByTestId } = await render(<CoverPhotoHarness />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('choose-cover-photo'));
+      await fireEvent.press(getByTestId('choose-cover-photo'));
     });
     await waitFor(() => expect(getByTestId('cover-photo-uri').props.children).toBe(importedPhoto.uri));
 
     await act(async () => {
-      fireEvent.press(getByTestId('remove-cover-photo'));
+      await fireEvent.press(getByTestId('remove-cover-photo'));
     });
 
     expect(getByTestId('cover-photo-uri').props.children).toBe('none');
@@ -126,7 +126,7 @@ describe('useDiaryCoverPhotoEditing', () => {
     const { getByTestId } = await render(<CoverPhotoHarness />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('choose-cover-photo'));
+      await fireEvent.press(getByTestId('choose-cover-photo'));
     });
 
     expect(getByTestId('cover-photo-uri').props.children).toBe('none');
@@ -147,19 +147,19 @@ describe('useDiaryCoverPhotoEditing', () => {
 
     mockTakeDiaryPhoto.mockResolvedValueOnce({ success: false, error: 'camera-permission-denied' });
     await act(async () => {
-      fireEvent.press(getByTestId('take-cover-photo'));
+      await fireEvent.press(getByTestId('take-cover-photo'));
     });
     expect(onCameraPermissionDenied).toHaveBeenCalled();
 
     mockChooseDiaryPhoto.mockResolvedValueOnce({ success: false, error: 'library-permission-denied' });
     await act(async () => {
-      fireEvent.press(getByTestId('choose-cover-photo'));
+      await fireEvent.press(getByTestId('choose-cover-photo'));
     });
     expect(onLibraryPermissionDenied).toHaveBeenCalled();
 
     mockChooseDiaryPhoto.mockResolvedValueOnce({ success: false, error: 'native-module-missing' });
     await act(async () => {
-      fireEvent.press(getByTestId('choose-cover-photo'));
+      await fireEvent.press(getByTestId('choose-cover-photo'));
     });
     expect(onNativeModuleMissing).toHaveBeenCalled();
   });
@@ -170,7 +170,7 @@ describe('useDiaryCoverPhotoEditing', () => {
     const { getByTestId } = await render(<CoverPhotoHarness onPhotoImportFailed={onPhotoImportFailed} />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('choose-cover-photo'));
+      await fireEvent.press(getByTestId('choose-cover-photo'));
     });
 
     expect(onPhotoImportFailed).toHaveBeenCalled();

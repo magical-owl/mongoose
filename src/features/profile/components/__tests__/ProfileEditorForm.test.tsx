@@ -41,7 +41,7 @@ describe('ProfileEditorForm', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    fireEvent.press(getByTestId('profile-save-button'));
+    await fireEvent.press(getByTestId('profile-save-button'));
 
     await waitFor(() => {
       expect(mockSaveProfile).toHaveBeenCalledWith({

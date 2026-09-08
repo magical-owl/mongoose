@@ -62,7 +62,7 @@ describe('ReflectionComposer', () => {
     );
 
     await act(async () => {
-      fireEvent.press(getByTestId('reflection-attach-photo'));
+      await fireEvent.press(getByTestId('reflection-attach-photo'));
     });
 
     await waitFor(() => {
@@ -71,13 +71,13 @@ describe('ReflectionComposer', () => {
       });
     });
 
-    fireEvent.changeText(getByLabelText('Reflection text'), 'A small visual note');
+    await fireEvent.changeText(getByLabelText('Reflection text'), 'A small visual note');
     await waitFor(() => {
       expect(getByLabelText('Reflection text').props.value).toBe('A small visual note');
     });
 
     await act(async () => {
-      fireEvent.press(getByTestId('reflection-submit'));
+      await fireEvent.press(getByTestId('reflection-submit'));
     });
 
     await waitFor(() => {
@@ -101,11 +101,11 @@ describe('ReflectionComposer', () => {
     );
 
     await act(async () => {
-      fireEvent.press(getByTestId('reflection-attach-photo'));
+      await fireEvent.press(getByTestId('reflection-attach-photo'));
     });
     await waitFor(() => expect(queryByTestId('reflection-photo-preview')).toBeTruthy());
 
-    fireEvent.press(getByTestId('reflection-remove-photo'));
+    await fireEvent.press(getByTestId('reflection-remove-photo'));
 
     await waitFor(() => expect(queryByTestId('reflection-photo-preview')).toBeNull());
     expect(mockDeletePhoto).toHaveBeenCalledWith(importedPhoto);
