@@ -19,11 +19,15 @@ const baseProps = {
   entryHierarchyMode: 'year-month-date' as const,
   expandedFilter: null,
   filterOptions: {
+    year: ['2026'],
+    month: ['2026-08'],
     date: ['2026-08-29'],
     tag: ['reflection'],
     mood: ['happy'],
   },
   search: '',
+  filterYear: '',
+  filterMonth: '',
   filterDate: '',
   filterTag: '',
   filterMood: '',
@@ -39,6 +43,8 @@ const baseProps = {
   onChangeExpandedFilter: jest.fn(),
   onChangeSearch: jest.fn(),
   onChangeEntryHierarchyMode: jest.fn(),
+  onChangeFilterYear: jest.fn(),
+  onChangeFilterMonth: jest.fn(),
   onChangeFilterDate: jest.fn(),
   onChangeFilterTag: jest.fn(),
   onChangeFilterMood: jest.fn(),
@@ -73,10 +79,30 @@ describe('JournalEntryListChrome', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
+    await fireEvent.press(getByLabelText('Filter by Year'));
+    await fireEvent.press(getByLabelText('Filter by Month'));
     await fireEvent.press(getByLabelText('Filter by Date'));
     await fireEvent.press(getByText('Clear all filters'));
 
+    expect(onChangeExpandedFilter).toHaveBeenCalledWith('year');
+    expect(onChangeExpandedFilter).toHaveBeenCalledWith('month');
     expect(onChangeExpandedFilter).toHaveBeenCalledWith('date');
     expect(onClearFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it('selects month filter options from the drawer', async () => {
+    const onChangeFilterMonth = jest.fn();
+    const { getByText } = await renderWithProviders(
+      <JournalEntryListChrome
+        {...baseProps}
+        expandedFilter="month"
+        onChangeFilterMonth={onChangeFilterMonth}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    await fireEvent.press(getByText('August 2026'));
+
+    expect(onChangeFilterMonth).toHaveBeenCalledWith('2026-08');
   });
 });

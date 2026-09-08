@@ -40,6 +40,7 @@ import {
   JOURNAL_HEADER_ROW_HEIGHT,
   JOURNAL_HEADER_TOP_PADDING,
   JournalEntryListChrome,
+  type JournalEntryDrawerPanel,
 } from "@/features/diary/components/JournalEntryListChrome";
 import { VirtualizedDiaryEntryList, type VirtualizedDiaryEntryListRef } from "@/features/diary/components/VirtualizedDiaryEntryList";
 import { PaywallModal } from "@/shared/components/PaywallModal";
@@ -89,6 +90,8 @@ export default function JournalEntriesScreen() {
   const moodColor = useCallback((mood: string) => getManualMoodColor(mood as ManualMood, theme.colors), [theme.colors]);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [search, setSearch] = useState("");
+  const [filterYear, setFilterYear] = useState("");
+  const [filterMonth, setFilterMonth] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterTag, setFilterTag] = useState("");
   const [filterMood, setFilterMood] = useState("");
@@ -96,9 +99,7 @@ export default function JournalEntriesScreen() {
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const [collapsedYears, setCollapsedYears] = useState<Set<string>>(new Set());
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
-  const [expandedFilter, setExpandedFilter] = useState<
-    "date" | "tag" | "mood" | "hierarchy" | null
-  >(null);
+  const [expandedFilter, setExpandedFilter] = useState<JournalEntryDrawerPanel>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [reflectionModalEntryId, setReflectionModalEntryId] = useState<string | null>(null);
@@ -160,6 +161,12 @@ export default function JournalEntriesScreen() {
 
   const filterOptions = useMemo(
     () => ({
+      year: Array.from(new Set(journalEntries.map((entry) => entry.date.slice(0, 4))))
+        .sort()
+        .reverse(),
+      month: Array.from(new Set(journalEntries.map((entry) => entry.date.slice(0, 7))))
+        .sort()
+        .reverse(),
       date: Array.from(new Set(journalEntries.map((entry) => entry.date)))
         .sort()
         .reverse(),
@@ -225,6 +232,24 @@ export default function JournalEntriesScreen() {
 
   const openDrawer = useCallback(() => {
     setIsDrawerOpen(true);
+  }, []);
+
+  const handleChangeFilterYear = useCallback((year: string) => {
+    setFilterYear(year);
+    setFilterMonth("");
+    setFilterDate("");
+  }, []);
+
+  const handleChangeFilterMonth = useCallback((month: string) => {
+    setFilterYear(month ? month.slice(0, 4) : "");
+    setFilterMonth(month);
+    setFilterDate("");
+  }, []);
+
+  const handleChangeFilterDate = useCallback((date: string) => {
+    setFilterYear(date ? date.slice(0, 4) : "");
+    setFilterMonth(date ? date.slice(0, 7) : "");
+    setFilterDate(date);
   }, []);
   const navigateBack = useCallback(() => {
     if (router.canGoBack()) {
@@ -392,6 +417,8 @@ export default function JournalEntriesScreen() {
   const filteredEntries = useMemo(() => {
     if (
       !search.trim() &&
+      !filterYear &&
+      !filterMonth &&
       !filterDate &&
       !filterTag &&
       !filterMood &&
@@ -405,7 +432,9 @@ export default function JournalEntriesScreen() {
         (!q ||
           e.title.toLowerCase().includes(q) ||
           stripHtml(e.content).toLowerCase().includes(q)) &&
-        (!filterDate || e.date.includes(filterDate)) &&
+        (!filterYear || e.date.startsWith(filterYear)) &&
+        (!filterMonth || e.date.startsWith(filterMonth)) &&
+        (!filterDate || e.date === filterDate) &&
         (!filterTag ||
           e.tags.some((tag) =>
             tag.toLowerCase().includes(filterTag.toLowerCase()),
@@ -417,6 +446,8 @@ export default function JournalEntriesScreen() {
   }, [
     journalEntries,
     search,
+    filterYear,
+    filterMonth,
     filterDate,
     filterTag,
     filterMood,
@@ -424,8 +455,8 @@ export default function JournalEntriesScreen() {
   ]);
 
   const entryPaginationKey = useMemo(
-    () => [journalId, search, filterDate, filterTag, filterMood, favoritesOnly ? "favorites" : "all"].join("|"),
-    [favoritesOnly, filterDate, filterMood, filterTag, journalId, search],
+    () => [journalId, search, filterYear, filterMonth, filterDate, filterTag, filterMood, favoritesOnly ? "favorites" : "all"].join("|"),
+    [favoritesOnly, filterDate, filterMonth, filterMood, filterTag, filterYear, journalId, search],
   );
   const visibleEntryCount = entryPagination.key === entryPaginationKey
     ? entryPagination.visibleCount
@@ -560,6 +591,8 @@ export default function JournalEntriesScreen() {
           expandedFilter={expandedFilter}
           filterOptions={filterOptions}
           search={search}
+          filterYear={filterYear}
+          filterMonth={filterMonth}
           filterDate={filterDate}
           filterTag={filterTag}
           filterMood={filterMood}
@@ -590,11 +623,15 @@ export default function JournalEntriesScreen() {
           onChangeExpandedFilter={setExpandedFilter}
           onChangeSearch={setSearch}
           onChangeEntryHierarchyMode={setEntryHierarchyMode}
-          onChangeFilterDate={setFilterDate}
+          onChangeFilterYear={handleChangeFilterYear}
+          onChangeFilterMonth={handleChangeFilterMonth}
+          onChangeFilterDate={handleChangeFilterDate}
           onChangeFilterTag={setFilterTag}
           onChangeFilterMood={setFilterMood}
           onToggleFavoritesOnly={() => setFavoritesOnly((value) => !value)}
           onClearFilters={() => {
+            setFilterYear("");
+            setFilterMonth("");
             setFilterDate("");
             setFilterTag("");
             setFilterMood("");

@@ -20,6 +20,8 @@ import {
   type JournalEntryFilterOptions,
 } from './JournalEntryListDrawer';
 
+export type { JournalEntryDrawerPanel, JournalEntryFilterOptions } from './JournalEntryListDrawer';
+
 export const JOURNAL_COVER_EXPANDED_HEIGHT = 254;
 export const JOURNAL_COVER_COLLAPSED_EXTRA_HEIGHT = 12;
 export const JOURNAL_HEADER_TOP_PADDING = 16;
@@ -50,6 +52,8 @@ interface JournalEntryListChromeProps {
   readonly expandedFilter: JournalEntryDrawerPanel;
   readonly filterOptions: JournalEntryFilterOptions;
   readonly search: string;
+  readonly filterYear: string;
+  readonly filterMonth: string;
   readonly filterDate: string;
   readonly filterTag: string;
   readonly filterMood: string;
@@ -65,6 +69,8 @@ interface JournalEntryListChromeProps {
   readonly onChangeExpandedFilter: (filter: JournalEntryDrawerPanel) => void;
   readonly onChangeSearch: (search: string) => void;
   readonly onChangeEntryHierarchyMode: (mode: EntryHierarchyMode) => void;
+  readonly onChangeFilterYear: (year: string) => void;
+  readonly onChangeFilterMonth: (month: string) => void;
   readonly onChangeFilterDate: (date: string) => void;
   readonly onChangeFilterTag: (tag: string) => void;
   readonly onChangeFilterMood: (mood: string) => void;
@@ -89,6 +95,8 @@ export function JournalEntryListChrome({
   expandedFilter,
   filterOptions,
   search,
+  filterYear,
+  filterMonth,
   filterDate,
   filterTag,
   filterMood,
@@ -104,6 +112,8 @@ export function JournalEntryListChrome({
   onChangeExpandedFilter,
   onChangeSearch,
   onChangeEntryHierarchyMode,
+  onChangeFilterYear,
+  onChangeFilterMonth,
   onChangeFilterDate,
   onChangeFilterTag,
   onChangeFilterMood,
@@ -125,6 +135,8 @@ export function JournalEntryListChrome({
         expandedPanel={expandedFilter}
         filterOptions={filterOptions}
         search={search}
+        filterYear={filterYear}
+        filterMonth={filterMonth}
         filterDate={filterDate}
         filterTag={filterTag}
         filterMood={filterMood}
@@ -136,6 +148,8 @@ export function JournalEntryListChrome({
         onChangeExpandedPanel={onChangeExpandedFilter}
         onChangeSearch={onChangeSearch}
         onChangeEntryHierarchyMode={onChangeEntryHierarchyMode}
+        onChangeFilterYear={onChangeFilterYear}
+        onChangeFilterMonth={onChangeFilterMonth}
         onChangeFilterDate={onChangeFilterDate}
         onChangeFilterTag={onChangeFilterTag}
         onChangeFilterMood={onChangeFilterMood}

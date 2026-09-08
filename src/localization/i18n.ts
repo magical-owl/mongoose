@@ -128,10 +128,14 @@ const translations = {
     homeDrawerCloseA11y: 'Close diary menu',
     homeDrawerFilterEntries: 'FILTER ENTRIES',
     homeDrawerFilterBy: 'Filter by',
+    homeFilterYear: 'Year',
+    homeFilterMonth: 'Month',
     homeFilterDate: 'Date',
     homeFilterTag: 'Tag',
     homeFilterMood: 'Mood',
     homeFilterCompanion: 'Companion',
+    homeFilterAllYears: 'All years',
+    homeFilterAllMonths: 'All months',
     homeFilterAllDates: 'All dates',
     homeFilterAllTags: 'All tags',
     homeFilterAllMoods: 'All moods',
@@ -695,10 +699,14 @@ const translations = {
     homeDrawerCloseA11y: '日記メニューを閉じる',
     homeDrawerFilterEntries: 'エントリーを絞り込み',
     homeDrawerFilterBy: '絞り込み',
+    homeFilterYear: '年',
+    homeFilterMonth: '月',
     homeFilterDate: '日付',
     homeFilterTag: 'タグ',
     homeFilterMood: '気分',
     homeFilterCompanion: 'コンパニオン',
+    homeFilterAllYears: 'すべての年',
+    homeFilterAllMonths: 'すべての月',
     homeFilterAllDates: 'すべての日付',
     homeFilterAllTags: 'すべてのタグ',
     homeFilterAllMoods: 'すべての気分',
@@ -1262,10 +1270,14 @@ const translations = {
     homeDrawerCloseA11y: '关闭日记菜单',
     homeDrawerFilterEntries: '筛选日记',
     homeDrawerFilterBy: '筛选条件',
+    homeFilterYear: '年份',
+    homeFilterMonth: '月份',
     homeFilterDate: '日期',
     homeFilterTag: '标签',
     homeFilterMood: '心情',
     homeFilterCompanion: '伙伴',
+    homeFilterAllYears: '所有年份',
+    homeFilterAllMonths: '所有月份',
     homeFilterAllDates: '所有日期',
     homeFilterAllTags: '所有标签',
     homeFilterAllMoods: '所有心情',
@@ -1829,10 +1841,14 @@ const translations = {
     homeDrawerCloseA11y: 'Tagebuchmenü schließen',
     homeDrawerFilterEntries: 'EINTRÄGE FILTERN',
     homeDrawerFilterBy: 'Filtern nach',
+    homeFilterYear: 'Jahr',
+    homeFilterMonth: 'Monat',
     homeFilterDate: 'Datum',
     homeFilterTag: 'Tag',
     homeFilterMood: 'Stimmung',
     homeFilterCompanion: 'Begleiter',
+    homeFilterAllYears: 'Alle Jahre',
+    homeFilterAllMonths: 'Alle Monate',
     homeFilterAllDates: 'Alle Daten',
     homeFilterAllTags: 'Alle Tags',
     homeFilterAllMoods: 'Alle Stimmungen',
@@ -2396,10 +2412,14 @@ const translations = {
     homeDrawerCloseA11y: 'Fermer le menu du journal',
     homeDrawerFilterEntries: 'FILTRER LES ENTRÉES',
     homeDrawerFilterBy: 'Filtrer par',
+    homeFilterYear: 'Année',
+    homeFilterMonth: 'Mois',
     homeFilterDate: 'Date',
     homeFilterTag: 'Étiquette',
     homeFilterMood: 'Humeur',
     homeFilterCompanion: 'Compagnon',
+    homeFilterAllYears: 'Toutes les années',
+    homeFilterAllMonths: 'Tous les mois',
     homeFilterAllDates: 'Toutes les dates',
     homeFilterAllTags: 'Toutes les étiquettes',
     homeFilterAllMoods: 'Toutes les humeurs',
@@ -2865,6 +2885,8 @@ export function homeViewModeLabel(mode: HomeViewMode, t: (key: TranslationKey) =
 }
 
 export function homeFilterKindLabel(kind: string, t: (key: TranslationKey) => string): string {
+  if (kind === 'year') return t('homeFilterYear');
+  if (kind === 'month') return t('homeFilterMonth');
   if (kind === 'date') return t('homeFilterDate');
   if (kind === 'tag') return t('homeFilterTag');
   if (kind === 'mood') return t('homeFilterMood');
@@ -2872,6 +2894,8 @@ export function homeFilterKindLabel(kind: string, t: (key: TranslationKey) => st
 }
 
 export function homeFilterAllLabel(kind: string, t: (key: TranslationKey) => string): string {
+  if (kind === 'year') return t('homeFilterAllYears');
+  if (kind === 'month') return t('homeFilterAllMonths');
   if (kind === 'date') return t('homeFilterAllDates');
   if (kind === 'tag') return t('homeFilterAllTags');
   if (kind === 'mood') return t('homeFilterAllMoods');

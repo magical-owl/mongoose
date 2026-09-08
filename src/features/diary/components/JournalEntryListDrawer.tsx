@@ -14,11 +14,13 @@ import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 const HIERARCHY_MODES: EntryHierarchyMode[] = ['year-month-date', 'month-date', 'date', 'none'];
 
-export type JournalEntryFilterKind = 'date' | 'tag' | 'mood';
+export type JournalEntryFilterKind = 'year' | 'month' | 'date' | 'tag' | 'mood';
 export type JournalEntryDrawerPanel = JournalEntryFilterKind | 'hierarchy' | null;
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
 export interface JournalEntryFilterOptions {
+  readonly year: readonly string[];
+  readonly month: readonly string[];
   readonly date: readonly string[];
   readonly tag: readonly string[];
   readonly mood: readonly string[];
@@ -36,6 +38,8 @@ interface JournalEntryListDrawerProps {
   readonly expandedPanel: JournalEntryDrawerPanel;
   readonly filterOptions: JournalEntryFilterOptions;
   readonly search: string;
+  readonly filterYear: string;
+  readonly filterMonth: string;
   readonly filterDate: string;
   readonly filterTag: string;
   readonly filterMood: string;
@@ -47,6 +51,8 @@ interface JournalEntryListDrawerProps {
   readonly onChangeExpandedPanel: (panel: JournalEntryDrawerPanel) => void;
   readonly onChangeSearch: (search: string) => void;
   readonly onChangeEntryHierarchyMode: (mode: EntryHierarchyMode) => void;
+  readonly onChangeFilterYear: (year: string) => void;
+  readonly onChangeFilterMonth: (month: string) => void;
   readonly onChangeFilterDate: (date: string) => void;
   readonly onChangeFilterTag: (tag: string) => void;
   readonly onChangeFilterMood: (mood: string) => void;
@@ -68,16 +74,32 @@ function capitalizeFilterLabel(value: string): string {
     .join('');
 }
 
-function drawerFilterValue(kind: JournalEntryFilterKind, values: { readonly date: string; readonly tag: string; readonly mood: string }): string {
+function drawerFilterValue(kind: JournalEntryFilterKind, values: { readonly year: string; readonly month: string; readonly date: string; readonly tag: string; readonly mood: string }): string {
+  if (kind === 'year') return values.year;
+  if (kind === 'month') return values.month;
   if (kind === 'date') return values.date;
   if (kind === 'tag') return values.tag;
   return values.mood;
 }
 
 function drawerFilterIcon(kind: JournalEntryFilterKind): IoniconName {
+  if (kind === 'year') return 'calendar-clear-outline';
+  if (kind === 'month') return 'calendar-number-outline';
   if (kind === 'date') return 'calendar-outline';
   if (kind === 'tag') return 'pricetag-outline';
   return 'heart-outline';
+}
+
+function formatMonthFilterLabel(value: string): string {
+  const [year, month] = value.split('-').map(Number);
+  if (!year || !month) return value;
+  return new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1, 12));
+}
+
+function formatDateFilterLabel(kind: JournalEntryFilterKind, value: string): string {
+  if (kind === 'month') return formatMonthFilterLabel(value);
+  if (kind === 'year' || kind === 'date') return value;
+  return capitalizeFilterLabel(value);
 }
 
 export function JournalEntryListDrawer({
@@ -89,6 +111,8 @@ export function JournalEntryListDrawer({
   expandedPanel,
   filterOptions,
   search,
+  filterYear,
+  filterMonth,
   filterDate,
   filterTag,
   filterMood,
@@ -100,6 +124,8 @@ export function JournalEntryListDrawer({
   onChangeExpandedPanel,
   onChangeSearch,
   onChangeEntryHierarchyMode,
+  onChangeFilterYear,
+  onChangeFilterMonth,
   onChangeFilterDate,
   onChangeFilterTag,
   onChangeFilterMood,
@@ -115,6 +141,8 @@ export function JournalEntryListDrawer({
       <TouchableOpacity
         onPress={() => {
           if (kind === 'date') onChangeFilterDate('');
+          if (kind === 'month') onChangeFilterMonth('');
+          if (kind === 'year') onChangeFilterYear('');
           if (kind === 'tag') onChangeFilterTag('');
           if (kind === 'mood') onChangeFilterMood('');
           onChangeExpandedPanel(null);
@@ -131,6 +159,8 @@ export function JournalEntryListDrawer({
             key={option}
             onPress={() => {
               if (kind === 'date') onChangeFilterDate(option);
+              if (kind === 'month') onChangeFilterMonth(option);
+              if (kind === 'year') onChangeFilterYear(option);
               if (kind === 'tag') onChangeFilterTag(option);
               if (kind === 'mood') onChangeFilterMood(option);
               onChangeExpandedPanel(null);
@@ -142,7 +172,7 @@ export function JournalEntryListDrawer({
                 <Text preset="caption" style={[styles.filterMoodBadgeText, { color: optionMoodColor }]}>{manualMoodLabel(option, t)}</Text>
               </View>
             ) : (
-              <Text preset="caption" color={selected ? 'tint' : 'text'}>{capitalizeFilterLabel(option)}</Text>
+              <Text preset="caption" color={selected ? 'tint' : 'text'}>{formatDateFilterLabel(kind, option)}</Text>
             )}
           </TouchableOpacity>
         );
@@ -217,8 +247,8 @@ export function JournalEntryListDrawer({
         ) : null}
 
         <SectionLabel style={styles.drawerSectionLabel}>{t('homeDrawerFilterEntries')}</SectionLabel>
-        {(['date', 'tag', 'mood'] as const).map((kind) => {
-          const value = drawerFilterValue(kind, { date: filterDate, tag: filterTag, mood: filterMood });
+        {(['year', 'month', 'date', 'tag', 'mood'] as const).map((kind) => {
+          const value = drawerFilterValue(kind, { year: filterYear, month: filterMonth, date: filterDate, tag: filterTag, mood: filterMood });
           const icon = drawerFilterIcon(kind);
           return (
             <Fragment key={kind}>
@@ -230,7 +260,7 @@ export function JournalEntryListDrawer({
               >
                 <Ionicons name={icon} size={20} color={value ? theme.colors.tint : theme.colors.textSecondary} />
                 <Text preset="bodySmall" color="text" style={styles.drawerRowText}>
-                  {value ? (kind === 'mood' ? manualMoodLabel(value, t) : capitalizeFilterLabel(value)) : homeFilterKindLabel(kind, t)}
+                  {value ? (kind === 'mood' ? manualMoodLabel(value, t) : formatDateFilterLabel(kind, value)) : homeFilterKindLabel(kind, t)}
                 </Text>
                 <Ionicons name={expandedPanel === kind ? 'chevron-down' : 'chevron-forward'} size={16} color={theme.colors.textSecondary} />
               </TouchableOpacity>
