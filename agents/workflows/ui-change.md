@@ -60,6 +60,16 @@ When a change affects app chrome, check every matching chrome surface:
 - `npm run lint`
 - Relevant component tests.
 
+## Animation And Modal Checks
+
+When the change touches animations, drawers, modals, floating panels, segmented controls, or route-driven UI state:
+
+- Test the first interaction, repeated interaction, close/reopen, route leave/return, and rapid taps when relevant.
+- Prefer shared animation and native-module mocks from `tests/` instead of adding inline mocks to individual test files.
+- Verify active, inactive, dismissed, and interrupted states instead of only the happy path.
+- Run the directly affected component test plus one nearby integration-style component test that exercises the component in its real screen context.
+- Do not broadly suppress `act()` warnings. Fix the async test boundary, timer handling, or shared mock instead.
+
 ## Output Example
 
 ```text
