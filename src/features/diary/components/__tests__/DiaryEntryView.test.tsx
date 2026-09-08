@@ -152,15 +152,19 @@ describe('DiaryEntryView', () => {
     const spineStyle = StyleSheet.flatten(getByTestId('entry-timeline-spine').props.style);
     const timelineStyle = StyleSheet.flatten(getByTestId('entry-timeline').props.style);
     const avatarStyle = StyleSheet.flatten(getByTestId('entry-timeline-avatar').props.style);
-    const reflectionAvatarStyle = StyleSheet.flatten(getByTestId('entry-reflection-avatar').props.style);
     const moodStyle = StyleSheet.flatten(getByTestId('entry-timeline-cover-mood').props.style);
     const metaRowStyle = StyleSheet.flatten(getByTestId('entry-timeline-cover-meta-row').props.style);
+    const coverStyle = StyleSheet.flatten(getByTestId('entry-timeline-cover-photo').props.style);
+    const coverScrimStyle = StyleSheet.flatten(getByTestId('entry-timeline-cover-photo-scrim').props.style);
+
+    expect(getByTestId('entry-timeline-reflection-button')).toBeTruthy();
+    expect(() => getByText('A follow-up reflection.')).toThrow();
+    await fireEvent.press(getByTestId('entry-timeline-reflection-button'));
+    const reflectionAvatarStyle = StyleSheet.flatten(getByTestId('entry-reflection-avatar').props.style);
     const reflectionsStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflections').props.style);
     const reflectionSectionStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflection-section').props.style);
     const reflectionInputStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflection-input').props.style);
     const reflectionItemStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflection-item').props.style);
-    const coverStyle = StyleSheet.flatten(getByTestId('entry-timeline-cover-photo').props.style);
-    const coverScrimStyle = StyleSheet.flatten(getByTestId('entry-timeline-cover-photo-scrim').props.style);
 
     expect(getByText('A follow-up reflection.')).toBeTruthy();
     expect(getByTestId('entry-inline-reflection-photo').props.source).toEqual({
@@ -379,9 +383,6 @@ describe('DiaryEntryView', () => {
     );
 
     const contentPanelStyle = StyleSheet.flatten(getByTestId('entry-feed-content-panel').props.style);
-    const reflectionPanelStyle = StyleSheet.flatten(getByTestId('entry-feed-reflection-panel').props.style);
-    const feedReflectionsStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflections').props.style);
-    const reflectionInputStyle = StyleSheet.flatten(getByTestId('entry-feed-reflection-input').props.style);
     const feedCardStyle = StyleSheet.flatten(getByTestId('entry-feed-card').props.style);
 
     const coverTimestampStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-timestamp').props.style);
@@ -393,7 +394,13 @@ describe('DiaryEntryView', () => {
     expect(queryByTestId('diary-entry-body-webview')).toBeNull();
     expect(coverTimestampStyle.color).toBeTruthy();
     expect(getByTestId('entry-cover-summary-meta-row')).toBeTruthy();
+    expect(getByTestId('entry-feed-reflection-button')).toBeTruthy();
     expect(getByTestId('entry-feed-cover-tags-daily')).toBeTruthy();
+    expect(queryByTestId('entry-feed-reflection-panel')).toBeNull();
+    await fireEvent.press(getByTestId('entry-feed-reflection-button'));
+    const reflectionPanelStyle = StyleSheet.flatten(getByTestId('entry-feed-reflection-panel').props.style);
+    const feedReflectionsStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflections').props.style);
+    const reflectionInputStyle = StyleSheet.flatten(getByTestId('entry-feed-reflection-input').props.style);
     expect(getByTestId('entry-inline-reflection-photo').props.source).toEqual({
       uri: 'file:///document/diary-photos/feed-reflection.jpg',
     });

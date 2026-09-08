@@ -100,6 +100,7 @@ export function DiaryEntryView({
   const timeFormat = useAppStore((state) => state.timeFormat);
   const t = useTranslation();
   const [isMemoryReactionPickerVisible, setIsMemoryReactionPickerVisible] = useState(false);
+  const [isInlineReflectionSectionVisible, setIsInlineReflectionSectionVisible] = useState(false);
   const [feedCanvasWidth, setFeedCanvasWidth] = useState(0);
   const entryMoods = getEntryManualMoods(entry);
   const primaryMood = getPrimaryManualMood(entryMoods);
@@ -118,7 +119,9 @@ export function DiaryEntryView({
   const feedEntryDateTime = entryTime;
   const viewCount = entry.viewCount ?? 0;
   const viewCountA11y = t('entryViewCountA11y').replace('{count}', String(viewCount));
-  const showReflectionSummaryAction = mode !== 'timeline' && Boolean(onReflectionSummaryPress);
+  const hasInlineReflections = mode === 'timeline' || mode === 'feed';
+  const showInlineReflectionAction = hasInlineReflections && (entry.reflections.length > 0 || Boolean(onAddReflection));
+  const showReflectionSummaryAction = !hasInlineReflections && Boolean(onReflectionSummaryPress);
   const showMemoryReactionControl = Boolean(onToggleMemoryReaction);
   const reflectionSummaryLabel = entry.reflections.length > 0 ? reflectionCountLabel(entry.reflections.length, t) : t('reflectOnThis');
   const editorCanvasWidth = Math.max(1, windowWidth - theme.spacing.lg * 2);
@@ -181,14 +184,16 @@ export function DiaryEntryView({
   );
 
   const renderInlineReflectionSection = (variant: 'feed' | 'timeline') => (
-    <EntryReflectionSection
-      entryId={entry.id}
-      reflections={entry.reflections}
-      variant={variant}
-      profile={profile}
-      onAddReflection={onAddReflection}
-      onReflectionInputFocus={onReflectionInputFocus}
-    />
+    isInlineReflectionSectionVisible ? (
+      <EntryReflectionSection
+        entryId={entry.id}
+        reflections={entry.reflections}
+        variant={variant}
+        profile={profile}
+        onAddReflection={onAddReflection}
+        onReflectionInputFocus={onReflectionInputFocus}
+      />
+    ) : null
   );
 
   if (mode === 'feed') {
@@ -200,9 +205,15 @@ export function DiaryEntryView({
         moods={feedHasCoverPhoto ? [] : entryMoods}
         tags={feedHasCoverPhoto ? [] : entry.tags}
         {...memoryReactionRowProps}
-        reflectionCount={showReflectionSummaryAction ? entry.reflections.length : undefined}
-        onReflectionPress={showReflectionSummaryAction ? () => onReflectionSummaryPress?.(entry.id) : undefined}
-        reflectionAccessibilityLabel={showReflectionSummaryAction ? reflectionSummaryLabel : undefined}
+        reflectionCount={showInlineReflectionAction ? entry.reflections.length : showReflectionSummaryAction ? entry.reflections.length : undefined}
+        onReflectionPress={
+          showInlineReflectionAction
+            ? () => setIsInlineReflectionSectionVisible((current) => !current)
+            : showReflectionSummaryAction
+              ? () => onReflectionSummaryPress?.(entry.id)
+              : undefined
+        }
+        reflectionAccessibilityLabel={showInlineReflectionAction || showReflectionSummaryAction ? reflectionSummaryLabel : undefined}
         testID="entry-feed-footer-meta"
         memoryReactionTestID="entry-feed-memory-reaction"
         moodTestID="entry-feed-mood"
@@ -343,10 +354,14 @@ export function DiaryEntryView({
                   moods={entry.coverPhoto ? [] : entryMoods}
                   tags={entry.coverPhoto ? [] : entry.tags}
                   {...memoryReactionRowProps}
+                  reflectionCount={showInlineReflectionAction ? entry.reflections.length : undefined}
+                  onReflectionPress={showInlineReflectionAction ? () => setIsInlineReflectionSectionVisible((current) => !current) : undefined}
+                  reflectionAccessibilityLabel={showInlineReflectionAction ? reflectionSummaryLabel : undefined}
                   testID="entry-timeline-meta-row"
                   memoryReactionTestID="entry-timeline-memory-reaction"
                   moodTestID="entry-timeline-mood"
                   tagTestID="entry-timeline-tags"
+                  reflectionTestID="entry-timeline-reflection-button"
                 />
               </View>
             </View>
