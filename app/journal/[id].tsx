@@ -123,6 +123,9 @@ export default function JournalEntriesScreen() {
   const focusedReflectionEntryId = useRef<string | null>(null);
   const pendingScrollEntryId = useRef<string | null>(null);
   const loadMoreAnimationFrames = useRef<number[]>([]);
+  const loadMoreRequestId = useRef(0);
+  const entryPaginationKeyRef = useRef("");
+  const isLoadingMoreEntriesRef = useRef(false);
   const premiumPromptShownThisSession = useRef(false);
   const selectedJournal = journals.find((journal) => journal.id === journalId);
   const journalEntries = useMemo(() => {
@@ -455,12 +458,13 @@ export default function JournalEntriesScreen() {
   ]);
 
   const entryPaginationKey = useMemo(
-    () => [journalId, search, filterYear, filterMonth, filterDate, filterTag, filterMood, favoritesOnly ? "favorites" : "all"].join("|"),
-    [favoritesOnly, filterDate, filterMonth, filterMood, filterTag, filterYear, journalId, search],
+    () => [journalId, viewMode, search, filterYear, filterMonth, filterDate, filterTag, filterMood, favoritesOnly ? "favorites" : "all"].join("|"),
+    [favoritesOnly, filterDate, filterMonth, filterMood, filterTag, filterYear, journalId, search, viewMode],
   );
   const visibleEntryCount = entryPagination.key === entryPaginationKey
     ? entryPagination.visibleCount
     : DIARY_ENTRY_LIST_PAGE_SIZE;
+  entryPaginationKeyRef.current = entryPaginationKey;
 
   const sortedFilteredEntries = useMemo(
     () => [...filteredEntries].sort((a, b) => b.date.localeCompare(a.date)),
@@ -484,41 +488,78 @@ export default function JournalEntriesScreen() {
     return counts;
   }, [entries]);
 
+  const updateIsLoadingMoreEntries = useCallback((value: boolean) => {
+    isLoadingMoreEntriesRef.current = value;
+    setIsLoadingMoreEntries(value);
+  }, []);
+
+  const clearLoadMoreAnimationFrames = useCallback(() => {
+    loadMoreAnimationFrames.current.forEach((frame) => cancelAnimationFrame(frame));
+    loadMoreAnimationFrames.current = [];
+  }, []);
+
+  const invalidateLoadMoreEntries = useCallback(() => {
+    loadMoreRequestId.current += 1;
+    clearLoadMoreAnimationFrames();
+    updateIsLoadingMoreEntries(false);
+  }, [clearLoadMoreAnimationFrames, updateIsLoadingMoreEntries]);
+
   const loadMoreEntries = useCallback(() => {
-    if (isLoadingMoreEntries || !hasMoreEntries) return;
-    setIsLoadingMoreEntries(true);
+    if (isLoadingMoreEntriesRef.current || !hasMoreEntries) return;
+
+    loadMoreRequestId.current += 1;
+    const requestId = loadMoreRequestId.current;
+    const requestKey = entryPaginationKey;
+
+    clearLoadMoreAnimationFrames();
+    updateIsLoadingMoreEntries(true);
+
     const showIndicatorFrame = requestAnimationFrame(() => {
+      loadMoreAnimationFrames.current = loadMoreAnimationFrames.current.filter(
+        (frame) => frame !== showIndicatorFrame,
+      );
+      if (loadMoreRequestId.current !== requestId || entryPaginationKeyRef.current !== requestKey) return;
+
       setEntryPagination((current) => {
-        const currentVisibleCount = current.key === entryPaginationKey
+        const currentVisibleCount = current.key === requestKey
           ? current.visibleCount
           : DIARY_ENTRY_LIST_PAGE_SIZE;
         return {
-          key: entryPaginationKey,
+          key: requestKey,
           visibleCount: getNextDiaryEntryVisibleCount(currentVisibleCount, filteredEntries.length),
         };
       });
       const hideIndicatorFrame = requestAnimationFrame(() => {
-        setIsLoadingMoreEntries(false);
+        if (loadMoreRequestId.current === requestId && entryPaginationKeyRef.current === requestKey) {
+          updateIsLoadingMoreEntries(false);
+        }
         loadMoreAnimationFrames.current = loadMoreAnimationFrames.current.filter(
-          (frame) => frame !== showIndicatorFrame && frame !== hideIndicatorFrame,
+          (frame) => frame !== hideIndicatorFrame,
         );
       });
       loadMoreAnimationFrames.current.push(hideIndicatorFrame);
     });
     loadMoreAnimationFrames.current.push(showIndicatorFrame);
-  }, [entryPaginationKey, filteredEntries.length, hasMoreEntries, isLoadingMoreEntries]);
+  }, [
+    clearLoadMoreAnimationFrames,
+    entryPaginationKey,
+    filteredEntries.length,
+    hasMoreEntries,
+    updateIsLoadingMoreEntries,
+  ]);
 
   useEffect(() => () => {
-    loadMoreAnimationFrames.current.forEach((frame) => cancelAnimationFrame(frame));
-    loadMoreAnimationFrames.current = [];
-  }, []);
+    loadMoreRequestId.current += 1;
+    clearLoadMoreAnimationFrames();
+    isLoadingMoreEntriesRef.current = false;
+  }, [clearLoadMoreAnimationFrames]);
 
   const handleJournalScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       handleCollapseScroll(event);
       if (
         hasMoreEntries &&
-        !isLoadingMoreEntries &&
+        !isLoadingMoreEntriesRef.current &&
         shouldLoadMoreDiaryEntries({
           visibleHeight: event.nativeEvent.layoutMeasurement.height,
           contentOffsetY: event.nativeEvent.contentOffset.y,
@@ -528,7 +569,7 @@ export default function JournalEntriesScreen() {
         loadMoreEntries();
       }
     },
-    [handleCollapseScroll, hasMoreEntries, isLoadingMoreEntries, loadMoreEntries],
+    [handleCollapseScroll, hasMoreEntries, loadMoreEntries],
   );
 
   const handleEntryPress = useCallback(async (entry: DiaryEntry) => {
@@ -617,6 +658,7 @@ export default function JournalEntriesScreen() {
             router.push("/(tabs)/settings");
           }}
           onSelectViewMode={(index, mode) => {
+            invalidateLoadMoreEntries();
             setViewModeIndex(index);
             setHomeViewMode(mode);
           }}
