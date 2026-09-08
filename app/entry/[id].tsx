@@ -539,6 +539,7 @@ export default function EntryDetailScreen() {
                 hasCoverPhoto={hasViewCoverPhoto}
                 timestamp={viewDateTime}
                 loadingEntryDirection={loadingEntryDirection}
+                bodyOpacity={viewEntryOpacity}
                 bodyCanvasHeight={bodyCanvasHeight}
                 stickers={displayStickers}
                 onChangeBodyLayout={setBodyLayout}

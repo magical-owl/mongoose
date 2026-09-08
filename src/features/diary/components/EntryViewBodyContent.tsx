@@ -1,4 +1,4 @@
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, StyleSheet, View } from 'react-native';
 import { Text } from '@shared/components/Text';
 import { useTheme } from '@/providers/ThemeProvider';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
@@ -15,6 +15,7 @@ interface EntryViewBodyContentProps {
   readonly hasCoverPhoto: boolean;
   readonly timestamp: string;
   readonly loadingEntryDirection: 'previous' | 'next' | null;
+  readonly bodyOpacity?: Animated.Value;
   readonly bodyCanvasHeight: number;
   readonly stickers: readonly PlacedSticker[];
   readonly onChangeBodyLayout: React.Dispatch<React.SetStateAction<StickerCanvasLayout>>;
@@ -28,6 +29,7 @@ export function EntryViewBodyContent({
   hasCoverPhoto,
   timestamp,
   loadingEntryDirection,
+  bodyOpacity,
   bodyCanvasHeight,
   stickers,
   onChangeBodyLayout,
@@ -62,23 +64,25 @@ export function EntryViewBodyContent({
           </Text>
         </View>
       )}
-      <DiaryEntryBodyView
-        entry={entry}
-        bodyCanvasHeight={bodyCanvasHeight}
-        bodyFontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
-        bodyLineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
-        stickers={stickers}
-        onBodyLayout={(layout) => {
-          onChangeBodyLayout((current) => (
-            current.y === layout.y && current.width === layout.width && current.height === layout.height
-              ? current
-              : layout
-          ));
-        }}
-        onUpdateSticker={onUpdateSticker}
-        onDeleteSticker={onDeleteSticker}
-        onStickerDragStateChange={onStickerDragStateChange}
-      />
+      <Animated.View style={bodyOpacity ? { opacity: bodyOpacity } : undefined} testID="entry-view-body-fade-layer">
+        <DiaryEntryBodyView
+          entry={entry}
+          bodyCanvasHeight={bodyCanvasHeight}
+          bodyFontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
+          bodyLineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
+          stickers={stickers}
+          onBodyLayout={(layout) => {
+            onChangeBodyLayout((current) => (
+              current.y === layout.y && current.width === layout.width && current.height === layout.height
+                ? current
+                : layout
+            ));
+          }}
+          onUpdateSticker={onUpdateSticker}
+          onDeleteSticker={onDeleteSticker}
+          onStickerDragStateChange={onStickerDragStateChange}
+        />
+      </Animated.View>
       {loadingEntryDirection === 'next' ? (
         <View style={styles.entryLoader} testID="entry-view-next-loader">
           <ActivityIndicator color={theme.colors.tint} />

@@ -1,3 +1,4 @@
+import { Animated, StyleSheet } from 'react-native';
 import { EntryViewBodyContent } from '@/features/diary/components/EntryViewBodyContent';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { renderWithProviders } from '@tests/helpers';
@@ -103,5 +104,30 @@ describe('EntryViewBodyContent', () => {
 
     expect(next.queryByTestId('entry-view-previous-loader')).toBeNull();
     expect(next.getByTestId('entry-view-next-loader')).toBeTruthy();
+  });
+
+  it('applies body fade opacity without fading the loaders', async () => {
+    const bodyOpacity = new Animated.Value(0.5);
+    const { getByTestId } = await renderWithProviders(
+      <EntryViewBodyContent
+        entry={entry}
+        hasCoverPhoto
+        timestamp="Yesterday at 08:33"
+        loadingEntryDirection="next"
+        bodyOpacity={bodyOpacity}
+        bodyCanvasHeight={260}
+        stickers={[]}
+        onChangeBodyLayout={jest.fn()}
+        onUpdateSticker={jest.fn()}
+        onDeleteSticker={jest.fn()}
+        onStickerDragStateChange={jest.fn()}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    const fadeLayerStyle = StyleSheet.flatten(getByTestId('entry-view-body-fade-layer').props.style);
+
+    expect(fadeLayerStyle.opacity).toBeDefined();
+    expect(getByTestId('entry-view-next-loader')).toBeTruthy();
   });
 });

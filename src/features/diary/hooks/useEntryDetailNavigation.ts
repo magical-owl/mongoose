@@ -62,6 +62,7 @@ export function useEntryDetailNavigation({
   onResetTransientUi,
 }: UseEntryDetailNavigationOptions): UseEntryDetailNavigationResult {
   const adjacentEntryLoadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fadeInFrame = useRef<number | null>(null);
   const hasUserScrolledViewRef = useRef(false);
   const isLoadingAdjacentEntryRef = useRef(false);
   const viewEntryOpacity = useRef(new Animated.Value(1)).current;
@@ -69,6 +70,7 @@ export function useEntryDetailNavigation({
 
   useEffect(() => () => {
     if (adjacentEntryLoadTimer.current) clearTimeout(adjacentEntryLoadTimer.current);
+    if (fadeInFrame.current) cancelAnimationFrame(fadeInFrame.current);
   }, []);
 
   const previousEntry = useMemo(() => (
@@ -102,6 +104,7 @@ export function useEntryDetailNavigation({
     await preloadEntryCoverPhoto(targetEntry.coverPhoto);
 
     if (adjacentEntryLoadTimer.current) clearTimeout(adjacentEntryLoadTimer.current);
+    if (fadeInFrame.current) cancelAnimationFrame(fadeInFrame.current);
     adjacentEntryLoadTimer.current = setTimeout(() => {
       Animated.timing(viewEntryOpacity, {
         toValue: 0,
@@ -109,18 +112,22 @@ export function useEntryDetailNavigation({
         useNativeDriver: true,
       }).start(() => {
         onResetTransientUi();
+        viewEntryOpacity.setValue(0);
         hydrateEntryState(targetEntry);
         resetScrollCollapse();
         scrollRef.current?.scrollTo({ y: 0, animated: false });
         onRouteEntryChange(targetEntry.id);
         adjacentEntryLoadTimer.current = null;
-        setLoadingEntryDirection(null);
-        Animated.timing(viewEntryOpacity, {
-          toValue: 1,
-          duration: NEXT_ENTRY_FADE_IN_MS,
-          useNativeDriver: true,
-        }).start(() => {
-          isLoadingAdjacentEntryRef.current = false;
+        fadeInFrame.current = requestAnimationFrame(() => {
+          setLoadingEntryDirection(null);
+          Animated.timing(viewEntryOpacity, {
+            toValue: 1,
+            duration: NEXT_ENTRY_FADE_IN_MS,
+            useNativeDriver: true,
+          }).start(() => {
+            fadeInFrame.current = null;
+            isLoadingAdjacentEntryRef.current = false;
+          });
         });
       });
     }, NEXT_ENTRY_LOAD_DELAY_MS);
