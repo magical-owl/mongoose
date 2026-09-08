@@ -86,6 +86,7 @@ export function EntryMetaRow({
             styles.reactionButton,
             variant === 'viewFooter' && styles.viewFooterReactionButton,
           ]}
+          buttonStyle={variant === 'viewFooter' && styles.viewFooterReactionButtonSurface}
           testID={memoryReactionTestID}
         />
       ) : null}
@@ -197,7 +198,14 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   viewFooterReactionButton: {
+    alignSelf: 'center',
     flexShrink: 0,
+  },
+  viewFooterReactionButtonSurface: {
+    minHeight: 38,
+    minWidth: 62,
+    borderRadius: 19,
+    paddingHorizontal: 10,
   },
   viewFooterMoodBadges: {
     maxWidth: 116,

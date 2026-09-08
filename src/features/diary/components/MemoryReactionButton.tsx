@@ -29,6 +29,7 @@ interface MemoryReactionButtonProps {
   readonly onToggleReaction: (reaction: MemoryReaction) => void | Promise<void>;
   readonly compact?: boolean;
   readonly style?: StyleProp<ViewStyle>;
+  readonly buttonStyle?: StyleProp<ViewStyle>;
   readonly testID?: string;
 }
 
@@ -40,6 +41,7 @@ export function MemoryReactionButton({
   onToggleReaction,
   compact = false,
   style,
+  buttonStyle,
   testID,
 }: MemoryReactionButtonProps): React.JSX.Element {
   const theme = useTheme();
@@ -172,6 +174,7 @@ export function MemoryReactionButton({
             backgroundColor: hasReaction ? theme.colors.tint + '22' : theme.colors.surface,
             borderColor: hasReaction ? theme.colors.tint : theme.colors.border,
           },
+          buttonStyle,
         ]}
           accessibilityRole="button"
           accessibilityLabel={t('memoryReactionPickerTitle')}

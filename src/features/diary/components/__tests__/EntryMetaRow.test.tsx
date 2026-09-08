@@ -1,4 +1,5 @@
 import { fireEvent, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { EntryMetaRow } from '@/features/diary/components/EntryMetaRow';
 import { renderWithProviders } from '@tests/helpers';
 
@@ -48,5 +49,33 @@ describe('EntryMetaRow', () => {
     );
 
     await waitFor(() => expect(queryByTestId('entry-meta-row')).toBeNull());
+  });
+
+  it('sizes and centers the reaction button in the view diary footer row', async () => {
+    const { getByTestId } = await renderWithProviders(
+      <EntryMetaRow
+        variant="viewFooter"
+        moods={['happy']}
+        tags={['family']}
+        memoryReactions={['cherish']}
+        isMemoryReactionPickerVisible={false}
+        onOpenMemoryReactionPicker={jest.fn()}
+        onDismissMemoryReactionPicker={jest.fn()}
+        onToggleMemoryReaction={jest.fn()}
+        reflectionCount={1}
+        onReflectionPress={jest.fn()}
+        reflectionAccessibilityLabel="Open reflections"
+        memoryReactionTestID="entry-view-reaction"
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    const reactionWrapperStyle = StyleSheet.flatten(getByTestId('entry-view-reaction').parent?.props.style);
+    const reactionButtonStyle = StyleSheet.flatten(getByTestId('entry-view-reaction').props.style);
+
+    expect(reactionWrapperStyle.alignSelf).toBe('center');
+    expect(reactionButtonStyle.minHeight).toBe(38);
+    expect(reactionButtonStyle.minWidth).toBe(62);
+    expect(reactionButtonStyle.borderRadius).toBe(19);
   });
 });
