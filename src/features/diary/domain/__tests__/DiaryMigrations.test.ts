@@ -42,6 +42,11 @@ describe('Diary migrations', () => {
     expect(result.entries[0]?.viewCount).toBe(0);
   });
 
+  it('defaults view history for legacy entries', () => {
+    const result = migrateDiaryStorage([entry]);
+    expect(result.entries[0]?.viewHistory).toEqual([]);
+  });
+
   it('defaults photos for legacy entries', () => {
     const result = migrateDiaryStorage([entry]);
     expect(result.entries[0]?.photos).toEqual([]);

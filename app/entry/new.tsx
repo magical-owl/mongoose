@@ -454,6 +454,8 @@ export default function CreateEntryScreen() {
       photos: [],
       companion: DEFAULT_COMPANION,
       isFavorite,
+      viewCount: 0,
+      viewHistory: [],
       memoryReactions: [],
       tags: selectedTags,
       manualMoodWeather,

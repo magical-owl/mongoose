@@ -36,6 +36,7 @@ import { useJournals } from '@/features/journal/hooks/useJournals';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import type { RichTextEditorHandle } from '@shared/components/RichTextEditor';
 import { DiaryEntry, getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
+import { getDiaryEntryViewCount } from '@/features/diary/domain/DiaryEntryViewHistory';
 import { Template } from '@/features/diary/domain/Template';
 import type { RichTextFormatItem } from '@/features/diary/components/RichTextFormattingDrawer';
 import { EntryDetailHeaderCover } from '@/features/diary/components/EntryDetailHeaderCover';
@@ -45,6 +46,7 @@ import { EntryViewBodyContent } from '@/features/diary/components/EntryViewBodyC
 import { DiaryPaperCanvas } from '@/features/diary/components/DiaryPaperCanvas';
 import { EntryDetailModals } from '@/features/diary/components/EntryDetailModals';
 import { EntryMetaRow } from '@/features/diary/components/EntryMetaRow';
+import { EntryViewHistoryModal } from '@/features/diary/components/EntryViewHistoryModal';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { createPlacedPhotoSticker } from '@/features/diary/services/DiaryPhotoService';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
@@ -145,6 +147,7 @@ export default function EntryDetailScreen() {
   } = useEntryEditDraft();
   const [isSaving, setIsSaving] = useState(false);
   const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
+  const [showViewHistory, setShowViewHistory] = useState(false);
   const {
     showEntryMetadata,
     setShowEntryMetadata,
@@ -290,6 +293,7 @@ export default function EntryDetailScreen() {
     onRequireLockboxAccess: () => appLockService.authenticate(),
     onResetTransientUi: () => {
       setIsEditing(false);
+      setShowViewHistory(false);
       resetTransientUi();
     },
   });
@@ -298,6 +302,7 @@ export default function EntryDetailScreen() {
     resetAdjacentEntryNavigation();
     const timer = setTimeout(() => {
       setShowMemoryReactionPicker(false);
+      setShowViewHistory(false);
       if (!id) return;
       const found = entries.find((e) => e.id === id);
       if (found) {
@@ -423,7 +428,7 @@ export default function EntryDetailScreen() {
         viewCoverOverlayOpacity={viewCoverOverlayOpacity}
         entryTitle={entry.title}
         viewDateTime={viewDateTime}
-        viewCount={entry.viewCount ?? 0}
+        viewCount={getDiaryEntryViewCount(entry)}
         viewMoods={viewMoods}
         viewTags={entry.tags}
         canBringStickersForward={editStickers.some((sticker) => sticker.behindText)}
@@ -439,6 +444,7 @@ export default function EntryDetailScreen() {
         onTakeCoverPhoto={handleTakeCoverPhoto}
         onChooseCoverPhoto={handleChooseCoverPhoto}
         onRemoveCoverPhoto={handleRemoveCoverPhoto}
+        onViewCountPress={() => setShowViewHistory(true)}
       />
 
       <Animated.View
@@ -623,6 +629,13 @@ export default function EntryDetailScreen() {
         onChangeJournalIds={setEditJournalIds}
         onChangeTags={setEditTags}
       />
+      {showViewHistory ? (
+        <EntryViewHistoryModal
+          visible
+          entry={entry}
+          onDismiss={() => setShowViewHistory(false)}
+        />
+      ) : null}
     </View>
   );
 }

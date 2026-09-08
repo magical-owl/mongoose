@@ -3,6 +3,7 @@ import { failure, success } from '@/shared/utils/result';
 import { generateUUID } from '@/shared/utils/uuid';
 import { FREE_PLAN_LIMITS, countAddedStickers, getLocalDateKey, validateDiaryEntryPlanLimits } from '@/features/subscription/services/PlanLimitService';
 import { DiaryEntry, DiaryPhoto, DiaryReflection } from '../domain/DiaryEntry';
+import { recordDiaryEntryViewHistory } from '../domain/DiaryEntryViewHistory';
 import { MemoryReaction, toggleMemoryReactionSelection } from '../domain/MemoryReaction';
 import { IDiaryRepository } from '../repositories/IDiaryRepository';
 import { diaryRepository } from '../repositories/DiaryRepository';
@@ -221,7 +222,7 @@ export class DiaryService {
 
     const updated: DiaryEntry = {
       ...entryResult.data,
-      viewCount: Math.max(0, entryResult.data.viewCount ?? 0) + 1,
+      ...recordDiaryEntryViewHistory(entryResult.data),
     };
     return await this.repo.save(updated);
   }

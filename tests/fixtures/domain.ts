@@ -47,6 +47,7 @@ export function buildDiaryEntry(overrides: Partial<DiaryEntry> = {}): DiaryEntry
     companion: 'cat',
     isFavorite: false,
     viewCount: 0,
+    viewHistory: [],
     memoryReactions: [],
     tags: [],
     createdAt: DEFAULT_DATETIME,

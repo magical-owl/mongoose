@@ -1,5 +1,6 @@
 import { fireEvent, waitFor } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DiaryEntryView } from '@/features/diary/components/DiaryEntryView';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { renderWithProviders } from '@tests/helpers';
@@ -21,6 +22,11 @@ const baseEntry = buildDiaryEntry({
 const profile = {
   displayName: 'Sarah Meadow',
   avatarUri: undefined,
+};
+
+const safeAreaMetrics = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 0, left: 0, right: 0, bottom: 0 },
 };
 
 describe('DiaryEntryView', () => {
@@ -211,6 +217,39 @@ describe('DiaryEntryView', () => {
     expect(getByTestId('entry-timeline-memory-reaction')).toBeTruthy();
     expect(getByTestId('entry-timeline-meta-row').children[0]).toBe(getByTestId('entry-timeline-memory-reaction').parent);
     expect(onToggleMemoryReaction).not.toHaveBeenCalled();
+  });
+
+  it('opens view history from the cover eye without opening the entry', async () => {
+    const onPress = jest.fn();
+    const entryWithViews: DiaryEntry = {
+      ...baseEntry,
+      viewCount: 3,
+      viewHistory: [
+        { viewedAt: '2026-09-08T10:15:00.000Z' },
+        { viewedAt: '2026-09-08T11:20:00.000Z' },
+      ],
+      coverPhoto: buildDiaryPhoto({
+        uri: 'file:///timeline-cover.jpg',
+        createdAt: '2026-08-29T01:50:00.000Z',
+      }),
+    };
+    const { getByTestId, getByText } = await renderWithProviders(
+      <SafeAreaProvider initialMetrics={safeAreaMetrics}>
+        <DiaryEntryView
+          entry={entryWithViews}
+          mode="timeline"
+          profile={profile}
+          onPress={onPress}
+        />
+      </SafeAreaProvider>,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    await fireEvent.press(getByTestId('entry-timeline-view-count'));
+
+    expect(onPress).not.toHaveBeenCalled();
+    expect(getByText('View history')).toBeTruthy();
+    expect(getByText('Sep 8, 2026')).toBeTruthy();
   });
 
   it('dismisses an open memory reaction tray when tapping the entry surface', async () => {

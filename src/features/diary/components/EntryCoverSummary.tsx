@@ -19,6 +19,7 @@ interface EntryCoverSummaryProps {
   readonly moods?: readonly ManualMood[];
   readonly tags?: readonly string[];
   readonly onShuffle?: () => void;
+  readonly onViewCountPress?: () => void;
   readonly shuffleAccessibilityLabel?: string;
   readonly style?: StyleProp<ViewStyle>;
   readonly testID?: string;
@@ -40,6 +41,7 @@ export function EntryCoverSummary({
   moods = [],
   tags = [],
   onShuffle,
+  onViewCountPress,
   shuffleAccessibilityLabel,
   style,
   testID,
@@ -140,6 +142,7 @@ export function EntryCoverSummary({
               height={26}
               minWidth={44}
               iconSize={15}
+              onPress={onViewCountPress}
               style={styles.viewCountBadge}
               testID={viewCountTestID}
             />

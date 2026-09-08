@@ -118,6 +118,11 @@ export const DiaryReflectionSchema = z.object({
 });
 export type DiaryReflection = z.infer<typeof DiaryReflectionSchema>;
 
+export const DiaryEntryViewEventSchema = z.object({
+  viewedAt: z.string().datetime(),
+});
+export type DiaryEntryViewEvent = z.infer<typeof DiaryEntryViewEventSchema>;
+
 export const DiaryEntrySchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1, 'Title is required').max(150),
@@ -130,6 +135,7 @@ export const DiaryEntrySchema = z.object({
   companion: CompanionTypeSchema.default('cat'),
   isFavorite: z.boolean().default(false),
   viewCount: z.number().int().nonnegative().optional(),
+  viewHistory: z.array(DiaryEntryViewEventSchema).default([]),
   memoryReactions: z.array(MemoryReactionSchema).default([]),
   tags: z.array(z.string()).default([]),
   createdAt: z.string().datetime(),

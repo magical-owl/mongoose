@@ -5,6 +5,7 @@ import { renderWithProviders } from '@tests/helpers';
 describe('EntryCoverSummary', () => {
   it('renders title, timestamp, view count, mood, and tag overlays', async () => {
     const onShuffle = jest.fn();
+    const onViewCountPress = jest.fn();
     const { getByLabelText, getByTestId, getByText } = await renderWithProviders(
       <EntryCoverSummary
         variant="memoryFeatured"
@@ -14,6 +15,7 @@ describe('EntryCoverSummary', () => {
         isFavorite
         viewCount={4}
         viewCountAccessibilityLabel="Viewed 4 times."
+        onViewCountPress={onViewCountPress}
         moods={['happy', 'sad']}
         tags={['family', 'weekend']}
         onShuffle={onShuffle}
@@ -34,5 +36,8 @@ describe('EntryCoverSummary', () => {
 
     await fireEvent.press(getByLabelText('Shuffle memory'));
     expect(onShuffle).toHaveBeenCalled();
+
+    await fireEvent.press(getByLabelText('Viewed 4 times.'));
+    expect(onViewCountPress).toHaveBeenCalled();
   });
 });

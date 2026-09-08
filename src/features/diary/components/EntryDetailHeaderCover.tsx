@@ -43,6 +43,7 @@ interface EntryDetailHeaderCoverProps {
   readonly onTakeCoverPhoto: () => void;
   readonly onChooseCoverPhoto: () => void;
   readonly onRemoveCoverPhoto: () => void;
+  readonly onViewCountPress?: () => void;
 }
 
 export function EntryDetailHeaderCover({
@@ -77,6 +78,7 @@ export function EntryDetailHeaderCover({
   onTakeCoverPhoto,
   onChooseCoverPhoto,
   onRemoveCoverPhoto,
+  onViewCountPress,
 }: EntryDetailHeaderCoverProps) {
   const theme = useTheme();
   const t = useTranslation();
@@ -208,6 +210,7 @@ export function EntryDetailHeaderCover({
                     height={26}
                     minWidth={44}
                     iconSize={15}
+                    onPress={onViewCountPress}
                     style={styles.coverViewCountBadge}
                     testID="entry-view-count"
                   />

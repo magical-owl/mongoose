@@ -9,8 +9,10 @@ import { APP_FOOTER_BOTTOM_OFFSET, AppFooterNavigation } from '@shared/component
 import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { AppPatternBackground } from '@shared/components/AppPatternBackground';
 import { EntryCoverSummary } from '@/features/diary/components/EntryCoverSummary';
+import { EntryViewHistoryModal } from '@/features/diary/components/EntryViewHistoryModal';
 import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
 import { getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
+import { getDiaryEntryViewCount } from '@/features/diary/domain/DiaryEntryViewHistory';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
 import { buildRediscoverMemorySet } from '@/features/diary/services/RediscoverMemoryService';
@@ -43,40 +45,51 @@ function MemoryCard({ entry, variant = 'compact', onPress, onShuffle }: MemoryCa
   const imageSource = displayPhoto ? getDiaryPhotoImageSource(displayPhoto.uri) : undefined;
   const isFeatured = variant === 'featured';
   const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
-  const viewCount = entry.viewCount ?? 0;
+  const viewCount = getDiaryEntryViewCount(entry);
   const viewCountA11y = t('entryViewCountA11y').replace('{count}', String(viewCount));
+  const [isViewHistoryVisible, setIsViewHistoryVisible] = useState(false);
 
   return (
-    <TouchableOpacity
-      onPress={() => onPress(entry)}
-      style={[
-        styles.memoryCard,
-        isFeatured && styles.featuredMemoryCard,
-        { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border },
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={`${t('rediscoverOpenEntryA11y')}: ${entry.title}`}
-    >
-      <EntryCoverSummary
-        variant={isFeatured ? 'memoryFeatured' : 'memory'}
-        title={entry.title}
-        timestamp={formatDisplayDate(entry.date, calendarDateFormat)}
-        imageSource={imageSource}
-        isFavorite={entry.isFavorite}
-        viewCount={viewCount}
-        viewCountAccessibilityLabel={viewCountA11y}
-        moods={getEntryManualMoods(entry)}
-        tags={entry.tags}
-        onShuffle={isFeatured ? onShuffle : undefined}
-        shuffleAccessibilityLabel={t('rediscoverShuffle')}
-        viewCountTestID="rediscover-entry-view-count"
-      />
-      <View style={styles.memoryCopy}>
-        <Text preset="bodySmall" color="textSecondary" numberOfLines={isFeatured ? 3 : 2}>
-          {stripHtml(entry.content)}
-        </Text>
-      </View>
-    </TouchableOpacity>
+    <>
+      <TouchableOpacity
+        onPress={() => onPress(entry)}
+        style={[
+          styles.memoryCard,
+          isFeatured && styles.featuredMemoryCard,
+          { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={`${t('rediscoverOpenEntryA11y')}: ${entry.title}`}
+      >
+        <EntryCoverSummary
+          variant={isFeatured ? 'memoryFeatured' : 'memory'}
+          title={entry.title}
+          timestamp={formatDisplayDate(entry.date, calendarDateFormat)}
+          imageSource={imageSource}
+          isFavorite={entry.isFavorite}
+          viewCount={viewCount}
+          viewCountAccessibilityLabel={viewCountA11y}
+          onViewCountPress={() => setIsViewHistoryVisible(true)}
+          moods={getEntryManualMoods(entry)}
+          tags={entry.tags}
+          onShuffle={isFeatured ? onShuffle : undefined}
+          shuffleAccessibilityLabel={t('rediscoverShuffle')}
+          viewCountTestID="rediscover-entry-view-count"
+        />
+        <View style={styles.memoryCopy}>
+          <Text preset="bodySmall" color="textSecondary" numberOfLines={isFeatured ? 3 : 2}>
+            {stripHtml(entry.content)}
+          </Text>
+        </View>
+      </TouchableOpacity>
+      {isViewHistoryVisible ? (
+        <EntryViewHistoryModal
+          visible
+          entry={entry}
+          onDismiss={() => setIsViewHistoryVisible(false)}
+        />
+      ) : null}
+    </>
   );
 }
 

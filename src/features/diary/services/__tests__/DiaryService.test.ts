@@ -194,6 +194,8 @@ describe('DiaryService', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.viewCount).toBe(3);
+      expect(result.data.viewHistory).toHaveLength(1);
+      expect(result.data.viewHistory[0]?.viewedAt).toBeDefined();
       expect(result.data.updatedAt).toBe(entry.updatedAt);
     }
   });
@@ -206,6 +208,20 @@ describe('DiaryService', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.viewCount).toBe(1);
+      expect(result.data.viewHistory).toHaveLength(1);
+    }
+  });
+
+  it('records dated view history without losing older scalar-only views', async () => {
+    const entry = { ...mockEntry, viewCount: 5, viewHistory: [] };
+    await service.saveEntry(entry);
+
+    const result = await service.recordEntryView(entry.id);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.viewCount).toBe(6);
+      expect(result.data.viewHistory).toHaveLength(1);
     }
   });
 

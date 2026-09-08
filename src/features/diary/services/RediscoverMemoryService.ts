@@ -1,5 +1,6 @@
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
+import { getDiaryEntryViewCount } from '@/features/diary/domain/DiaryEntryViewHistory';
 import { isDiaryEntryVisible } from './DiaryEntryVisibility';
 
 const DAY_MS = 86_400_000;
@@ -58,7 +59,7 @@ function hasExpressiveMood(entry: DiaryEntry): boolean {
 
 function sortEntriesByViewCountDesc(entries: readonly DiaryEntry[]): DiaryEntry[] {
   return [...entries].sort((a, b) => {
-    const viewDelta = (b.viewCount ?? 0) - (a.viewCount ?? 0);
+    const viewDelta = getDiaryEntryViewCount(b) - getDiaryEntryViewCount(a);
     if (viewDelta !== 0) return viewDelta;
     return b.date.localeCompare(a.date);
   });
@@ -114,7 +115,7 @@ export function buildRediscoverMemorySet(
       .filter(hasExpressiveMood)
       .slice(0, SECTION_LIMIT),
     mostViewedEntries: sortEntriesByViewCountDesc(
-      eligibleEntries.filter((entry) => (entry.viewCount ?? 0) > 0),
+      eligibleEntries.filter((entry) => getDiaryEntryViewCount(entry) > 0),
     ).slice(0, MOST_VIEWED_LIMIT),
   };
 }

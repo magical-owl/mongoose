@@ -80,12 +80,16 @@ function renderHeaderCover(
 
 describe('EntryDetailHeaderCover', () => {
   it('renders the view cover overlay with title, timestamp, and view count', async () => {
-    const { getByText, getByTestId } = await renderHeaderCover();
+    const onViewCountPress = jest.fn();
+    const { getByText, getByTestId, getByLabelText } = await renderHeaderCover({ onViewCountPress });
 
     expect(getByTestId('mock-diary-cover-photo-picker')).toBeTruthy();
     expect(getByText('A quiet morning')).toBeTruthy();
     expect(getByText('Yesterday at 08:33')).toBeTruthy();
     expect(getByTestId('entry-view-count')).toBeTruthy();
+
+    await fireEvent.press(getByLabelText('Viewed 7 times.'));
+    expect(onViewCountPress).toHaveBeenCalled();
   });
 
   it('renders edit header controls and cover picker', async () => {

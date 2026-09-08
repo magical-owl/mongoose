@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { fireEvent } from '@testing-library/react-native';
 import { EntryViewCountBadge } from '@/features/diary/components/EntryViewCountBadge';
 import { renderWithProviders } from '@tests/helpers';
 
@@ -28,5 +29,16 @@ describe('EntryViewCountBadge', () => {
     expect(style.height).toBe(40);
     expect(style.minWidth).toBe(64);
     expect(style.borderRadius).toBe(20);
+  });
+
+  it('supports optional press handling', async () => {
+    const onPress = jest.fn();
+    const { getByLabelText } = await renderWithProviders(
+      <EntryViewCountBadge count={3} accessibilityLabel="Viewed 3 times." onPress={onPress} />,
+    );
+
+    await fireEvent.press(getByLabelText('Viewed 3 times.'));
+
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 });
