@@ -153,8 +153,8 @@ describe('DiaryEntryView', () => {
     const timelineStyle = StyleSheet.flatten(getByTestId('entry-timeline').props.style);
     const avatarStyle = StyleSheet.flatten(getByTestId('entry-timeline-avatar').props.style);
     const reflectionAvatarStyle = StyleSheet.flatten(getByTestId('entry-reflection-avatar').props.style);
-    const moodStyle = StyleSheet.flatten(getByTestId('entry-timeline-mood').props.style);
-    const metaRowStyle = StyleSheet.flatten(getByTestId('entry-timeline-meta-row').props.style);
+    const moodStyle = StyleSheet.flatten(getByTestId('entry-timeline-cover-mood').props.style);
+    const metaRowStyle = StyleSheet.flatten(getByTestId('entry-timeline-cover-meta-row').props.style);
     const reflectionsStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflections').props.style);
     const reflectionSectionStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflection-section').props.style);
     const reflectionInputStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflection-input').props.style);
@@ -174,11 +174,11 @@ describe('DiaryEntryView', () => {
     expect(reflectionAvatarStyle.width).toBe(24);
     expect(moodStyle.flexDirection).toBe('row');
     expect(moodStyle.gap).toBe(4);
-    expect(getByTestId('entry-timeline-mood-calm')).toBeTruthy();
-    expect(getByTestId('entry-timeline-tags-daily')).toBeTruthy();
+    expect(getByTestId('entry-timeline-cover-mood-calm')).toBeTruthy();
+    expect(getByTestId('entry-timeline-cover-tags-daily')).toBeTruthy();
     expect(getByText('Calm +2')).toBeTruthy();
     expect(getByText('#daily +2')).toBeTruthy();
-    expect(metaRowStyle.marginBottom).toBe(8);
+    expect(metaRowStyle.flex).toBe(1);
     expect(reflectionsStyle.borderLeftWidth).toBe(1);
     expect(reflectionsStyle.marginTop).toBe(0);
     expect(reflectionsStyle.borderLeftColor).toBe(`${accentColors.blue.dark}88`);
@@ -385,15 +385,15 @@ describe('DiaryEntryView', () => {
     const feedCardStyle = StyleSheet.flatten(getByTestId('entry-feed-card').props.style);
 
     const coverTimestampStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-timestamp').props.style);
-    const footerMetaStyle = StyleSheet.flatten(getByTestId('entry-feed-footer-meta').props.style);
-    const moodStyle = StyleSheet.flatten(getByTestId('entry-feed-mood-calm').props.style);
+    const coverMetaStyle = StyleSheet.flatten(getByTestId('entry-cover-summary-meta-row').props.style);
+    const moodStyle = StyleSheet.flatten(getByTestId('entry-feed-cover-mood-calm').props.style);
 
     expect(getByTestId('entry-feed-paper-canvas-image')).toBeTruthy();
     expect(getByTestId('diary-entry-body-preview')).toBeTruthy();
     expect(queryByTestId('diary-entry-body-webview')).toBeNull();
     expect(coverTimestampStyle.color).toBeTruthy();
-    expect(getByTestId('entry-feed-footer-meta')).toBeTruthy();
-    expect(getByTestId('entry-feed-tags-daily')).toBeTruthy();
+    expect(getByTestId('entry-cover-summary-meta-row')).toBeTruthy();
+    expect(getByTestId('entry-feed-cover-tags-daily')).toBeTruthy();
     expect(getByTestId('entry-inline-reflection-photo').props.source).toEqual({
       uri: 'file:///document/diary-photos/feed-reflection.jpg',
     });
@@ -403,14 +403,14 @@ describe('DiaryEntryView', () => {
         uri: 'file:///document/diary-photos/feed-reflection.jpg',
       });
     });
-    expect(moodStyle.borderRadius).toBe(13);
+    expect(moodStyle.borderRadius).toBe(11);
     expect(moodStyle.borderWidth).toBe(1);
     expect(getByText('Calm +2')).toBeTruthy();
     expect(getByText('#daily +2')).toBeTruthy();
-    expect(queryByTestId('entry-feed-tags-travel')).toBeNull();
-    expect(queryByTestId('entry-feed-cover-mood-calm')).toBeNull();
-    expect(queryByTestId('entry-feed-cover-tags-daily')).toBeNull();
-    expect(footerMetaStyle.borderTopWidth).toBe(StyleSheet.hairlineWidth);
+    expect(queryByTestId('entry-feed-cover-tags-travel')).toBeNull();
+    expect(queryByTestId('entry-feed-mood-calm')).toBeNull();
+    expect(queryByTestId('entry-feed-tags-daily')).toBeNull();
+    expect(coverMetaStyle.flex).toBe(1);
     expect(contentPanelStyle.borderRadius).toBe(0);
     expect(contentPanelStyle.borderWidth).toBe(0);
     expect(contentPanelStyle.backgroundColor).toBe('transparent');

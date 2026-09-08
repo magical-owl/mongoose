@@ -2,10 +2,11 @@ import { Animated, StyleSheet, View } from 'react-native';
 import { Text } from '@shared/components/Text';
 import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
-import type { DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
+import type { DiaryPhoto, ManualMood } from '@/features/diary/domain/DiaryEntry';
 import { DiaryCoverPhotoPicker } from '@/features/diary/components/DiaryCoverPhotoPicker';
 import { DiaryEntryEditorHeader } from '@/features/diary/components/DiaryEntryEditorChrome';
 import { EntryViewCountBadge } from '@/features/diary/components/EntryViewCountBadge';
+import { EntryMetaRow } from '@/features/diary/components/EntryMetaRow';
 import { ENTRY_DETAIL_VIEW_COVER_EXPANDED_HEIGHT } from '@/features/diary/components/EntryDetailLayout';
 import { useTranslation } from '@/localization/i18n';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -27,6 +28,8 @@ interface EntryDetailHeaderCoverProps {
   readonly entryTitle: string;
   readonly viewDateTime: string;
   readonly viewCount: number;
+  readonly viewMoods?: readonly ManualMood[];
+  readonly viewTags?: readonly string[];
   readonly canBringStickersForward: boolean;
   readonly isFavorite: boolean;
   readonly isSaving: boolean;
@@ -59,6 +62,8 @@ export function EntryDetailHeaderCover({
   entryTitle,
   viewDateTime,
   viewCount,
+  viewMoods = [],
+  viewTags = [],
   canBringStickersForward,
   isFavorite,
   isSaving,
@@ -187,15 +192,26 @@ export function EntryDetailHeaderCover({
                     {viewDateTime}
                   </Text>
                 </Animated.View>
-                <EntryViewCountBadge
-                  count={viewCount}
-                  accessibilityLabel={t('entryViewCountA11y').replace('{count}', String(viewCount))}
-                  height={26}
-                  minWidth={44}
-                  iconSize={15}
-                  style={styles.coverViewCountBadge}
-                  testID="entry-view-count"
-                />
+                <Animated.View style={[styles.coverMetaOverlay, { opacity: viewCoverOverlayOpacity }]}>
+                  <EntryMetaRow
+                    variant="cover"
+                    moods={viewMoods}
+                    tags={viewTags}
+                    style={styles.coverMetaBadges}
+                    testID="entry-view-cover-meta-row"
+                    moodTestID="entry-view-cover-mood"
+                    tagTestID="entry-view-cover-tags"
+                  />
+                  <EntryViewCountBadge
+                    count={viewCount}
+                    accessibilityLabel={t('entryViewCountA11y').replace('{count}', String(viewCount))}
+                    height={26}
+                    minWidth={44}
+                    iconSize={15}
+                    style={styles.coverViewCountBadge}
+                    testID="entry-view-count"
+                  />
+                </Animated.View>
               </DiaryCoverPhotoPicker>
             )}
           </Animated.View>
@@ -249,10 +265,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 10,
     right: 10,
-    bottom: 10,
+    bottom: 44,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingRight: 76,
     paddingVertical: 9,
   },
   coverDateTime: {
@@ -266,8 +281,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   coverViewCountBadge: {
+    flexShrink: 0,
+  },
+  coverMetaOverlay: {
     position: 'absolute',
+    left: 12,
     right: 12,
     bottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  coverMetaBadges: {
+    flex: 1,
+    minWidth: 0,
   },
 });

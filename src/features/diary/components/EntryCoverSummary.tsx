@@ -3,9 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@shared/components/Text';
 import { useTheme } from '@providers/ThemeProvider';
 import type { ManualMood } from '@/features/diary/domain/DiaryEntry';
-import { MoodBadgeList } from './MoodBadgeList';
-import { TagBadgeList } from './TagBadgeList';
 import { EntryViewCountBadge } from './EntryViewCountBadge';
+import { EntryMetaRow } from './EntryMetaRow';
 
 type EntryCoverSummaryVariant = 'feed' | 'memory' | 'memoryFeatured';
 
@@ -26,6 +25,8 @@ interface EntryCoverSummaryProps {
   readonly imageTestID?: string;
   readonly viewCountTestID?: string;
   readonly timestampTestID?: string;
+  readonly moodTestID?: string;
+  readonly tagTestID?: string;
 }
 
 export function EntryCoverSummary({
@@ -45,12 +46,15 @@ export function EntryCoverSummary({
   imageTestID,
   viewCountTestID,
   timestampTestID,
+  moodTestID,
+  tagTestID,
 }: EntryCoverSummaryProps): React.JSX.Element {
   const theme = useTheme();
   const isFeed = variant === 'feed';
   const isFeatured = variant === 'memoryFeatured';
   const showBadges = moods.length > 0 || tags.length > 0;
   const showViewCount = typeof viewCount === 'number' && Boolean(viewCountAccessibilityLabel);
+  const showBottomRow = showBadges || showViewCount;
 
   return (
     <View
@@ -88,17 +92,6 @@ export function EntryCoverSummary({
           <Ionicons name="shuffle" size={21} color={theme.colors.stickerControlText} />
         </TouchableOpacity>
       ) : null}
-      {showViewCount ? (
-        <EntryViewCountBadge
-          count={viewCount}
-          accessibilityLabel={viewCountAccessibilityLabel!}
-          height={26}
-          minWidth={44}
-          iconSize={15}
-          style={styles.viewCountBadge}
-          testID={viewCountTestID}
-        />
-      ) : null}
       <View style={[styles.copy, isFeed && styles.feedCopy]}>
         <Text
           preset={isFeatured ? 'h2' : isFeed ? undefined : 'label'}
@@ -116,37 +109,43 @@ export function EntryCoverSummary({
           {title}
         </Text>
         {timestamp ? (
-          <View style={styles.metaRow}>
-            <Text
-              preset="caption"
-              numberOfLines={1}
-              style={[styles.timestamp, { color: theme.colors.stickerControlText }]}
-              testID={timestampTestID}
-            >
-              {timestamp}
-            </Text>
-            {isFavorite ? <Ionicons name="star" size={13} color={theme.colors.warning} /> : null}
-          </View>
-        ) : null}
-        {showBadges ? (
-          <View style={styles.badgeRow}>
-            <MoodBadgeList
-              moods={moods}
-              maxVisible={1}
-              compact
-              overflowPopup
-              style={styles.moodBadges}
-            />
-            <TagBadgeList
-              tags={tags}
-              maxVisible={1}
-              compact
-              overflowPopup
-              style={styles.tagBadges}
-            />
-          </View>
+          <Text
+            preset="caption"
+            numberOfLines={1}
+            style={[styles.timestamp, { color: theme.colors.stickerControlText }]}
+            testID={timestampTestID}
+          >
+            {timestamp}
+          </Text>
         ) : null}
       </View>
+      {isFavorite ? (
+        <Ionicons name="star" size={15} color={theme.colors.warning} style={styles.favoriteIcon} />
+      ) : null}
+      {showBottomRow ? (
+        <View style={[styles.bottomMetaRow, isFeed && styles.feedBottomMetaRow]}>
+          <EntryMetaRow
+            variant="cover"
+            moods={moods}
+            tags={tags}
+            style={styles.badgeRow}
+            testID={moodTestID || tagTestID ? `${testID ?? 'entry-cover-summary'}-meta-row` : undefined}
+            moodTestID={moodTestID}
+            tagTestID={tagTestID}
+          />
+          {showViewCount ? (
+            <EntryViewCountBadge
+              count={viewCount}
+              accessibilityLabel={viewCountAccessibilityLabel!}
+              height={26}
+              minWidth={44}
+              iconSize={15}
+              style={styles.viewCountBadge}
+              testID={viewCountTestID}
+            />
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -188,30 +187,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.42)',
   },
   viewCountBadge: {
-    position: 'absolute',
-    right: 10,
-    bottom: 10,
+    flexShrink: 0,
   },
   copy: {
     position: 'absolute',
     left: 12,
-    right: 64,
-    bottom: 10,
+    right: 34,
+    bottom: 44,
     gap: 5,
   },
   feedCopy: {
     left: 20,
-    right: 78,
-    bottom: 12,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
+    right: 20,
+    bottom: 50,
   },
   timestamp: {
-    flex: 1,
     fontWeight: '800',
     textShadowColor: 'rgba(0, 0, 0, 0.72)',
     textShadowOffset: { width: 0, height: 1 },
@@ -225,16 +215,26 @@ const styles = StyleSheet.create({
     textShadowRadius: 5,
   },
   badgeRow: {
+    flex: 1,
+    minWidth: 0,
+  },
+  bottomMetaRow: {
+    position: 'absolute',
+    left: 10,
+    right: 10,
+    bottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 5,
+    gap: 8,
   },
-  moodBadges: {
-    maxWidth: 140,
+  feedBottomMetaRow: {
+    left: 20,
+    right: 20,
+    bottom: 12,
   },
-  tagBadges: {
-    flex: 1,
-    maxWidth: '100%',
+  favoriteIcon: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
   },
 });

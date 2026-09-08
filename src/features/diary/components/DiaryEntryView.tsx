@@ -165,6 +165,20 @@ export function DiaryEntryView({
       testID={testID}
     />
   );
+  const renderCoverMetaOverlay = (prefix: 'card' | 'timeline') => (
+    <View style={styles.coverMetaOverlay}>
+      <EntryMetaRow
+        variant="cover"
+        moods={entryMoods}
+        tags={entry.tags}
+        style={styles.coverMetaBadges}
+        testID={`entry-${prefix}-cover-meta-row`}
+        moodTestID={`entry-${prefix}-cover-mood`}
+        tagTestID={`entry-${prefix}-cover-tags`}
+      />
+      {renderViewCountBadge(`entry-${prefix}-view-count`, styles.coverViewCountBadge)}
+    </View>
+  );
 
   const renderInlineReflectionSection = (variant: 'feed' | 'timeline') => (
     <EntryReflectionSection
@@ -179,11 +193,12 @@ export function DiaryEntryView({
 
   if (mode === 'feed') {
     const feedTimestamp = feedEntryDateTime;
+    const feedHasCoverPhoto = Boolean(entry.coverPhoto);
     const feedFooterMeta = (
       <EntryMetaRow
         variant="feed"
-        moods={entryMoods}
-        tags={entry.tags}
+        moods={feedHasCoverPhoto ? [] : entryMoods}
+        tags={feedHasCoverPhoto ? [] : entry.tags}
         {...memoryReactionRowProps}
         reflectionCount={showReflectionSummaryAction ? entry.reflections.length : undefined}
         onReflectionPress={showReflectionSummaryAction ? () => onReflectionSummaryPress?.(entry.id) : undefined}
@@ -218,8 +233,12 @@ export function DiaryEntryView({
               imageSource={getDiaryPhotoImageSource(entry.coverPhoto.uri)}
               viewCount={viewCount}
               viewCountAccessibilityLabel={viewCountA11y}
+              moods={entryMoods}
+              tags={entry.tags}
               viewCountTestID="entry-feed-view-count"
               timestampTestID="entry-feed-cover-timestamp"
+              moodTestID="entry-feed-cover-mood"
+              tagTestID="entry-feed-cover-tags"
             />
           ) : null}
           <DiaryPaperCanvas
@@ -313,7 +332,7 @@ export function DiaryEntryView({
             </View>
             {entry.coverPhoto ? (
               <CoverPhotoPreview entry={entry} style={styles.timelineHeroCoverPhoto} testID="entry-timeline-cover-photo">
-                {renderViewCountBadge('entry-timeline-view-count', styles.coverViewCountBadge)}
+                {renderCoverMetaOverlay('timeline')}
               </CoverPhotoPreview>
             ) : null}
             <View style={styles.timelinePreviewRow}>
@@ -321,8 +340,8 @@ export function DiaryEntryView({
                 <Text style={[styles.timelineContent, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
                 <EntryMetaRow
                   variant="timeline"
-                  moods={entryMoods}
-                  tags={entry.tags}
+                  moods={entry.coverPhoto ? [] : entryMoods}
+                  tags={entry.coverPhoto ? [] : entry.tags}
                   {...memoryReactionRowProps}
                   testID="entry-timeline-meta-row"
                   memoryReactionTestID="entry-timeline-memory-reaction"
@@ -339,11 +358,12 @@ export function DiaryEntryView({
   }
 
   const cardDate = formatCardDay(entry.date);
+  const cardHasCoverPhoto = Boolean(entry.coverPhoto);
   const cardFooterContent = (
-    <EntryMetaRow
-      variant="card"
-      moods={entryMoods}
-      tags={entry.tags}
+      <EntryMetaRow
+        variant="card"
+        moods={cardHasCoverPhoto ? [] : entryMoods}
+        tags={cardHasCoverPhoto ? [] : entry.tags}
       {...memoryReactionRowProps}
       reflectionCount={showReflectionSummaryAction ? entry.reflections.length : undefined}
       onReflectionPress={showReflectionSummaryAction ? () => onReflectionSummaryPress?.(entry.id) : undefined}
@@ -366,7 +386,7 @@ export function DiaryEntryView({
     >
       {entry.coverPhoto ? (
         <CoverPhotoPreview entry={entry} style={styles.cardHeroCoverPhoto} testID="entry-card-cover-photo">
-          {renderViewCountBadge('entry-card-view-count', styles.coverViewCountBadge)}
+          {renderCoverMetaOverlay('card')}
         </CoverPhotoPreview>
       ) : null}
       <View style={styles.cardInner}>
@@ -416,7 +436,20 @@ const styles = StyleSheet.create({
   coverPhotoFrame: { position: 'relative', overflow: 'hidden' },
   coverPhoto: { backgroundColor: '#000' },
   coverPhotoScrim: { position: 'absolute', top: 0, left: 0, opacity: 0.28 },
-  coverViewCountBadge: { position: 'absolute', right: 10, bottom: 10 },
+  coverViewCountBadge: { flexShrink: 0 },
+  coverMetaOverlay: {
+    position: 'absolute',
+    left: 10,
+    right: 10,
+    bottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  coverMetaBadges: {
+    flex: 1,
+    minWidth: 0,
+  },
   cardPreviewRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   cardTextPreview: { flex: 1, minWidth: 0 },
   cardCoverPhoto: { width: 58, height: 58, borderRadius: 6 },

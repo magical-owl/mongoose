@@ -7,7 +7,7 @@ import { TagBadgeList } from './TagBadgeList';
 import { MemoryReactionButton } from './MemoryReactionButton';
 import { ReflectionSummaryButton } from './ReflectionSummaryButton';
 
-type EntryMetaRowVariant = 'card' | 'feed' | 'timeline' | 'viewFooter';
+type EntryMetaRowVariant = 'card' | 'cover' | 'feed' | 'timeline' | 'viewFooter';
 
 interface EntryMetaRowProps {
   readonly variant: EntryMetaRowVariant;
@@ -56,7 +56,7 @@ export function EntryMetaRow({
 
   if (!showMemoryReaction && !hasMood && !hasTags && !showReflection) return null;
 
-  const isCompact = variant === 'card' || variant === 'timeline';
+  const isCompact = variant === 'card' || variant === 'cover' || variant === 'timeline';
 
   return (
     <View
@@ -67,6 +67,7 @@ export function EntryMetaRow({
           { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
         ],
         variant === 'timeline' && styles.timelineRow,
+        variant === 'cover' && styles.coverRow,
         variant === 'card' && styles.cardRow,
         variant === 'viewFooter' && styles.viewFooterRow,
         style,
@@ -96,6 +97,7 @@ export function EntryMetaRow({
           overflowPopup
           style={[
             variant === 'card' && styles.cardMoodBadges,
+            variant === 'cover' && styles.coverMoodBadges,
             variant === 'timeline' && styles.timelineMoodBadges,
             variant === 'feed' && styles.feedMoodBadges,
             variant === 'viewFooter' && styles.viewFooterMoodBadges,
@@ -111,6 +113,7 @@ export function EntryMetaRow({
           overflowPopup
           style={[
             variant === 'card' && styles.cardTagBadges,
+            variant === 'cover' && styles.coverTagBadges,
             variant === 'timeline' && styles.timelineTagBadges,
             variant === 'feed' && styles.feedTagBadges,
             variant === 'viewFooter' && styles.viewFooterTagBadges,
@@ -143,6 +146,11 @@ const styles = StyleSheet.create({
   cardRow: {
     marginTop: 8,
   },
+  coverRow: {
+    flex: 1,
+    minWidth: 0,
+    gap: 6,
+  },
   feedRow: {
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 20,
@@ -163,6 +171,13 @@ const styles = StyleSheet.create({
     maxWidth: 140,
   },
   cardTagBadges: {
+    flex: 1,
+    maxWidth: '100%',
+  },
+  coverMoodBadges: {
+    maxWidth: 128,
+  },
+  coverTagBadges: {
     flex: 1,
     maxWidth: '100%',
   },

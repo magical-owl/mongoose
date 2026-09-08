@@ -343,8 +343,8 @@ export default function EntryDetailScreen() {
   const renderViewFooterMoodAndTags = () => (
     <EntryMetaRow
       variant="viewFooter"
-      moods={viewMoods}
-      tags={entry.tags}
+      moods={hasViewCoverPhoto ? [] : viewMoods}
+      tags={hasViewCoverPhoto ? [] : entry.tags}
       memoryReactions={entry.memoryReactions}
       isMemoryReactionPickerVisible={showMemoryReactionPicker}
       onOpenMemoryReactionPicker={() => setShowMemoryReactionPicker(true)}
@@ -424,6 +424,8 @@ export default function EntryDetailScreen() {
         entryTitle={entry.title}
         viewDateTime={viewDateTime}
         viewCount={entry.viewCount ?? 0}
+        viewMoods={viewMoods}
+        viewTags={entry.tags}
         canBringStickersForward={editStickers.some((sticker) => sticker.behindText)}
         isFavorite={editFavorite}
         isSaving={isSaving}
