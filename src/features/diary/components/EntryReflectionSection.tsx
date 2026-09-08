@@ -1,4 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { Text } from '@shared/components/Text';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useTheme } from '@providers/ThemeProvider';
@@ -34,6 +35,19 @@ export function EntryReflectionSection({
   const t = useTranslation();
   const isFeed = variant === 'feed';
   const hasContent = reflections.length > 0 || Boolean(onAddReflection);
+  const revealProgress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!hasContent) return;
+
+    revealProgress.setValue(0);
+    Animated.timing(revealProgress, {
+      toValue: 1,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [hasContent, revealProgress]);
 
   if (!hasContent) return null;
 
@@ -48,8 +62,20 @@ export function EntryReflectionSection({
   };
 
   return (
-    <View
+    <Animated.View
       style={[
+        styles.animatedSection,
+        {
+          opacity: revealProgress,
+          transform: [
+            {
+              translateY: revealProgress.interpolate({
+                inputRange: [0, 1],
+                outputRange: [10, 0],
+              }),
+            },
+          ],
+        },
         !isFeed && styles.timelineReflectionSection,
         isFeed && styles.feedReflectionPanel,
         isFeed && { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
@@ -120,11 +146,14 @@ export function EntryReflectionSection({
           backgroundColor={isFeed ? theme.colors.surface : theme.colors.card}
         />
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  animatedSection: {
+    opacity: 1,
+  },
   feedReflectionPanel: {
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 0,

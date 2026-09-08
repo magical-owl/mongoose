@@ -47,6 +47,8 @@ describe('EntryReflectionSection', () => {
     const reflectionsStyle = StyleSheet.flatten(getByTestId('entry-timeline-reflections').props.style);
 
     expect(getByText('A small visual note.')).toBeTruthy();
+    expect(sectionStyle.opacity).toBeDefined();
+    expect(sectionStyle.transform).toBeTruthy();
     expect(sectionStyle.marginRight).toBe(0);
     expect(reflectionsStyle.borderLeftWidth).toBe(1);
     expect(getByTestId('entry-inline-reflection-photo').props.source).toEqual({

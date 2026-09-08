@@ -341,6 +341,8 @@ describe('DiaryEntryView', () => {
     expect(moodChipStyle.borderWidth).toBe(1);
     expect(footerMetaStyle.flexDirection).toBe('row');
     expect(footerMetaStyle.borderTopWidth).toBe(StyleSheet.hairlineWidth);
+    expect(footerMetaStyle.paddingLeft).toBe(12);
+    expect(footerMetaStyle.paddingRight).toBe(20);
     expect(feedCardStyle.paddingVertical).toBe(0);
     expect(feedCardStyle.marginBottom).toBe(0);
     expect(feedCardStyle.marginHorizontal).toBe(-20);

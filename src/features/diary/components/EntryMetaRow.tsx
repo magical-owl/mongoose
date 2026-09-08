@@ -153,7 +153,8 @@ const styles = StyleSheet.create({
   },
   feedRow: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 20,
+    paddingLeft: 12,
+    paddingRight: 20,
     paddingVertical: 10,
   },
   timelineRow: {
