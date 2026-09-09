@@ -2,7 +2,10 @@ import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-nat
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@shared/components/Text';
 import { useTheme } from '@providers/ThemeProvider';
-import { getJournalCoverImageSource } from '@/features/journal/domain/JournalBackgrounds';
+import {
+  DEFAULT_JOURNAL_BACKGROUND_URI,
+  getJournalCoverImageSource,
+} from '@/features/journal/domain/JournalBackgrounds';
 import type { Journal } from '@/features/journal/domain/Journal';
 import { type TranslationKey, useTranslation } from '@/localization/i18n';
 import { getTranslucentSurfaceColor } from '@/theme/surfaces';
@@ -58,7 +61,7 @@ export function JournalSuggestionsFooter({
         accessibilityLabel={t('journalSuggestionsA11y')}
       >
         {suggestedJournals.map((journal) => {
-          const coverSource = getJournalCoverImageSource(journal.coverImageUri);
+          const coverSource = getJournalCoverImageSource(journal.coverImageUri ?? DEFAULT_JOURNAL_BACKGROUND_URI);
           const count = entryCountsByJournalId.get(journal.id) ?? 0;
 
           return (
@@ -70,9 +73,15 @@ export function JournalSuggestionsFooter({
               accessibilityRole="button"
               accessibilityLabel={`${t('journalSuggestionOpenA11y')} ${journal.title}`}
             >
-              <View style={[styles.cover, { backgroundColor: journal.color || theme.colors.tint }]}>
+              <View style={[styles.cover, { backgroundColor: theme.colors.surface }]}>
                 {coverSource ? (
-                  <Image source={coverSource} style={styles.coverImage} resizeMode="cover" />
+                  <Image
+                    source={coverSource}
+                    style={styles.coverImage}
+                    resizeMode="cover"
+                    accessibilityIgnoresInvertColors
+                    testID={`journal-suggestion-cover-${journal.id}`}
+                  />
                 ) : (
                   <Ionicons name="journal-outline" size={28} color={theme.colors.stickerControlText} />
                 )}

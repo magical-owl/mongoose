@@ -29,7 +29,7 @@ describe('JournalBackgrounds', () => {
   });
 
   it('does not treat removed built-in backgrounds as remote image URLs', () => {
-    expect(getJournalCoverImageSource(`${BUILTIN_JOURNAL_COVER_PREFIX}art-studio`)).toBeUndefined();
-    expect(getJournalCoverImageSource(`${BUILTIN_JOURNAL_COVER_PREFIX}botanical-desk`)).toBeUndefined();
+    expect(getJournalCoverImageSource(`${BUILTIN_JOURNAL_COVER_PREFIX}art-studio`)).toBe(BUILTIN_JOURNAL_BACKGROUNDS[0]?.source);
+    expect(getJournalCoverImageSource(`${BUILTIN_JOURNAL_COVER_PREFIX}botanical-desk`)).toBe(BUILTIN_JOURNAL_BACKGROUNDS[0]?.source);
   });
 });

@@ -66,4 +66,21 @@ describe('JournalSuggestionsFooter', () => {
 
     expect(queryByTestId('journal-suggestions-footer')).toBeNull();
   });
+
+  it('uses the default journal cover for suggestions without a cover image', async () => {
+    const journalWithoutCover: Journal = {
+      ...journals[1]!,
+      coverImageUri: undefined,
+    };
+    const { getByTestId } = await renderWithProviders(
+      <JournalSuggestionsFooter
+        journals={[journals[0]!, journalWithoutCover]}
+        currentJournalId="11111111-1111-4111-8111-111111111111"
+        entryCountsByJournalId={new Map()}
+        onPressJournal={jest.fn()}
+      />,
+    );
+
+    expect(getByTestId('journal-suggestion-cover-22222222-2222-4222-8222-222222222222')).toBeTruthy();
+  });
 });

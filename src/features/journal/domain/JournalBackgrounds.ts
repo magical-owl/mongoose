@@ -97,6 +97,8 @@ export function getJournalCoverImageSource(
 ): ImageSourcePropType | undefined {
   const builtin = findBuiltinJournalBackground(uri);
   if (builtin) return builtin.source;
-  if (uri?.startsWith(BUILTIN_JOURNAL_COVER_PREFIX)) return undefined;
+  if (uri?.startsWith(BUILTIN_JOURNAL_COVER_PREFIX)) {
+    return BUILTIN_JOURNAL_BACKGROUNDS[0]?.source;
+  }
   return uri ? { uri } : undefined;
 }
