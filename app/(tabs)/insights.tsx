@@ -15,10 +15,12 @@ import { getEntryManualMoods, type ManualMood } from "@/features/diary/domain/Di
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
 import { findStickerItem } from "@/features/diary/domain/Sticker";
 import { normalizeDiaryTags } from "@/features/diary/services/DiaryTagService";
+import { getMemoryReactionStats } from "@/features/diary/domain/MemoryReaction";
+import { MemoryReactionIcon } from "@/features/diary/components/MemoryReactionIcon";
 import { useProfileForm } from "@/features/profile/hooks/useProfileForm";
 import { resolveImportedProfilePhotoUri } from "@/features/profile/services/ProfilePhotoService";
 import { useAppStore } from "@/stores/useAppStore";
-import { insightsMetricUnitLabel, manualMoodLabel, type InsightsMetricUnit, type TranslationKey, useTranslation } from "@/localization/i18n";
+import { insightsMetricUnitLabel, manualMoodLabel, memoryReactionLabel, type InsightsMetricUnit, type TranslationKey, useTranslation } from "@/localization/i18n";
 import { getTranslucentSurfaceColor } from "@/theme/surfaces";
 
 type InsightsRange = "year" | "month" | "week";
@@ -238,6 +240,7 @@ export default function InsightsScreen() {
 
     return {
       moodCounts: [...moodCounts.entries()].sort((a, b) => b[1] - a[1]),
+      memoryReactionStats: getMemoryReactionStats(scopedEntries),
       mostUsedTags: [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8),
       mostUsedStickers,
       journalTimeBuckets,
@@ -257,6 +260,7 @@ export default function InsightsScreen() {
   }, [calendarFirstDay, entries, periodDate, range]);
 
   const moodTotal = stats.moodCounts.reduce((sum, [, count]) => sum + count, 0);
+  const memoryReactionTotal = stats.memoryReactionStats.reduce((sum, stat) => sum + stat.total, 0);
   const maxActivityCount = Math.max(...stats.activityBuckets.map((day) => day.count), 1);
   const moodColor = (mood: string) => getManualMoodColor(mood as ManualMood, theme.colors);
   const numberStats: readonly { readonly label: TranslationKey; readonly unit: InsightsMetricUnit; readonly value: number; readonly tone: string }[] = [
@@ -400,6 +404,34 @@ export default function InsightsScreen() {
             </>
           ) : (
             <Text preset="bodySmall" color="textSecondary">{t("insightsMoodEmpty")}</Text>
+          )}
+        </View>
+
+        <Text preset="caption" color="textSecondary" style={styles.sectionLabel}>{t("insightsReactionSection")}</Text>
+        <View style={[styles.card, { backgroundColor: translucentSurfaceColor, borderColor: theme.colors.border }]}>
+          {memoryReactionTotal > 0 ? (
+            <View style={styles.reactionStatsList}>
+              {stats.memoryReactionStats.map((stat) => (
+                <View key={stat.reaction} style={styles.reactionStatRow}>
+                  <View style={[styles.reactionStatIcon, { backgroundColor: theme.colors.tint + "20", borderColor: theme.colors.tint + "44" }]}>
+                    <MemoryReactionIcon reaction={stat.reaction} size={34} />
+                  </View>
+                  <View style={styles.reactionStatCopy}>
+                    <Text preset="bodySmall" color="text" style={styles.reactionStatTitle}>
+                      {memoryReactionLabel(stat.reaction, t)}
+                    </Text>
+                    <Text preset="caption" color="textSecondary">
+                      {stat.entryCount} {insightsMetricUnitLabel("entry", stat.entryCount, t)} · {stat.reflectionCount} {insightsMetricUnitLabel("reflection", stat.reflectionCount, t)}
+                    </Text>
+                  </View>
+                  <View style={[styles.reactionStatCount, { backgroundColor: theme.colors.tint + "20" }]}>
+                    <Text preset="caption" color="text" style={styles.reactionStatCountText}>{stat.total}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text preset="bodySmall" color="textSecondary">{t("insightsReactionEmpty")}</Text>
           )}
         </View>
 
@@ -610,6 +642,13 @@ const styles = StyleSheet.create({
   moodLegend: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   moodBadge: { minHeight: 30, borderWidth: 1, borderRadius: 15, paddingHorizontal: 10, alignItems: "center", justifyContent: "center" },
   moodBadgeText: { fontWeight: "700" },
+  reactionStatsList: { gap: 12 },
+  reactionStatRow: { minHeight: 50, flexDirection: "row", alignItems: "center", gap: 12 },
+  reactionStatIcon: { width: 46, height: 46, borderWidth: 1, borderRadius: 23, alignItems: "center", justifyContent: "center" },
+  reactionStatCopy: { flex: 1, minWidth: 0 },
+  reactionStatTitle: { fontWeight: "800", marginBottom: 2 },
+  reactionStatCount: { minWidth: 36, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", paddingHorizontal: 10 },
+  reactionStatCountText: { fontWeight: "800" },
   tagList: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   tagPill: {
     maxWidth: "100%",
