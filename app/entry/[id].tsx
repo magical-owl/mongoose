@@ -26,6 +26,7 @@ import {
   StyleSheet,
   useWindowDimensions,
   ActivityIndicator,
+  Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
@@ -47,6 +48,7 @@ import { DiaryPaperCanvas } from '@/features/diary/components/DiaryPaperCanvas';
 import { EntryDetailModals } from '@/features/diary/components/EntryDetailModals';
 import { EntryMetaRow } from '@/features/diary/components/EntryMetaRow';
 import { EntryViewHistoryModal } from '@/features/diary/components/EntryViewHistoryModal';
+import { closeMemoryReactionPanels } from '@/features/diary/components/MemoryReactionPanelRegistry';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { createPlacedPhotoSticker } from '@/features/diary/services/DiaryPhotoService';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
@@ -501,11 +503,13 @@ export default function EntryDetailScreen() {
           onScrollBeginDrag={() => {
             if (!isEditing) markViewScrollStarted();
             closeFormattingTools();
+            closeMemoryReactionPanels();
             handleEditorScrollBeginDrag();
           }}
           scrollEventThrottle={16}
           onStartShouldSetResponderCapture={() => {
             closeFormattingTools();
+            closeMemoryReactionPanels();
             dismissEntryKeyboard();
             return false;
           }}
@@ -553,6 +557,16 @@ export default function EntryDetailScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {!isEditing && showMemoryReactionPicker ? (
+        <Pressable
+          style={styles.memoryReactionDismissLayer}
+          onPress={() => closeMemoryReactionPanels()}
+          accessibilityRole="button"
+          accessibilityLabel={t('memoryReactionPickerTitle')}
+          testID="entry-view-memory-reaction-dismiss-layer"
+        />
+      ) : null}
 
       {!isEditing && (
         <DiaryEntryEditorFooter
@@ -686,6 +700,12 @@ const styles = StyleSheet.create({
   },
   entryPaperBackdrop: {
     flex: 1,
+  },
+  memoryReactionDismissLayer: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 1000,
+    elevation: 10,
+    backgroundColor: 'transparent',
   },
   viewFooter: {
     paddingHorizontal: 12,
