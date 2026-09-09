@@ -1500,8 +1500,11 @@ const selectedTargets = new Set(process.argv.slice(2));
 if (selectedTargets.size === 0 || selectedTargets.has('journal-backgrounds')) {
   generateJournalBackgrounds();
 }
-if (selectedTargets.size === 0 || selectedTargets.has('stickers')) {
+if (selectedTargets.has('legacy-stickers')) {
   generateStickers();
+}
+if (selectedTargets.has('stickers')) {
+  console.log('Sticker PNGs are AI-generated assets. Use the recorded source assets instead of the legacy deterministic sticker renderer.');
 }
 if (selectedTargets.size === 0 || selectedTargets.has('patterns')) {
   generatePatternBackgrounds();
