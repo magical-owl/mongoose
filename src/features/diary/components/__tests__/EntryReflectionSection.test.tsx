@@ -22,6 +22,7 @@ const reflections: readonly DiaryReflection[] = [
     text: 'A small visual note.',
     createdAt: '2026-08-29T02:12:00.000Z',
     updatedAt: '2026-08-29T02:12:00.000Z',
+    memoryReactions: [],
     photo: {
       id: '33333333-3333-4333-8333-333333333333',
       uri: 'file:///document/diary-photos/reflection.jpg',
@@ -97,5 +98,69 @@ describe('EntryReflectionSection', () => {
         undefined,
       );
     });
+  });
+
+  it('toggles reactions for a reflection row', async () => {
+    const onToggleReflectionMemoryReaction = jest.fn().mockResolvedValue(true);
+    const { getByTestId } = await renderWithProviders(
+      <EntryReflectionSection
+        entryId="11111111-1111-4111-8111-111111111111"
+        reflections={reflections}
+        variant="timeline"
+        onToggleReflectionMemoryReaction={onToggleReflectionMemoryReaction}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    await fireEvent.press(getByTestId('entry-reflection-reaction-22222222-2222-4222-8222-222222222222-button'));
+    await fireEvent.press(getByTestId('entry-reflection-reaction-22222222-2222-4222-8222-222222222222-button-cherish'));
+
+    expect(onToggleReflectionMemoryReaction).toHaveBeenCalledWith(
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222',
+      'cherish',
+    );
+  });
+
+  it('places text-only reflection reactions in a footer', async () => {
+    const textOnlyReflection: DiaryReflection = {
+      ...reflections[0]!,
+      photo: undefined,
+    };
+    const { getByTestId } = await renderWithProviders(
+      <EntryReflectionSection
+        entryId="11111111-1111-4111-8111-111111111111"
+        reflections={[textOnlyReflection]}
+        variant="timeline"
+        onToggleReflectionMemoryReaction={jest.fn().mockResolvedValue(true)}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    const footerStyle = StyleSheet.flatten(
+      getByTestId('entry-reflection-reaction-22222222-2222-4222-8222-222222222222').props.style,
+    );
+
+    expect(footerStyle.justifyContent).toBe('flex-start');
+    expect(getByTestId('entry-reflection-reaction-22222222-2222-4222-8222-222222222222-button')).toBeTruthy();
+  });
+
+  it('places image reflection reactions in the same footer', async () => {
+    const { getByTestId } = await renderWithProviders(
+      <EntryReflectionSection
+        entryId="11111111-1111-4111-8111-111111111111"
+        reflections={reflections}
+        variant="timeline"
+        onToggleReflectionMemoryReaction={jest.fn().mockResolvedValue(true)}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    const footerStyle = StyleSheet.flatten(
+      getByTestId('entry-reflection-reaction-22222222-2222-4222-8222-222222222222').props.style,
+    );
+
+    expect(footerStyle.justifyContent).toBe('flex-start');
+    expect(getByTestId('entry-reflection-reaction-22222222-2222-4222-8222-222222222222-button')).toBeTruthy();
   });
 });

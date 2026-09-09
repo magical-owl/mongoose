@@ -8,7 +8,7 @@ import type { useTranslation } from '@/localization/i18n';
 
 type DiaryActions = Pick<
   ReturnType<typeof useDiary>,
-  'saveDiaryEntry' | 'deleteDiaryEntry' | 'addReflection' | 'deleteReflection' | 'toggleMemoryReaction'
+  'saveDiaryEntry' | 'deleteDiaryEntry' | 'addReflection' | 'deleteReflection' | 'toggleMemoryReaction' | 'toggleReflectionMemoryReaction'
 >;
 
 interface UseEntryDetailActionsOptions extends DiaryActions {
@@ -45,6 +45,7 @@ export function useEntryDetailActions({
   addReflection,
   deleteReflection,
   toggleMemoryReaction,
+  toggleReflectionMemoryReaction,
   t,
 }: UseEntryDetailActionsOptions) {
   const handleSaveEdit = useCallback(async () => {
@@ -149,11 +150,28 @@ export function useEntryDetailActions({
     }
   }, [entry, setEntry, setShowMemoryReactionPicker, t, toggleMemoryReaction]);
 
+  const handleToggleReflectionMemoryReaction = useCallback(async (
+    entryId: string,
+    reflectionId: string,
+    reaction: MemoryReaction,
+  ) => {
+    if (!entry || entry.id !== entryId) return false;
+    const result = await toggleReflectionMemoryReaction(entryId, reflectionId, reaction);
+    if (result.success) {
+      setEntry(result.data);
+      return true;
+    }
+
+    Alert.alert(t('memoryReactionNotSavedTitle'), result.error.message);
+    return false;
+  }, [entry, setEntry, t, toggleReflectionMemoryReaction]);
+
   return {
     handleSaveEdit,
     handleDelete,
     handleAddReflection,
     handleDeleteReflection,
     handleToggleMemoryReaction,
+    handleToggleReflectionMemoryReaction,
   };
 }

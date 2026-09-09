@@ -1,16 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Modal } from '@shared/components/Modal';
 import { Text } from '@shared/components/Text';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import type { Profile } from '@/features/profile/domain/Profile';
 import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
+import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import { type TimeFormat } from '@/stores/useAppStore';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useTranslation } from '@/localization/i18n';
 import { formatFriendlyTimestamp } from '@/shared/utils/timeFormat';
 import { ReflectionComposer } from './ReflectionComposer';
 import { ReflectionPhotoPreview } from './ReflectionPhotoPreview';
+import { ReflectionReactionFooter } from './ReflectionReactionFooter';
 
 interface EntryReflectionsModalProps {
   readonly visible: boolean;
@@ -20,6 +22,7 @@ interface EntryReflectionsModalProps {
   readonly onDismiss: () => void;
   readonly onAddReflection: (entryId: string, text: string, photo?: DiaryPhoto) => Promise<boolean>;
   readonly onDeleteReflection: (entryId: string, reflectionId: string) => void;
+  readonly onToggleReflectionMemoryReaction?: (entryId: string, reflectionId: string, reaction: MemoryReaction) => Promise<boolean>;
 }
 
 export function EntryReflectionsModal({
@@ -30,9 +33,11 @@ export function EntryReflectionsModal({
   onDismiss,
   onAddReflection,
   onDeleteReflection,
+  onToggleReflectionMemoryReaction,
 }: EntryReflectionsModalProps): React.JSX.Element {
   const theme = useTheme();
   const t = useTranslation();
+  const [openReactionReflectionId, setOpenReactionReflectionId] = useState<string | null>(null);
   const friendlyTimestampLabels = useMemo(
     () => ({
       today: t('timeToday'),
@@ -75,13 +80,15 @@ export function EntryReflectionsModal({
                       <Text preset="caption" color="textTertiary">
                         {formatFriendlyTimestamp(reflection.createdAt, timeFormat, friendlyTimestampLabels)}
                       </Text>
-                      <TouchableOpacity
-                        onPress={() => onDeleteReflection(entry.id, reflection.id)}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('reflectionDeleteA11y')}
-                      >
-                        <Text preset="caption" color="textSecondary">{t('entryDelete')}</Text>
-                      </TouchableOpacity>
+                      <View style={styles.reflectionActions}>
+                        <TouchableOpacity
+                          onPress={() => onDeleteReflection(entry.id, reflection.id)}
+                          accessibilityRole="button"
+                          accessibilityLabel={t('reflectionDeleteA11y')}
+                        >
+                          <Text preset="caption" color="textSecondary">{t('entryDelete')}</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                     <Text preset="bodySmall" color="text" style={styles.reflectionText}>{reflection.text}</Text>
                     {reflection.photo ? (
@@ -89,6 +96,20 @@ export function EntryReflectionsModal({
                         photo={reflection.photo}
                         style={styles.reflectionPhoto}
                         testID="entry-reflection-photo"
+                      />
+                    ) : null}
+                    {onToggleReflectionMemoryReaction ? (
+                      <ReflectionReactionFooter
+                        entryId={entry.id}
+                        reflectionId={reflection.id}
+                        reactions={reflection.memoryReactions ?? []}
+                        isPickerVisible={openReactionReflectionId === reflection.id}
+                        onOpenPicker={() => setOpenReactionReflectionId(reflection.id)}
+                        onDismissPicker={() => setOpenReactionReflectionId(null)}
+                        onToggleReaction={(targetEntryId, targetReflectionId, reaction) => {
+                          void onToggleReflectionMemoryReaction(targetEntryId, targetReflectionId, reaction);
+                        }}
+                        testID={`entry-modal-reflection-reaction-${reflection.id}`}
                       />
                     ) : null}
                   </View>
@@ -130,7 +151,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
     marginBottom: 2,
+  },
+  reflectionActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   reflectionText: { lineHeight: 20, marginTop: 2 },
   reflectionPhoto: {

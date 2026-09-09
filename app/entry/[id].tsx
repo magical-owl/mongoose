@@ -96,7 +96,7 @@ export default function EntryDetailScreen() {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const t = useTranslation();
-  const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection, toggleMemoryReaction, recordEntryView } = useDiary();
+  const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection, toggleMemoryReaction, toggleReflectionMemoryReaction, recordEntryView } = useDiary();
   const { journals } = useJournals();
   const { profile } = useProfileForm();
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -251,6 +251,7 @@ export default function EntryDetailScreen() {
     handleAddReflection,
     handleDeleteReflection,
     handleToggleMemoryReaction,
+    handleToggleReflectionMemoryReaction,
   } = useEntryDetailActions({
     entry,
     editTitle,
@@ -269,6 +270,7 @@ export default function EntryDetailScreen() {
     addReflection,
     deleteReflection,
     toggleMemoryReaction,
+    toggleReflectionMemoryReaction,
     t,
   });
 
@@ -625,6 +627,7 @@ export default function EntryDetailScreen() {
         onDismissReflections={() => setShowReflections(false)}
         onAddReflection={handleAddReflection}
         onDeleteReflection={handleDeleteReflection}
+        onToggleReflectionMemoryReaction={handleToggleReflectionMemoryReaction}
         onDismissEntryMetadata={() => setShowEntryMetadata(false)}
         onChangeMoods={setEditMoods}
         onChangeJournalIds={setEditJournalIds}

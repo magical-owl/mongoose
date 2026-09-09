@@ -30,6 +30,7 @@ interface MemoryReactionButtonProps {
   readonly compact?: boolean;
   readonly style?: StyleProp<ViewStyle>;
   readonly buttonStyle?: StyleProp<ViewStyle>;
+  readonly trayAlignment?: 'left' | 'center' | 'right';
   readonly testID?: string;
 }
 
@@ -42,6 +43,7 @@ export function MemoryReactionButton({
   compact = false,
   style,
   buttonStyle,
+  trayAlignment = 'left',
   testID,
 }: MemoryReactionButtonProps): React.JSX.Element {
   const theme = useTheme();
@@ -54,6 +56,7 @@ export function MemoryReactionButton({
   const hasReaction = Boolean(firstReaction);
   const label = firstReaction ? memoryReactionLabel(firstReaction, t) : t('memoryReactionButton');
   const trayWidth = Math.min(Math.max(width - 80, 300), 380);
+  const trayAnchorWidth = compact ? 112 : 136;
 
   useEffect(() => {
     if (!visible) {
@@ -110,6 +113,8 @@ export function MemoryReactionButton({
         <Animated.View
           style={[
             styles.tray,
+            trayAlignment === 'right' && styles.rightAlignedTray,
+            trayAlignment === 'center' && { left: -(trayWidth - trayAnchorWidth) / 2 },
             trayAnimatedStyle,
             {
               width: trayWidth,
@@ -245,6 +250,10 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
     elevation: 6,
+  },
+  rightAlignedTray: {
+    left: undefined,
+    right: 0,
   },
   reactionRow: {
     gap: 10,

@@ -31,6 +31,7 @@ export function buildDiaryReflection(overrides: Partial<DiaryReflection> = {}): 
     text: 'A small reflection.',
     createdAt: DEFAULT_DATETIME,
     updatedAt: DEFAULT_DATETIME,
+    memoryReactions: [],
     ...overrides,
   };
 }

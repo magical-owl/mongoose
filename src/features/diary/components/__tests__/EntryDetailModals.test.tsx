@@ -132,6 +132,7 @@ describe('EntryDetailModals', () => {
         onDismissReflections={jest.fn()}
         onAddReflection={jest.fn()}
         onDeleteReflection={jest.fn()}
+        onToggleReflectionMemoryReaction={jest.fn()}
         onDismissEntryMetadata={jest.fn()}
         onChangeMoods={jest.fn()}
         onChangeJournalIds={jest.fn()}

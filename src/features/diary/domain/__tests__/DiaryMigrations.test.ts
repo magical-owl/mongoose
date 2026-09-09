@@ -37,6 +37,32 @@ describe('Diary migrations', () => {
     expect(result.entries[0]?.memoryReactions).toEqual([]);
   });
 
+  it('defaults and normalizes memory reactions for legacy reflections', () => {
+    const result = migrateDiaryStorage([
+      {
+        ...entry,
+        reflections: [
+          {
+            id: '22222222-2222-4222-8222-222222222222',
+            text: 'A later thought.',
+            createdAt: '2026-08-13T01:00:00.000Z',
+            updatedAt: '2026-08-13T01:00:00.000Z',
+          },
+          {
+            id: '33333333-3333-4333-8333-333333333333',
+            text: 'A reacted thought.',
+            createdAt: '2026-08-13T02:00:00.000Z',
+            updatedAt: '2026-08-13T02:00:00.000Z',
+            memoryReactions: ['cherish', 'treasure'],
+          },
+        ],
+      },
+    ]);
+
+    expect(result.entries[0]?.reflections[0]?.memoryReactions).toEqual([]);
+    expect(result.entries[0]?.reflections[1]?.memoryReactions).toEqual(['cherish']);
+  });
+
   it('defaults view counts for legacy entries', () => {
     const result = migrateDiaryStorage([entry]);
     expect(result.entries[0]?.viewCount).toBe(0);

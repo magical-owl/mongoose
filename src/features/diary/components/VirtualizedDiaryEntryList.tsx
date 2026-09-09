@@ -86,6 +86,7 @@ interface VirtualizedDiaryEntryListProps {
   readonly onReflectionInputFocus?: (entryId: string) => void;
   readonly onReflectionSummaryPress?: (entryId: string) => void;
   readonly onToggleMemoryReaction?: (entryId: string, reaction: MemoryReaction) => Promise<boolean>;
+  readonly onToggleReflectionMemoryReaction?: (entryId: string, reflectionId: string, reaction: MemoryReaction) => Promise<boolean>;
   readonly onPressJournalSuggestion: (journal: Journal) => void;
   readonly onPressSuggestionsTitle: () => void;
   readonly searchQuery: string;
@@ -192,6 +193,7 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
       onReflectionInputFocus,
       onReflectionSummaryPress,
       onToggleMemoryReaction,
+      onToggleReflectionMemoryReaction,
       onPressJournalSuggestion,
       onPressSuggestionsTitle,
       searchQuery,
@@ -321,6 +323,7 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
             onReflectionInputFocus={mode === 'timeline' || mode === 'feed' ? onReflectionInputFocus : undefined}
             onReflectionSummaryPress={mode === 'timeline' || mode === 'feed' ? undefined : onReflectionSummaryPress}
             onToggleMemoryReaction={onToggleMemoryReaction}
+            onToggleReflectionMemoryReaction={onToggleReflectionMemoryReaction}
           />
         </View>
       );
@@ -335,6 +338,7 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
       onReflectionInputFocus,
       onReflectionSummaryPress,
       onToggleMemoryReaction,
+      onToggleReflectionMemoryReaction,
       onToggleDate,
       onToggleMonth,
       onToggleYear,

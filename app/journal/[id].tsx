@@ -69,7 +69,7 @@ export default function JournalEntriesScreen() {
   const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { height: windowHeight } = useWindowDimensions();
-  const { entries, isLoading, refresh, addReflection, deleteReflection, toggleMemoryReaction } = useDiary();
+  const { entries, isLoading, refresh, addReflection, deleteReflection, toggleMemoryReaction, toggleReflectionMemoryReaction } = useDiary();
   const { journals, refresh: refreshJournals } = useJournals();
   const { profile } = useProfileForm();
   const { isPro } = useSubscription();
@@ -290,6 +290,18 @@ export default function JournalEntriesScreen() {
       return true;
     },
     [toggleMemoryReaction, t],
+  );
+
+  const handleToggleReflectionMemoryReaction = useCallback(
+    async (entryId: string, reflectionId: string, reaction: MemoryReaction) => {
+      const result = await toggleReflectionMemoryReaction(entryId, reflectionId, reaction);
+      if (!result.success) {
+        Alert.alert(t("memoryReactionNotSavedTitle"), result.error.message);
+        return false;
+      }
+      return true;
+    },
+    [toggleReflectionMemoryReaction, t],
   );
 
   const scrollReflectionInputIntoView = useCallback((entryId: string) => {
@@ -727,6 +739,7 @@ export default function JournalEntriesScreen() {
             onReflectionInputFocus={viewMode === "timeline" || viewMode === "feed" ? handleReflectionInputFocus : undefined}
             onReflectionSummaryPress={viewMode === "timeline" || viewMode === "feed" ? undefined : handleReflectionSummaryPress}
             onToggleMemoryReaction={handleToggleMemoryReaction}
+            onToggleReflectionMemoryReaction={handleToggleReflectionMemoryReaction}
             onPressJournalSuggestion={(journal) => {
               router.push({ pathname: "/journal/[id]", params: { id: journal.id, title: journal.title } });
             }}
@@ -781,6 +794,7 @@ export default function JournalEntriesScreen() {
         onDismiss={() => setReflectionModalEntryId(null)}
         onAddReflection={handleAddReflection}
         onDeleteReflection={handleDeleteReflection}
+        onToggleReflectionMemoryReaction={handleToggleReflectionMemoryReaction}
       />
     </AppPatternBackground>
   );

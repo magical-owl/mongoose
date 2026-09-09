@@ -8,7 +8,7 @@ import { buildDiaryEntry, buildDiaryPhoto, buildDiaryReflection } from '@tests/f
 
 type DiaryActions = Pick<
   ReturnType<typeof useDiary>,
-  'saveDiaryEntry' | 'deleteDiaryEntry' | 'addReflection' | 'deleteReflection' | 'toggleMemoryReaction'
+  'saveDiaryEntry' | 'deleteDiaryEntry' | 'addReflection' | 'deleteReflection' | 'toggleMemoryReaction' | 'toggleReflectionMemoryReaction'
 >;
 
 const t = ((key: string) => key) as ReturnType<typeof useTranslation>;
@@ -34,6 +34,7 @@ function ActionsHarness({
   addReflection = jest.fn<ReturnType<DiaryActions['addReflection']>, Parameters<DiaryActions['addReflection']>>(),
   deleteReflection = jest.fn<ReturnType<DiaryActions['deleteReflection']>, Parameters<DiaryActions['deleteReflection']>>(),
   toggleMemoryReaction = jest.fn<ReturnType<DiaryActions['toggleMemoryReaction']>, Parameters<DiaryActions['toggleMemoryReaction']>>(),
+  toggleReflectionMemoryReaction = jest.fn<ReturnType<DiaryActions['toggleReflectionMemoryReaction']>, Parameters<DiaryActions['toggleReflectionMemoryReaction']>>(),
   setShowPremiumModal = jest.fn(),
   navigateBack = jest.fn(),
 }: {
@@ -44,6 +45,7 @@ function ActionsHarness({
   readonly addReflection?: DiaryActions['addReflection'];
   readonly deleteReflection?: DiaryActions['deleteReflection'];
   readonly toggleMemoryReaction?: DiaryActions['toggleMemoryReaction'];
+  readonly toggleReflectionMemoryReaction?: DiaryActions['toggleReflectionMemoryReaction'];
   readonly setShowPremiumModal?: (isVisible: boolean) => void;
   readonly navigateBack?: () => void;
 }) {
@@ -73,6 +75,7 @@ function ActionsHarness({
     addReflection,
     deleteReflection,
     toggleMemoryReaction,
+    toggleReflectionMemoryReaction,
     t,
   });
 
@@ -89,6 +92,16 @@ function ActionsHarness({
       </TouchableOpacity>
       <TouchableOpacity testID="toggle-reaction" onPress={() => void actions.handleToggleMemoryReaction('cherish')}>
         <Text>React</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="toggle-reflection-reaction"
+        onPress={() => void actions.handleToggleReflectionMemoryReaction(
+          initialEntry?.id ?? 'missing',
+          '22222222-2222-4222-8222-222222222222',
+          'cherish',
+        )}
+      >
+        <Text>React reflection</Text>
       </TouchableOpacity>
       <Text testID="entry-id">{initialEntry?.id ?? 'none'}</Text>
     </>
@@ -146,6 +159,38 @@ describe('useEntryDetailActions', () => {
     await fireEvent.press(getByTestId('toggle-reaction'));
 
     expect(toggleMemoryReaction).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', 'cherish');
+  });
+
+  it('replaces the entry after selecting a reflection memory reaction', async () => {
+    const updatedEntry = createEntry({
+      reflections: [
+        buildDiaryReflection({
+          id: '22222222-2222-4222-8222-222222222222',
+          memoryReactions: ['cherish'],
+        }),
+      ],
+    });
+    const toggleReflectionMemoryReaction = jest.fn<
+      ReturnType<DiaryActions['toggleReflectionMemoryReaction']>,
+      Parameters<DiaryActions['toggleReflectionMemoryReaction']>
+    >();
+    toggleReflectionMemoryReaction.mockResolvedValue({ success: true, data: updatedEntry });
+    const { getByTestId } = await render(
+      <ActionsHarness
+        initialEntry={createEntry({
+          reflections: [buildDiaryReflection({ id: '22222222-2222-4222-8222-222222222222' })],
+        })}
+        toggleReflectionMemoryReaction={toggleReflectionMemoryReaction}
+      />,
+    );
+
+    await fireEvent.press(getByTestId('toggle-reflection-reaction'));
+
+    expect(toggleReflectionMemoryReaction).toHaveBeenCalledWith(
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222',
+      'cherish',
+    );
   });
 
   it('confirms before deleting an entry', async () => {

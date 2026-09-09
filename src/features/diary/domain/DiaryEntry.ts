@@ -114,6 +114,7 @@ export const DiaryReflectionSchema = z.object({
   text: z.string().min(1).max(2000),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+  memoryReactions: z.array(MemoryReactionSchema).default([]),
   photo: DiaryPhotoSchema.optional(),
 });
 export type DiaryReflection = z.infer<typeof DiaryReflectionSchema>;

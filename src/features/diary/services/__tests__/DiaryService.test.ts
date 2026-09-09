@@ -185,6 +185,32 @@ describe('DiaryService', () => {
     }
   });
 
+  it('should toggle one memory reaction on a reflection', async () => {
+    await service.saveEntry(mockEntry);
+    const addReflectionResult = await service.addReflection(mockEntry.id, 'I understand this differently now.');
+    expect(addReflectionResult.success).toBe(true);
+    if (!addReflectionResult.success) return;
+    const reflectionId = addReflectionResult.data.reflections[0]?.id;
+    expect(reflectionId).toBeDefined();
+    if (!reflectionId) return;
+
+    const addReactionResult = await service.toggleReflectionMemoryReaction(mockEntry.id, reflectionId, 'cherish');
+    expect(addReactionResult.success).toBe(true);
+    if (!addReactionResult.success) return;
+    expect(addReactionResult.data.reflections[0]?.memoryReactions).toEqual(['cherish']);
+
+    const replaceReactionResult = await service.toggleReflectionMemoryReaction(mockEntry.id, reflectionId, 'treasure');
+    expect(replaceReactionResult.success).toBe(true);
+    if (!replaceReactionResult.success) return;
+    expect(replaceReactionResult.data.reflections[0]?.memoryReactions).toEqual(['treasure']);
+
+    const clearReactionResult = await service.toggleReflectionMemoryReaction(mockEntry.id, reflectionId, 'treasure');
+    expect(clearReactionResult.success).toBe(true);
+    if (clearReactionResult.success) {
+      expect(clearReactionResult.data.reflections[0]?.memoryReactions).toEqual([]);
+    }
+  });
+
   it('should record entry views without marking the entry as edited', async () => {
     const entry = { ...mockEntry, viewCount: 2 };
     await service.saveEntry(entry);

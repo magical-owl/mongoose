@@ -1,5 +1,6 @@
 import { MemoryReactionButton } from '@/features/diary/components/MemoryReactionButton';
 import { renderWithProviders } from '@tests/helpers';
+import { StyleSheet } from 'react-native';
 
 describe('MemoryReactionButton', () => {
   it('renders an anchored reaction tray when visible', async () => {
@@ -45,5 +46,43 @@ describe('MemoryReactionButton', () => {
     expect(getByText('Cherish')).toBeTruthy();
     expect(queryByText('+1')).toBeNull();
     expect(queryByText('Treasure')).toBeNull();
+  });
+
+  it('can anchor the reaction tray to the right edge', async () => {
+    const { getByTestId } = await renderWithProviders(
+      <MemoryReactionButton
+        reactions={[]}
+        visible
+        onOpen={jest.fn()}
+        onDismiss={jest.fn()}
+        onToggleReaction={jest.fn()}
+        trayAlignment="right"
+        testID="memory-reaction"
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    const trayStyle = StyleSheet.flatten(getByTestId('memory-reaction-tray').props.style);
+    expect(trayStyle.left).toBeUndefined();
+    expect(trayStyle.right).toBe(0);
+  });
+
+  it('can center the reaction tray over the button', async () => {
+    const { getByTestId } = await renderWithProviders(
+      <MemoryReactionButton
+        reactions={[]}
+        visible
+        onOpen={jest.fn()}
+        onDismiss={jest.fn()}
+        onToggleReaction={jest.fn()}
+        trayAlignment="center"
+        testID="memory-reaction"
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    const trayStyle = StyleSheet.flatten(getByTestId('memory-reaction-tray').props.style);
+    expect(typeof trayStyle.left).toBe('number');
+    expect(trayStyle.left).toBeLessThan(0);
   });
 });

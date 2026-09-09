@@ -147,6 +147,7 @@ export class DiaryService {
       text: trimmed,
       createdAt: now,
       updatedAt: now,
+      memoryReactions: [],
       ...(photo ? { photo } : {}),
     };
     const updated: DiaryEntry = {
@@ -206,6 +207,42 @@ export class DiaryService {
       ...entryResult.data,
       memoryReactions: toggleMemoryReactionSelection(entryResult.data.memoryReactions, reaction),
       updatedAt: new Date().toISOString(),
+    };
+    return await this.repo.save(updated);
+  }
+
+  public async toggleReflectionMemoryReaction(
+    entryId: string,
+    reflectionId: string,
+    reaction: MemoryReaction,
+  ): Promise<Result<DiaryEntry>> {
+    const entryResult = await this.repo.getById(entryId);
+    if (!entryResult.success) return entryResult;
+    if (!entryResult.data) {
+      return failure({
+        code: 'NOT_FOUND',
+        message: 'Diary entry not found',
+      });
+    }
+
+    let didUpdateReflection = false;
+    const now = new Date().toISOString();
+    const reflections = entryResult.data.reflections.map((reflection) => {
+      if (reflection.id !== reflectionId) return reflection;
+      didUpdateReflection = true;
+      return {
+        ...reflection,
+        memoryReactions: toggleMemoryReactionSelection(reflection.memoryReactions, reaction),
+        updatedAt: now,
+      };
+    });
+
+    if (!didUpdateReflection) return success(entryResult.data);
+
+    const updated: DiaryEntry = {
+      ...entryResult.data,
+      reflections,
+      updatedAt: now,
     };
     return await this.repo.save(updated);
   }

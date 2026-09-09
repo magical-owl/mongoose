@@ -178,6 +178,17 @@ export function useDiary() {
     return result;
   };
 
+  const toggleReflectionMemoryReaction = async (entryId: string, reflectionId: string, reaction: MemoryReaction) => {
+    const result = await diaryService.toggleReflectionMemoryReaction(entryId, reflectionId, reaction);
+    if (result.success) {
+      commitDiaryEntries(
+        replaceDiaryEntryPreservingOrder(entriesRef.current, result.data),
+        deletedEntriesRef.current,
+      );
+    }
+    return result;
+  };
+
   const recordEntryView = async (entryId: string) => {
     const result = await diaryService.recordEntryView(entryId);
     if (result.success) {
@@ -208,6 +219,7 @@ export function useDiary() {
     addReflection,
     deleteReflection,
     toggleMemoryReaction,
+    toggleReflectionMemoryReaction,
     recordEntryView,
     refresh: fetchEntries,
     streakStats,

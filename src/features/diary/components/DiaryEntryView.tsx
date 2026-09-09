@@ -37,6 +37,7 @@ interface DiaryEntryViewProps {
   readonly onReflectionSummaryPress?: (entryId: string) => void;
   readonly onReflectionInputFocus?: (entryId: string) => void;
   readonly onToggleMemoryReaction?: (entryId: string, reaction: MemoryReaction) => Promise<boolean>;
+  readonly onToggleReflectionMemoryReaction?: (entryId: string, reflectionId: string, reaction: MemoryReaction) => Promise<boolean>;
   readonly showDateColumn?: boolean;
 }
 
@@ -95,6 +96,7 @@ export function DiaryEntryView({
   onReflectionSummaryPress,
   onReflectionInputFocus,
   onToggleMemoryReaction,
+  onToggleReflectionMemoryReaction,
   showDateColumn = true,
 }: DiaryEntryViewProps): React.JSX.Element {
   const theme = useTheme();
@@ -205,6 +207,7 @@ export function DiaryEntryView({
         profile={profile}
         onAddReflection={onAddReflection}
         onReflectionInputFocus={onReflectionInputFocus}
+        onToggleReflectionMemoryReaction={onToggleReflectionMemoryReaction}
       />
     ) : null
   );

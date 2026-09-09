@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { Text } from '@shared/components/Text';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
@@ -10,6 +10,8 @@ import type { Profile } from '@/features/profile/domain/Profile';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import { ReflectionComposer } from './ReflectionComposer';
 import { ReflectionPhotoPreview } from './ReflectionPhotoPreview';
+import type { MemoryReaction } from '../domain/MemoryReaction';
+import { ReflectionReactionFooter } from './ReflectionReactionFooter';
 
 type EntryReflectionSectionVariant = 'feed' | 'timeline';
 
@@ -20,6 +22,7 @@ interface EntryReflectionSectionProps {
   readonly profile?: Pick<Profile, 'displayName' | 'avatarUri'> | null;
   readonly onAddReflection?: (entryId: string, text: string, photo?: DiaryPhoto) => Promise<boolean>;
   readonly onReflectionInputFocus?: (entryId: string) => void;
+  readonly onToggleReflectionMemoryReaction?: (entryId: string, reflectionId: string, reaction: MemoryReaction) => Promise<boolean>;
 }
 
 export function EntryReflectionSection({
@@ -29,6 +32,7 @@ export function EntryReflectionSection({
   profile,
   onAddReflection,
   onReflectionInputFocus,
+  onToggleReflectionMemoryReaction,
 }: EntryReflectionSectionProps): React.JSX.Element | null {
   const theme = useTheme();
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -36,6 +40,7 @@ export function EntryReflectionSection({
   const isFeed = variant === 'feed';
   const hasContent = reflections.length > 0 || Boolean(onAddReflection);
   const revealProgress = useRef(new Animated.Value(0)).current;
+  const [openReactionReflectionId, setOpenReactionReflectionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasContent) return;
@@ -117,6 +122,20 @@ export function EntryReflectionSection({
                     photo={reflection.photo}
                     style={styles.timelineReflectionPhoto}
                     testID="entry-inline-reflection-photo"
+                  />
+                ) : null}
+                {onToggleReflectionMemoryReaction ? (
+                  <ReflectionReactionFooter
+                    entryId={entryId}
+                    reflectionId={reflection.id}
+                    reactions={reflection.memoryReactions ?? []}
+                    isPickerVisible={openReactionReflectionId === reflection.id}
+                    onOpenPicker={() => setOpenReactionReflectionId(reflection.id)}
+                    onDismissPicker={() => setOpenReactionReflectionId(null)}
+                    onToggleReaction={(targetEntryId, targetReflectionId, reaction) => {
+                      void onToggleReflectionMemoryReaction(targetEntryId, targetReflectionId, reaction);
+                    }}
+                    testID={`entry-reflection-reaction-${reflection.id}`}
                   />
                 ) : null}
               </View>

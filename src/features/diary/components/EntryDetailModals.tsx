@@ -1,5 +1,6 @@
 import type { DiaryEntry, DiaryPhoto, ManualMood } from '@/features/diary/domain/DiaryEntry';
 import type { DiaryBodyFontFamily, DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
+import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import type { Template } from '@/features/diary/domain/Template';
 import type { Journal } from '@/features/journal/domain/Journal';
 import type { Profile } from '@/features/profile/domain/Profile';
@@ -50,6 +51,7 @@ interface EntryDetailModalsProps {
   readonly onDismissReflections: () => void;
   readonly onAddReflection: (entryId: string, text: string, photo?: DiaryPhoto) => Promise<boolean>;
   readonly onDeleteReflection: (entryId: string, reflectionId: string) => void;
+  readonly onToggleReflectionMemoryReaction: (entryId: string, reflectionId: string, reaction: MemoryReaction) => Promise<boolean>;
   readonly onDismissEntryMetadata: () => void;
   readonly onChangeMoods: (moods: ManualMood[]) => void;
   readonly onChangeJournalIds: (journalIds: string[]) => void;
@@ -92,6 +94,7 @@ export function EntryDetailModals({
   onDismissReflections,
   onAddReflection,
   onDeleteReflection,
+  onToggleReflectionMemoryReaction,
   onDismissEntryMetadata,
   onChangeMoods,
   onChangeJournalIds,
@@ -150,6 +153,7 @@ export function EntryDetailModals({
         timeFormat={timeFormat}
         onAddReflection={onAddReflection}
         onDeleteReflection={onDeleteReflection}
+        onToggleReflectionMemoryReaction={onToggleReflectionMemoryReaction}
       />
       <EntryMetadataModal
         visible={showEntryMetadata}
