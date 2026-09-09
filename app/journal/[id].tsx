@@ -33,6 +33,7 @@ import {
 } from "@/features/diary/services/DiaryEntryListPagination";
 import { appLockService } from "@/services/AppLockService";
 import { EntryReflectionsModal } from "@/features/diary/components/EntryReflectionsModal";
+import { closeMemoryReactionPanels } from "@/features/diary/components/MemoryReactionPanelRegistry";
 import {
   JOURNAL_COVER_COLLAPSED_EXTRA_HEIGHT,
   JOURNAL_COVER_EXPANDED_HEIGHT,
@@ -188,6 +189,9 @@ export default function JournalEntriesScreen() {
       resetScrollCollapse();
       refresh();
       void refreshJournals();
+      return () => {
+        closeMemoryReactionPanels();
+      };
     }, [refresh, refreshJournals, resetScrollCollapse]),
   );
 

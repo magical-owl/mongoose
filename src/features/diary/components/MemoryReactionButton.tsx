@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Pressable,
@@ -18,8 +18,44 @@ import {
 } from '@/features/diary/domain/MemoryReaction';
 import { memoryReactionLabel, useTranslation } from '@/localization/i18n';
 import { MemoryReactionIcon } from './MemoryReactionIcon';
+import {
+  openMemoryReactionPanel,
+  subscribeToMemoryReactionPanelOpen,
+} from './MemoryReactionPanelRegistry';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const TRAY_SCREEN_PADDING = 12;
+let nextMemoryReactionPanelId = 0;
+
+interface ReactionTrayLayoutInput {
+  readonly alignment: 'left' | 'center' | 'right';
+  readonly anchorX: number | null;
+  readonly anchorWidth: number;
+  readonly screenWidth: number;
+  readonly trayWidth: number;
+}
+
+export function getClampedReactionTrayLeft({
+  alignment,
+  anchorX,
+  anchorWidth,
+  screenWidth,
+  trayWidth,
+}: ReactionTrayLayoutInput): number {
+  const desiredLeftByAlignment = {
+    left: 0,
+    center: -(trayWidth - anchorWidth) / 2,
+    right: anchorWidth - trayWidth,
+  };
+  const desiredLeft = desiredLeftByAlignment[alignment];
+
+  if (anchorX === null) return desiredLeft;
+
+  const minLeft = TRAY_SCREEN_PADDING - anchorX;
+  const maxLeft = screenWidth - TRAY_SCREEN_PADDING - trayWidth - anchorX;
+
+  return Math.min(Math.max(desiredLeft, minLeft), maxLeft);
+}
 
 interface MemoryReactionButtonProps {
   readonly reactions: readonly MemoryReaction[];
@@ -49,14 +85,38 @@ export function MemoryReactionButton({
   const theme = useTheme();
   const t = useTranslation();
   const { width } = useWindowDimensions();
+  const panelIdRef = useRef(`memory-reaction-panel-${nextMemoryReactionPanelId += 1}`);
   const trayProgress = useRef(new Animated.Value(0)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
+  const onDismissRef = useRef(onDismiss);
+  const wrapperRef = useRef<View>(null);
+  const [anchorMetrics, setAnchorMetrics] = useState({
+    x: null as number | null,
+    width: compact ? 112 : 136,
+  });
   const firstReaction = reactions[0];
   const previousReactionRef = useRef<MemoryReaction | undefined>(firstReaction);
   const hasReaction = Boolean(firstReaction);
   const label = firstReaction ? memoryReactionLabel(firstReaction, t) : t('memoryReactionButton');
   const trayWidth = Math.min(Math.max(width - 80, 300), 380);
-  const trayAnchorWidth = compact ? 112 : 136;
+  const trayLeft = getClampedReactionTrayLeft({
+    alignment: trayAlignment,
+    anchorX: anchorMetrics.x,
+    anchorWidth: anchorMetrics.width,
+    screenWidth: width,
+    trayWidth,
+  });
+
+  const measureAnchor = useCallback(() => {
+    wrapperRef.current?.measureInWindow((x, _y, measuredWidth) => {
+      if (measuredWidth <= 0) return;
+      setAnchorMetrics({ x, width: measuredWidth });
+    });
+  }, []);
+
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
 
   useEffect(() => {
     if (!visible) {
@@ -70,7 +130,16 @@ export function MemoryReactionButton({
       tension: 170,
       friction: 16,
     }).start();
-  }, [trayProgress, visible]);
+    measureAnchor();
+  }, [measureAnchor, trayProgress, visible]);
+
+  useEffect(() => (
+    subscribeToMemoryReactionPanelOpen((activePanelId) => {
+      if (activePanelId !== panelIdRef.current) {
+        onDismissRef.current();
+      }
+    })
+  ), []);
 
   useEffect(() => {
     if (previousReactionRef.current === firstReaction) return;
@@ -108,13 +177,12 @@ export function MemoryReactionButton({
   };
 
   return (
-    <View style={[styles.wrapper, style]}>
+    <View ref={wrapperRef} onLayout={measureAnchor} style={[styles.wrapper, style]}>
       {visible ? (
         <Animated.View
           style={[
             styles.tray,
-            trayAlignment === 'right' && styles.rightAlignedTray,
-            trayAlignment === 'center' && { left: -(trayWidth - trayAnchorWidth) / 2 },
+            { left: trayLeft },
             trayAnimatedStyle,
             {
               width: trayWidth,
@@ -168,8 +236,12 @@ export function MemoryReactionButton({
       <AnimatedPressable
         onPress={(event) => {
           stopPressPropagation(event);
+          measureAnchor();
           if (visible) onDismiss();
-          else onOpen();
+          else {
+            openMemoryReactionPanel(panelIdRef.current);
+            onOpen();
+          }
         }}
         style={[
           styles.button,
@@ -250,10 +322,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
     elevation: 6,
-  },
-  rightAlignedTray: {
-    left: undefined,
-    right: 0,
   },
   reactionRow: {
     gap: 10,
