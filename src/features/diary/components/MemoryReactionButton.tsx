@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
   Animated,
   Pressable,
@@ -25,7 +25,6 @@ import {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const TRAY_SCREEN_PADDING = 12;
-let nextMemoryReactionPanelId = 0;
 
 interface ReactionTrayLayoutInput {
   readonly alignment: 'left' | 'center' | 'right';
@@ -85,7 +84,7 @@ export function MemoryReactionButton({
   const theme = useTheme();
   const t = useTranslation();
   const { width } = useWindowDimensions();
-  const panelIdRef = useRef(`memory-reaction-panel-${nextMemoryReactionPanelId += 1}`);
+  const panelId = useId();
   const trayProgress = useRef(new Animated.Value(0)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
   const onDismissRef = useRef(onDismiss);
@@ -135,11 +134,11 @@ export function MemoryReactionButton({
 
   useEffect(() => (
     subscribeToMemoryReactionPanelOpen((activePanelId) => {
-      if (activePanelId !== panelIdRef.current) {
+      if (activePanelId !== panelId) {
         onDismissRef.current();
       }
     })
-  ), []);
+  ), [panelId]);
 
   useEffect(() => {
     if (previousReactionRef.current === firstReaction) return;
@@ -239,7 +238,7 @@ export function MemoryReactionButton({
           measureAnchor();
           if (visible) onDismiss();
           else {
-            openMemoryReactionPanel(panelIdRef.current);
+            openMemoryReactionPanel(panelId);
             onOpen();
           }
         }}

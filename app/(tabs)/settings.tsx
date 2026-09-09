@@ -7,7 +7,7 @@
  * - Modals for Appearance and Data Export
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -27,6 +27,7 @@ import { Modal } from '@shared/components/Modal';
 import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { SectionLabel } from '@shared/components/SectionLabel';
 import { AppPatternBackground } from '@shared/components/AppPatternBackground';
+import { PasscodeLockScreen } from '@shared/components/PasscodeLockScreen';
 import { PatternBackgroundPreview } from '@shared/components/PatternBackground';
 import { ProfileEditorForm } from '@/features/profile/components/ProfileEditorForm';
 import { PaywallModal } from '@/shared/components/PaywallModal';
@@ -89,6 +90,7 @@ export default function SettingsScreen() {
   const { entries, deletedEntries, restoreEntries, restoreDeletedEntry, permanentlyDeleteEntry, refresh } = useDiary();
   const { refresh: refreshJournals } = useJournals();
   const biometricLockEnabled = useAppStore((state) => state.biometricLockEnabled);
+  const passcodeLockEnabled = useAppStore((state) => state.passcodeLockEnabled);
   const calendarDateFormat = useAppStore((state) => state.calendarDateFormat);
   const timeFormat = useAppStore((state) => state.timeFormat);
   const calendarFirstDay = useAppStore((state) => state.calendarFirstDay);
@@ -109,6 +111,7 @@ export default function SettingsScreen() {
   const setAppLanguage = useAppStore((state) => state.setAppLanguage);
   const setOnboardingStatus = useAppStore((state) => state.setOnboardingStatus);
   const setBiometricLockEnabled = useAppStore((state) => state.setBiometricLockEnabled);
+  const setPasscodeLockEnabled = useAppStore((state) => state.setPasscodeLockEnabled);
   const setLocked = useAppStore((state) => state.setLocked);
   const resetAppStore = useAppStore((state) => state.reset);
   const resetSubscriptionStore = useSubscriptionStore((state) => state.reset);
@@ -130,6 +133,7 @@ export default function SettingsScreen() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showDataModal, setShowDataModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [passcodeFlow, setPasscodeFlow] = useState<'setup' | 'confirm' | 'disable' | null>(null);
   const [showRecoveryBinModal, setShowRecoveryBinModal] = useState(false);
   const [showDisplayModal, setShowDisplayModal] = useState(false);
   const [showFontsModal, setShowFontsModal] = useState(false);
@@ -138,6 +142,9 @@ export default function SettingsScreen() {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showDeveloperModal, setShowDeveloperModal] = useState(false);
   const [backupPassword, setBackupPassword] = useState('');
+  const [pendingPasscode, setPendingPasscode] = useState('');
+  const [passcodeError, setPasscodeError] = useState('');
+  const passcodeFlowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [stickersUsedToday, setStickersUsedToday] = useState(0);
   const [stickerLimitExhaustedAt, setStickerLimitExhaustedAt] = useState<string | undefined>(undefined);
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -175,6 +182,10 @@ export default function SettingsScreen() {
     const timer = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(timer);
   }, [isPro, showFreeTierModal]);
+
+  useEffect(() => () => {
+    if (passcodeFlowTimerRef.current) clearTimeout(passcodeFlowTimerRef.current);
+  }, []);
 
   const loadDailyUsage = useCallback(async () => {
     const result = await planUsageRepository.getDailyUsage(deviceDateKey);
@@ -259,6 +270,75 @@ export default function SettingsScreen() {
     } else {
       setBiometricLockEnabled(false);
       setLocked(false);
+    }
+  };
+
+  const openPasscodeFlow = (flow: 'setup' | 'disable') => {
+    if (passcodeFlowTimerRef.current) clearTimeout(passcodeFlowTimerRef.current);
+    setShowSecurityModal(false);
+    passcodeFlowTimerRef.current = setTimeout(() => {
+      setPasscodeFlow(flow);
+      passcodeFlowTimerRef.current = null;
+    }, 350);
+  };
+
+  const handlePasscodeToggle = async (enabled: boolean) => {
+    setPasscodeError('');
+    if (enabled) {
+      setPendingPasscode('');
+      openPasscodeFlow('setup');
+      return;
+    }
+
+    if (!(await appLockService.hasPasscode())) {
+      await appLockService.clearPasscode();
+      setPasscodeLockEnabled(false);
+      setLocked(false);
+      return;
+    }
+
+    openPasscodeFlow('disable');
+  };
+
+  const handleSubmitPasscodeFlow = async (passcode: string) => {
+    setPasscodeError('');
+    if (passcodeFlow === 'setup') {
+      setPendingPasscode(passcode);
+      setPasscodeFlow('confirm');
+      return;
+    }
+
+    if (passcodeFlow === 'confirm') {
+      if (passcode !== pendingPasscode) {
+        setPasscodeError(t('settingsPasscodeMismatch'));
+        setPendingPasscode('');
+        setPasscodeFlow('setup');
+        return;
+      }
+      const saved = await appLockService.setPasscode(passcode);
+      if (!saved) {
+        setPasscodeError(t('settingsPasscodeInvalid'));
+        setPendingPasscode('');
+        setPasscodeFlow('setup');
+        return;
+      }
+      setPasscodeLockEnabled(true);
+      setLocked(false);
+      setPendingPasscode('');
+      setPasscodeFlow(null);
+      return;
+    }
+
+    if (passcodeFlow === 'disable') {
+      const verified = await appLockService.verifyPasscode(passcode);
+      if (!verified) {
+        setPasscodeError(t('settingsPasscodeIncorrect'));
+        return;
+      }
+      await appLockService.clearPasscode();
+      setPasscodeLockEnabled(false);
+      setLocked(false);
+      setPasscodeFlow(null);
     }
   };
 
@@ -961,6 +1041,54 @@ export default function SettingsScreen() {
             </View>
             <Switch value={biometricLockEnabled} onValueChange={handleBiometricToggle} trackColor={{ false: theme.colors.border, true: theme.colors.tint }} thumbColor={theme.colors.card} />
           </View>
+          <View style={[styles.modalRow, { borderBottomColor: theme.colors.border }]}>
+            <View style={{ flex: 1 }}>
+              <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>{t('settingsPasscodeLockTitle')}</Text>
+              <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>{t('settingsPasscodeLockHint')}</Text>
+            </View>
+            <Switch value={passcodeLockEnabled} onValueChange={(enabled) => { void handlePasscodeToggle(enabled); }} trackColor={{ false: theme.colors.border, true: theme.colors.tint }} thumbColor={theme.colors.card} />
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={Boolean(passcodeFlow)}
+        onDismiss={() => {
+          setPasscodeFlow(null);
+          setPendingPasscode('');
+          setPasscodeError('');
+        }}
+        title={t('settingsPasscodeLockTitle')}
+        accessibilityLabel={t('settingsPasscodeLockTitle')}
+        scrollable={false}
+      >
+        <View style={styles.passcodeModalBody}>
+          <PasscodeLockScreen
+            title={
+              passcodeFlow === 'confirm'
+                ? t('settingsPasscodeConfirmTitle')
+                : passcodeFlow === 'disable'
+                  ? t('settingsPasscodeDisableTitle')
+                  : t('settingsPasscodeSetupTitle')
+            }
+            message={
+              passcodeFlow === 'confirm'
+                ? t('settingsPasscodeConfirmMessage')
+                : passcodeFlow === 'disable'
+                  ? t('settingsPasscodeDisableMessage')
+                  : t('settingsPasscodeSetupMessage')
+            }
+            error={passcodeError}
+            submitLabel={t('commonOk')}
+            cancelLabel={t('entryCancel')}
+            onCancel={() => {
+              setPasscodeFlow(null);
+              setPendingPasscode('');
+              setPasscodeError('');
+            }}
+            onSubmit={(passcode) => { void handleSubmitPasscodeFlow(passcode); }}
+            testID="settings-passcode-flow"
+          />
         </View>
       </Modal>
 
@@ -1238,6 +1366,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 15,
+  },
+  passcodeModalBody: {
+    height: 580,
+    marginHorizontal: -8,
   },
   modalRowBtn: {
     flexDirection: 'row',

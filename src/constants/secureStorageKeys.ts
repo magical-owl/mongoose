@@ -6,6 +6,7 @@ export const secureStorageKeys = {
   planUsage: 'meadow.plan-usage',
   subscriptionEntitlement: 'meadow.subscription-entitlement',
   backupEncryptionKey: 'meadow.backup-encryption-key',
+  appLockPasscode: 'meadow.app-lock-passcode',
   journalExtras: 'meadow.journal-extras',
   journals: 'meadow.journals',
 } as const;
