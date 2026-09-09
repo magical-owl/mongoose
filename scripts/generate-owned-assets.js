@@ -273,6 +273,113 @@ function save(png, file, options = {}) {
   fs.writeFileSync(target, PNG.sync.write(upscalePng(png, options.upscale ?? 1)));
 }
 
+function readPng(file) {
+  return PNG.sync.read(fs.readFileSync(path.join(root, file)));
+}
+
+function transparentPixel(png, x, y) {
+  const i = (png.width * y + x) << 2;
+  png.data[i] = 0;
+  png.data[i + 1] = 0;
+  png.data[i + 2] = 0;
+  png.data[i + 3] = 0;
+}
+
+function alphaCleanPng(png, alphaThreshold = 28) {
+  for (let y = 0; y < png.height; y += 1) {
+    for (let x = 0; x < png.width; x += 1) {
+      const i = (png.width * y + x) << 2;
+      if (png.data[i + 3] < alphaThreshold) transparentPixel(png, x, y);
+    }
+  }
+  return png;
+}
+
+function cropToAlphaBounds(png, padding = 2) {
+  let minX = png.width;
+  let minY = png.height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < png.height; y += 1) {
+    for (let x = 0; x < png.width; x += 1) {
+      const alpha = png.data[((png.width * y + x) << 2) + 3];
+      if (alpha === 0) continue;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+  }
+
+  if (maxX < minX || maxY < minY) return png;
+
+  const left = Math.max(0, minX - padding);
+  const top = Math.max(0, minY - padding);
+  const right = Math.min(png.width - 1, maxX + padding);
+  const bottom = Math.min(png.height - 1, maxY + padding);
+  const width = right - left + 1;
+  const height = bottom - top + 1;
+  const cropped = new PNG({ width, height });
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const source = (png.width * (top + y) + left + x) << 2;
+      const target = (width * y + x) << 2;
+      cropped.data[target] = png.data[source];
+      cropped.data[target + 1] = png.data[source + 1];
+      cropped.data[target + 2] = png.data[source + 2];
+      cropped.data[target + 3] = png.data[source + 3];
+    }
+  }
+
+  return cropped;
+}
+
+function loadPatternMotif(file, alphaThreshold = 28) {
+  return cropToAlphaBounds(alphaCleanPng(readPng(file), alphaThreshold));
+}
+
+function sampleNearest(png, x, y) {
+  const px = Math.round(x);
+  const py = Math.round(y);
+  if (px < 0 || py < 0 || px >= png.width || py >= png.height) return { r: 0, g: 0, b: 0, a: 0 };
+  const i = (png.width * py + px) << 2;
+  return {
+    r: png.data[i],
+    g: png.data[i + 1],
+    b: png.data[i + 2],
+    a: png.data[i + 3],
+  };
+}
+
+function drawMotifImage(target, motif, cx, cy, maxSize, opacity, tilt = 0) {
+  const scale = maxSize / Math.max(motif.width, motif.height);
+  const outputWidth = motif.width * scale;
+  const outputHeight = motif.height * scale;
+  const cos = Math.cos(tilt);
+  const sin = Math.sin(tilt);
+  const radius = Math.ceil(Math.hypot(outputWidth, outputHeight) / 2);
+
+  for (let y = Math.floor(cy - radius); y <= Math.ceil(cy + radius); y += 1) {
+    for (let x = Math.floor(cx - radius); x <= Math.ceil(cx + radius); x += 1) {
+      const dx = x - cx;
+      const dy = y - cy;
+      const sourceX = (dx * cos + dy * sin) / scale + motif.width / 2;
+      const sourceY = (-dx * sin + dy * cos) / scale + motif.height / 2;
+      if (sourceX < 0 || sourceY < 0 || sourceX >= motif.width || sourceY >= motif.height) continue;
+      const color = sampleNearest(motif, sourceX, sourceY);
+      if (color.a === 0) continue;
+      setPixel(target, x, y, {
+        r: color.r,
+        g: color.g,
+        b: color.b,
+        a: Math.round(color.a * opacity),
+      });
+    }
+  }
+}
+
 function applyCoverPaperGrain(png, salt) {
   for (let i = 0; i < 1200; i += 1) {
     const x = Math.floor(hashPixel(i, 7, salt) * png.width);
@@ -894,20 +1001,23 @@ function leafShape(png, x, y, scale, color) {
   line(png, x - 18 * scale, y + 7 * scale, x + 18 * scale, y - 7 * scale, 2 * scale, rgba('#6A5638', 110));
 }
 
-function pattern(file, draw) {
+function pattern(file, draw, options = {}) {
   const png = canvas(768, 768);
   draw(png);
-  applyHandmadeTexture(png, {
-    salt: file.length * 59,
-    colorJitter: 7,
-    alphaJitter: 5,
-    toothChance: 0.008,
-    edgeFadeChance: 0.08,
-  });
+  if (options.texture !== false) {
+    applyHandmadeTexture(png, {
+      salt: file.length * 59,
+      colorJitter: 7,
+      alphaJitter: 5,
+      toothChance: 0.008,
+      edgeFadeChance: 0.08,
+    });
+  }
   save(png, `assets/patterns/${file}.png`);
 }
 
-function patternPositions(width, height) {
+function basePatternPositions(width, height) {
+  const motifScale = 0.75;
   return [
     [-34, 82, 0.78, -0.2],
     [154, 132, 1.05, 0.12],
@@ -922,15 +1032,140 @@ function patternPositions(width, height) {
     [430, 650, 0.84, -0.26],
     [688, 704, 0.9, 0.16],
     [-18, 724, 0.76, 0.1],
-  ].map(([x, y, scale, tilt]) => [x % width, y % height, scale, tilt]);
+  ].map(([x, y, scale, tilt]) => [x % width, y % height, scale * motifScale, tilt]);
+}
+
+function patternPositions(width, height, variant = 'spring') {
+  const positionsByVariant = {
+    spring: [
+      [-34, 82, 0.78, -0.2],
+      [154, 132, 1.05, 0.12],
+      [382, 58, 0.72, -0.36],
+      [624, 116, 0.95, 0.26],
+      [76, 342, 0.9, 0.34],
+      [305, 292, 0.68, -0.18],
+      [540, 356, 1.12, 0.08],
+      [708, 470, 0.74, -0.32],
+      [184, 596, 1, 0.22],
+      [430, 650, 0.84, -0.26],
+      [688, 704, 0.9, 0.16],
+      [-18, 724, 0.76, 0.1],
+    ],
+    summer: [
+      [58, 96, 0.74, 0.05],
+      [278, 74, 1.08, -0.24],
+      [540, 150, 0.82, 0.3],
+      [742, 78, 0.7, -0.18],
+      [146, 312, 0.98, 0.22],
+      [418, 302, 0.66, -0.34],
+      [652, 372, 1.12, 0.12],
+      [-20, 478, 0.8, -0.28],
+      [244, 574, 0.72, 0.36],
+      [506, 642, 0.96, -0.16],
+      [746, 590, 0.76, 0.24],
+      [84, 748, 0.9, -0.08],
+    ],
+    autumn: [
+      [96, 42, 0.82, -0.5],
+      [340, 128, 1.02, 0.18],
+      [654, 66, 0.72, -0.12],
+      [-18, 248, 0.92, 0.34],
+      [220, 328, 0.7, -0.28],
+      [514, 284, 1.08, 0.48],
+      [734, 390, 0.78, -0.36],
+      [134, 540, 1, 0.14],
+      [394, 622, 0.74, 0.4],
+      [626, 588, 0.92, -0.22],
+      [746, 734, 0.7, 0.2],
+      [254, 756, 0.84, -0.46],
+    ],
+    winter: [
+      [34, 118, 0.72, 0.3],
+      [222, 68, 0.98, -0.1],
+      [484, 116, 0.78, 0.44],
+      [704, 52, 0.9, -0.28],
+      [116, 374, 1.1, 0.08],
+      [334, 284, 0.68, -0.36],
+      [594, 338, 0.96, 0.28],
+      [750, 486, 0.72, -0.16],
+      [-24, 604, 0.84, 0.38],
+      [272, 592, 0.92, -0.22],
+      [524, 692, 0.74, 0.12],
+      [716, 726, 1.02, -0.34],
+    ],
+    rainCloud: [
+      [96, 122, 0.86, -0.08],
+      [390, 72, 0.64, 0.18],
+      [650, 154, 0.94, -0.22],
+      [224, 346, 0.72, 0.12],
+      [536, 378, 1.02, 0.04],
+      [70, 624, 0.66, -0.18],
+      [348, 688, 0.92, 0.2],
+      [708, 602, 0.76, -0.1],
+    ],
+    rainDrop: [
+      [250, 166, 0.56, 0.18],
+      [530, 116, 0.48, -0.24],
+      [42, 300, 0.5, 0.1],
+      [366, 292, 0.62, -0.14],
+      [702, 336, 0.52, 0.28],
+      [164, 508, 0.46, -0.2],
+      [472, 550, 0.58, 0.08],
+      [612, 724, 0.5, -0.18],
+    ],
+  };
+  const motifScale = 0.75;
+  return (positionsByVariant[variant] ?? basePatternPositions(width, height))
+    .map(([x, y, scale, tilt]) => [((x % width) + width) % width, ((y % height) + height) % height, scale * motifScale, tilt]);
+}
+
+function rotatedPoint(cx, cy, radiusX, radiusY, angle, tilt = 0) {
+  const x = Math.cos(angle) * radiusX;
+  const y = Math.sin(angle) * radiusY;
+  return [
+    cx + x * Math.cos(tilt) - y * Math.sin(tilt),
+    cy + x * Math.sin(tilt) + y * Math.cos(tilt),
+  ];
+}
+
+function facetedEllipse(png, cx, cy, rx, ry, tilt, color) {
+  const points = Array.from({ length: 10 }, (_, index) => {
+    const angle = (Math.PI * 2 * index) / 10;
+    const wobble = index % 3 === 0 ? 0.9 : index % 2 === 0 ? 1.05 : 1;
+    return rotatedPoint(cx, cy, rx * wobble, ry * wobble, angle, tilt);
+  });
+  polygon(png, points, color);
+}
+
+function facetedDiamond(png, cx, cy, rx, ry, tilt, color) {
+  const localPoints = [
+    [0, -ry],
+    [rx * 0.9, -ry * 0.2],
+    [rx, ry * 0.45],
+    [rx * 0.2, ry],
+    [-rx * 0.85, ry * 0.36],
+    [-rx * 0.72, -ry * 0.28],
+  ];
+  const points = localPoints.map(([px, py]) => [
+    cx + px * Math.cos(tilt) - py * Math.sin(tilt),
+    cy + px * Math.sin(tilt) + py * Math.cos(tilt),
+  ]);
+  polygon(png, points, color);
+}
+
+function transformLocalPoints(cx, cy, tilt, points) {
+  return points.map(([px, py]) => [
+    cx + px * Math.cos(tilt) - py * Math.sin(tilt),
+    cy + px * Math.sin(tilt) + py * Math.cos(tilt),
+  ]);
 }
 
 function drawPatternSun(png, x, y, scale, tilt = 0) {
   const rayColor = rgba('#E3A23F', 118);
   const bodyColor = rgba('#F2C767', 128);
   const shadeColor = rgba('#C98245', 68);
-  for (let i = 0; i < 10; i += 1) {
-    const a = (Math.PI * 2 * i) / 10 + tilt;
+  for (let i = 0; i < 9; i += 1) {
+    const a = (Math.PI * 2 * i) / 9 + tilt;
     line(
       png,
       x + Math.cos(a) * 28 * scale,
@@ -941,7 +1176,7 @@ function drawPatternSun(png, x, y, scale, tilt = 0) {
       rayColor,
     );
   }
-  circle(png, x, y, 25 * scale, bodyColor);
+  facetedEllipse(png, x, y, 25 * scale, 23 * scale, tilt * 0.4, bodyColor);
   polygon(
     png,
     [
@@ -977,14 +1212,81 @@ function drawPatternSnowflake(png, x, y, scale, tilt = 0) {
   circle(png, x, y, 5 * scale, cream);
 }
 
+function drawPatternCloud(png, x, y, scale, tilt = 0) {
+  const cloud = rgba('#9FB8C6', 130);
+  const highlight = rgba('#E6E1D0', 88);
+  const shade = rgba('#647F90', 82);
+  facetedEllipse(png, x - 22 * scale, y + 6 * scale, 27 * scale, 18 * scale, tilt - 0.08, cloud);
+  facetedEllipse(png, x + 6 * scale, y - 6 * scale, 33 * scale, 25 * scale, tilt + 0.04, cloud);
+  facetedEllipse(png, x + 34 * scale, y + 8 * scale, 28 * scale, 18 * scale, tilt + 0.1, cloud);
+  polygon(
+    png,
+    [
+      [x - 52 * scale, y + 12 * scale],
+      [x - 8 * scale, y - 1 * scale],
+      [x + 60 * scale, y + 9 * scale],
+      [x + 48 * scale, y + 25 * scale],
+      [x - 44 * scale, y + 27 * scale],
+    ],
+    shade,
+  );
+  polygon(
+    png,
+    [
+      [x - 16 * scale, y - 22 * scale],
+      [x + 18 * scale, y - 27 * scale],
+      [x + 36 * scale, y - 8 * scale],
+      [x + 4 * scale, y - 2 * scale],
+    ],
+    highlight,
+  );
+}
+
+function drawPatternRaindrop(png, x, y, scale, tilt = 0) {
+  const drop = rgba('#86B7CF', 130);
+  const highlight = rgba('#F4F1DF', 84);
+  const shade = rgba('#4F7F99', 68);
+  const points = transformLocalPoints(x, y, tilt, [
+    [0, -31 * scale],
+    [21 * scale, -8 * scale],
+    [18 * scale, 20 * scale],
+    [0, 31 * scale],
+    [-20 * scale, 18 * scale],
+    [-18 * scale, -8 * scale],
+  ]);
+  polygon(png, points, drop);
+  polygon(
+    png,
+    transformLocalPoints(x, y, tilt, [
+      [-7 * scale, -18 * scale],
+      [6 * scale, -2 * scale],
+      [-4 * scale, 19 * scale],
+      [-14 * scale, 5 * scale],
+    ]),
+    highlight,
+  );
+  polygon(
+    png,
+    transformLocalPoints(x, y, tilt, [
+      [7 * scale, -6 * scale],
+      [18 * scale, 11 * scale],
+      [4 * scale, 29 * scale],
+      [0, 7 * scale],
+    ]),
+    shade,
+  );
+}
+
 function drawPatternBlossom(png, x, y, scale, tilt = 0) {
   const petal = rgba('#E7A7B4', 116);
   const petalShade = rgba('#C98693', 58);
   const center = rgba('#D1A044', 108);
   for (let i = 0; i < 5; i += 1) {
     const a = (Math.PI * 2 * i) / 5 + tilt;
-    ellipse(png, x + Math.cos(a) * 17 * scale, y + Math.sin(a) * 17 * scale, 11 * scale, 18 * scale, petal);
-    ellipse(png, x + Math.cos(a) * 18 * scale, y + Math.sin(a) * 18 * scale, 6 * scale, 12 * scale, petalShade);
+    const px = x + Math.cos(a) * 17 * scale;
+    const py = y + Math.sin(a) * 17 * scale;
+    facetedDiamond(png, px, py, 11 * scale, 18 * scale, a, petal);
+    facetedDiamond(png, px + Math.cos(a) * 1.5 * scale, py + Math.sin(a) * 1.5 * scale, 6 * scale, 11 * scale, a, petalShade);
   }
   circle(png, x, y, 8 * scale, center);
 }
@@ -993,8 +1295,8 @@ function drawPatternLeaf(png, x, y, scale, tilt = 0) {
   const leaf = rgba('#BD7445', 126);
   const shade = rgba('#8F5E3F', 62);
   const stem = rgba('#62452F', 92);
-  ellipse(png, x, y, 34 * scale, 17 * scale, leaf);
-  ellipse(png, x + Math.cos(tilt) * 6 * scale, y + Math.sin(tilt) * 6 * scale, 22 * scale, 11 * scale, shade);
+  facetedDiamond(png, x, y, 35 * scale, 18 * scale, tilt - 0.2, leaf);
+  facetedDiamond(png, x + Math.cos(tilt) * 6 * scale, y + Math.sin(tilt) * 6 * scale, 22 * scale, 10 * scale, tilt - 0.2, shade);
   line(png, x - 26 * scale, y + 12 * scale, x + 28 * scale, y - 13 * scale, 3 * scale, stem);
 }
 
@@ -1028,22 +1330,37 @@ function drawSingleMotifPattern(png, drawMotif) {
   });
 }
 
+function drawImageMotifPattern(png, motif, variant, maxSize = 92, opacity = 0.92) {
+  patternPositions(png.width, png.height, variant).forEach(([x, y, scale, tilt], index) => {
+    const sizeVariation = index % 4 === 0 ? 0.86 : index % 3 === 0 ? 1.08 : 1;
+    drawMotifImage(png, motif, x, y, maxSize * scale * sizeVariation, opacity, tilt + index * 0.05);
+  });
+}
+
 function generatePatternBackgrounds() {
+  const spring = loadPatternMotif('assets/patterns/motifs/spring-blossom.png');
+  const summer = loadPatternMotif('assets/patterns/motifs/summer-sun.png', 38);
+  const autumn = loadPatternMotif('assets/patterns/motifs/autumn-leaf.png');
+  const winter = loadPatternMotif('assets/patterns/motifs/winter-snowflake.png');
+  const rainCloud = loadPatternMotif('assets/patterns/motifs/rain-cloud.png', 72);
+  const rainDrop = loadPatternMotif('assets/patterns/motifs/rain-drop.png', 96);
+
   pattern('pattern-spring', (png) => {
-    drawSingleMotifPattern(png, drawPatternBlossom);
-  });
+    drawImageMotifPattern(png, spring, 'spring');
+  }, { texture: false });
   pattern('pattern-summer', (png) => {
-    drawSingleMotifPattern(png, drawPatternSun);
-  });
+    drawImageMotifPattern(png, summer, 'summer');
+  }, { texture: false });
   pattern('pattern-autumn', (png) => {
-    drawSingleMotifPattern(png, drawPatternLeaf);
-  });
+    drawImageMotifPattern(png, autumn, 'autumn');
+  }, { texture: false });
   pattern('pattern-winter', (png) => {
-    drawSingleMotifPattern(png, drawPatternSnowflake);
-  });
-  pattern('pattern-star', (png) => {
-    drawSingleMotifPattern(png, drawPatternStar);
-  });
+    drawImageMotifPattern(png, winter, 'winter');
+  }, { texture: false });
+  pattern('pattern-rain', (png) => {
+    drawImageMotifPattern(png, rainCloud, 'rainCloud', 96, 0.9);
+    drawImageMotifPattern(png, rainDrop, 'rainDrop', 66, 0.9);
+  }, { texture: false });
 }
 
 function diaryPaperBackground(file, baseHex, draw) {

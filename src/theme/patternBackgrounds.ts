@@ -4,6 +4,7 @@ export const PATTERN_BACKGROUND_VARIANTS = [
   'summer',
   'autumn',
   'winter',
+  'rain',
 ] as const;
 
 export type PatternBackgroundVariant = typeof PATTERN_BACKGROUND_VARIANTS[number];

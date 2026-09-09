@@ -40,6 +40,7 @@ const PATTERN_IMAGE_SOURCES: Record<PatternImageVariant, ImageSourcePropType> = 
   summer: require('../../../assets/patterns/pattern-summer.png'),
   autumn: require('../../../assets/patterns/pattern-autumn.png'),
   winter: require('../../../assets/patterns/pattern-winter.png'),
+  rain: require('../../../assets/patterns/pattern-rain.png'),
 };
 
 function patternOpacity(isDark: boolean): number {
