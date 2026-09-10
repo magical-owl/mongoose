@@ -42,6 +42,21 @@ export const DIARY_PAPER_BACKGROUNDS = [
     label: 'Blue notebook paper',
     source: require('../../../../assets/diary-paper/blue-notebook-paper.png') as ImageSourcePropType,
   },
+  {
+    id: 'recycled-kraft-paper',
+    label: 'Recycled kraft paper',
+    source: require('../../../../assets/diary-paper/recycled-kraft-paper.png') as ImageSourcePropType,
+  },
+  {
+    id: 'pastel-memo-paper',
+    label: 'Pastel memo paper',
+    source: require('../../../../assets/diary-paper/pastel-memo-paper.png') as ImageSourcePropType,
+  },
+  {
+    id: 'cream-letter-paper',
+    label: 'Cream letter paper',
+    source: require('../../../../assets/diary-paper/cream-letter-paper.png') as ImageSourcePropType,
+  },
 ] as const satisfies readonly DiaryPaperBackground[];
 
 export const DEFAULT_DIARY_PAPER_BACKGROUND_ID = 'vintage-parchment';

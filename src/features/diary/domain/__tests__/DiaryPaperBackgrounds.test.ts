@@ -10,6 +10,9 @@ describe('DiaryPaperBackgrounds', () => {
       'warm-grid-paper',
       'rose-memo-paper',
       'blue-notebook-paper',
+      'recycled-kraft-paper',
+      'pastel-memo-paper',
+      'cream-letter-paper',
     ]);
   });
 
