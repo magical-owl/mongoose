@@ -7,6 +7,10 @@ const PROFILE_PHOTO_DIRECTORY_MARKER = `/${PROFILE_PHOTO_DIRECTORY_NAME}/`;
 const LEGACY_DIARY_PHOTO_DIRECTORY_NAME = 'diary-photos';
 const LEGACY_DIARY_PHOTO_DIRECTORY_MARKER = `/${LEGACY_DIARY_PHOTO_DIRECTORY_NAME}/`;
 
+export interface IProfilePhotoCleanupService {
+  clearImportedProfilePhotos(): Promise<void>;
+}
+
 export class ProfilePhotoService {
   public async importAsset(asset: ImagePickerAsset): Promise<string> {
     const id = generateUUID();
@@ -17,6 +21,13 @@ export class ProfilePhotoService {
     const destination = new File(directory, `${id}${getProfilePhotoExtension(asset)}`);
     await source.copy(destination, { overwrite: true });
     return destination.uri;
+  }
+
+  public async clearImportedProfilePhotos(): Promise<void> {
+    const directory = new Directory(Paths.document, PROFILE_PHOTO_DIRECTORY_NAME);
+    if (directory.exists) {
+      directory.delete();
+    }
   }
 }
 

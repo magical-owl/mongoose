@@ -3,6 +3,7 @@ import { managedSecureStorageKeys } from '@/constants/secureStorageKeys';
 import { getCachedDiaryEntries, setCachedDiaryEntries } from '@/features/diary/services/DiaryEntryCache';
 import type { IDiaryPhotoCleanupService } from '@/features/diary/services/DiaryPhotoService';
 import { getCachedJournals, setCachedJournals } from '@/features/journal/services/JournalCache';
+import type { IProfilePhotoCleanupService } from '@/features/profile/services/ProfilePhotoService';
 import { buildDiaryEntry, buildJournal } from '@tests/fixtures/domain';
 import { DataDeletionService } from '../DataDeletionService';
 
@@ -23,6 +24,9 @@ describe('DataDeletionService', () => {
       deleteReflectionPhoto: jest.fn().mockResolvedValue(undefined),
       clearImportedPhotos: jest.fn().mockResolvedValue(undefined),
     };
+    const profilePhotoCleanup: IProfilePhotoCleanupService = {
+      clearImportedProfilePhotos: jest.fn().mockResolvedValue(undefined),
+    };
     const entry = buildDiaryEntry({
       title: 'Entry',
       content: 'Today',
@@ -33,12 +37,13 @@ describe('DataDeletionService', () => {
     });
     setCachedDiaryEntries([entry], []);
     setCachedJournals([journal]);
-    const service = new DataDeletionService(managedLocalData, storage, photoCleanup);
+    const service = new DataDeletionService(managedLocalData, storage, photoCleanup, profilePhotoCleanup);
 
     await service.deleteAll();
 
     expect(managedLocalData.clearManagedData).toHaveBeenCalledTimes(1);
     expect(photoCleanup.clearImportedPhotos).toHaveBeenCalledTimes(1);
+    expect(profilePhotoCleanup.clearImportedProfilePhotos).toHaveBeenCalledTimes(1);
     expect(removedKeys).toEqual(managedSecureStorageKeys);
     expect(getCachedDiaryEntries()).toEqual({ entries: null, deletedEntries: null });
     expect(getCachedJournals()).toBeNull();
