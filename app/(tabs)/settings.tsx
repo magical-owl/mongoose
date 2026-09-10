@@ -211,13 +211,24 @@ export default function SettingsScreen() {
     }, [deviceDateKey, refresh, setStickerLimitExhaustedAt, setStickersUsedToday])
   );
 
-  const handleExportData = async () => {
+  const exportPlainJson = async () => {
     try {
       await diaryBackupService.exportJson(entries, profile, journalExtras);
       Alert.alert(t('settingsExportedTitle'), t('settingsExportedMessage'));
     } catch {
       Alert.alert(t('entryErrorTitle'), t('settingsExportFailedMessage'));
     }
+  };
+
+  const handleExportData = () => {
+    Alert.alert(t('settingsExportJsonWarningTitle'), t('settingsExportJsonWarningMessage'), [
+      { text: t('entryCancel'), style: 'cancel' },
+      {
+        text: t('settingsExportJsonConfirm'),
+        style: 'destructive',
+        onPress: () => { void exportPlainJson(); },
+      },
+    ]);
   };
 
   const handleEncryptedExport = async () => {

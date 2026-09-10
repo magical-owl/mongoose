@@ -4,12 +4,18 @@ import { buildDiaryEntry } from '@tests/fixtures/domain';
 
 class MockSecureStorage implements ISecureStorageDataSource {
   private store = new Map<string, string>();
+  public failReads = false;
+  public setItemCalls = 0;
 
   public async getItem(key: string): Promise<string | null> {
+    if (this.failReads) {
+      throw new Error('Secure storage is unavailable');
+    }
     return this.store.get(key) ?? null;
   }
 
   public async setItem(key: string, value: string): Promise<void> {
+    this.setItemCalls += 1;
     this.store.set(key, value);
   }
 
@@ -146,6 +152,38 @@ describe('DiaryRepository', () => {
     expect(getDeletedResult.success).toBe(true);
     if (getDeletedResult.success) {
       expect(getDeletedResult.data).toHaveLength(0);
+    }
+  });
+
+  it('does not overwrite stored entries when secure storage cannot be read', async () => {
+    const saveResult = await repository.save(mockEntry);
+    expect(saveResult.success).toBe(true);
+    const successfulWriteCount = mockStorage.setItemCalls;
+
+    const freshRepository = new DiaryRepository(mockStorage);
+    mockStorage.failReads = true;
+
+    const failedSaveResult = await freshRepository.save(buildDiaryEntry({
+      id: '223e4567-e89b-12d3-a456-426614174001',
+      title: 'Should not save',
+      content: 'This should not overwrite existing storage.',
+      paperBackgroundId: 'vintage-parchment',
+    }));
+
+    expect(failedSaveResult.success).toBe(false);
+    if (!failedSaveResult.success) {
+      expect(failedSaveResult.error.code).toBe('STORAGE_ERROR');
+    }
+    expect(mockStorage.setItemCalls).toBe(successfulWriteCount);
+
+    mockStorage.failReads = false;
+    const restoredRepository = new DiaryRepository(mockStorage);
+    const getAllResult = await restoredRepository.getAll();
+
+    expect(getAllResult.success).toBe(true);
+    if (getAllResult.success) {
+      expect(getAllResult.data).toHaveLength(1);
+      expect(getAllResult.data[0]?.id).toBe(mockEntry.id);
     }
   });
 });

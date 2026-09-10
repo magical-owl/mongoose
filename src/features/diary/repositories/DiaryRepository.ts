@@ -20,23 +20,18 @@ export class DiaryRepository implements IDiaryRepository {
 
   private async ensureLoaded(): Promise<void> {
     if (this.isLoaded) return;
-    try {
-      const raw = await this.storage.getItem(secureStorageKeys.diaryEntries);
-      if (raw) {
-        const parsed: unknown = JSON.parse(raw);
-        if (Array.isArray(parsed) || (typeof parsed === 'object' && parsed !== null)) {
-          const migrated = migrateDiaryStorage(parsed);
-          this.memoryStore.clear();
-          for (const entry of migrated.entries) {
-            this.memoryStore.set(entry.id, entry);
-          }
+    const raw = await this.storage.getItem(secureStorageKeys.diaryEntries);
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed) || (typeof parsed === 'object' && parsed !== null)) {
+        const migrated = migrateDiaryStorage(parsed);
+        this.memoryStore.clear();
+        for (const entry of migrated.entries) {
+          this.memoryStore.set(entry.id, entry);
         }
       }
-    } catch {
-      // If encrypted storage read fails, fallback gracefully to current in-memory store
-    } finally {
-      this.isLoaded = true;
     }
+    this.isLoaded = true;
   }
 
   private async persist(): Promise<void> {
@@ -141,13 +136,15 @@ export class DiaryRepository implements IDiaryRepository {
       return success(validated);
     } catch (error) {
       let message = 'Failed to save entry';
+      let code = 'STORAGE_ERROR';
       if (error instanceof z.ZodError) {
         message = error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join(', ');
+        code = 'VALIDATION_ERROR';
       } else if (error instanceof Error) {
         message = error.message;
       }
       return failure({
-        code: 'VALIDATION_ERROR',
+        code,
         message,
       });
     }

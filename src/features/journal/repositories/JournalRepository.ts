@@ -19,20 +19,15 @@ export class JournalRepository implements IJournalRepository {
 
   private async ensureLoaded(): Promise<void> {
     if (this.isLoaded) return;
-    try {
-      const raw = await this.storage.getItem(secureStorageKeys.journals);
-      if (raw) {
-        const parsed = JournalStorageSchema.safeParse(JSON.parse(raw));
-        if (parsed.success) {
-          this.memoryStore.clear();
-          parsed.data.journals.forEach((journal) => this.memoryStore.set(journal.id, journal));
-        }
+    const raw = await this.storage.getItem(secureStorageKeys.journals);
+    if (raw) {
+      const parsed = JournalStorageSchema.safeParse(JSON.parse(raw));
+      if (parsed.success) {
+        this.memoryStore.clear();
+        parsed.data.journals.forEach((journal) => this.memoryStore.set(journal.id, journal));
       }
-    } catch {
-      // Keep the in-memory fallback if secure storage cannot be read.
-    } finally {
-      this.isLoaded = true;
     }
+    this.isLoaded = true;
   }
 
   private async persist(): Promise<void> {
