@@ -3,7 +3,6 @@ import { Image, Pressable, StyleSheet, TouchableOpacity, useWindowDimensions, Vi
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
-import { stripHtml } from '@shared/utils/html';
 import { getEntryManualMoods, getPrimaryManualMood, type DiaryEntry, type DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
 import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import { getDiaryEntryViewCount } from '@/features/diary/domain/DiaryEntryViewHistory';
@@ -17,6 +16,7 @@ import { useAppStore } from '@/stores/useAppStore';
 import { getManualMoodColor } from '@/features/diary/domain/moodColors';
 import { reflectionCountLabel, useTranslation } from '@/localization/i18n';
 import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
+import { getDiaryEntryPreviewText } from '@/features/diary/services/DiaryEntryPreviewText';
 import {
   getStickerBodyPreviewBottom,
 } from '@/features/diary/domain/StickerLayout';
@@ -123,6 +123,7 @@ export function DiaryEntryView({
   const entryTime = formatFriendlyTimestamp(entry.createdAt, timeFormat, friendlyTimestampLabels);
   const feedEntryDateTime = entryTime;
   const viewCount = getDiaryEntryViewCount(entry);
+  const previewText = getDiaryEntryPreviewText(entry);
   const viewCountA11y = t('entryViewCountA11y').replace('{count}', String(viewCount));
   const hasInlineReflections = mode === 'timeline' || mode === 'feed';
   const showInlineReflectionAction = hasInlineReflections && (entry.reflections.length > 0 || Boolean(onAddReflection));
@@ -369,7 +370,7 @@ export function DiaryEntryView({
             ) : null}
             <View style={styles.timelinePreviewRow}>
               <View style={styles.timelineTextPreview}>
-                <Text style={[styles.timelineContent, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
+                <Text style={[styles.timelineContent, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{previewText}</Text>
                 <EntryMetaRow
                   variant="timeline"
                   moods={entry.coverPhoto ? [] : entryMoods}
@@ -447,7 +448,7 @@ export function DiaryEntryView({
             </View>
             <View style={styles.cardPreviewRow}>
               <View style={styles.cardTextPreview}>
-                <Text style={[styles.content, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{stripHtml(entry.content)}</Text>
+                <Text style={[styles.content, { color: theme.colors.textSecondary }]} numberOfLines={entry.coverPhoto ? 2 : 3}>{previewText}</Text>
                 {cardFooterContent}
               </View>
               {!entry.coverPhoto ? <CoverPhotoPreview entry={entry} style={styles.cardCoverPhoto} /> : null}

@@ -1,7 +1,16 @@
 import type { ImagePickerAsset } from 'expo-image-picker';
-import { diaryPhotoService, getDiaryPhotoImageSource, resolveImportedDiaryPhotoUri } from '@/features/diary/services/DiaryPhotoService';
+import {
+  clearDiaryPhotoImageSourceCache,
+  diaryPhotoService,
+  getDiaryPhotoImageSource,
+  resolveImportedDiaryPhotoUri,
+} from '@/features/diary/services/DiaryPhotoService';
 
 describe('DiaryPhotoService', () => {
+  afterEach(() => {
+    clearDiaryPhotoImageSourceCache();
+  });
+
   it('stores compatible album JPEG assets with a renderable jpg extension', async () => {
     const imported = await diaryPhotoService.importAsset({
       uri: 'file:///picker/IMG_0001.HEIC',
@@ -21,5 +30,12 @@ describe('DiaryPhotoService', () => {
 
     expect(resolveImportedDiaryPhotoUri(uri)).toBe('file:///document/diary-photos/photo-1.jpg');
     expect(getDiaryPhotoImageSource(uri)).toEqual({ uri: 'file:///document/diary-photos/photo-1.jpg' });
+  });
+
+  it('reuses image source objects for the same resolved imported photo uri', () => {
+    const oldContainerUri = 'file:///old-container/diary-photos/photo-1.jpg';
+    const currentContainerUri = 'file:///document/diary-photos/photo-1.jpg';
+
+    expect(getDiaryPhotoImageSource(oldContainerUri)).toBe(getDiaryPhotoImageSource(currentContainerUri));
   });
 });

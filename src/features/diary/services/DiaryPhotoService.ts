@@ -8,6 +8,8 @@ import { generateUUID } from '@/shared/utils/uuid';
 
 const PHOTO_DIRECTORY_NAME = 'diary-photos';
 const PHOTO_DIRECTORY_MARKER = `/${PHOTO_DIRECTORY_NAME}/`;
+const MAX_IMAGE_SOURCE_CACHE_SIZE = 500;
+const diaryPhotoImageSourceCache = new Map<string, ImageSourcePropType>();
 
 export interface IDiaryPhotoCleanupService {
   deletePhoto(photo: DiaryPhoto): Promise<void>;
@@ -99,7 +101,28 @@ export function resolveImportedDiaryPhotoUri(uri: string): string {
 }
 
 export function getDiaryPhotoImageSource(uri: string): ImageSourcePropType | undefined {
-  return getJournalCoverImageSource(resolveImportedDiaryPhotoUri(uri));
+  const resolvedUri = resolveImportedDiaryPhotoUri(uri);
+  const cachedSource = diaryPhotoImageSourceCache.get(resolvedUri);
+  if (cachedSource) {
+    diaryPhotoImageSourceCache.delete(resolvedUri);
+    diaryPhotoImageSourceCache.set(resolvedUri, cachedSource);
+    return cachedSource;
+  }
+
+  const source = getJournalCoverImageSource(resolvedUri);
+  if (!source) return undefined;
+
+  diaryPhotoImageSourceCache.set(resolvedUri, source);
+  if (diaryPhotoImageSourceCache.size > MAX_IMAGE_SOURCE_CACHE_SIZE) {
+    const oldestKey = diaryPhotoImageSourceCache.keys().next().value;
+    if (oldestKey) diaryPhotoImageSourceCache.delete(oldestKey);
+  }
+
+  return source;
+}
+
+export function clearDiaryPhotoImageSourceCache(): void {
+  diaryPhotoImageSourceCache.clear();
 }
 
 function getPhotoExtension(asset: ImagePickerAsset): string {

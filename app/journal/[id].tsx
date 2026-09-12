@@ -23,8 +23,9 @@ import {
   DEFAULT_JOURNAL_BACKGROUND_URI,
   getJournalCoverImageSource,
 } from "@/features/journal/domain/JournalBackgrounds";
-import { stripHtml } from "@shared/utils/html";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
+import { filterVisibleDiaryEntries } from "@/features/diary/services/DiaryEntryListFilter";
+import { getDiaryEntryFilterOptions, sortDiaryEntriesByDateDesc } from "@/features/diary/services/DiaryEntryListQuery";
 import {
   DIARY_ENTRY_LIST_PAGE_SIZE,
   getNextDiaryEntryVisibleCount,
@@ -50,7 +51,7 @@ import { useScrollCollapse } from "@/shared/hooks/useScrollCollapse";
 import { useSubscription } from "@/features/subscription/hooks/useSubscription";
 import { APP_IDENTITY } from "@/config/appIdentity";
 import type { HomeViewMode } from "@/stores/useAppStore";
-import { getEntryManualMoods, type DiaryEntry, type DiaryPhoto, type ManualMood } from "@/features/diary/domain/DiaryEntry";
+import { type DiaryEntry, type DiaryPhoto, type ManualMood } from "@/features/diary/domain/DiaryEntry";
 import type { MemoryReaction } from "@/features/diary/domain/MemoryReaction";
 import { getManualMoodColor } from "@/features/diary/domain/moodColors";
 import { premiumPaywallTitle, useTranslation } from "@/localization/i18n";
@@ -134,6 +135,10 @@ export default function JournalEntriesScreen() {
     if (journalId === UNASSIGNED_JOURNAL_ID) return entries.filter((entry) => (entry.journalIds?.length ?? entry.collectionIds.length) === 0);
     return entries.filter((entry) => (entry.journalIds ?? entry.collectionIds).includes(journalId));
   }, [entries, journalId]);
+  const sortedJournalEntries = useMemo(
+    () => sortDiaryEntriesByDateDesc(journalEntries),
+    [journalEntries],
+  );
   const reflectionModalEntry = useMemo(
     () => reflectionModalEntryId ? entries.find((entry) => entry.id === reflectionModalEntryId) ?? null : null,
     [entries, reflectionModalEntryId],
@@ -164,23 +169,7 @@ export default function JournalEntriesScreen() {
   );
 
   const filterOptions = useMemo(
-    () => ({
-      year: Array.from(new Set(journalEntries.map((entry) => entry.date.slice(0, 4))))
-        .sort()
-        .reverse(),
-      month: Array.from(new Set(journalEntries.map((entry) => entry.date.slice(0, 7))))
-        .sort()
-        .reverse(),
-      date: Array.from(new Set(journalEntries.map((entry) => entry.date)))
-        .sort()
-        .reverse(),
-      tag: Array.from(new Set(journalEntries.flatMap((entry) => entry.tags))).sort(),
-      mood: Array.from(
-        new Set(
-          journalEntries.flatMap((entry) => getEntryManualMoods(entry)),
-        ),
-      ).sort(),
-    }),
+    () => getDiaryEntryFilterOptions(journalEntries),
     [journalEntries],
   );
 
@@ -434,36 +423,17 @@ export default function JournalEntriesScreen() {
   );
 
   const filteredEntries = useMemo(() => {
-    if (
-      !search.trim() &&
-      !filterYear &&
-      !filterMonth &&
-      !filterDate &&
-      !filterTag &&
-      !filterMood &&
-      !favoritesOnly
-    )
-      return journalEntries.filter((entry) => isDiaryEntryVisible(entry));
-    const q = search.toLowerCase();
-    return journalEntries.filter(
-      (e) =>
-        isDiaryEntryVisible(e) &&
-        (!q ||
-          e.title.toLowerCase().includes(q) ||
-          stripHtml(e.content).toLowerCase().includes(q)) &&
-        (!filterYear || e.date.startsWith(filterYear)) &&
-        (!filterMonth || e.date.startsWith(filterMonth)) &&
-        (!filterDate || e.date === filterDate) &&
-        (!filterTag ||
-          e.tags.some((tag) =>
-            tag.toLowerCase().includes(filterTag.toLowerCase()),
-          )) &&
-        (!filterMood ||
-          getEntryManualMoods(e).includes(filterMood.toLowerCase() as ManualMood)) &&
-        (!favoritesOnly || e.isFavorite),
-    );
+    return filterVisibleDiaryEntries(sortedJournalEntries, {
+      search,
+      year: filterYear,
+      month: filterMonth,
+      date: filterDate,
+      tag: filterTag,
+      mood: filterMood,
+      favoritesOnly,
+    });
   }, [
-    journalEntries,
+    sortedJournalEntries,
     search,
     filterYear,
     filterMonth,
@@ -482,14 +452,9 @@ export default function JournalEntriesScreen() {
     : DIARY_ENTRY_LIST_PAGE_SIZE;
   entryPaginationKeyRef.current = entryPaginationKey;
 
-  const sortedFilteredEntries = useMemo(
-    () => [...filteredEntries].sort((a, b) => b.date.localeCompare(a.date)),
-    [filteredEntries],
-  );
-
   const visibleFilteredEntries = useMemo(
-    () => getVisibleDiaryEntries(sortedFilteredEntries, visibleEntryCount),
-    [sortedFilteredEntries, visibleEntryCount],
+    () => getVisibleDiaryEntries(filteredEntries, visibleEntryCount),
+    [filteredEntries, visibleEntryCount],
   );
 
   const hasMoreEntries = visibleEntryCount < filteredEntries.length;

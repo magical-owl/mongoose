@@ -23,7 +23,7 @@ import { appLockService } from '@/services/AppLockService';
 import { useAppStore } from '@/stores/useAppStore';
 import { useTranslation } from '@/localization/i18n';
 import { formatDisplayDate } from '@/shared/utils/dateFormat';
-import { stripHtml } from '@/shared/utils/html';
+import { getDiaryEntryPreviewText } from '@/features/diary/services/DiaryEntryPreviewText';
 import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 function getEntryDisplayPhoto(entry: DiaryEntry): DiaryPhoto | undefined {
@@ -78,7 +78,7 @@ function MemoryCard({ entry, variant = 'compact', onPress, onShuffle }: MemoryCa
         />
         <View style={styles.memoryCopy}>
           <Text preset="bodySmall" color="textSecondary" numberOfLines={isFeatured ? 3 : 2}>
-            {stripHtml(entry.content)}
+            {getDiaryEntryPreviewText(entry)}
           </Text>
         </View>
       </TouchableOpacity>
