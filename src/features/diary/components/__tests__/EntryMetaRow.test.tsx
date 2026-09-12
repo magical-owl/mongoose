@@ -51,6 +51,43 @@ describe('EntryMetaRow', () => {
     await waitFor(() => expect(queryByTestId('entry-meta-row')).toBeNull());
   });
 
+  it('renders memory reactions as read-only badges when handlers are not provided', async () => {
+    const { getByTestId, getByText, queryByTestId } = await renderWithProviders(
+      <EntryMetaRow
+        variant="cover"
+        moods={['happy']}
+        tags={['family']}
+        memoryReactions={['treasure']}
+        testID="entry-meta-row"
+        memoryReactionTestID="entry-meta-reaction"
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByTestId('entry-meta-row')).toBeTruthy();
+    expect(getByTestId('entry-meta-reaction')).toBeTruthy();
+    expect(getByTestId('entry-meta-reaction-icon')).toBeTruthy();
+    expect(getByText('Treasure')).toBeTruthy();
+    expect(queryByTestId('entry-meta-reaction-tray')).toBeNull();
+  });
+
+  it('does not render an empty read-only memory reaction badge', async () => {
+    const { queryByTestId } = await renderWithProviders(
+      <EntryMetaRow
+        variant="cover"
+        moods={[]}
+        tags={[]}
+        memoryReactions={[]}
+        testID="entry-meta-row"
+        memoryReactionTestID="entry-meta-reaction"
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(queryByTestId('entry-meta-row')).toBeNull();
+    expect(queryByTestId('entry-meta-reaction')).toBeNull();
+  });
+
   it('sizes and centers the reaction button in the view diary footer row', async () => {
     const { getByTestId } = await renderWithProviders(
       <EntryMetaRow

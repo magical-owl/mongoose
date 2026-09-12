@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@shared/components/Text';
 import { useTheme } from '@providers/ThemeProvider';
 import type { ManualMood } from '@/features/diary/domain/DiaryEntry';
+import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import { EntryViewCountBadge } from './EntryViewCountBadge';
 import { EntryMetaRow } from './EntryMetaRow';
 
@@ -18,6 +19,7 @@ interface EntryCoverSummaryProps {
   readonly viewCountAccessibilityLabel?: string;
   readonly moods?: readonly ManualMood[];
   readonly tags?: readonly string[];
+  readonly memoryReactions?: readonly MemoryReaction[];
   readonly onShuffle?: () => void;
   readonly onViewCountPress?: () => void;
   readonly shuffleAccessibilityLabel?: string;
@@ -40,6 +42,7 @@ export function EntryCoverSummary({
   viewCountAccessibilityLabel,
   moods = [],
   tags = [],
+  memoryReactions = [],
   onShuffle,
   onViewCountPress,
   shuffleAccessibilityLabel,
@@ -54,7 +57,7 @@ export function EntryCoverSummary({
   const theme = useTheme();
   const isFeed = variant === 'feed';
   const isFeatured = variant === 'memoryFeatured';
-  const showBadges = moods.length > 0 || tags.length > 0;
+  const showBadges = memoryReactions.length > 0 || moods.length > 0 || tags.length > 0;
   const showViewCount = typeof viewCount === 'number' && Boolean(viewCountAccessibilityLabel);
   const showBottomRow = showBadges || showViewCount;
 
@@ -128,6 +131,7 @@ export function EntryCoverSummary({
         <View style={[styles.bottomMetaRow, isFeed && styles.feedBottomMetaRow]}>
           <EntryMetaRow
             variant="cover"
+            memoryReactions={memoryReactions}
             moods={moods}
             tags={tags}
             style={styles.badgeRow}

@@ -5,6 +5,7 @@ import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import { MoodBadgeList } from './MoodBadgeList';
 import { TagBadgeList } from './TagBadgeList';
 import { MemoryReactionButton } from './MemoryReactionButton';
+import { MemoryReactionBadge } from './MemoryReactionBadge';
 import { ReflectionSummaryButton } from './ReflectionSummaryButton';
 
 type EntryMetaRowVariant = 'card' | 'cover' | 'feed' | 'timeline' | 'viewFooter';
@@ -49,7 +50,9 @@ export function EntryMetaRow({
   reflectionTestID,
 }: EntryMetaRowProps): React.JSX.Element | null {
   const theme = useTheme();
-  const showMemoryReaction = Boolean(onToggleMemoryReaction && onOpenMemoryReactionPicker && onDismissMemoryReactionPicker);
+  const showInteractiveMemoryReaction = Boolean(onToggleMemoryReaction && onOpenMemoryReactionPicker && onDismissMemoryReactionPicker);
+  const showReadOnlyMemoryReaction = !showInteractiveMemoryReaction && memoryReactions.length > 0;
+  const showMemoryReaction = showInteractiveMemoryReaction || showReadOnlyMemoryReaction;
   const showReflection = typeof reflectionCount === 'number' && Boolean(onReflectionPress && reflectionAccessibilityLabel);
   const hasMood = moods.length > 0;
   const hasTags = tags.length > 0;
@@ -74,7 +77,7 @@ export function EntryMetaRow({
       ]}
       testID={testID}
     >
-      {showMemoryReaction ? (
+      {showInteractiveMemoryReaction ? (
         <MemoryReactionButton
           reactions={memoryReactions}
           visible={isMemoryReactionPickerVisible}
@@ -87,6 +90,17 @@ export function EntryMetaRow({
             variant === 'viewFooter' && styles.viewFooterReactionButton,
           ]}
           buttonStyle={variant === 'viewFooter' && styles.viewFooterReactionButtonSurface}
+          testID={memoryReactionTestID}
+        />
+      ) : null}
+      {showReadOnlyMemoryReaction ? (
+        <MemoryReactionBadge
+          reactions={memoryReactions}
+          compact={variant !== 'feed'}
+          style={[
+            styles.reactionButton,
+            variant === 'viewFooter' && styles.viewFooterReactionButton,
+          ]}
           testID={memoryReactionTestID}
         />
       ) : null}

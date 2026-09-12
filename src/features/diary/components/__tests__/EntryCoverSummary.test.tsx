@@ -16,6 +16,7 @@ describe('EntryCoverSummary', () => {
         viewCount={4}
         viewCountAccessibilityLabel="Viewed 4 times."
         onViewCountPress={onViewCountPress}
+        memoryReactions={['wonder']}
         moods={['happy', 'sad']}
         tags={['family', 'weekend']}
         onShuffle={onShuffle}
@@ -30,6 +31,7 @@ describe('EntryCoverSummary', () => {
     expect(getByTestId('entry-cover-summary-image').props.source).toEqual({ uri: 'file:///cover.jpg' });
     expect(getByText('Quiet morning')).toBeTruthy();
     expect(getByTestId('entry-cover-summary-timestamp')).toBeTruthy();
+    expect(getByText('Wonder')).toBeTruthy();
     expect(getByText('Happy +1')).toBeTruthy();
     expect(getByText('#family +1')).toBeTruthy();
     expect(getByTestId('entry-cover-summary-view-count')).toBeTruthy();

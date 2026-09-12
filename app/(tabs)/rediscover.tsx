@@ -70,6 +70,7 @@ function MemoryCard({ entry, variant = 'compact', onPress, onShuffle }: MemoryCa
           viewCount={viewCount}
           viewCountAccessibilityLabel={viewCountA11y}
           onViewCountPress={() => setIsViewHistoryVisible(true)}
+          memoryReactions={entry.memoryReactions}
           moods={getEntryManualMoods(entry)}
           tags={entry.tags}
           onShuffle={isFeatured ? onShuffle : undefined}
