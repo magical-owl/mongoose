@@ -104,6 +104,20 @@ export const STICKER_PACKS: StickerCategory[] = [
     ],
   },
   {
+    id: 'frames-img',
+    name: 'Memory Frames',
+    icon: 'image-frame',
+    accessTier: 'premium',
+    stickers: [
+      { id: 'frames_taped_paper', name: 'Taped Paper', source: STICKER_IMAGES.frames_taped_paper },
+      { id: 'frames_torn_paper', name: 'Torn Paper', source: STICKER_IMAGES.frames_torn_paper },
+      { id: 'frames_notebook_edge', name: 'Notebook Edge', source: STICKER_IMAGES.frames_notebook_edge },
+      { id: 'frames_punched_edge', name: 'Punched Edge', source: STICKER_IMAGES.frames_punched_edge },
+      { id: 'frames_soft_scallop', name: 'Soft Scallop', source: STICKER_IMAGES.frames_soft_scallop },
+      { id: 'frames_corner_tabs', name: 'Corner Tabs', source: STICKER_IMAGES.frames_corner_tabs },
+    ],
+  },
+  {
     id: 'winter-img',
     name: 'Winter',
     icon: 'winter',

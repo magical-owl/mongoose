@@ -30,6 +30,24 @@ Related references:
 - [ ] Light mode and dark mode readability have been checked where the asset appears behind UI/text.
 - [ ] Final release candidates have human IP/design review recorded.
 
+## Pre-Generation Checks
+
+Use this before creating a new asset group, especially when the concept overlaps with physical products, brands, common marketplace art, or recognizable visual formats.
+
+- [ ] Asset purpose, intended display size, and output dimensions are defined.
+- [ ] Pack name and individual asset names use generic language, not brand-adjacent terms.
+- [ ] Web research was used only to identify common visual risks and forbidden cues.
+- [ ] Third-party reference images were not uploaded into a generator unless ownership or commercial-use rights are documented.
+- [ ] Prompt uses neutral medium, structure, palette, mood, and composition terms instead of named artist/studio/franchise/brand references.
+- [ ] Forbidden elements are listed in the generation packet.
+
+### Frame Sticker Pack Pre-Generation
+
+- [ ] Pack name avoids branded camera, film, scrapbook, stationery, and instant-photo product names.
+- [ ] Frame concepts avoid exact commercial product proportions, film-stock markings, serial numbers, color stripes, and logo-like placements.
+- [ ] Each frame has an original shape language: uneven handmade edges, distinct corner treatment, and app-owned palette choices.
+- [ ] If frames are meant to sit over user photos, transparent cutout or mask requirements are documented before generation.
+
 ## Review Queue
 
 | Asset group | Paths | Visual quality | IP/style risk | App fit | Status | Notes |
@@ -44,6 +62,7 @@ Related references:
 | Sticker pack: School | `assets/stickers/school/*.png` | Pending | Pending | Pending | Pending | Re-check pencil and backpack extraction after latest cleanup. |
 | Premium sticker pack: Summer | `assets/stickers/summer/*.png` | Pending | Pending | Pending | Pending | Confirm premium lock behavior and small-size readability. |
 | Sticker pack: Scribble Art | `assets/stickers/scribble/*.png` | Pending | Pending | Pending | Pending | Check that scribble assets look intentional, not malformed. |
+| Premium sticker pack: Memory Frames | `assets/stickers/frames/*.png` | Pending | Pending | Pending | Pending | Check frame cutout behavior, transparent-edge specks, trade-dress risk, and whether frames work over user photos. |
 | Premium sticker pack: Winter | `assets/stickers/winter/*.png` | Pending | Pending | Pending | Pending | Check seasonal consistency and small-size readability. |
 | Premium sticker pack: Spring | `assets/stickers/spring/*.png` | Pending | Pending | Pending | Pending | Check bee/butterfly are generic and not mascot-like. |
 | Premium sticker pack: Fall | `assets/stickers/fall/*.png` | Pending | Pending | Pending | Pending | Check mushroom/apple/pie for clean edges and generic design. |

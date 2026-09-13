@@ -37,6 +37,17 @@ Use clean inputs:
 - Do not use named artists, studios, companies, franchises, games, films, animation houses, or brands as style targets. This includes prompts such as "Studio Ghibli-like", "Disney-like", "Pixar-style", "Sanrio-like", "Pokemon-style", "Animal Crossing-style", or "in the style of [named artist/studio/franchise]".
 - Replace protected-style wording with neutral medium and mood language, such as "cozy hand-drawn diary illustration", "colored-pencil texture", "soft charcoal outline", "rounded handmade forms", "dusty pastel palette", or "warm analog journal aesthetic".
 
+## Web Reference Research Rules
+
+Web searches may be used before generation to understand ordinary object categories, IP risk, and store-policy expectations. Treat web research as risk reduction, not legal clearance.
+
+- Use official policy sources first for rules: USPTO, U.S. Copyright Office, Apple App Store Review Guidelines, Google Play policy, and license owner pages.
+- Use image search only to identify crowded visual territory and common product/trade-dress risks. Do not copy an image, motif layout, exact proportions, decoration, colorway, or distinctive silhouette found online.
+- Do not upload third-party search results, product photos, marketplace stickers, social media art, stock previews, or watermarked images into an image generator unless rights are documented in `assets/ASSET_REGISTER.md`.
+- Convert references into neutral constraints: object category, scale, density, use case, readability target, and forbidden elements.
+- Record the search date and high-risk terms checked when an asset category could overlap with brands, products, app icons, emoji, sticker packs, or distinctive trade dress.
+- If web results show many similar branded or marketplace designs, simplify the concept further and avoid the most recognizable product cues.
+
 ## Generation Packet
 
 Before generating or revising assets, write a short packet:
@@ -146,6 +157,17 @@ For stickers:
 - Exceptionally clean outer silhouette with no white halos, fringe pixels, background remnants, semi-transparent contamination, or edge residue.
 - Export with enough pixel density for the largest in-app display size, then downscale in the app when needed.
 - Avoid large transparent padding. Leave breathing room, but do not make the tappable/visual bounds feel disconnected.
+
+For frame stickers:
+
+- Use generic pack names such as "Memory Frames", "Paper Frames", or "Photo Frames". Avoid brand-adjacent names.
+- Use generic asset names such as instant photo frame, taped paper frame, scalloped paper frame, notebook edge frame, torn paper frame, soft label frame, or film-strip-inspired frame.
+- Do not use brand names or product lines in prompts, filenames, UI labels, or alt text. Avoid terms like Polaroid, Instax, Kodak, Fujifilm, Moleskine, Post-it, or any camera/film/stationery brand unless there is explicit documented permission.
+- Avoid trade-dress cues: exact instant-photo border proportions, recognizable film-stock edge markings, branded color stripes, product labels, serial numbers, logo placements, packaging shapes, or text-like marks.
+- Keep the center opening clearly functional for user photos when the asset is intended as a frame overlay. If the app requires a transparent cutout, record that in the generation packet and review the exported alpha channel.
+- Make every frame independently designed through original proportions, uneven handmade edges, distinct corner treatment, and palette choices that are not tied to a real product.
+- Prefer simple paper/craft construction over realistic replicas of commercial photo products.
+- Review frame stickers against trademark/trade-dress risk before adding them to a release candidate.
 
 For pattern backgrounds:
 

@@ -46,6 +46,12 @@ export const STICKER_IMAGES = {
   scribble_swoosh: require('../../../../assets/stickers/scribble/swoosh.png'),
   scribble_flower: require('../../../../assets/stickers/scribble/flower.png'),
   scribble_tape_note: require('../../../../assets/stickers/scribble/tape-note.png'),
+  frames_taped_paper: require('../../../../assets/stickers/frames/taped-paper.png'),
+  frames_torn_paper: require('../../../../assets/stickers/frames/torn-paper.png'),
+  frames_notebook_edge: require('../../../../assets/stickers/frames/notebook-edge.png'),
+  frames_punched_edge: require('../../../../assets/stickers/frames/punched-edge.png'),
+  frames_soft_scallop: require('../../../../assets/stickers/frames/soft-scallop.png'),
+  frames_corner_tabs: require('../../../../assets/stickers/frames/corner-tabs.png'),
 } as const;
 
 export type StickerImageKey = keyof typeof STICKER_IMAGES;
