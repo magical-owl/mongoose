@@ -95,7 +95,7 @@ describe('EntryDetailModals', () => {
     const onSelectFontFamily = jest.fn();
     const onSelectTextColor = jest.fn();
 
-    const { getByText, getByTestId, queryByTestId } = await renderWithProviders(
+    const { getByText, getByTestId } = await renderWithProviders(
       <EntryDetailModals
         entry={entry}
         profile={null}
@@ -150,7 +150,7 @@ describe('EntryDetailModals', () => {
     expect(getByTestId('mock-sticker-picker')).toBeTruthy();
     expect(getByTestId('mock-template-picker')).toBeTruthy();
     expect(getByTestId('mock-paper-picker')).toBeTruthy();
-    expect(queryByTestId('mock-paywall-modal')).toBeNull();
+    expect(getByTestId('mock-paywall-modal')).toBeTruthy();
     expect(getByTestId('mock-reflections-modal')).toBeTruthy();
     expect(getByTestId('mock-metadata-modal')).toBeTruthy();
     expect(onSelectFormat).toHaveBeenCalledWith('bold');

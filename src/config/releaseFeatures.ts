@@ -1,3 +1,3 @@
 export const releaseFeatures = {
-  monetization: false,
+  monetization: true,
 } as const;

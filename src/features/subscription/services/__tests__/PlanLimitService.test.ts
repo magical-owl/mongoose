@@ -1,8 +1,13 @@
 import { buildDiaryEntry } from '@tests/fixtures/domain';
-import { FREE_PLAN_LIMITS, getLocalDateKey, validateDiaryEntryPlanLimits } from '../PlanLimitService';
+import {
+  FREE_PLAN_LIMITS,
+  PLAN_LIMIT_ERROR_CODES,
+  getLocalDateKey,
+  validateDiaryEntryPlanLimits,
+} from '../PlanLimitService';
 
 describe('PlanLimitService release gating', () => {
-  it('does not block entries when monetization is disabled for the release candidate', () => {
+  it('blocks entries when monetization is enabled', () => {
     const deviceDateKey = getLocalDateKey(new Date());
     const existingEntries = Array.from({ length: FREE_PLAN_LIMITS.entriesPerDay }, (_, index) => buildDiaryEntry({
       id: `entry-${index}`,
@@ -21,6 +26,9 @@ describe('PlanLimitService release gating', () => {
       },
     });
 
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe(PLAN_LIMIT_ERROR_CODES.entriesPerDay);
+    }
   });
 });
