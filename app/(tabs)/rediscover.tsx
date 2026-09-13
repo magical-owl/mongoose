@@ -77,7 +77,7 @@ function MemoryCard({ entry, variant = 'compact', onPress, onShuffle }: MemoryCa
           shuffleAccessibilityLabel={t('rediscoverShuffle')}
           viewCountTestID="rediscover-entry-view-count"
         />
-        <View style={styles.memoryCopy}>
+        <View style={[styles.memoryCopy, isFeatured ? styles.featuredMemoryCopy : styles.compactMemoryCopy]}>
           <Text preset="bodySmall" color="textSecondary" numberOfLines={isFeatured ? 3 : 2}>
             {getDiaryEntryPreviewText(entry)}
           </Text>
@@ -411,6 +411,12 @@ const styles = StyleSheet.create({
   },
   memoryCopy: {
     padding: 12,
+  },
+  compactMemoryCopy: {
+    height: 74,
+  },
+  featuredMemoryCopy: {
+    height: 94,
   },
   emptyInline: {
     minHeight: 54,
