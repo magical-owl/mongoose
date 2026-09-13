@@ -76,20 +76,6 @@ export const STICKER_PACKS: StickerCategory[] = [
     ],
   },
   {
-    id: 'summer-img',
-    name: 'Summer',
-    icon: 'summer',
-    accessTier: 'premium',
-    stickers: [
-      { id: 'summer_sun', name: 'Sun', source: STICKER_IMAGES.summer_sun },
-      { id: 'summer_wave', name: 'Wave', source: STICKER_IMAGES.summer_wave },
-      { id: 'summer_ice_cream', name: 'Ice Cream', source: STICKER_IMAGES.summer_ice_cream },
-      { id: 'summer_sunglasses', name: 'Sunglasses', source: STICKER_IMAGES.summer_sunglasses },
-      { id: 'summer_beach_ball', name: 'Beach Ball', source: STICKER_IMAGES.summer_beach_ball },
-      { id: 'summer_popsicle', name: 'Popsicle', source: STICKER_IMAGES.summer_popsicle },
-    ],
-  },
-  {
     id: 'scribble-img',
     name: 'Scribble Art',
     icon: 'scribble',
@@ -101,6 +87,20 @@ export const STICKER_PACKS: StickerCategory[] = [
       { id: 'scribble_swoosh', name: 'Swoosh', source: STICKER_IMAGES.scribble_swoosh },
       { id: 'scribble_flower', name: 'Scribble Flower', source: STICKER_IMAGES.scribble_flower },
       { id: 'scribble_tape_note', name: 'Tape Note', source: STICKER_IMAGES.scribble_tape_note },
+    ],
+  },
+  {
+    id: 'summer-img',
+    name: 'Summer',
+    icon: 'summer',
+    accessTier: 'premium',
+    stickers: [
+      { id: 'summer_sun', name: 'Sun', source: STICKER_IMAGES.summer_sun },
+      { id: 'summer_wave', name: 'Wave', source: STICKER_IMAGES.summer_wave },
+      { id: 'summer_ice_cream', name: 'Ice Cream', source: STICKER_IMAGES.summer_ice_cream },
+      { id: 'summer_sunglasses', name: 'Sunglasses', source: STICKER_IMAGES.summer_sunglasses },
+      { id: 'summer_beach_ball', name: 'Beach Ball', source: STICKER_IMAGES.summer_beach_ball },
+      { id: 'summer_popsicle', name: 'Popsicle', source: STICKER_IMAGES.summer_popsicle },
     ],
   },
   {
