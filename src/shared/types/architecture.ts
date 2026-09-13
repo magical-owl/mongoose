@@ -3,7 +3,7 @@
  *
  * This file defines the foundational types for the Clean Architecture layers.
  * These types enforce the dependency rules:
- * - Presentation → Hooks → Services → Repositories → Data Sources → Storage/API/AI
+ * - Presentation → Hooks → Services → Repositories → Data Sources → Storage/API
  * - No layer may import from a layer above it
  * - Data flows inward, dependencies flow outward
  */

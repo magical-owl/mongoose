@@ -63,7 +63,6 @@ export interface AppState {
   biometricLockEnabled: boolean;
   passcodeLockEnabled: boolean;
   isLocked: boolean;
-  remoteAiConsent: boolean;
   calendarDateFormat: CalendarDateFormat;
   timeFormat: TimeFormat;
   calendarFirstDay: 0 | 1;
@@ -91,7 +90,6 @@ export interface AppState {
   setBiometricLockEnabled: (enabled: boolean) => void;
   setPasscodeLockEnabled: (enabled: boolean) => void;
   setLocked: (locked: boolean) => void;
-  setRemoteAiConsent: (consent: boolean) => void;
   setCalendarDateFormat: (format: CalendarDateFormat) => void;
   setTimeFormat: (format: TimeFormat) => void;
   setCalendarFirstDay: (day: 0 | 1) => void;
@@ -123,7 +121,6 @@ const initialState: Pick<
   | 'biometricLockEnabled'
   | 'passcodeLockEnabled'
   | 'isLocked'
-  | 'remoteAiConsent'
   | 'calendarDateFormat'
   | 'timeFormat'
   | 'calendarFirstDay'
@@ -151,7 +148,6 @@ const initialState: Pick<
   biometricLockEnabled: false,
   passcodeLockEnabled: false,
   isLocked: false,
-  remoteAiConsent: false,
   calendarDateFormat: 'month-day-year',
   timeFormat: '24-hour',
   calendarFirstDay: 0,
@@ -190,8 +186,6 @@ export const useAppStore = create<AppState>()(
       setPasscodeLockEnabled: (passcodeLockEnabled: boolean) => set({ passcodeLockEnabled }),
 
       setLocked: (isLocked: boolean) => set({ isLocked }),
-
-      setRemoteAiConsent: (remoteAiConsent: boolean) => set({ remoteAiConsent }),
 
       setCalendarDateFormat: (calendarDateFormat: CalendarDateFormat) => set({ calendarDateFormat }),
       setTimeFormat: (timeFormat: TimeFormat) => set({ timeFormat }),
@@ -245,7 +239,6 @@ export const useAppStore = create<AppState>()(
         selectedCompanion: state.selectedCompanion,
         biometricLockEnabled: state.biometricLockEnabled,
         passcodeLockEnabled: state.passcodeLockEnabled,
-        remoteAiConsent: state.remoteAiConsent,
         calendarDateFormat: state.calendarDateFormat,
         timeFormat: state.timeFormat,
         calendarFirstDay: state.calendarFirstDay,

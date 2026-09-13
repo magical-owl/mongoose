@@ -1,5 +1,5 @@
 import type { ISecureStorageDataSource } from '@/database/SecureStorageDataSource';
-import { managedSecureStorageKeys } from '@/constants/secureStorageKeys';
+import { managedSecureStorageKeys, secureStorageKeys } from '@/constants/secureStorageKeys';
 import { getCachedDiaryEntries, setCachedDiaryEntries } from '@/features/diary/services/DiaryEntryCache';
 import type { IDiaryPhotoCleanupService } from '@/features/diary/services/DiaryPhotoService';
 import { getCachedJournals, setCachedJournals } from '@/features/journal/services/JournalCache';
@@ -45,6 +45,7 @@ describe('DataDeletionService', () => {
     expect(photoCleanup.clearImportedPhotos).toHaveBeenCalledTimes(1);
     expect(profilePhotoCleanup.clearImportedProfilePhotos).toHaveBeenCalledTimes(1);
     expect(removedKeys).toEqual(managedSecureStorageKeys);
+    expect(removedKeys).toContain(secureStorageKeys.mediaEncryptionKey);
     expect(getCachedDiaryEntries()).toEqual({ entries: null, deletedEntries: null });
     expect(getCachedJournals()).toBeNull();
   });

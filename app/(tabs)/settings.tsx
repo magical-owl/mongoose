@@ -48,6 +48,7 @@ import { PATTERN_BACKGROUND_VARIANTS, type PatternBackgroundVariant } from '@/th
 import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 import { APP_LANGUAGES, premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { APP_IDENTITY } from '@/config/appIdentity';
+import { releaseFeatures } from '@/config/releaseFeatures';
 import { FREE_PLAN_LIMITS, getLocalDateKey, getNextLocalPlanResetDate } from '@/features/subscription/services/PlanLimitService';
 import { formatDisplayMonthDayYearTime, formatDisplayTime } from '@/shared/utils/timeFormat';
 import { formatDisplayDate } from '@/shared/utils/dateFormat';
@@ -437,6 +438,37 @@ export default function SettingsScreen() {
     setShowProfileModal(true);
   };
 
+  const planPrivacyOptions: SettingsOption[] = [
+    {
+      id: 'security',
+      title: t('settingsSecurityTitle'),
+      subtitle: t('settingsSecuritySubtitle'),
+      icon: 'lock-closed-outline',
+      onPress: () => setShowSecurityModal(true),
+    },
+  ];
+
+  if (releaseFeatures.monetization) {
+    planPrivacyOptions.unshift(
+      {
+        id: 'free-tier',
+        title: t('settingsFreeTierTitle'),
+        subtitle: isPro
+          ? t('settingsFreeTierProSubtitle')
+          : `${t('settingsFreeTierSubtitle')} ${nextFreeTierResetText}`,
+        icon: 'hourglass-outline',
+        onPress: handleOpenFreeTier,
+      },
+      {
+        id: 'premium',
+        title: t('settingsPremiumTitle'),
+        subtitle: isPro ? `${t('settingsPremiumActiveSubtitle')}: ${activeTier}` : t('settingsPremiumSubtitle'),
+        icon: 'sparkles-outline',
+        onPress: () => setShowPremiumModal(true),
+      },
+    );
+  }
+
   const settingsSections: SettingsSection[] = [
     {
       id: 'preferences',
@@ -482,31 +514,7 @@ export default function SettingsScreen() {
     {
       id: 'plan-privacy',
       title: t('settingsPlanPrivacySection'),
-      options: [
-        {
-          id: 'free-tier',
-          title: t('settingsFreeTierTitle'),
-          subtitle: isPro
-            ? t('settingsFreeTierProSubtitle')
-            : `${t('settingsFreeTierSubtitle')} ${nextFreeTierResetText}`,
-          icon: 'hourglass-outline',
-          onPress: handleOpenFreeTier,
-        },
-        {
-          id: 'premium',
-          title: t('settingsPremiumTitle'),
-          subtitle: isPro ? `${t('settingsPremiumActiveSubtitle')}: ${activeTier}` : t('settingsPremiumSubtitle'),
-          icon: 'sparkles-outline',
-          onPress: () => setShowPremiumModal(true),
-        },
-        {
-          id: 'security',
-          title: t('settingsSecurityTitle'),
-          subtitle: t('settingsSecuritySubtitle'),
-          icon: 'lock-closed-outline',
-          onPress: () => setShowSecurityModal(true),
-        },
-      ],
+      options: planPrivacyOptions,
     },
     {
       id: 'data',
@@ -940,7 +948,7 @@ export default function SettingsScreen() {
       </Modal>
 
       <Modal
-        visible={showFreeTierModal}
+        visible={releaseFeatures.monetization && showFreeTierModal}
         onDismiss={() => setShowFreeTierModal(false)}
         accessibilityLabel={t('settingsFreeTierTitle')}
       >
@@ -1024,20 +1032,22 @@ export default function SettingsScreen() {
         </Text>
       </Modal>
 
-      <PaywallModal
-        visible={showPremiumModal}
-        onClose={() => setShowPremiumModal(false)}
-        appName={APP_IDENTITY.codename}
-        title={premiumPaywallTitle(t)}
-        subtitle={t('premiumPaywallSubtitle')}
-        features={[
-          t('premiumPaywallFeatureEntries'),
-          t('premiumPaywallFeatureStickers'),
-          t('premiumPaywallFeatureInsights'),
-          t('premiumPaywallFeatureThemes'),
-          t('premiumPaywallFeatureOffline'),
-        ]}
-      />
+      {releaseFeatures.monetization ? (
+        <PaywallModal
+          visible={showPremiumModal}
+          onClose={() => setShowPremiumModal(false)}
+          appName={APP_IDENTITY.codename}
+          title={premiumPaywallTitle(t)}
+          subtitle={t('premiumPaywallSubtitle')}
+          features={[
+            t('premiumPaywallFeatureEntries'),
+            t('premiumPaywallFeatureStickers'),
+            t('premiumPaywallFeatureInsights'),
+            t('premiumPaywallFeatureThemes'),
+            t('premiumPaywallFeatureOffline'),
+          ]}
+        />
+      ) : null}
 
       <Modal
         visible={showSecurityModal}

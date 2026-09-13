@@ -1,6 +1,7 @@
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import type { Result, ArchitectureError } from '@/shared/types/architecture';
 import { failure, success } from '@/shared/utils/result';
+import { releaseFeatures } from '@/config/releaseFeatures';
 import type { DailyPlanUsage } from '../domain/PlanUsage';
 
 export const FREE_PLAN_LIMITS = {
@@ -85,6 +86,10 @@ export function validateDiaryEntryPlanLimits({
   deviceDateKey,
   dailyUsage,
 }: ValidateDiaryEntryPlanLimitsInput): Result<void> {
+  if (!releaseFeatures.monetization) {
+    return success(undefined);
+  }
+
   if (isPro) {
     return success(undefined);
   }

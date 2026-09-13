@@ -22,6 +22,7 @@ import { PaywallModal } from '@/shared/components/PaywallModal';
 import { useSubscription } from '@/features/subscription/hooks/useSubscription';
 import { useAppStore } from '@/stores/useAppStore';
 import { APP_IDENTITY } from '@/config/appIdentity';
+import { releaseFeatures } from '@/config/releaseFeatures';
 import { premiumPaywallTitle, useTranslation, type TranslationKey } from '@/localization/i18n';
 import type { Journal } from '@/features/journal/domain/Journal';
 import {
@@ -117,6 +118,7 @@ export default function JournalsScreen(): React.JSX.Element {
   );
 
   useEffect(() => {
+    if (!releaseFeatures.monetization) return;
     if (!isOnboarded || isPro || showPremiumModal) return;
 
     const now = Date.now();
@@ -477,20 +479,22 @@ export default function JournalsScreen(): React.JSX.Element {
       />
       <AppFooterNavigation activeItem="journal" bottom={insets.bottom + APP_FOOTER_BOTTOM_OFFSET} />
 
-      <PaywallModal
-        visible={showPremiumModal}
-        onClose={closePremiumModal}
-        appName={APP_IDENTITY.codename}
-        title={premiumPaywallTitle(t)}
-        subtitle={t('premiumPaywallSubtitle')}
-        features={[
-          t('premiumPaywallFeatureEntries'),
-          t('premiumPaywallFeatureStickers'),
-          t('premiumPaywallFeatureInsights'),
-          t('premiumPaywallFeatureThemes'),
-          t('premiumPaywallFeatureOffline'),
-        ]}
-      />
+      {releaseFeatures.monetization ? (
+        <PaywallModal
+          visible={showPremiumModal}
+          onClose={closePremiumModal}
+          appName={APP_IDENTITY.codename}
+          title={premiumPaywallTitle(t)}
+          subtitle={t('premiumPaywallSubtitle')}
+          features={[
+            t('premiumPaywallFeatureEntries'),
+            t('premiumPaywallFeatureStickers'),
+            t('premiumPaywallFeatureInsights'),
+            t('premiumPaywallFeatureThemes'),
+            t('premiumPaywallFeatureOffline'),
+          ]}
+        />
+      ) : null}
 
       <SlidingDrawer
         visible={showJournalMenu}

@@ -1,5 +1,6 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import type { ImagePickerAsset } from 'expo-image-picker';
+import { encryptedMediaStorageService, type EncryptedMediaStorageService } from '@/services/EncryptedMediaStorageService';
 import { generateUUID } from '@/shared/utils/uuid';
 
 const PROFILE_PHOTO_DIRECTORY_NAME = 'profile-photos';
@@ -12,14 +13,19 @@ export interface IProfilePhotoCleanupService {
 }
 
 export class ProfilePhotoService {
+  public constructor(
+    private readonly mediaStorage: EncryptedMediaStorageService = encryptedMediaStorageService,
+  ) {}
+
   public async importAsset(asset: ImagePickerAsset): Promise<string> {
     const id = generateUUID();
     const directory = new Directory(Paths.document, PROFILE_PHOTO_DIRECTORY_NAME);
     directory.create({ idempotent: true, intermediates: true });
 
     const source = new File(asset.uri);
-    const destination = new File(directory, `${id}${getProfilePhotoExtension(asset)}`);
-    await source.copy(destination, { overwrite: true });
+    const filename = this.mediaStorage.getEncryptedFilename(`${id}${getProfilePhotoExtension(asset)}`);
+    const destination = new File(directory, filename);
+    await this.mediaStorage.writeEncryptedCopy(source, destination);
     return destination.uri;
   }
 
@@ -28,6 +34,7 @@ export class ProfilePhotoService {
     if (directory.exists) {
       directory.delete();
     }
+    this.mediaStorage.clearRenderCache();
   }
 }
 
@@ -42,7 +49,10 @@ function getImportedProfilePhotoFilename(uri: string, marker: string): string | 
 export function resolveImportedProfilePhotoUri(uri: string): string {
   const profilePhotoFilename = getImportedProfilePhotoFilename(uri, PROFILE_PHOTO_DIRECTORY_MARKER);
   if (profilePhotoFilename) {
-    return new File(new Directory(Paths.document, PROFILE_PHOTO_DIRECTORY_NAME), profilePhotoFilename).uri;
+    const resolvedUri = new File(new Directory(Paths.document, PROFILE_PHOTO_DIRECTORY_NAME), profilePhotoFilename).uri;
+    if (!encryptedMediaStorageService.isEncryptedUri(resolvedUri)) return resolvedUri;
+    void encryptedMediaStorageService.ensureRenderCache(resolvedUri);
+    return encryptedMediaStorageService.getRenderCacheUri(resolvedUri);
   }
 
   const legacyDiaryPhotoFilename = getImportedProfilePhotoFilename(uri, LEGACY_DIARY_PHOTO_DIRECTORY_MARKER);

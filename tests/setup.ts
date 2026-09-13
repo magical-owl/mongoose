@@ -82,13 +82,21 @@ jest.mock('expo-crypto', () => ({
   aesEncryptAsync: jest.fn(async () => ({
     combined: jest.fn(async () => 'encrypted-payload'),
   })),
-  aesDecryptAsync: jest.fn(async () => ''),
+  aesDecryptAsync: jest.fn(async () => new Uint8Array([1, 2, 3])),
   digestStringAsync: jest.fn(async () => '0'.repeat(64)),
   getRandomBytesAsync: jest.fn(async (length: number) => new Uint8Array(length).fill(1)),
 }));
 
 jest.mock('expo-file-system', () => {
   const deletedUris: string[] = [];
+  const fileContents: Record<string, string | Uint8Array> = {};
+  const mockStringToBytes = (value: string): Uint8Array => (
+    Uint8Array.from(Array.from(value, (char) => char.charCodeAt(0)))
+  );
+  const mockBytesToString = (value: Uint8Array): string => (
+    Array.from(value, (byte) => String.fromCharCode(byte)).join('')
+  );
+
   class Directory {
     public readonly uri: string;
     public exists = true;
@@ -111,6 +119,7 @@ jest.mock('expo-file-system', () => {
 
   class File {
     public readonly uri: string;
+    public readonly name: string;
     public exists = true;
 
     public constructor(...parts: (string | { uri: string })[]) {
@@ -119,15 +128,30 @@ jest.mock('expo-file-system', () => {
         .join('/')
         .replace(/\/+/g, '/')
         .replace('file:/', 'file://');
+      this.name = this.uri.split('/').pop() ?? '';
     }
 
-    public async copy(): Promise<void> {}
+    public async copy(destination: File): Promise<void> {
+      fileContents[destination.uri] = fileContents[this.uri] ?? new Uint8Array([1, 2, 3]);
+    }
 
     public create(): void {}
 
-    public write(): void {}
+    public write(value: string | Uint8Array): void {
+      fileContents[this.uri] = value;
+    }
+
+    public async bytes(): Promise<Uint8Array> {
+      const content = fileContents[this.uri];
+      if (content instanceof Uint8Array) return content;
+      if (typeof content === 'string') return mockStringToBytes(content);
+      return new Uint8Array([1, 2, 3]);
+    }
 
     public async text(): Promise<string> {
+      const content = fileContents[this.uri];
+      if (typeof content === 'string') return content;
+      if (content instanceof Uint8Array) return mockBytesToString(content);
       return '';
     }
 
@@ -145,6 +169,7 @@ jest.mock('expo-file-system', () => {
       cache: new Directory('file:///cache'),
     },
     __deletedUris: deletedUris,
+    __fileContents: fileContents,
   };
 });
 

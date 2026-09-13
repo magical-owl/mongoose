@@ -16,7 +16,6 @@ export const ErrorCodes = {
   TIMEOUT: 'TIMEOUT_ERROR',
   STORAGE: 'STORAGE_ERROR',
   SECURE_STORAGE: 'SECURE_STORAGE_ERROR',
-  AI_SERVICE: 'AI_SERVICE_ERROR',
 
   // Repository errors
   NOT_FOUND: 'NOT_FOUND',

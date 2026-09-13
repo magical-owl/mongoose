@@ -50,6 +50,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import { useScrollCollapse } from "@/shared/hooks/useScrollCollapse";
 import { useSubscription } from "@/features/subscription/hooks/useSubscription";
 import { APP_IDENTITY } from "@/config/appIdentity";
+import { releaseFeatures } from "@/config/releaseFeatures";
 import type { HomeViewMode } from "@/stores/useAppStore";
 import { type DiaryEntry, type DiaryPhoto, type ManualMood } from "@/features/diary/domain/DiaryEntry";
 import type { MemoryReaction } from "@/features/diary/domain/MemoryReaction";
@@ -185,6 +186,7 @@ export default function JournalEntriesScreen() {
   );
 
   useEffect(() => {
+    if (!releaseFeatures.monetization) return;
     if (!isOnboarded || isPro || showPremiumModal) return;
 
     const now = Date.now();
@@ -740,21 +742,23 @@ export default function JournalEntriesScreen() {
         </>
         )}
       </View>
-      <PaywallModal
-        visible={showPremiumModal}
-        onClose={closePremiumModal}
-        appName={APP_IDENTITY.codename}
-        title={premiumPaywallTitle(t)}
-        subtitle={t("premiumPaywallSubtitle")}
-        features={[
-          t("premiumPaywallFeatureEntries"),
-          t("premiumPaywallFeatureStickers"),
-          t("premiumPaywallFeatureInsights"),
-          t("premiumPaywallFeatureThemes"),
-          t("premiumPaywallFeatureOffline"),
-        ]}
-        onSuccess={closePremiumModal}
-      />
+      {releaseFeatures.monetization ? (
+        <PaywallModal
+          visible={showPremiumModal}
+          onClose={closePremiumModal}
+          appName={APP_IDENTITY.codename}
+          title={premiumPaywallTitle(t)}
+          subtitle={t("premiumPaywallSubtitle")}
+          features={[
+            t("premiumPaywallFeatureEntries"),
+            t("premiumPaywallFeatureStickers"),
+            t("premiumPaywallFeatureInsights"),
+            t("premiumPaywallFeatureThemes"),
+            t("premiumPaywallFeatureOffline"),
+          ]}
+          onSuccess={closePremiumModal}
+        />
+      ) : null}
       <EntryReflectionsModal
         visible={reflectionModalEntryId !== null}
         entry={reflectionModalEntry}

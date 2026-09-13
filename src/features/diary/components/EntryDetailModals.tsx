@@ -6,6 +6,7 @@ import type { Journal } from '@/features/journal/domain/Journal';
 import type { Profile } from '@/features/profile/domain/Profile';
 import type { TimeFormat } from '@/stores/useAppStore';
 import { APP_IDENTITY } from '@/config/appIdentity';
+import { releaseFeatures } from '@/config/releaseFeatures';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/DiaryPaperBackgroundPickerModal';
@@ -131,20 +132,22 @@ export function EntryDetailModals({
         onSelect={onSelectPaperBackground}
         onDismiss={onDismissPaperBackgroundPicker}
       />
-      <PaywallModal
-        visible={showPremiumModal}
-        onClose={onClosePremiumModal}
-        appName={APP_IDENTITY.codename}
-        title={premiumPaywallTitle(t)}
-        subtitle={t('premiumPaywallSubtitle')}
-        features={[
-          t('premiumPaywallFeatureEntries'),
-          t('premiumPaywallFeatureStickers'),
-          t('premiumPaywallFeatureInsights'),
-          t('premiumPaywallFeatureThemes'),
-          t('premiumPaywallFeatureOffline'),
-        ]}
-      />
+      {releaseFeatures.monetization ? (
+        <PaywallModal
+          visible={showPremiumModal}
+          onClose={onClosePremiumModal}
+          appName={APP_IDENTITY.codename}
+          title={premiumPaywallTitle(t)}
+          subtitle={t('premiumPaywallSubtitle')}
+          features={[
+            t('premiumPaywallFeatureEntries'),
+            t('premiumPaywallFeatureStickers'),
+            t('premiumPaywallFeatureInsights'),
+            t('premiumPaywallFeatureThemes'),
+            t('premiumPaywallFeatureOffline'),
+          ]}
+        />
+      ) : null}
       <EntryReflectionsModal
         visible={showReflections}
         onDismiss={onDismissReflections}

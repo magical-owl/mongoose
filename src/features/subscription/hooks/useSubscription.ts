@@ -1,7 +1,8 @@
 import { useCallback, useEffect } from 'react';
+import { releaseFeatures } from '@/config/releaseFeatures';
+import { failure } from '@/shared/utils/result';
 import { useSubscriptionStore } from '../../../stores/useSubscriptionStore';
-import { subscriptionService } from '../services/SubscriptionService';
-import { SubscriptionPackage } from '../domain/Subscription';
+import type { SubscriptionPackage } from '../domain/Subscription';
 
 export function useSubscription() {
   const isPro = useSubscriptionStore((state) => state.isPro);
@@ -16,9 +17,16 @@ export function useSubscription() {
   const setPackages = useSubscriptionStore((state) => state.setPackages);
 
   useEffect(() => {
+    if (!releaseFeatures.monetization) {
+      setLoading(false);
+      setError(null);
+      return undefined;
+    }
+
     let isMounted = true;
     setLoading(true);
     const initializeSubscription = async () => {
+      const { subscriptionService } = await import('../services/SubscriptionService');
       const entitlementResult = await subscriptionService.initialize();
       if (!isMounted) return;
       if (!entitlementResult.success) {
@@ -43,7 +51,12 @@ export function useSubscription() {
   }, [setEntitlement, setError, setLoading, setPackages]);
 
   const purchasePackage = useCallback(async (pkg: SubscriptionPackage) => {
+    if (!releaseFeatures.monetization) {
+      return failure({ code: 'MONETIZATION_DISABLED', message: 'Monetization is disabled for this build.' });
+    }
+
     setLoading(true);
+    const { subscriptionService } = await import('../services/SubscriptionService');
     const result = await subscriptionService.purchasePackage(pkg);
     if (result.success) {
       setEntitlement(result.data);
@@ -54,7 +67,12 @@ export function useSubscription() {
   }, [setEntitlement, setError, setLoading]);
 
   const restorePurchases = useCallback(async () => {
+    if (!releaseFeatures.monetization) {
+      return failure({ code: 'MONETIZATION_DISABLED', message: 'Monetization is disabled for this build.' });
+    }
+
     setLoading(true);
+    const { subscriptionService } = await import('../services/SubscriptionService');
     const result = await subscriptionService.restorePurchases();
     if (result.success) {
       setEntitlement(result.data);
@@ -65,7 +83,12 @@ export function useSubscription() {
   }, [setEntitlement, setError, setLoading]);
 
   const revertToFree = useCallback(async () => {
+    if (!releaseFeatures.monetization) {
+      return failure({ code: 'MONETIZATION_DISABLED', message: 'Monetization is disabled for this build.' });
+    }
+
     setLoading(true);
+    const { subscriptionService } = await import('../services/SubscriptionService');
     const result = await subscriptionService.revertToFree();
     if (result.success) {
       setEntitlement(result.data);

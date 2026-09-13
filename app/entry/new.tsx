@@ -54,6 +54,7 @@ import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimitService';
 import { APP_IDENTITY } from '@/config/appIdentity';
+import { releaseFeatures } from '@/config/releaseFeatures';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
 import { getStickerBodyPreviewBottom } from '@/features/diary/domain/StickerLayout';
 import { resolveAppFontFamilyForWebContent } from '@/theme/fonts';
@@ -478,7 +479,7 @@ export default function CreateEntryScreen() {
       await diaryDraftService.clear();
       setSelectedCalendarDate(null);
       navigateBack();
-    } else if (isPlanLimitErrorCode(result.error.code)) {
+    } else if (releaseFeatures.monetization && isPlanLimitErrorCode(result.error.code)) {
       setShowPremiumModal(true);
     } else {
       Alert.alert(t('entryErrorTitle'), result.error.message);
@@ -826,7 +827,11 @@ export default function CreateEntryScreen() {
         visible={showStickerPicker}
         onClose={() => setShowStickerPicker(false)}
         onSelectSticker={handleAddSticker}
-        onRequestPremium={() => setShowPremiumModal(true)}
+        onRequestPremium={() => {
+          if (releaseFeatures.monetization) {
+            setShowPremiumModal(true);
+          }
+        }}
       />
       <TemplatePickerModal
         visible={showTemplatePicker}
@@ -855,20 +860,22 @@ export default function CreateEntryScreen() {
         confirmDisabled={isSaving}
         onConfirm={isEntryMetadataSavePrompt ? () => { void handleSave({ skipMetadataPrompt: true }); } : undefined}
       />
-      <PaywallModal
-        visible={showPremiumModal}
-        onClose={() => setShowPremiumModal(false)}
-        appName={APP_IDENTITY.codename}
-        title={premiumPaywallTitle(t)}
-        subtitle={t('premiumPaywallSubtitle')}
-        features={[
-          t('premiumPaywallFeatureEntries'),
-          t('premiumPaywallFeatureStickers'),
-          t('premiumPaywallFeatureInsights'),
-          t('premiumPaywallFeatureThemes'),
-          t('premiumPaywallFeatureOffline'),
-        ]}
-      />
+      {releaseFeatures.monetization ? (
+        <PaywallModal
+          visible={showPremiumModal}
+          onClose={() => setShowPremiumModal(false)}
+          appName={APP_IDENTITY.codename}
+          title={premiumPaywallTitle(t)}
+          subtitle={t('premiumPaywallSubtitle')}
+          features={[
+            t('premiumPaywallFeatureEntries'),
+            t('premiumPaywallFeatureStickers'),
+            t('premiumPaywallFeatureInsights'),
+            t('premiumPaywallFeatureThemes'),
+            t('premiumPaywallFeatureOffline'),
+          ]}
+        />
+      ) : null}
     </View>
   );
 }

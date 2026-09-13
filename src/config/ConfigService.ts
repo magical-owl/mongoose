@@ -20,8 +20,6 @@ export interface AppConfig {
   readonly isProd: boolean;
   readonly enableAnalytics: boolean;
   readonly enableCrashReporting: boolean;
-  readonly remoteAiBaseUrl: string | null;
-  readonly remoteAiZdrConfigured: boolean;
   readonly version: string;
   readonly buildNumber: string;
 }
@@ -33,8 +31,6 @@ export interface RawAppConfig {
   readonly apiTimeout?: string;
   readonly enableAnalytics?: string;
   readonly enableCrashReporting?: string;
-  readonly remoteAiBaseUrl?: string;
-  readonly remoteAiZdrConfigured?: string;
 }
 
 function getEnvironment(value?: string): AppEnvironment {
@@ -67,8 +63,6 @@ export function createConfig(raw: RawAppConfig): AppConfig {
     isProd: env === 'production',
     enableAnalytics: raw.enableAnalytics === 'true',
     enableCrashReporting: raw.enableCrashReporting === 'true',
-    remoteAiBaseUrl: normalizeUrl(raw.remoteAiBaseUrl),
-    remoteAiZdrConfigured: raw.remoteAiZdrConfigured === 'true',
     version: Constants.expoConfig?.version ?? '1.0.0',
     buildNumber: Constants.expoConfig?.ios?.buildNumber ?? '1',
   };
@@ -85,12 +79,6 @@ export function getConfigValidationErrors(appConfig: AppConfig): string[] {
     } catch {
       errors.push('EXPO_PUBLIC_API_BASE_URL must be a valid absolute URL.');
     }
-  }
-  if (appConfig.remoteAiBaseUrl && !appConfig.remoteAiBaseUrl.startsWith('https://')) {
-    errors.push('EXPO_PUBLIC_REMOTE_AI_BASE_URL must use HTTPS.');
-  }
-  if (appConfig.remoteAiBaseUrl && !appConfig.remoteAiZdrConfigured) {
-    errors.push('EXPO_PUBLIC_REMOTE_AI_ZDR must be true when EXPO_PUBLIC_REMOTE_AI_BASE_URL is configured.');
   }
   if (appConfig.apiTimeout < 1000 || appConfig.apiTimeout > 120000) {
     errors.push('EXPO_PUBLIC_API_TIMEOUT must be between 1000 and 120000 milliseconds.');
@@ -112,8 +100,6 @@ export const config = createConfig({
   apiTimeout: process.env.EXPO_PUBLIC_API_TIMEOUT,
   enableAnalytics: process.env.EXPO_PUBLIC_ENABLE_ANALYTICS,
   enableCrashReporting: process.env.EXPO_PUBLIC_ENABLE_CRASH_REPORTING,
-  remoteAiBaseUrl: process.env.EXPO_PUBLIC_REMOTE_AI_BASE_URL,
-  remoteAiZdrConfigured: process.env.EXPO_PUBLIC_REMOTE_AI_ZDR,
 });
 
 export function getConfig(): AppConfig {

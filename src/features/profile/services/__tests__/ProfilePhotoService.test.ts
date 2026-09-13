@@ -1,3 +1,4 @@
+import type { ImagePickerAsset } from 'expo-image-picker';
 import { ProfilePhotoService, resolveImportedProfilePhotoUri } from '@/features/profile/services/ProfilePhotoService';
 
 const fileSystem = jest.requireMock('expo-file-system') as {
@@ -11,6 +12,22 @@ describe('ProfilePhotoService', () => {
 
   it('resolves imported profile photo filenames from the document directory', () => {
     expect(resolveImportedProfilePhotoUri('file:///previous/profile-photos/avatar.jpg')).toBe('file://document/profile-photos/avatar.jpg');
+  });
+
+  it('resolves encrypted imported profile photo filenames through the render cache', () => {
+    expect(resolveImportedProfilePhotoUri('file:///previous/profile-photos/avatar.jpg.enc')).toBe('file://cache/media-render-cache/avatar.jpg');
+  });
+
+  it('encrypts newly imported profile photos', async () => {
+    const importedUri = await new ProfilePhotoService().importAsset({
+      uri: 'file:///picker/avatar.png',
+      fileName: 'avatar.png',
+      mimeType: 'image/png',
+      width: 512,
+      height: 512,
+    } as ImagePickerAsset);
+
+    expect(importedUri.endsWith('.png.enc')).toBe(true);
   });
 
   it('resolves legacy diary photo avatar filenames from the document directory', () => {

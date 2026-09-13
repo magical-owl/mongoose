@@ -4,7 +4,7 @@
  * Design mirrors the reference diary app:
  *   View mode:
  *     - Back | date | Edit + Delete header
- *     - Full-bleed content (title → MarkdownText → AI card)
+ *     - Full-bleed content (title -> diary body -> reflection controls)
  *     - Stickers displayed (non-editable)
  *
  *   Edit mode:

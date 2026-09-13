@@ -34,6 +34,7 @@ import {
 } from '../domain/Sticker';
 import { useTranslation } from '@/localization/i18n';
 import { useSubscription } from '@/features/subscription/hooks/useSubscription';
+import { releaseFeatures } from '@/config/releaseFeatures';
 
 const GRID_COLUMNS = 4;
 const GRID_CELL_GAP = 6;
@@ -82,7 +83,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
   );
 
   const renderSticker = ({ item, packId, accessTier }: SearchResult) => {
-    const isLocked = accessTier === 'premium' && !isPro;
+    const isLocked = releaseFeatures.monetization && accessTier === 'premium' && !isPro;
 
     return (
       <TouchableOpacity
@@ -173,7 +174,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
         >
           {STICKER_PACKS.map((pack) => {
             const active = pack.id === activePack.id;
-            const categoryLocked = pack.accessTier === 'premium' && !isPro;
+            const categoryLocked = releaseFeatures.monetization && pack.accessTier === 'premium' && !isPro;
             return (
               <TouchableOpacity
                 key={pack.id}

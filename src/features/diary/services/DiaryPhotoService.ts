@@ -4,6 +4,7 @@ import type { ImageSourcePropType } from 'react-native';
 import type { DiaryEntry, DiaryPhoto, DiaryReflection } from '@/features/diary/domain/DiaryEntry';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { getJournalCoverImageSource } from '@/features/journal/domain/JournalBackgrounds';
+import { encryptedMediaStorageService, type EncryptedMediaStorageService } from '@/services/EncryptedMediaStorageService';
 import { generateUUID } from '@/shared/utils/uuid';
 
 const PHOTO_DIRECTORY_NAME = 'diary-photos';
@@ -19,14 +20,19 @@ export interface IDiaryPhotoCleanupService {
 }
 
 export class DiaryPhotoService implements IDiaryPhotoCleanupService {
+  public constructor(
+    private readonly mediaStorage: EncryptedMediaStorageService = encryptedMediaStorageService,
+  ) {}
+
   public async importAsset(asset: ImagePickerAsset): Promise<DiaryPhoto> {
     const id = generateUUID();
     const directory = this.getPhotoDirectory();
     directory.create({ idempotent: true, intermediates: true });
 
     const source = new File(asset.uri);
-    const destination = new File(directory, `${id}${getPhotoExtension(asset)}`);
-    await source.copy(destination, { overwrite: true });
+    const filename = this.mediaStorage.getEncryptedFilename(`${id}${getPhotoExtension(asset)}`);
+    const destination = new File(directory, filename);
+    await this.mediaStorage.writeEncryptedCopy(source, destination);
 
     return {
       id,
@@ -67,8 +73,8 @@ export class DiaryPhotoService implements IDiaryPhotoCleanupService {
 
   public async clearImportedPhotos(): Promise<void> {
     const directory = this.getPhotoDirectory();
-    if (!directory.exists) return;
-    directory.delete();
+    if (directory.exists) directory.delete();
+    this.mediaStorage.clearRenderCache();
   }
 
   private getPhotoDirectory(): Directory {
@@ -82,7 +88,7 @@ export class DiaryPhotoService implements IDiaryPhotoCleanupService {
   private async deleteFileIfExists(uri: string): Promise<void> {
     const file = new File(resolveImportedDiaryPhotoUri(uri));
     if (!file.exists) return;
-    file.delete();
+    await this.mediaStorage.deleteEncryptedMedia(file.uri);
   }
 }
 
@@ -102,17 +108,21 @@ export function resolveImportedDiaryPhotoUri(uri: string): string {
 
 export function getDiaryPhotoImageSource(uri: string): ImageSourcePropType | undefined {
   const resolvedUri = resolveImportedDiaryPhotoUri(uri);
-  const cachedSource = diaryPhotoImageSourceCache.get(resolvedUri);
+  const renderUri = encryptedMediaStorageService.isEncryptedUri(resolvedUri)
+    ? encryptedMediaStorageService.getRenderCacheUri(resolvedUri)
+    : resolvedUri;
+  void encryptedMediaStorageService.ensureRenderCache(resolvedUri);
+  const cachedSource = diaryPhotoImageSourceCache.get(renderUri);
   if (cachedSource) {
-    diaryPhotoImageSourceCache.delete(resolvedUri);
-    diaryPhotoImageSourceCache.set(resolvedUri, cachedSource);
+    diaryPhotoImageSourceCache.delete(renderUri);
+    diaryPhotoImageSourceCache.set(renderUri, cachedSource);
     return cachedSource;
   }
 
-  const source = getJournalCoverImageSource(resolvedUri);
+  const source = getJournalCoverImageSource(renderUri);
   if (!source) return undefined;
 
-  diaryPhotoImageSourceCache.set(resolvedUri, source);
+  diaryPhotoImageSourceCache.set(renderUri, source);
   if (diaryPhotoImageSourceCache.size > MAX_IMAGE_SOURCE_CACHE_SIZE) {
     const oldestKey = diaryPhotoImageSourceCache.keys().next().value;
     if (oldestKey) diaryPhotoImageSourceCache.delete(oldestKey);

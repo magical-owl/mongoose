@@ -5,7 +5,6 @@
  * - Remote APIs (HTTP/REST)
  * - Local storage (MMKV, SecureStore)
  * - Device APIs (Camera, Location, etc.)
- * - AI services
  *
  * Data sources:
  * - Handle raw communication with external systems
@@ -98,37 +97,4 @@ export interface ISecureStorageDataSource extends IStorageDataSource {
    * Check if the device supports secure storage.
    */
   isAvailable(): Promise<Result<boolean, ArchitectureError>>;
-}
-
-/**
- * AI data source interface.
- * Wraps AI service operations.
- */
-export interface IAiDataSource {
-  /**
-   * Send a prompt to the AI service and get a response.
-   */
-  generate<T>(
-    prompt: string,
-    options?: AiRequestOptions
-  ): Promise<Result<T, ArchitectureError>>;
-
-  /**
-   * Stream a response from the AI service.
-   */
-  stream(
-    prompt: string,
-    options?: AiRequestOptions
-  ): AsyncIterable<Result<string, ArchitectureError>>;
-}
-
-/**
- * Options for AI requests.
- */
-export interface AiRequestOptions {
-  model?: string;
-  temperature?: number;
-  maxTokens?: number;
-  signal?: AbortSignal;
-  systemPrompt?: string;
 }

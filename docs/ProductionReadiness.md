@@ -2,9 +2,12 @@
 
 This checklist is the release gate for Meadow. A feature is not considered complete until its local implementation, tests, privacy review, and release configuration are complete.
 
+Current focused audit: [Privacy and Critical Flow Readiness](PrivacyAndCriticalFlowReadiness.md).
+
 ## 1. Data Protection
 
 - [x] Diary data is persisted through the secure storage data source.
+- [x] Imported diary/profile/reflection images are encrypted at rest.
 - [x] Sensitive fields are excluded from logs by the logging redaction layer.
 - [x] Production console logging is disabled by default.
 - [ ] Verify storage behavior on physical iOS and Android release builds.
@@ -28,23 +31,19 @@ This checklist is the release gate for Meadow. A feature is not considered compl
 - [ ] Verify app-switcher snapshots do not expose diary content.
 - [ ] Verify lock behavior on enrolled, unenrolled, cancelled, and failed biometric states.
 
-## 4. Subscription Safety
+## 4. Monetization
 
-- [x] Purchase and restore methods fail closed when native billing is unavailable.
-- [ ] Integrate StoreKit or RevenueCat before enabling paid access.
-- [ ] Validate entitlements with the store/provider, not local state.
-- [ ] Test purchase, renewal, expiration, refund, restore, and offline states.
-- [ ] Remove or disable paywall entry points until billing is configured.
+- [x] Native payment infrastructure is retained behind a release flag.
+- [x] Paid entry points are hidden while monetization is disabled.
+- [ ] Decide which app capabilities are free vs premium before enabling paid access.
+- [ ] Validate future entitlements with the store/provider, not local state.
 
-## 5. AI Privacy
+## 5. Remote Processing
 
-- [x] Remote AI requires explicit consent.
-- [x] Remote AI requires HTTPS and ZDR configuration.
-- [x] Remote AI responses are labeled as AI-generated.
-- [x] Automated mood inference has been removed.
-- [ ] Add a user-facing confirmation immediately before sending diary text remotely.
-- [ ] Verify the production endpoint contract and retention policy.
-- [ ] Test that consent removal blocks every remote AI call.
+- [x] Remote processing is disabled for the current release candidate.
+- [x] Diary features are local-first for this release path.
+- [x] Runtime remote-processing service code is not part of the current app source.
+- [ ] Reintroduce remote processing only after a separate privacy and data-retention review.
 
 ## 6. Testing
 
@@ -80,7 +79,7 @@ This checklist is the release gate for Meadow. A feature is not considered compl
 - [ ] Complete App Store privacy disclosures.
 - [ ] Complete Google Play Data Safety disclosures.
 - [ ] Configure production bundle identifiers, signing, icons, screenshots, and versioning.
-- [ ] Configure native subscription products, if monetization is enabled.
+- [ ] Configure native billing products only if monetization is reintroduced.
 - [ ] Complete TestFlight and Play internal testing.
 - [ ] Verify account/data deletion instructions are available to users.
 

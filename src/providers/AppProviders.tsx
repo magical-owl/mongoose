@@ -15,8 +15,8 @@ import { ThemeProvider } from './ThemeProvider';
 import { QueryProvider } from './QueryProvider';
 import { NetworkProvider } from './NetworkProvider';
 import { assertValidConfig } from '@/config/ConfigService';
-import { subscriptionService } from '@/features/subscription/services/SubscriptionService';
 import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
+import { releaseFeatures } from '@/config/releaseFeatures';
 
 /**
  * App providers composition.
@@ -32,7 +32,10 @@ export function AppProviders({
   const setEntitlement = useSubscriptionStore((state) => state.setEntitlement);
 
   useEffect(() => {
+    if (!releaseFeatures.monetization) return;
+
     const initializeSubscription = async () => {
+      const { subscriptionService } = await import('@/features/subscription/services/SubscriptionService');
       const result = await subscriptionService.initialize();
       if (result.success) {
         setEntitlement(result.data);

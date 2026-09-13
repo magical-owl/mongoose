@@ -1,3 +1,11 @@
+/* eslint-disable import/first */
+
+jest.mock('@/config/releaseFeatures', () => ({
+  releaseFeatures: {
+    monetization: true,
+  },
+}));
+
 import { DiaryService } from '../DiaryService';
 import { DiaryRepository } from '../../repositories/DiaryRepository';
 import { DiaryEntry } from '../../domain/DiaryEntry';
