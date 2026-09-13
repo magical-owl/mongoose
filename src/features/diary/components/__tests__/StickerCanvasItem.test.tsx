@@ -82,4 +82,38 @@ describe('StickerCanvasItem', () => {
 
     expect(mockGetDiaryPhotoImageSource).toHaveBeenCalledWith('file:///document/diary-photos/encrypted-photo.jpg');
   });
+
+  it('shows visible resize handles around a selected sticker', async () => {
+    const { getByTestId } = await renderWithProviders(
+      <StickerCanvasItem
+        sticker={{ ...baseSticker, text: '' }}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
+        isEditable
+        testID="sticker-item"
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByTestId('sticker-item-corner-top-left')).toBeTruthy();
+    expect(getByTestId('sticker-item-corner-top-right')).toBeTruthy();
+    expect(getByTestId('sticker-item-corner-bottom-left')).toBeTruthy();
+    expect(getByTestId('sticker-item-corner-bottom-right')).toBeTruthy();
+  });
+
+  it('hides resize handles when controlled as unselected', async () => {
+    const { queryByTestId } = await renderWithProviders(
+      <StickerCanvasItem
+        sticker={{ ...baseSticker, text: '' }}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
+        isEditable
+        isSelected={false}
+        testID="sticker-item"
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(queryByTestId('sticker-item-corner-top-left')).toBeNull();
+  });
 });

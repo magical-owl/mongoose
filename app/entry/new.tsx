@@ -20,6 +20,7 @@ import {
   TextInput as NativeTextInput,
   StyleSheet,
   useWindowDimensions,
+  type GestureResponderEvent,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@providers/ThemeProvider';
@@ -178,6 +179,7 @@ export default function CreateEntryScreen() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isStickerDragging, setIsStickerDragging] = useState(false);
+  const [selectedStickerId, setSelectedStickerId] = useState<string | undefined>(undefined);
   const [showStickerBounds, setShowStickerBounds] = useState(false);
   const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
   const [bodyContentHeight, setBodyContentHeight] = useState(ENTRY_BODY_MIN_HEIGHT);
@@ -312,9 +314,10 @@ export default function CreateEntryScreen() {
 
   const handleAddSticker = useCallback((stickerId: string, category: string) => {
     revealStickerBounds();
+    const newStickerId = generateUUID();
     const position = getVisibleStickerPosition(stickers.length);
     const newSticker: PlacedSticker = {
-      id: generateUUID(),
+      id: newStickerId,
       stickerId,
       category,
       x: position.x,
@@ -325,6 +328,7 @@ export default function CreateEntryScreen() {
       behindText: false,
     };
     setStickers((prev) => [...prev, newSticker]);
+    setSelectedStickerId(newStickerId);
   }, [getVisibleStickerPosition, revealStickerBounds, stickers.length]);
 
   const handleUpdateSticker = useCallback((updated: PlacedSticker) => {
@@ -332,14 +336,16 @@ export default function CreateEntryScreen() {
   }, []);
 
   const handleDeleteSticker = useCallback((id: string) => {
+    setSelectedStickerId((current) => (current === id ? undefined : current));
     setStickers((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
   const handleAddTextSticker = useCallback(() => {
     revealStickerBounds();
+    const newStickerId = generateUUID();
     const position = getVisibleStickerPosition(stickers.length, TEXT_STICKER_PLACEMENT_WIDTH);
     const newSticker: PlacedSticker = {
-      id: generateUUID(),
+      id: newStickerId,
       stickerId: 'text-sticker',
       category: 'text',
       x: position.x,
@@ -354,6 +360,7 @@ export default function CreateEntryScreen() {
       opacity: 1,
     };
     setStickers((prev) => [...prev, newSticker]);
+    setSelectedStickerId(newStickerId);
   }, [getVisibleStickerPosition, revealStickerBounds, setStickers, stickers.length]);
 
   const handleAddPhotoStickers = useCallback(async () => {
@@ -370,17 +377,30 @@ export default function CreateEntryScreen() {
     try {
       const imported = await Promise.all(result.assets.map((asset) => diaryPhotoService.importAsset(asset)));
       revealStickerBounds();
+      const firstNewStickerId = generateUUID();
       setStickers((current) => [
         ...current,
-        ...imported.map((photo, index) => ({
-          ...createPlacedPhotoSticker(photo, current.length + index),
-          ...getVisibleStickerPosition(current.length + index, PHOTO_STICKER_PLACEMENT_WIDTH),
-        })),
+        ...imported.map((photo, index) => {
+          const placedSticker = createPlacedPhotoSticker(photo, current.length + index);
+          return {
+            ...placedSticker,
+            id: index === 0 ? firstNewStickerId : placedSticker.id,
+            ...getVisibleStickerPosition(current.length + index, PHOTO_STICKER_PLACEMENT_WIDTH),
+          };
+        }),
       ]);
+      setSelectedStickerId(firstNewStickerId);
     } catch {
       Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
     }
   }, [getVisibleStickerPosition, revealStickerBounds, t]);
+
+  const clearSelectedStickerFromCanvas = useCallback((event: GestureResponderEvent) => {
+    if (event.target === event.currentTarget) {
+      setSelectedStickerId(undefined);
+    }
+    return false;
+  }, []);
 
   const handleCoverPhotoPickerResult = useCallback(async (source: 'camera' | 'library') => {
     const result = source === 'camera' ? await takeDiaryPhoto() : await chooseDiaryPhoto();
@@ -671,6 +691,7 @@ export default function CreateEntryScreen() {
                     : { y, width, height }
                 ));
               }}
+              onStartShouldSetResponder={clearSelectedStickerFromCanvas}
             >
               {behindStickers.map((sticker) => (
                 <StickerCanvasItem
@@ -678,6 +699,9 @@ export default function CreateEntryScreen() {
                   sticker={sticker}
                   onUpdate={handleUpdateSticker}
                   onDelete={handleDeleteSticker}
+                  isSelected={selectedStickerId === sticker.id}
+                  onSelect={setSelectedStickerId}
+                  onDeselect={() => setSelectedStickerId(undefined)}
                   onDragStateChange={setIsStickerDragging}
                   bounds={bodyLayout}
                   allowBottomOverflow
@@ -709,6 +733,9 @@ export default function CreateEntryScreen() {
                   sticker={sticker}
                   onUpdate={handleUpdateSticker}
                   onDelete={handleDeleteSticker}
+                  isSelected={selectedStickerId === sticker.id}
+                  onSelect={setSelectedStickerId}
+                  onDeselect={() => setSelectedStickerId(undefined)}
                   onDragStateChange={setIsStickerDragging}
                   bounds={bodyLayout}
                   allowBottomOverflow

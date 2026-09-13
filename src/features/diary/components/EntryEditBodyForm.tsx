@@ -1,5 +1,5 @@
-import type { Dispatch, RefObject, SetStateAction } from 'react';
-import { StyleSheet, TextInput as NativeTextInput, View } from 'react-native';
+import { useCallback, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
+import { StyleSheet, TextInput as NativeTextInput, View, type GestureResponderEvent } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
@@ -62,6 +62,17 @@ export function EntryEditBodyForm({
   const theme = useTheme();
   const t = useTranslation();
   const placeholderColor = theme.colors.stickerControlText;
+  const [selectedStickerId, setSelectedStickerId] = useState<string | undefined>(undefined);
+  const clearSelectedStickerFromCanvas = useCallback((event: GestureResponderEvent) => {
+    if (event.target === event.currentTarget) {
+      setSelectedStickerId(undefined);
+    }
+    return false;
+  }, []);
+  const handleDeleteSticker = useCallback((stickerId: string) => {
+    setSelectedStickerId((current) => (current === stickerId ? undefined : current));
+    onDeleteSticker(stickerId);
+  }, [onDeleteSticker]);
 
   return (
     <>
@@ -95,14 +106,18 @@ export function EntryEditBodyForm({
               : { y, width, height }
           ));
         }}
+        onStartShouldSetResponder={clearSelectedStickerFromCanvas}
       >
         {behindStickers.map((sticker) => (
           <StickerCanvasItem
             key={sticker.id}
             sticker={sticker}
             onUpdate={onUpdateSticker}
-            onDelete={onDeleteSticker}
+            onDelete={handleDeleteSticker}
             isEditable
+            isSelected={selectedStickerId === sticker.id}
+            onSelect={setSelectedStickerId}
+            onDeselect={() => setSelectedStickerId(undefined)}
             onDragStateChange={onStickerDragStateChange}
             bounds={bodyLayout}
             allowBottomOverflow
@@ -133,8 +148,11 @@ export function EntryEditBodyForm({
             key={sticker.id}
             sticker={sticker}
             onUpdate={onUpdateSticker}
-            onDelete={onDeleteSticker}
+            onDelete={handleDeleteSticker}
             isEditable
+            isSelected={selectedStickerId === sticker.id}
+            onSelect={setSelectedStickerId}
+            onDeselect={() => setSelectedStickerId(undefined)}
             onDragStateChange={onStickerDragStateChange}
             bounds={bodyLayout}
             allowBottomOverflow

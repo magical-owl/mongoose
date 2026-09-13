@@ -41,6 +41,7 @@ import {
   DIARY_TEXT_STICKER_BASE_HEIGHT,
   DIARY_TEXT_STICKER_BASE_WIDTH,
   clampStickerPosition,
+  getStickerVisualSize,
 } from '@/features/diary/domain/StickerLayout';
 
 const DEFAULT_TEXT_STICKER_COLOR = '#DC2626';
@@ -48,12 +49,19 @@ const DEFAULT_TEXT_STICKER_BACKGROUND_COLOR = '#E5E7EB';
 const TEXT_STICKER_COLORS = [DEFAULT_TEXT_STICKER_COLOR, '#111827', '#F8FAFC', '#2563EB', '#059669', '#D97706', '#7C3AED', '#DB2777'] as const;
 const TEXT_STICKER_BACKGROUND_COLORS = [DEFAULT_TEXT_STICKER_BACKGROUND_COLOR, '#F8FAFC', '#FEF3C7', '#DBEAFE', '#DCFCE7', '#FCE7F3', '#EDE9FE', '#111827'] as const;
 const STICKER_OPACITIES = [1, 0.75, 0.5, 0.3] as const;
+const STICKER_CONTROL_SIZE = 34;
+const STICKER_CONTROL_GAP = 4;
+const STICKER_CONTROL_OFFSET = 46;
+const STICKER_CONTROL_EDGE_SPACE = 12;
 
 interface StickerCanvasItemProps {
   readonly sticker: PlacedSticker;
   readonly onUpdate: (updated: PlacedSticker) => void;
   readonly onDelete: (id: string) => void;
   readonly isEditable?: boolean;
+  readonly isSelected?: boolean;
+  readonly onSelect?: (id: string) => void;
+  readonly onDeselect?: () => void;
   readonly onDragStateChange?: (isDragging: boolean) => void;
   readonly bounds?: {
     readonly width: number;
@@ -69,6 +77,9 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   onUpdate,
   onDelete,
   isEditable = true,
+  isSelected: controlledIsSelected,
+  onSelect,
+  onDeselect,
   onDragStateChange,
   bounds,
   allowBottomOverflow = false,
@@ -77,11 +88,22 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
 }) => {
   const t = useTranslation();
   const theme = useTheme();
-  const [isSelected, setIsSelected] = useState(isEditable && sticker.text !== undefined && sticker.text.length === 0);
+  const [localIsSelected, setLocalIsSelected] = useState(isEditable && sticker.text !== undefined && sticker.text.length === 0);
   const [showTextOptions, setShowTextOptions] = useState(false);
   const selectedRef = useRef(false);
   const stickerRef = useRef(sticker);
   stickerRef.current = sticker;
+  const isSelected = controlledIsSelected ?? localIsSelected;
+  const setStickerSelected = useCallback((selected: boolean) => {
+    if (selected) {
+      onSelect?.(stickerRef.current.id);
+    } else {
+      onDeselect?.();
+    }
+    if (controlledIsSelected === undefined) {
+      setLocalIsSelected(selected);
+    }
+  }, [controlledIsSelected, onDeselect, onSelect]);
   const boundsRef = useRef(bounds);
   boundsRef.current = bounds;
   const allowBottomOverflowRef = useRef(allowBottomOverflow);
@@ -163,7 +185,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
         pan.setValue({ x: 0, y: 0 });
         dragMoved.current = false;
         setShowTextOptions(false);
-        setIsSelected(false); // hide controls while dragging
+        setStickerSelected(false); // hide controls while dragging
       },
 
       onPanResponderMove: (_, gesture) => {
@@ -175,7 +197,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
         onDragStateChange?.(false);
         pan.flattenOffset();
         if (!dragMoved.current) {
-          setIsSelected((selected) => !selected);
+          setStickerSelected(!selectedRef.current);
           return;
         }
         const nextPosition = clampPosition(position.current.x + gs.dx, position.current.y + gs.dy);
@@ -206,9 +228,9 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const handleToggleBehindText = useCallback(() => {
     // Release the editing layer immediately so the new stack order is visible.
     setShowTextOptions(false);
-    setIsSelected(false);
+    setStickerSelected(false);
     onUpdate(buildUpdatedSticker({ behindText: !stickerRef.current.behindText }));
-  }, [onUpdate]);
+  }, [onUpdate, setStickerSelected]);
 
   const handleChangeText = useCallback((text: string) => {
     draftTextRef.current = text;
@@ -219,11 +241,11 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const handleFinishTextEditing = useCallback(() => {
     Keyboard.dismiss();
     setShowTextOptions(false);
-    setIsSelected(false);
+    setStickerSelected(false);
     if (stickerRef.current.text !== undefined) {
       onUpdate(buildUpdatedSticker({ text: draftTextRef.current }));
     }
-  }, [onUpdate]);
+  }, [onUpdate, setStickerSelected]);
 
   const handleFinishSelection = useCallback(() => {
     if (stickerRef.current.text !== undefined) {
@@ -231,9 +253,9 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
       return;
     }
     setShowTextOptions(false);
-    setIsSelected(false);
+    setStickerSelected(false);
     onUpdate(buildUpdatedSticker({}));
-  }, [handleFinishTextEditing, onUpdate]);
+  }, [handleFinishTextEditing, onUpdate, setStickerSelected]);
 
   const handleDelete = useCallback(() => {
     setShowTextOptions(false);
@@ -262,21 +284,30 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const rotatePanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
       onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 2 || Math.abs(gesture.dy) > 2,
+      onMoveShouldSetPanResponderCapture: (_, gesture) => Math.abs(gesture.dx) > 2 || Math.abs(gesture.dy) > 2,
       onPanResponderGrant: () => {
+        onDragStateChange?.(true);
         rotateGestureStart.current = { rotation: rotationRef.current, moved: false };
       },
       onPanResponderMove: (_, gesture) => {
         if (Math.abs(gesture.dx) < 2 && Math.abs(gesture.dy) < 2) return;
         rotateGestureStart.current.moved = true;
-        const next = rotateGestureStart.current.rotation + gesture.dx * 0.75;
+        const next = rotateGestureStart.current.rotation - gesture.dx * 0.75;
         rotationRef.current = next;
         setCurrentRotation(next);
         onUpdate(buildUpdatedSticker({ rotation: next }));
       },
       onPanResponderRelease: () => {
+        onDragStateChange?.(false);
         if (!rotateGestureStart.current.moved) handleRotate();
       },
+      onPanResponderTerminate: () => {
+        onDragStateChange?.(false);
+      },
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
     })
   ).current;
 
@@ -308,10 +339,10 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   });
 
   const resizeGestureStart = useRef({ scale: sticker.scale });
-  const resizeTopPanResponder = useRef(createResizePanResponder(0, -1)).current;
-  const resizeRightPanResponder = useRef(createResizePanResponder(1, 0)).current;
-  const resizeBottomPanResponder = useRef(createResizePanResponder(0, 1)).current;
-  const resizeLeftPanResponder = useRef(createResizePanResponder(-1, 0)).current;
+  const resizeTopLeftPanResponder = useRef(createResizePanResponder(-1, -1)).current;
+  const resizeTopRightPanResponder = useRef(createResizePanResponder(1, -1)).current;
+  const resizeBottomLeftPanResponder = useRef(createResizePanResponder(-1, 1)).current;
+  const resizeBottomRightPanResponder = useRef(createResizePanResponder(1, 1)).current;
 
   const stickerCanvasLayerIndex = sticker.behindText ? 1 : stickerLayerIndex + 3;
   const activeStickerCanvasLayerIndex = isSelected ? 999 : stickerCanvasLayerIndex;
@@ -331,23 +362,44 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
     ],
     opacity: stickerOpacity,
   };
-  const controlsShouldSitBelow = position.current.y < (showTextOptions ? 112 : 62);
+  const stickerVisualSize = getStickerVisualSize(sticker);
+  const scaledStickerWidth = stickerVisualSize.width * currentScale;
+  const scaledStickerHeight = stickerVisualSize.height * currentScale;
+  const selectionFrameStyle = {
+    width: scaledStickerWidth,
+    height: scaledStickerHeight,
+    left: -(scaledStickerWidth - stickerVisualSize.width) / 2,
+    top: -(scaledStickerHeight - stickerVisualSize.height) / 2,
+    transform: [{ rotate: `${currentRotation}deg` }],
+  };
+  const primaryControlCount = isTextSticker ? 5 : 4;
+  const primaryControlsWidth = primaryControlCount * STICKER_CONTROL_SIZE + (primaryControlCount - 1) * STICKER_CONTROL_GAP;
+  const stickerRightEdge = position.current.x + stickerVisualSize.width * currentScale;
+  const stickerBottomEdge = position.current.y + stickerVisualSize.height * currentScale;
+  const shouldPlaceControlsAbove = bounds
+    ? stickerBottomEdge + STICKER_CONTROL_OFFSET > bounds.height - STICKER_CONTROL_EDGE_SPACE
+    : false;
+  const shouldAnchorControlsLeft = position.current.x < primaryControlsWidth / 2;
+  const shouldAnchorControlsRight = bounds
+    ? stickerRightEdge + primaryControlsWidth / 2 > bounds.width - STICKER_CONTROL_EDGE_SPACE
+    : false;
+  const primaryControlsPositionStyle = [
+    styles.primaryControls,
+    shouldPlaceControlsAbove ? styles.primaryControlsAbove : styles.primaryControlsBelow,
+    shouldAnchorControlsLeft
+      ? styles.primaryControlsLeft
+      : shouldAnchorControlsRight
+        ? styles.primaryControlsRight
+        : styles.primaryControlsCenter,
+  ];
 
   return (
     <Animated.View
       style={[styles.container, positionStyle]}
       testID={testID}
     >
-      {/* Control strip (only when selected and editable) */}
       {isEditable && isSelected && (
-        <View
-          style={[
-            styles.controls,
-            showTextOptions && styles.controlsExpanded,
-            controlsShouldSitBelow && styles.controlsBelow,
-            controlsShouldSitBelow && showTextOptions && styles.controlsBelowExpanded,
-          ]}
-        >
+        <View style={styles.textControlsWrap} pointerEvents="box-none">
           {isTextSticker && showTextOptions ? (
             <View style={styles.secondaryControls}>
               <TouchableOpacity
@@ -376,72 +428,12 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
               </TouchableOpacity>
             </View>
           ) : null}
-
-          <View style={styles.primaryControls}>
-            <TouchableOpacity
-              style={[styles.controlBtn, { backgroundColor: theme.colors.stickerControl }]}
-              onPress={handleFinishSelection}
-              accessibilityLabel={t('entrySaveA11y')}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons name="check" size={19} color={theme.colors.stickerControlText} />
-            </TouchableOpacity>
-
-            <View
-              style={[styles.controlBtn, { backgroundColor: theme.colors.stickerControl }]}
-              {...rotatePanResponder.panHandlers}
-              accessibilityLabel={t('stickerRotateA11y')}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons name="rotate-right" size={18} color={theme.colors.stickerControlText} />
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.controlBtn,
-                { backgroundColor: sticker.behindText ? theme.colors.stickerControlActive : theme.colors.stickerControl },
-              ]}
-              onPress={handleToggleBehindText}
-              accessibilityLabel={sticker.behindText ? t('stickerBringForwardA11y') : t('stickerSendBehindA11y')}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons
-                name={sticker.behindText ? 'layers' : 'layers-minus'}
-                size={18}
-                color={theme.colors.stickerControlText}
-              />
-            </TouchableOpacity>
-
-            {isTextSticker ? (
-              <TouchableOpacity
-                style={[
-                  styles.controlBtn,
-                  { backgroundColor: showTextOptions ? theme.colors.stickerControlActive : theme.colors.stickerControl },
-                ]}
-                onPress={() => setShowTextOptions((current) => !current)}
-                accessibilityLabel={t('stickerOptionsA11y')}
-                accessibilityRole="button"
-                accessibilityState={{ expanded: showTextOptions }}
-              >
-                <MaterialCommunityIcons name="dots-horizontal" size={20} color={theme.colors.stickerControlText} />
-              </TouchableOpacity>
-            ) : null}
-
-            <TouchableOpacity
-              style={[styles.controlBtn, { backgroundColor: theme.colors.stickerControlDestructive }]}
-              onPress={handleDelete}
-              accessibilityLabel={t('stickerDeleteA11y')}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons name="close" size={19} color={theme.colors.stickerControlText} />
-            </TouchableOpacity>
-          </View>
         </View>
       )}
 
-      {/* Sticker body — tap to toggle selection */}
-      <Animated.View style={stickerTransformStyle}>
-        <View style={isEditable && isSelected && [styles.selectionFrame, { borderColor: theme.colors.stickerSelectionOutline }]}>
+      <View style={[styles.stickerBodyFrame, { width: stickerVisualSize.width, height: stickerVisualSize.height }]}>
+        {/* Sticker body — tap to toggle selection */}
+        <Animated.View style={[styles.stickerBody, stickerTransformStyle]}>
           <View
             accessibilityLabel={`Sticker${isEditable ? ', tap to select' : ''}`}
             accessibilityRole={isEditable ? 'button' : 'image'}
@@ -484,36 +476,104 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
               </Text>
             )}
           </View>
-          {isEditable && isSelected ? (
-            <>
-              <View
-                style={[styles.resizeOutlineTouchTarget, styles.resizeOutlineTop]}
-                {...resizeTopPanResponder.panHandlers}
-                accessibilityLabel={t('stickerResizeA11y')}
-                accessibilityRole="adjustable"
-              />
-              <View
-                style={[styles.resizeOutlineTouchTarget, styles.resizeOutlineRight]}
-                {...resizeRightPanResponder.panHandlers}
-                accessibilityLabel={t('stickerResizeA11y')}
-                accessibilityRole="adjustable"
-              />
-              <View
-                style={[styles.resizeOutlineTouchTarget, styles.resizeOutlineBottom]}
-                {...resizeBottomPanResponder.panHandlers}
-                accessibilityLabel={t('stickerResizeA11y')}
-                accessibilityRole="adjustable"
-              />
-              <View
-                style={[styles.resizeOutlineTouchTarget, styles.resizeOutlineLeft]}
-                {...resizeLeftPanResponder.panHandlers}
-                accessibilityLabel={t('stickerResizeA11y')}
-                accessibilityRole="adjustable"
-              />
-            </>
-          ) : null}
-        </View>
-      </Animated.View>
+        </Animated.View>
+        {isEditable && isSelected ? (
+          <Animated.View
+            style={[
+              styles.selectionFrame,
+              selectionFrameStyle,
+              { borderColor: theme.colors.stickerSelectionOutline },
+            ]}
+            pointerEvents="box-none"
+          >
+            <View
+              style={[styles.cornerHandle, styles.cornerTopLeft, { borderColor: theme.colors.stickerSelectionOutline }]}
+              {...resizeTopLeftPanResponder.panHandlers}
+              accessibilityLabel={t('stickerResizeA11y')}
+              accessibilityRole="adjustable"
+              testID={testID ? `${testID}-corner-top-left` : undefined}
+            />
+            <View
+              style={[styles.cornerHandle, styles.cornerTopRight, { borderColor: theme.colors.stickerSelectionOutline }]}
+              {...resizeTopRightPanResponder.panHandlers}
+              accessibilityLabel={t('stickerResizeA11y')}
+              accessibilityRole="adjustable"
+              testID={testID ? `${testID}-corner-top-right` : undefined}
+            />
+            <View
+              style={[styles.cornerHandle, styles.cornerBottomLeft, { borderColor: theme.colors.stickerSelectionOutline }]}
+              {...resizeBottomLeftPanResponder.panHandlers}
+              accessibilityLabel={t('stickerResizeA11y')}
+              accessibilityRole="adjustable"
+              testID={testID ? `${testID}-corner-bottom-left` : undefined}
+            />
+            <View
+              style={[styles.cornerHandle, styles.cornerBottomRight, { borderColor: theme.colors.stickerSelectionOutline }]}
+              {...resizeBottomRightPanResponder.panHandlers}
+              accessibilityLabel={t('stickerResizeA11y')}
+              accessibilityRole="adjustable"
+              testID={testID ? `${testID}-corner-bottom-right` : undefined}
+            />
+            <View style={styles.frameControls} pointerEvents="box-none">
+              <View style={primaryControlsPositionStyle}>
+                <TouchableOpacity
+                  style={[styles.controlBtn, { backgroundColor: theme.colors.stickerControl }]}
+                  onPress={handleFinishSelection}
+                  accessibilityLabel={t('entrySaveA11y')}
+                  accessibilityRole="button"
+                >
+                  <MaterialCommunityIcons name="check" size={16} color={theme.colors.stickerControlText} />
+                </TouchableOpacity>
+                <View
+                  style={[styles.controlBtn, { backgroundColor: theme.colors.stickerControl }]}
+                  {...rotatePanResponder.panHandlers}
+                  accessibilityLabel={t('stickerRotateA11y')}
+                  accessibilityRole="button"
+                >
+                  <MaterialCommunityIcons name="rotate-right" size={15} color={theme.colors.stickerControlText} />
+                </View>
+                {isTextSticker ? (
+                  <TouchableOpacity
+                    style={[
+                      styles.controlBtn,
+                      { backgroundColor: showTextOptions ? theme.colors.stickerControlActive : theme.colors.stickerControl },
+                    ]}
+                    onPress={() => setShowTextOptions((current) => !current)}
+                    accessibilityLabel={t('stickerOptionsA11y')}
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: showTextOptions }}
+                  >
+                    <MaterialCommunityIcons name="dots-horizontal" size={17} color={theme.colors.stickerControlText} />
+                  </TouchableOpacity>
+                ) : null}
+                <TouchableOpacity
+                  style={[
+                    styles.controlBtn,
+                    { backgroundColor: sticker.behindText ? theme.colors.stickerControlActive : theme.colors.stickerControl },
+                  ]}
+                  onPress={handleToggleBehindText}
+                  accessibilityLabel={sticker.behindText ? t('stickerBringForwardA11y') : t('stickerSendBehindA11y')}
+                  accessibilityRole="button"
+                >
+                  <MaterialCommunityIcons
+                    name={sticker.behindText ? 'layers' : 'layers-minus'}
+                    size={15}
+                    color={theme.colors.stickerControlText}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.controlBtn, { backgroundColor: theme.colors.stickerControlDestructive }]}
+                  onPress={handleDelete}
+                  accessibilityLabel={t('stickerDeleteA11y')}
+                  accessibilityRole="button"
+                >
+                  <MaterialCommunityIcons name="close" size={16} color={theme.colors.stickerControlText} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Animated.View>
+        ) : null}
+      </View>
     </Animated.View>
   );
 };
@@ -524,39 +584,85 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  stickerBodyFrame: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stickerBody: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   selectionFrame: {
-    borderWidth: 1,
-    borderStyle: 'dotted',
-    borderColor: 'rgba(51, 65, 85, 0.8)',
-    padding: 4,
-  },
-  resizeOutlineTouchTarget: {
     position: 'absolute',
-    zIndex: 2,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(51, 65, 85, 0.8)',
   },
-  resizeOutlineTop: {
-    top: -12,
-    left: -12,
-    right: -12,
-    height: 24,
+  frameControls: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 4,
+    elevation: 4,
   },
-  resizeOutlineRight: {
-    top: -12,
-    right: -12,
-    bottom: -12,
-    width: 24,
+  primaryControls: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: STICKER_CONTROL_GAP,
   },
-  resizeOutlineBottom: {
-    left: -12,
-    right: -12,
-    bottom: -12,
-    height: 24,
+  primaryControlsAbove: {
+    top: -STICKER_CONTROL_OFFSET,
   },
-  resizeOutlineLeft: {
-    top: -12,
-    left: -12,
-    bottom: -12,
-    width: 24,
+  primaryControlsBelow: {
+    bottom: -STICKER_CONTROL_OFFSET,
+  },
+  primaryControlsCenter: {
+    alignSelf: 'center',
+  },
+  primaryControlsLeft: {
+    left: 0,
+  },
+  primaryControlsRight: {
+    right: 0,
+  },
+  textControlsWrap: {
+    position: 'absolute',
+    top: -44,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 1000,
+    elevation: 10,
+  },
+  cornerHandle: {
+    position: 'absolute',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    backgroundColor: '#F8FAFC',
+    zIndex: 5,
+    elevation: 5,
+  },
+  cornerTopLeft: {
+    top: -9,
+    left: -9,
+  },
+  cornerTopRight: {
+    top: -9,
+    right: -9,
+  },
+  cornerBottomLeft: {
+    bottom: -9,
+    left: -9,
+  },
+  cornerBottomRight: {
+    right: -9,
+    bottom: -9,
   },
   emoji: {
     fontSize: 48,
@@ -602,39 +708,15 @@ const styles = StyleSheet.create({
   selectedOverlay: {
     opacity: 0.85,
   },
-  controls: {
-    position: 'absolute',
-    top: -52,
-    gap: 6,
-    alignItems: 'center',
-    zIndex: 1000,
-    elevation: 10,
-  },
-  controlsExpanded: {
-    top: -102,
-  },
-  controlsBelow: {
-    top: undefined,
-    bottom: -52,
-    flexDirection: 'column-reverse',
-  },
-  controlsBelowExpanded: {
-    bottom: -102,
-  },
-  primaryControls: {
-    flexDirection: 'row',
-    gap: 6,
-    alignItems: 'center',
-  },
   secondaryControls: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 4,
     alignItems: 'center',
   },
   controlBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: STICKER_CONTROL_SIZE,
+    height: STICKER_CONTROL_SIZE,
+    borderRadius: STICKER_CONTROL_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
