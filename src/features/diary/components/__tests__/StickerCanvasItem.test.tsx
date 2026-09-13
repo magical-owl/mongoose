@@ -3,6 +3,12 @@ import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { renderWithProviders } from '@tests/helpers';
 
+const mockGetDiaryPhotoImageSource = jest.fn((uri: string) => ({ uri: `cache:${uri}` }));
+
+jest.mock('@/features/diary/services/DiaryPhotoService', () => ({
+  getDiaryPhotoImageSource: (uri: string) => mockGetDiaryPhotoImageSource(uri),
+}));
+
 const baseSticker: PlacedSticker = {
   id: '550e8400-e29b-41d4-a716-446655440000',
   stickerId: 'text-sticker',
@@ -51,5 +57,29 @@ describe('StickerCanvasItem', () => {
 
     expect(style.zIndex).toBe(5);
     expect(style.elevation).toBe(5);
+  });
+
+  it('renders photo stickers through the diary photo image source resolver', async () => {
+    const photoSticker: PlacedSticker = {
+      ...baseSticker,
+      stickerId: 'photo:asset',
+      category: 'photos',
+      text: undefined,
+      imageUri: 'file:///document/diary-photos/encrypted-photo.jpg',
+      imageWidth: 1200,
+      imageHeight: 800,
+    };
+    await renderWithProviders(
+      <StickerCanvasItem
+        sticker={photoSticker}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
+        isEditable
+        testID="sticker-item"
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(mockGetDiaryPhotoImageSource).toHaveBeenCalledWith('file:///document/diary-photos/encrypted-photo.jpg');
   });
 });

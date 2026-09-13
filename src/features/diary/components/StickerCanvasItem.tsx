@@ -34,7 +34,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PlacedSticker, findStickerItem } from '../domain/Sticker';
 import { useTranslation } from '@/localization/i18n';
 import { useTheme } from '@/providers/ThemeProvider';
-import { resolveImportedDiaryPhotoUri } from '@/features/diary/services/DiaryPhotoService';
+import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
 import {
   DIARY_PHOTO_STICKER_BASE_WIDTH,
   DIARY_STICKER_BASE_SIZE,
@@ -112,6 +112,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const stickerItem = sticker.imageUri || isTextSticker ? undefined : findStickerItem(sticker.stickerId);
   const stickerIcon = stickerItem?.icon ?? '⭐';
   const stickerSource = stickerItem?.source;
+  const photoStickerSource = sticker.imageUri ? getDiaryPhotoImageSource(sticker.imageUri) : undefined;
   const photoAspectRatio = sticker.imageWidth && sticker.imageHeight ? sticker.imageWidth / sticker.imageHeight : 1;
   const textColor = sticker.textColor ?? DEFAULT_TEXT_STICKER_COLOR;
   const textBackgroundColor = sticker.textBackgroundColor ?? DEFAULT_TEXT_STICKER_BACKGROUND_COLOR;
@@ -464,11 +465,13 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
                 </Text>
               )
             ) : sticker.imageUri ? (
-              <Image
-                source={{ uri: resolveImportedDiaryPhotoUri(sticker.imageUri) }}
-                style={[styles.photoStickerImage, { aspectRatio: photoAspectRatio }, isSelected && styles.selectedOverlay]}
-                resizeMode="cover"
-              />
+              photoStickerSource ? (
+                <Image
+                  source={photoStickerSource}
+                  style={[styles.photoStickerImage, { aspectRatio: photoAspectRatio }, isSelected && styles.selectedOverlay]}
+                  resizeMode="cover"
+                />
+              ) : null
             ) : stickerSource != null ? (
               <Image
                 source={stickerSource}

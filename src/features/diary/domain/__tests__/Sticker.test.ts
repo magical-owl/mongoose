@@ -32,6 +32,23 @@ describe('Sticker catalog', () => {
     expect(scribblePack?.stickers.every((sticker) => sticker.source != null)).toBe(true);
   });
 
+  it('treats the Summer sticker pack as premium', () => {
+    const summerPack = STICKER_PACKS.find((pack) => pack.id === 'summer-img');
+
+    expect(summerPack?.accessTier).toBe('premium');
+  });
+
+  it('includes six stickers in the themed cat, school, and seasonal packs', () => {
+    const expandedPackIds = ['cat-img', 'school-img', 'summer-img', 'winter-img', 'spring-img', 'fall-img'];
+
+    for (const packId of expandedPackIds) {
+      const pack = STICKER_PACKS.find((candidate) => candidate.id === packId);
+
+      expect(pack?.stickers).toHaveLength(6);
+      expect(pack?.stickers.every((sticker) => sticker.source != null)).toBe(true);
+    }
+  });
+
   it('supports text stickers in placed sticker data', () => {
     const result = PlacedStickerSchema.parse({
       id: '123e4567-e89b-12d3-a456-426614174000',
