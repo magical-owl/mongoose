@@ -32,4 +32,13 @@ describe('JournalBackgrounds', () => {
     expect(getJournalCoverImageSource(`${BUILTIN_JOURNAL_COVER_PREFIX}art-studio`)).toBe(BUILTIN_JOURNAL_BACKGROUNDS[0]?.source);
     expect(getJournalCoverImageSource(`${BUILTIN_JOURNAL_COVER_PREFIX}botanical-desk`)).toBe(BUILTIN_JOURNAL_BACKGROUNDS[0]?.source);
   });
+
+  it('marks the default covers free and curated covers premium', () => {
+    const tiers = Object.fromEntries(BUILTIN_JOURNAL_BACKGROUNDS.map((background) => [background.id, background.accessTier]));
+
+    expect(tiers['default-journal']).toBe('free');
+    expect(tiers['meadow-day']).toBe('free');
+    expect(tiers['meadow-sunset']).toBe('premium');
+    expect(tiers['mountain-sunrise']).toBe('premium');
+  });
 });

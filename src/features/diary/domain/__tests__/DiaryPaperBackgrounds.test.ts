@@ -27,4 +27,15 @@ describe('DiaryPaperBackgrounds', () => {
   it('uses no image source for the blank diary background', () => {
     expect(getDiaryPaperBackgroundSource('blank')).toBeUndefined();
   });
+
+  it('marks baseline papers free and extra papers premium', () => {
+    const tiers = Object.fromEntries(DIARY_PAPER_BACKGROUNDS.map((background) => [background.id, background.accessTier]));
+
+    expect(tiers.blank).toBe('free');
+    expect(tiers['vintage-parchment']).toBe('free');
+    expect(tiers['soft-lined-paper']).toBe('free');
+    expect(tiers['recycled-kraft-paper']).toBe('free');
+    expect(tiers['pastel-memo-paper']).toBe('premium');
+    expect(tiers['cream-letter-paper']).toBe('premium');
+  });
 });

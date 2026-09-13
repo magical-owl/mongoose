@@ -3,12 +3,14 @@ import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/shared/components/Text';
+import { PaywallModal } from '@/shared/components/PaywallModal';
 import { JournalCreateForm } from '@/features/journal/components/JournalCreateForm';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import type { CreateJournalInput } from '@/features/journal/services/JournalService';
 import { useTheme } from '@/providers/ThemeProvider';
-import { useTranslation } from '@/localization/i18n';
+import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { useAppStore } from '@/stores/useAppStore';
+import { releaseFeatures } from '@/config/releaseFeatures';
 
 export default function FirstJournalOnboardingScreen(): React.JSX.Element {
   const router = useRouter();
@@ -19,6 +21,7 @@ export default function FirstJournalOnboardingScreen(): React.JSX.Element {
   const { journals, createJournal } = useJournals();
   const [isCreating, setIsCreating] = useState(false);
   const [createdJournalId, setCreatedJournalId] = useState<string | null>(null);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   useEffect(() => {
     if (journals.length > 0 && !createdJournalId && !isCreating) {
@@ -65,10 +68,26 @@ export default function FirstJournalOnboardingScreen(): React.JSX.Element {
             isSaving={isCreating}
             showCancel={false}
             autoFocus
+            onRequestPremium={() => setShowPremiumModal(true)}
             onSubmit={(input) => { void handleCreateJournal(input); }}
           />
         </View>
       </ScrollView>
+      {releaseFeatures.monetization ? (
+        <PaywallModal
+          visible={showPremiumModal}
+          onClose={() => setShowPremiumModal(false)}
+          title={premiumPaywallTitle(t)}
+          subtitle={t('premiumPaywallSubtitle')}
+          features={[
+            t('premiumPaywallFeatureEntries'),
+            t('premiumPaywallFeatureStickers'),
+            t('premiumPaywallFeatureInsights'),
+            t('premiumPaywallFeatureThemes'),
+            t('premiumPaywallFeatureOffline'),
+          ]}
+        />
+      ) : null}
     </View>
   );
 }

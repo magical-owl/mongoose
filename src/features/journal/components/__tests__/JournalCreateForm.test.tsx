@@ -3,15 +3,20 @@ import { JournalCreateForm } from '@/features/journal/components/JournalCreateFo
 import { BUILTIN_JOURNAL_BACKGROUNDS } from '@/features/journal/domain/JournalBackgrounds';
 import { renderWithProviders } from '@tests/helpers';
 
+jest.mock('@/features/subscription/hooks/useSubscription', () => ({
+  useSubscription: () => ({ isPro: false }),
+}));
+
 describe('JournalCreateForm', () => {
   it('submits title, description, and selected cover metadata', async () => {
     const onSubmit = jest.fn();
-    const background = BUILTIN_JOURNAL_BACKGROUNDS.find((item) => item.id === 'winter');
+    const background = BUILTIN_JOURNAL_BACKGROUNDS.find((item) => item.id === 'meadow-day');
     expect(background).toBeDefined();
     if (!background) return;
     const { getByTestId } = await renderWithProviders(
       <JournalCreateForm
         submitLabel="Create Journal"
+        onRequestPremium={jest.fn()}
         onSubmit={onSubmit}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
@@ -39,6 +44,38 @@ describe('JournalCreateForm', () => {
     });
   });
 
+  it('requests premium instead of selecting a premium built-in cover', async () => {
+    const onSubmit = jest.fn();
+    const onRequestPremium = jest.fn();
+    const premiumBackground = BUILTIN_JOURNAL_BACKGROUNDS.find((item) => item.id === 'winter');
+    expect(premiumBackground).toBeDefined();
+    if (!premiumBackground) return;
+    const { getByTestId } = await renderWithProviders(
+      <JournalCreateForm
+        submitLabel="Create Journal"
+        onRequestPremium={onRequestPremium}
+        onSubmit={onSubmit}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    await act(async () => {
+      await fireEvent.press(getByTestId(`journal-create-cover-option-${premiumBackground.id}`));
+    });
+    await act(async () => {
+      await fireEvent.press(getByTestId('journal-create-submit-button'));
+    });
+
+    expect(onRequestPremium).toHaveBeenCalledTimes(1);
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: '',
+      description: '',
+      coverImageUri: undefined,
+      coverImageWidth: undefined,
+      coverImageHeight: undefined,
+    });
+  });
+
   it('prefills existing journal details and can remove the cover before saving', async () => {
     const onSubmit = jest.fn();
     const background = BUILTIN_JOURNAL_BACKGROUNDS[0];
@@ -54,6 +91,7 @@ describe('JournalCreateForm', () => {
           coverImageHeight: background.height,
         }}
         submitLabel="Save"
+        onRequestPremium={jest.fn()}
         onSubmit={onSubmit}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },

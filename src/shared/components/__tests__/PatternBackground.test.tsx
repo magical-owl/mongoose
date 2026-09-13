@@ -1,6 +1,6 @@
 import { Text } from 'react-native';
 import { renderWithProviders } from '@tests/helpers';
-import { PATTERN_BACKGROUND_VARIANTS, PatternBackground, PatternBackgroundPreview } from '../PatternBackground';
+import { getPatternBackgroundAccessTier, PATTERN_BACKGROUND_VARIANTS, PatternBackground, PatternBackgroundPreview } from '../PatternBackground';
 
 describe('PatternBackground', () => {
   it('renders children above a decorative transparent pattern layer', async () => {
@@ -43,5 +43,12 @@ describe('PatternBackground', () => {
 
     expect(getByText('Plain content')).toBeTruthy();
     expect(queryByTestId('pattern-background-pattern')).toBeNull();
+  });
+
+  it('marks none and spring free while extra themes are premium', () => {
+    expect(getPatternBackgroundAccessTier('none')).toBe('free');
+    expect(getPatternBackgroundAccessTier('spring')).toBe('free');
+    expect(getPatternBackgroundAccessTier('summer')).toBe('premium');
+    expect(getPatternBackgroundAccessTier('rain')).toBe('premium');
   });
 });

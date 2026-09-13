@@ -10,11 +10,12 @@ import {
 import { useTheme } from '@providers/ThemeProvider';
 import {
   DEFAULT_PATTERN_BACKGROUND_VARIANT,
+  getPatternBackgroundAccessTier,
   PATTERN_BACKGROUND_VARIANTS,
   type PatternBackgroundVariant,
 } from '@/theme/patternBackgrounds';
 
-export { PATTERN_BACKGROUND_VARIANTS, type PatternBackgroundVariant };
+export { getPatternBackgroundAccessTier, PATTERN_BACKGROUND_VARIANTS, type PatternBackgroundVariant };
 
 interface PatternBackgroundProps {
   readonly children?: ReactNode;

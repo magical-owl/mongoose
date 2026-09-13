@@ -24,6 +24,7 @@ import { useAppStore } from '@/stores/useAppStore';
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { releaseFeatures } from '@/config/releaseFeatures';
 import { premiumPaywallTitle, useTranslation, type TranslationKey } from '@/localization/i18n';
+import { canUsePremiumFeature } from '@/features/subscription/services/PremiumAccessService';
 import type { Journal } from '@/features/journal/domain/Journal';
 import {
   BUILTIN_JOURNAL_BACKGROUNDS,
@@ -154,7 +155,7 @@ export default function JournalsScreen(): React.JSX.Element {
   const closePremiumModal = useCallback(() => {
     markPremiumPromptDismissed(new Date().toISOString());
     setShowPremiumModal(false);
-  }, [markPremiumPromptDismissed]);
+  }, [markPremiumPromptDismissed, setShowPremiumModal]);
   const closeJournalMenu = useCallback(() => {
     setShowJournalMenu(false);
   }, []);
@@ -361,6 +362,14 @@ export default function JournalsScreen(): React.JSX.Element {
     const journal = coverPickerJournal;
     const background = BUILTIN_JOURNAL_BACKGROUNDS.find((item) => item.uri === backgroundUri);
     if (!journal || !background) return;
+    if (
+      background.accessTier === 'premium'
+      && !canUsePremiumFeature('premium-journal-backgrounds', { isPro })
+    ) {
+      setCoverPickerJournal(null);
+      setTimeout(() => setShowPremiumModal(true), 250);
+      return;
+    }
     void (async () => {
       setAssigningCoverJournalId(journal.id);
       if (isSyntheticJournalId(journal.id)) {
@@ -384,7 +393,7 @@ export default function JournalsScreen(): React.JSX.Element {
       setAssigningCoverJournalId(null);
       setCoverPickerJournal(null);
     })();
-  }, [coverPickerJournal, journals, saveJournal, setSyntheticJournalCover, t]);
+  }, [coverPickerJournal, isPro, journals, saveJournal, setShowPremiumModal, setSyntheticJournalCover, t]);
 
   const handleRemoveJournalCover = useCallback((journalId: string) => {
     const journal = journalItems.find((item) => item.id === journalId);
@@ -615,6 +624,8 @@ export default function JournalsScreen(): React.JSX.Element {
               <View style={styles.coverPickerGrid}>
                 {BUILTIN_JOURNAL_BACKGROUNDS.map((background) => {
                   const selected = coverPickerJournal?.coverImageUri === background.uri;
+                  const locked = background.accessTier === 'premium'
+                    && !canUsePremiumFeature('premium-journal-backgrounds', { isPro });
                   return (
                     <TouchableOpacity
                       key={background.id}
@@ -625,14 +636,20 @@ export default function JournalsScreen(): React.JSX.Element {
                           borderColor: selected ? theme.colors.tint : theme.colors.border,
                           backgroundColor: translucentSurfaceColor,
                         },
+                        locked && styles.coverPickerLockedOption,
                       ]}
                       accessibilityRole="radio"
                       accessibilityState={{ selected }}
-                      accessibilityLabel={`${t('journalSetCoverA11y')} ${background.title}`}
+                      accessibilityLabel={`${locked ? t('stickerPremiumLockedA11y') : t('journalSetCoverA11y')} ${background.title}`}
                       disabled={Boolean(assigningCoverJournalId)}
                     >
                       <Image source={background.source} style={styles.coverPickerPreview} resizeMode="cover" />
                       <View style={styles.coverPickerTileShade} />
+                      {locked ? (
+                        <View style={[styles.coverPickerLockBadge, { backgroundColor: theme.colors.background }]}>
+                          <Ionicons name="lock-closed" size={12} color={theme.colors.tint} />
+                        </View>
+                      ) : null}
                       <Text preset="caption" numberOfLines={1} style={[styles.coverPickerTileTitle, { color: theme.colors.stickerControlText }]}>
                         {background.title}
                       </Text>
@@ -661,6 +678,7 @@ export default function JournalsScreen(): React.JSX.Element {
                 isSaving={isCreating}
                 autoFocus
                 onCancel={() => setShowCreateModal(false)}
+                onRequestPremium={() => setShowPremiumModal(true)}
                 onSubmit={(input) => { void handleCreateJournal(input); }}
               />
             ) : null}
@@ -681,6 +699,7 @@ export default function JournalsScreen(): React.JSX.Element {
                 isSaving={isRenaming}
                 autoFocus
                 onCancel={closeRenameModal}
+                onRequestPremium={() => setShowPremiumModal(true)}
                 onSubmit={(input) => { void handleRenameJournal(input); }}
               />
             ) : null}
@@ -762,8 +781,10 @@ const styles = StyleSheet.create({
   coverPickerSectionLabel: { marginTop: 16, marginBottom: 8, fontWeight: '800' },
   coverPickerGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
   coverPickerOption: { width: '48.5%', aspectRatio: 1.24, borderWidth: 1, borderRadius: 8, overflow: 'hidden' },
+  coverPickerLockedOption: { opacity: 0.76 },
   coverPickerPreview: { width: '100%', height: '100%' },
   coverPickerTileShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 34, backgroundColor: 'rgba(0, 0, 0, 0.38)' },
   coverPickerTileTitle: { position: 'absolute', left: 9, right: 34, bottom: 8, fontWeight: '800' },
+  coverPickerLockBadge: { position: 'absolute', top: 6, left: 6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   coverPickerSelectedBadge: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
 });

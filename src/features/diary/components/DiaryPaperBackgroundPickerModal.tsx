@@ -5,12 +5,15 @@ import { Modal } from '@shared/components/Modal';
 import { Text } from '@shared/components/Text';
 import { DIARY_PAPER_BACKGROUNDS } from '@/features/diary/domain/DiaryPaperBackgrounds';
 import { useTranslation } from '@/localization/i18n';
+import { useSubscription } from '@/features/subscription/hooks/useSubscription';
+import { canUsePremiumFeature } from '@/features/subscription/services/PremiumAccessService';
 
 interface DiaryPaperBackgroundPickerModalProps {
   readonly visible: boolean;
   readonly selectedPaperBackgroundId: string;
   readonly onSelect: (paperBackgroundId: string) => void;
   readonly onDismiss: () => void;
+  readonly onRequestPremium: () => void;
 }
 
 export function DiaryPaperBackgroundPickerModal({
@@ -18,9 +21,11 @@ export function DiaryPaperBackgroundPickerModal({
   selectedPaperBackgroundId,
   onSelect,
   onDismiss,
+  onRequestPremium,
 }: DiaryPaperBackgroundPickerModalProps): React.JSX.Element {
   const theme = useTheme();
   const t = useTranslation();
+  const { isPro } = useSubscription();
 
   return (
     <Modal
@@ -37,6 +42,8 @@ export function DiaryPaperBackgroundPickerModal({
       >
         {DIARY_PAPER_BACKGROUNDS.map((background) => {
           const selected = selectedPaperBackgroundId === background.id;
+          const locked = background.accessTier === 'premium'
+            && !canUsePremiumFeature('premium-diary-paper-backgrounds', { isPro });
           const selectedBadge = selected ? (
             <View style={[styles.selectedBadge, { backgroundColor: theme.colors.tint }]}>
               <MaterialCommunityIcons name="check" size={16} color={theme.colors.background} />
@@ -47,6 +54,11 @@ export function DiaryPaperBackgroundPickerModal({
             <TouchableOpacity
               key={background.id}
               onPress={() => {
+                if (locked) {
+                  onDismiss();
+                  setTimeout(onRequestPremium, 250);
+                  return;
+                }
                 onSelect(background.id);
                 onDismiss();
               }}
@@ -56,10 +68,11 @@ export function DiaryPaperBackgroundPickerModal({
                   borderColor: selected ? theme.colors.tint : theme.colors.border,
                   backgroundColor: theme.colors.surface,
                 },
+                locked && styles.lockedOption,
               ]}
               accessibilityRole="radio"
               accessibilityState={{ selected }}
-              accessibilityLabel={`${t('entryPaperBackgroundSelectA11y')} ${background.label}`}
+              accessibilityLabel={`${locked ? t('stickerPremiumLockedA11y') : t('entryPaperBackgroundSelectA11y')} ${background.label}`}
               testID={`entry-paper-background-${background.id}`}
             >
               {background.source ? (
@@ -76,6 +89,11 @@ export function DiaryPaperBackgroundPickerModal({
                     ]}
                   />
                   {selectedBadge}
+                  {locked ? (
+                    <View style={[styles.lockBadge, { backgroundColor: theme.colors.background }]}>
+                      <MaterialCommunityIcons name="lock" size={13} color={theme.colors.tint} />
+                    </View>
+                  ) : null}
                 </ImageBackground>
               ) : (
                 <View
@@ -89,6 +107,11 @@ export function DiaryPaperBackgroundPickerModal({
                   ]}
                 >
                   {selectedBadge}
+                  {locked ? (
+                    <View style={[styles.lockBadge, { backgroundColor: theme.colors.background }]}>
+                      <MaterialCommunityIcons name="lock" size={13} color={theme.colors.tint} />
+                    </View>
+                  ) : null}
                 </View>
               )}
               <Text preset="caption" style={[styles.label, { color: selected ? theme.colors.tint : theme.colors.text }]}>
@@ -132,6 +155,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     margin: 8,
+  },
+  lockBadge: {
+    position: 'absolute',
+    left: 8,
+    top: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockedOption: {
+    opacity: 0.76,
   },
   label: {
     minHeight: 38,

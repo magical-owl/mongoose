@@ -843,6 +843,11 @@ export default function CreateEntryScreen() {
         selectedPaperBackgroundId={paperBackgroundId}
         onSelect={setPaperBackgroundId}
         onDismiss={() => setShowPaperBackgroundPicker(false)}
+        onRequestPremium={() => {
+          if (releaseFeatures.monetization) {
+            setShowPremiumModal(true);
+          }
+        }}
       />
       <EntryMetadataModal
         visible={showEntryMetadata}

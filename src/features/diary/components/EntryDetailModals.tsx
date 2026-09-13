@@ -131,6 +131,7 @@ export function EntryDetailModals({
         selectedPaperBackgroundId={selectedPaperBackgroundId}
         onSelect={onSelectPaperBackground}
         onDismiss={onDismissPaperBackgroundPicker}
+        onRequestPremium={onRequestPremium}
       />
       {releaseFeatures.monetization ? (
         <PaywallModal

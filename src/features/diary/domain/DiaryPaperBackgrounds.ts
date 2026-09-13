@@ -3,6 +3,7 @@ import type { ImageSourcePropType } from 'react-native';
 export interface DiaryPaperBackground {
   readonly id: string;
   readonly label: string;
+  readonly accessTier: 'free' | 'premium';
   readonly source?: ImageSourcePropType;
 }
 
@@ -10,51 +11,61 @@ export const DIARY_PAPER_BACKGROUNDS = [
   {
     id: 'blank',
     label: 'Blank',
+    accessTier: 'free',
     source: undefined,
   },
   {
     id: 'vintage-parchment',
     label: 'Vintage parchment',
+    accessTier: 'free',
     source: require('../../../../assets/diary-paper/vintage-parchment.png') as ImageSourcePropType,
   },
   {
     id: 'soft-lined-paper',
     label: 'Soft lined paper',
+    accessTier: 'free',
     source: require('../../../../assets/diary-paper/soft-lined-paper.png') as ImageSourcePropType,
   },
   {
     id: 'cream-dot-paper',
     label: 'Pressed petal paper',
+    accessTier: 'premium',
     source: require('../../../../assets/diary-paper/cream-dot-paper.png') as ImageSourcePropType,
   },
   {
     id: 'warm-grid-paper',
     label: 'Taped note paper',
+    accessTier: 'premium',
     source: require('../../../../assets/diary-paper/warm-grid-paper.png') as ImageSourcePropType,
   },
   {
     id: 'rose-memo-paper',
     label: 'Rose memo paper',
+    accessTier: 'premium',
     source: require('../../../../assets/diary-paper/rose-memo-paper.png') as ImageSourcePropType,
   },
   {
     id: 'blue-notebook-paper',
     label: 'Blue notebook paper',
+    accessTier: 'premium',
     source: require('../../../../assets/diary-paper/blue-notebook-paper.png') as ImageSourcePropType,
   },
   {
     id: 'recycled-kraft-paper',
     label: 'Recycled kraft paper',
+    accessTier: 'free',
     source: require('../../../../assets/diary-paper/recycled-kraft-paper.png') as ImageSourcePropType,
   },
   {
     id: 'pastel-memo-paper',
     label: 'Pastel memo paper',
+    accessTier: 'premium',
     source: require('../../../../assets/diary-paper/pastel-memo-paper.png') as ImageSourcePropType,
   },
   {
     id: 'cream-letter-paper',
     label: 'Cream letter paper',
+    accessTier: 'premium',
     source: require('../../../../assets/diary-paper/cream-letter-paper.png') as ImageSourcePropType,
   },
 ] as const satisfies readonly DiaryPaperBackground[];

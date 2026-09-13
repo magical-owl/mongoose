@@ -44,7 +44,7 @@ import { useJournalExtras } from '@/features/journal/hooks/useJournalExtras';
 import { accentColors, type AccentColor } from '@/theme/accents';
 import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
 import { appFontOptions, getAppFontLabel, normalizeAppFontFamily, resolveAppFontFamily } from '@/theme/fonts';
-import { PATTERN_BACKGROUND_VARIANTS, type PatternBackgroundVariant } from '@/theme/patternBackgrounds';
+import { getPatternBackgroundAccessTier, PATTERN_BACKGROUND_VARIANTS, type PatternBackgroundVariant } from '@/theme/patternBackgrounds';
 import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 import { APP_LANGUAGES, premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { APP_IDENTITY } from '@/config/appIdentity';
@@ -55,6 +55,7 @@ import { formatDisplayDate } from '@/shared/utils/dateFormat';
 import { planUsageRepository } from '@/features/subscription/repositories/PlanUsageRepository';
 import { useSubscription } from '@/features/subscription/hooks/useSubscription';
 import { config } from '@/config/ConfigService';
+import { canUsePremiumFeature } from '@/features/subscription/services/PremiumAccessService';
 
 function withCount(value: string, count: number): string {
   return value.replace('{count}', String(count));
@@ -769,22 +770,37 @@ export default function SettingsScreen() {
             {PATTERN_BACKGROUND_VARIANTS.map((variant) => {
               const active = patternBackgroundVariant === variant;
               const label = t(patternBackgroundLabelKey(variant));
+              const locked = getPatternBackgroundAccessTier(variant) === 'premium'
+                && !canUsePremiumFeature('premium-app-background-themes', { isPro });
               return (
                 <TouchableOpacity
                   key={variant}
-                  onPress={() => setPatternBackgroundVariant(variant)}
+                  onPress={() => {
+                    if (locked) {
+                      setShowDisplayModal(false);
+                      setTimeout(() => setShowPremiumModal(true), 250);
+                      return;
+                    }
+                    setPatternBackgroundVariant(variant);
+                  }}
                   style={[
                     styles.backgroundThemeOption,
                     {
                       backgroundColor: active ? theme.colors.tint + '14' : theme.colors.surface,
                       borderColor: active ? theme.colors.tint : theme.colors.border,
                     },
+                    locked && styles.lockedBackgroundThemeOption,
                   ]}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: active }}
-                  accessibilityLabel={`${label}${active ? `, ${t('settingsBackgroundThemeSelected')}` : ''}`}
+                  accessibilityLabel={`${locked ? t('stickerPremiumLockedA11y') : label}${active ? `, ${t('settingsBackgroundThemeSelected')}` : ''}`}
                 >
                   <PatternBackgroundPreview variant={variant} selected={active} />
+                  {locked ? (
+                    <View style={[styles.backgroundThemeLockBadge, { backgroundColor: theme.colors.background }]}>
+                      <Icon name="lock-closed" size={12} color="tint" />
+                    </View>
+                  ) : null}
                   <Text preset="bodySmall" color={active ? 'tint' : 'text'} style={styles.backgroundThemeLabel} numberOfLines={1}>
                     {label}
                   </Text>
@@ -1370,6 +1386,19 @@ const styles = StyleSheet.create({
   backgroundThemeLabel: {
     minHeight: 18,
     fontWeight: '700',
+  },
+  lockedBackgroundThemeOption: {
+    opacity: 0.76,
+  },
+  backgroundThemeLockBadge: {
+    position: 'absolute',
+    left: 10,
+    top: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   arrow: {
     fontSize: 20,

@@ -34,7 +34,7 @@ import {
 } from '../domain/Sticker';
 import { useTranslation } from '@/localization/i18n';
 import { useSubscription } from '@/features/subscription/hooks/useSubscription';
-import { releaseFeatures } from '@/config/releaseFeatures';
+import { canUsePremiumFeature } from '@/features/subscription/services/PremiumAccessService';
 
 const GRID_COLUMNS = 4;
 const GRID_CELL_GAP = 6;
@@ -43,7 +43,7 @@ interface StickerPickerModalProps {
   readonly visible: boolean;
   readonly onClose: () => void;
   readonly onSelectSticker: (stickerId: string, category: string) => void;
-  readonly onRequestPremium?: () => void;
+  readonly onRequestPremium: () => void;
 }
 
 type SearchResult = { item: StickerItem; packId: string; accessTier: StickerAccessTier };
@@ -83,7 +83,8 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
   );
 
   const renderSticker = ({ item, packId, accessTier }: SearchResult) => {
-    const isLocked = releaseFeatures.monetization && accessTier === 'premium' && !isPro;
+    const isLocked = accessTier === 'premium'
+      && !canUsePremiumFeature('premium-sticker-packs', { isPro });
 
     return (
       <TouchableOpacity
@@ -91,7 +92,7 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
         onPress={() => {
           if (isLocked) {
             onClose();
-            setTimeout(() => onRequestPremium?.(), 250);
+            setTimeout(onRequestPremium, 250);
             return;
           }
           onSelectSticker(item.id, packId);
@@ -174,7 +175,8 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
         >
           {STICKER_PACKS.map((pack) => {
             const active = pack.id === activePack.id;
-            const categoryLocked = releaseFeatures.monetization && pack.accessTier === 'premium' && !isPro;
+            const categoryLocked = pack.accessTier === 'premium'
+              && !canUsePremiumFeature('premium-sticker-packs', { isPro });
             return (
               <TouchableOpacity
                 key={pack.id}
@@ -185,7 +187,9 @@ export function StickerPickerModal({ visible, onClose, onSelectSticker, onReques
                     backgroundColor: active ? theme.colors.tint + '18' : theme.colors.surface,
                   },
                 ]}
-                onPress={() => setActivePackId(pack.id)}
+                onPress={() => {
+                  setActivePackId(pack.id);
+                }}
                 accessibilityLabel={`${t('stickerCategoryA11y')}: ${pack.name}`}
               >
                 {categoryLocked ? (

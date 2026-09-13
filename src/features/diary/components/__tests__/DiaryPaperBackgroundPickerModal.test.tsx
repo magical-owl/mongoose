@@ -1,7 +1,11 @@
-import { fireEvent } from '@testing-library/react-native';
+import { act, fireEvent } from '@testing-library/react-native';
 import type React from 'react';
 import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/DiaryPaperBackgroundPickerModal';
 import { renderWithProviders } from '@tests/helpers';
+
+jest.mock('@/features/subscription/hooks/useSubscription', () => ({
+  useSubscription: () => ({ isPro: false }),
+}));
 
 jest.mock('@shared/components/Modal', () => {
   const { View } = jest.requireActual<typeof import('react-native')>('react-native');
@@ -20,6 +24,10 @@ jest.mock('@shared/components/Modal', () => {
 });
 
 describe('DiaryPaperBackgroundPickerModal', () => {
+  beforeEach(() => {
+    jest.useRealTimers();
+  });
+
   it('selects a diary paper background and dismisses the modal', async () => {
     const onSelect = jest.fn();
     const onDismiss = jest.fn();
@@ -29,6 +37,7 @@ describe('DiaryPaperBackgroundPickerModal', () => {
         selectedPaperBackgroundId="vintage-parchment"
         onSelect={onSelect}
         onDismiss={onDismiss}
+        onRequestPremium={jest.fn()}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
@@ -48,6 +57,7 @@ describe('DiaryPaperBackgroundPickerModal', () => {
         selectedPaperBackgroundId="vintage-parchment"
         onSelect={onSelect}
         onDismiss={onDismiss}
+        onRequestPremium={jest.fn()}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
@@ -56,5 +66,32 @@ describe('DiaryPaperBackgroundPickerModal', () => {
 
     expect(onSelect).toHaveBeenCalledWith('blank');
     expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('requests premium instead of selecting locked premium paper', async () => {
+    jest.useFakeTimers();
+    const onSelect = jest.fn();
+    const onDismiss = jest.fn();
+    const onRequestPremium = jest.fn();
+    const { getByTestId } = await renderWithProviders(
+      <DiaryPaperBackgroundPickerModal
+        visible
+        selectedPaperBackgroundId="vintage-parchment"
+        onSelect={onSelect}
+        onDismiss={onDismiss}
+        onRequestPremium={onRequestPremium}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    await fireEvent.press(getByTestId('entry-paper-background-pastel-memo-paper'));
+    await act(async () => {
+      jest.advanceTimersByTime(250);
+    });
+
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+    expect(onRequestPremium).toHaveBeenCalledTimes(1);
+    jest.useRealTimers();
   });
 });

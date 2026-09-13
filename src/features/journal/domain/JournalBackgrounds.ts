@@ -13,6 +13,7 @@ export interface BuiltinJournalBackground {
   readonly width: number;
   readonly height: number;
   readonly source: ImageSourcePropType;
+  readonly accessTier: "free" | "premium";
 }
 
 export const BUILTIN_JOURNAL_BACKGROUNDS: readonly BuiltinJournalBackground[] =
@@ -24,6 +25,7 @@ export const BUILTIN_JOURNAL_BACKGROUNDS: readonly BuiltinJournalBackground[] =
       width: DEFAULT_JOURNAL_BACKGROUND_WIDTH,
       height: DEFAULT_JOURNAL_BACKGROUND_HEIGHT,
       source: require("../../../../assets/journal-backgrounds/default-journal.png"),
+      accessTier: "free",
     },
     {
       id: "meadow-day",
@@ -32,6 +34,7 @@ export const BUILTIN_JOURNAL_BACKGROUNDS: readonly BuiltinJournalBackground[] =
       width: 1672,
       height: 941,
       source: require("../../../../assets/journal-backgrounds/meadow-day.png"),
+      accessTier: "free",
     },
     {
       id: "meadow-sunset",
@@ -40,6 +43,7 @@ export const BUILTIN_JOURNAL_BACKGROUNDS: readonly BuiltinJournalBackground[] =
       width: 1672,
       height: 941,
       source: require("../../../../assets/journal-backgrounds/meadow-sunset.png"),
+      accessTier: "premium",
     },
     {
       id: "meadow-night",
@@ -48,6 +52,7 @@ export const BUILTIN_JOURNAL_BACKGROUNDS: readonly BuiltinJournalBackground[] =
       width: 1672,
       height: 941,
       source: require("../../../../assets/journal-backgrounds/meadow-night.png"),
+      accessTier: "premium",
     },
     {
       id: "winter",
@@ -56,6 +61,7 @@ export const BUILTIN_JOURNAL_BACKGROUNDS: readonly BuiltinJournalBackground[] =
       width: 1672,
       height: 941,
       source: require("../../../../assets/journal-backgrounds/winter.png"),
+      accessTier: "premium",
     },
     {
       id: "summer",
@@ -64,6 +70,7 @@ export const BUILTIN_JOURNAL_BACKGROUNDS: readonly BuiltinJournalBackground[] =
       width: 1672,
       height: 941,
       source: require("../../../../assets/journal-backgrounds/summer.png"),
+      accessTier: "premium",
     },
     {
       id: "moonlit-lake",
@@ -72,6 +79,7 @@ export const BUILTIN_JOURNAL_BACKGROUNDS: readonly BuiltinJournalBackground[] =
       width: 1672,
       height: 941,
       source: require("../../../../assets/journal-backgrounds/moonlit-lake.png"),
+      accessTier: "premium",
     },
     {
       id: "mountain-sunrise",
@@ -80,6 +88,7 @@ export const BUILTIN_JOURNAL_BACKGROUNDS: readonly BuiltinJournalBackground[] =
       width: 1672,
       height: 941,
       source: require("../../../../assets/journal-backgrounds/mountain-sunrise.png"),
+      accessTier: "premium",
     },
   ];
 

@@ -11,6 +11,8 @@ import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerServ
 import { diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { BUILTIN_JOURNAL_BACKGROUNDS, getJournalCoverImageSource } from '@/features/journal/domain/JournalBackgrounds';
 import type { CreateJournalInput } from '@/features/journal/services/JournalService';
+import { useSubscription } from '@/features/subscription/hooks/useSubscription';
+import { canUsePremiumFeature } from '@/features/subscription/services/PremiumAccessService';
 
 interface JournalCoverDraft {
   readonly coverImageUri: string;
@@ -26,6 +28,7 @@ interface JournalCreateFormProps {
   readonly showCancel?: boolean;
   readonly autoFocus?: boolean;
   readonly onCancel?: () => void;
+  readonly onRequestPremium: () => void;
   readonly onSubmit: (input: CreateJournalInput) => void;
 }
 
@@ -37,10 +40,12 @@ export function JournalCreateForm({
   showCancel = true,
   autoFocus = false,
   onCancel,
+  onRequestPremium,
   onSubmit,
 }: JournalCreateFormProps): React.JSX.Element {
   const theme = useTheme();
   const t = useTranslation();
+  const { isPro } = useSubscription();
   const [title, setTitle] = useState(initialValues?.title ?? '');
   const [description, setDescription] = useState(initialValues?.description ?? '');
   const [cover, setCover] = useState<JournalCoverDraft | null>(
@@ -158,27 +163,41 @@ export function JournalCreateForm({
       >
         {BUILTIN_JOURNAL_BACKGROUNDS.map((background) => {
           const selected = cover?.coverImageUri === background.uri;
+          const locked = background.accessTier === 'premium'
+            && !canUsePremiumFeature('premium-journal-backgrounds', { isPro });
           return (
             <TouchableOpacity
               key={background.id}
-              onPress={() => setCover({
-                coverImageUri: background.uri,
-                coverImageWidth: background.width,
-                coverImageHeight: background.height,
-              })}
+              onPress={() => {
+                if (locked) {
+                  onRequestPremium();
+                  return;
+                }
+                setCover({
+                  coverImageUri: background.uri,
+                  coverImageWidth: background.width,
+                  coverImageHeight: background.height,
+                });
+              }}
               style={[
                 styles.backgroundOption,
                 {
                   borderColor: selected ? theme.colors.tint : theme.colors.border,
                   backgroundColor: theme.colors.surface,
                 },
+                locked && styles.lockedBackgroundOption,
               ]}
               accessibilityRole="radio"
               accessibilityState={{ selected }}
-              accessibilityLabel={`${t('journalSetCoverA11y')} ${background.title}`}
+              accessibilityLabel={`${locked ? t('stickerPremiumLockedA11y') : t('journalSetCoverA11y')} ${background.title}`}
               testID={`journal-create-cover-option-${background.id}`}
             >
               <Image source={background.source} style={styles.backgroundPreview} resizeMode="cover" />
+              {locked ? (
+                <View style={[styles.lockBadge, { backgroundColor: theme.colors.background }]}>
+                  <Ionicons name="lock-closed" size={12} color={theme.colors.tint} />
+                </View>
+              ) : null}
               {selected ? (
                 <View style={[styles.selectedBadge, { backgroundColor: theme.colors.tint }]}>
                   <Ionicons name="checkmark" size={13} color={theme.colors.background} />
@@ -265,6 +284,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   backgroundPreview: { width: '100%', height: '100%' },
+  lockedBackgroundOption: { opacity: 0.76 },
+  lockBadge: { position: 'absolute', top: 5, left: 5, width: 21, height: 21, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   selectedBadge: { position: 'absolute', top: 5, right: 5, width: 21, height: 21, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 8 },
   cancelButton: { minHeight: 40, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },

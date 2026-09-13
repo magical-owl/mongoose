@@ -9,17 +9,21 @@ import { IconCircleButton } from '@/shared/components/IconCircleButton';
 import { SectionLabel } from '@/shared/components/SectionLabel';
 import { AppPatternBackground } from '@/shared/components/AppPatternBackground';
 import { PatternBackgroundPreview } from '@/shared/components/PatternBackground';
+import { PaywallModal } from '@/shared/components/PaywallModal';
 import { useTheme, type ThemeMode } from '@/providers/ThemeProvider';
-import { APP_LANGUAGES, appText, useTranslation, type TranslationKey } from '@/localization/i18n';
+import { APP_LANGUAGES, appText, premiumPaywallTitle, useTranslation, type TranslationKey } from '@/localization/i18n';
 import { useAppStore, type FontScale, type TimeFormat } from '@/stores/useAppStore';
 import { colorThemes, type ColorTheme } from '@/theme/colorThemes';
 import { accentColors, type AccentColor } from '@/theme/accents';
-import { PATTERN_BACKGROUND_VARIANTS, type PatternBackgroundVariant } from '@/theme/patternBackgrounds';
+import { getPatternBackgroundAccessTier, PATTERN_BACKGROUND_VARIANTS, type PatternBackgroundVariant } from '@/theme/patternBackgrounds';
 import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { profilePhotoService } from '@/features/profile/services/ProfilePhotoService';
+import { useSubscription } from '@/features/subscription/hooks/useSubscription';
+import { canUsePremiumFeature } from '@/features/subscription/services/PremiumAccessService';
+import { releaseFeatures } from '@/config/releaseFeatures';
 
 type OnboardingStep = 0 | 1 | 2 | 3;
 
@@ -82,7 +86,9 @@ export default function OnboardingScreen(): React.JSX.Element {
   const theme = useTheme();
   const t = useTranslation();
   const translucentSurfaceColor = getTranslucentSurfaceColor(theme);
+  const { isPro } = useSubscription();
   const [step, setStep] = useState<OnboardingStep>(0);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [profileAvatarUri, setProfileAvatarUri] = useState<string | undefined>(undefined);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -400,22 +406,36 @@ export default function OnboardingScreen(): React.JSX.Element {
               {PATTERN_BACKGROUND_VARIANTS.map((variant) => {
                 const selected = patternBackgroundVariant === variant;
                 const label = t(patternBackgroundLabelKey(variant));
+                const locked = getPatternBackgroundAccessTier(variant) === 'premium'
+                  && !canUsePremiumFeature('premium-app-background-themes', { isPro });
                 return (
                   <TouchableOpacity
                     key={variant}
-                    onPress={() => setPatternBackgroundVariant(variant)}
+                    onPress={() => {
+                      if (locked) {
+                        setShowPremiumModal(true);
+                        return;
+                      }
+                      setPatternBackgroundVariant(variant);
+                    }}
                     style={[
                       styles.backgroundThemeCard,
                       {
                         borderColor: selected ? theme.colors.tint : theme.colors.border,
                         backgroundColor: selected ? `${theme.colors.tint}18` : translucentSurfaceColor,
                       },
+                      locked && styles.lockedBackgroundThemeCard,
                     ]}
                     accessibilityRole="radio"
                     accessibilityState={{ selected }}
-                    accessibilityLabel={`${label}${selected ? `, ${t('settingsBackgroundThemeSelected')}` : ''}`}
+                    accessibilityLabel={`${locked ? t('stickerPremiumLockedA11y') : label}${selected ? `, ${t('settingsBackgroundThemeSelected')}` : ''}`}
                   >
                     <PatternBackgroundPreview variant={variant} selected={selected} style={styles.backgroundThemePreview} />
+                    {locked ? (
+                      <View style={[styles.backgroundThemeLockBadge, { backgroundColor: theme.colors.background }]}>
+                        <Ionicons name="lock-closed" size={12} color={theme.colors.tint} />
+                      </View>
+                    ) : null}
                     <Text preset="bodySmall" color={selected ? 'tint' : 'text'} style={styles.choiceText} numberOfLines={1}>
                       {label}
                     </Text>
@@ -535,6 +555,21 @@ export default function OnboardingScreen(): React.JSX.Element {
           style={styles.startButton}
         />
       </View>
+      {releaseFeatures.monetization ? (
+        <PaywallModal
+          visible={showPremiumModal}
+          onClose={() => setShowPremiumModal(false)}
+          title={premiumPaywallTitle(t)}
+          subtitle={t('premiumPaywallSubtitle')}
+          features={[
+            t('premiumPaywallFeatureEntries'),
+            t('premiumPaywallFeatureStickers'),
+            t('premiumPaywallFeatureInsights'),
+            t('premiumPaywallFeatureThemes'),
+            t('premiumPaywallFeatureOffline'),
+          ]}
+        />
+      ) : null}
     </AppPatternBackground>
   );
 }
@@ -711,6 +746,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 10,
     gap: 8,
+  },
+  lockedBackgroundThemeCard: {
+    opacity: 0.76,
+  },
+  backgroundThemeLockBadge: {
+    position: 'absolute',
+    left: 10,
+    top: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   backgroundThemePreview: {
     width: 96,
