@@ -18,6 +18,7 @@ interface EntryViewBodyContentProps {
   readonly bodyOpacity?: Animated.Value;
   readonly bodyCanvasHeight: number;
   readonly stickers: readonly PlacedSticker[];
+  readonly initialCanvasWidth?: number;
   readonly onChangeBodyLayout: React.Dispatch<React.SetStateAction<StickerCanvasLayout>>;
   readonly onUpdateSticker: (sticker: PlacedSticker) => void;
   readonly onDeleteSticker: (stickerId: string) => void;
@@ -32,6 +33,7 @@ export function EntryViewBodyContent({
   bodyOpacity,
   bodyCanvasHeight,
   stickers,
+  initialCanvasWidth,
   onChangeBodyLayout,
   onUpdateSticker,
   onDeleteSticker,
@@ -71,6 +73,7 @@ export function EntryViewBodyContent({
           bodyFontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
           bodyLineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
           stickers={stickers}
+          initialCanvasWidth={initialCanvasWidth}
           onBodyLayout={(layout) => {
             onChangeBodyLayout((current) => (
               current.y === layout.y && current.width === layout.width && current.height === layout.height

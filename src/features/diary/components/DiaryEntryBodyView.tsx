@@ -16,6 +16,7 @@ interface DiaryEntryBodyViewProps {
   readonly bodyFontSize: number;
   readonly bodyLineHeight: number;
   readonly stickers: readonly PlacedSticker[];
+  readonly initialCanvasWidth?: number;
   readonly onBodyLayout: (layout: { readonly y: number; readonly width: number; readonly height: number }) => void;
   readonly onUpdateSticker?: (sticker: PlacedSticker) => void;
   readonly onDeleteSticker?: (stickerId: string) => void;
@@ -38,6 +39,7 @@ export function DiaryEntryBodyView({
   bodyFontSize,
   bodyLineHeight,
   stickers,
+  initialCanvasWidth = 0,
   onBodyLayout,
   onUpdateSticker,
   onDeleteSticker,
@@ -53,7 +55,7 @@ export function DiaryEntryBodyView({
   const handleUpdateSticker = onUpdateSticker ?? (() => {});
   const handleDeleteSticker = onDeleteSticker ?? (() => {});
   const sanitizedContent = useMemo(() => sanitizeRichBodyHtml(normalizeHtmlContent(entry.content)), [entry.content]);
-  const [bodyLayout, setBodyLayout] = useState({ width: 0, height: contentHeight });
+  const [bodyLayout, setBodyLayout] = useState({ width: initialCanvasWidth, height: contentHeight });
   const textAvoidanceInsets = useMemo(
     () => {
       const insets = getStickerTextAvoidanceInsets(stickers, bodyLayout);

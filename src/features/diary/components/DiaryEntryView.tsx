@@ -327,6 +327,7 @@ export function DiaryEntryView({
                     bodyLineHeight={24}
                     stickers={entry.stickers}
                     coordinateScale={feedCoordinateScale}
+                    initialCanvasWidth={measuredFeedCanvasWidth}
                     onBodyLayout={(layout) => setFeedCanvasWidth(layout.width)}
                   />
                 </View>

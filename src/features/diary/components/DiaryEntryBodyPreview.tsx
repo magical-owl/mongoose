@@ -18,6 +18,7 @@ interface DiaryEntryBodyPreviewProps {
   readonly bodyLineHeight: number;
   readonly stickers: readonly PlacedSticker[];
   readonly coordinateScale?: number;
+  readonly initialCanvasWidth?: number;
   readonly onBodyLayout: (layout: { readonly y: number; readonly width: number; readonly height: number }) => void;
 }
 
@@ -28,6 +29,7 @@ export function DiaryEntryBodyPreview({
   bodyLineHeight,
   stickers,
   coordinateScale = 1,
+  initialCanvasWidth = 0,
   onBodyLayout,
 }: DiaryEntryBodyPreviewProps): React.JSX.Element {
   const theme = useTheme();
@@ -45,7 +47,7 @@ export function DiaryEntryBodyPreview({
   const behindStickers = useMemo(() => scaledStickers.filter((sticker) => sticker.behindText), [scaledStickers]);
   const foregroundStickers = useMemo(() => scaledStickers.filter((sticker) => !sticker.behindText), [scaledStickers]);
   const contentHeight = Math.max(1, bodyCanvasHeight);
-  const [bodyLayout, setBodyLayout] = useState({ width: 0, height: contentHeight });
+  const [bodyLayout, setBodyLayout] = useState({ width: initialCanvasWidth, height: contentHeight });
   const textAvoidanceInsets = useMemo(
     () => {
       const insets = getStickerTextAvoidanceInsets(scaledStickers, bodyLayout);
@@ -75,7 +77,7 @@ export function DiaryEntryBodyPreview({
           isEditable={false}
         />
       ))}
-      <View style={[styles.textLayer, textAvoidanceInsets]}>
+      <View style={[styles.textLayer, textAvoidanceInsets]} testID="diary-entry-body-preview-text-layer">
         <MarkdownText
           style={[
             styles.text,

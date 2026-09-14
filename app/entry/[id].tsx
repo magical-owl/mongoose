@@ -548,6 +548,7 @@ export default function EntryDetailScreen() {
                 bodyOpacity={viewEntryOpacity}
                 bodyCanvasHeight={bodyCanvasHeight}
                 stickers={displayStickers}
+                initialCanvasWidth={Math.max(1, windowWidth - theme.spacing.lg * 2)}
                 onChangeBodyLayout={setBodyLayout}
                 onUpdateSticker={handleUpdateSticker}
                 onDeleteSticker={handleDeleteSticker}
