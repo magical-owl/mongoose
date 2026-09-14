@@ -765,7 +765,7 @@ export default function CreateEntryScreen() {
       >
           <View>
             <IconCircleButton
-              icon="format-text"
+              icon="fountain-pen-tip"
               size="sm"
               active={showFormattingTools}
               surface="transparent"
@@ -779,14 +779,14 @@ export default function CreateEntryScreen() {
 
           <View style={[diaryEntryEditorChromeStyles.toolbarDivider, { backgroundColor: theme.colors.border }]} />
           <IconCircleButton
-            icon="file-document-edit-outline"
+            icon="notebook-edit-outline"
             size="sm"
             surface="transparent"
             onPress={() => setShowTemplatePicker(true)}
             accessibilityLabel={t('entryChooseTemplateA11y')}
           />
           <IconCircleButton
-            icon="palette-outline"
+            icon="brush-variant"
             size="sm"
             surface="transparent"
             onPress={() => setShowPaperBackgroundPicker(true)}
@@ -796,7 +796,7 @@ export default function CreateEntryScreen() {
 
           <View style={diaryEntryEditorChromeStyles.toolbarPlainGroup}>
             <IconCircleButton
-              icon="image-outline"
+              icon="image-plus"
               size="sm"
               surface="transparent"
               onPress={() => { void handleAddPhotoStickers(); }}
@@ -805,7 +805,7 @@ export default function CreateEntryScreen() {
             />
 
             <IconCircleButton
-              icon="format-textbox"
+              icon="card-text-outline"
               size="sm"
               surface="transparent"
               onPress={handleAddTextSticker}
@@ -813,7 +813,7 @@ export default function CreateEntryScreen() {
             />
 
             <IconCircleButton
-              icon="sticker-outline"
+              icon="sticker-plus-outline"
               size="sm"
               surface="transparent"
               onPress={() => {

@@ -58,7 +58,7 @@ export function EntryEditFooterTools({
     >
       <View>
         <IconCircleButton
-          icon="format-text"
+          icon="fountain-pen-tip"
           size="sm"
           active={showFormattingTools}
           surface="transparent"
@@ -68,14 +68,14 @@ export function EntryEditFooterTools({
       </View>
       <View style={[diaryEntryEditorChromeStyles.toolbarDivider, { backgroundColor: theme.colors.border }]} />
       <IconCircleButton
-        icon="file-document-edit-outline"
+        icon="notebook-edit-outline"
         size="sm"
         surface="transparent"
         onPress={onOpenTemplatePicker}
         accessibilityLabel={t('entryChooseTemplateA11y')}
       />
       <IconCircleButton
-        icon="palette-outline"
+        icon="brush-variant"
         size="sm"
         surface="transparent"
         onPress={onOpenPaperBackgroundPicker}
@@ -84,7 +84,7 @@ export function EntryEditFooterTools({
       />
       <View style={diaryEntryEditorChromeStyles.toolbarPlainGroup}>
         <IconCircleButton
-          icon="image-outline"
+          icon="image-plus"
           size="sm"
           surface="transparent"
           onPress={onAddPhotoSticker}
@@ -92,14 +92,14 @@ export function EntryEditFooterTools({
           testID="entry-edit-add-photo-sticker-button"
         />
         <IconCircleButton
-          icon="format-textbox"
+          icon="card-text-outline"
           size="sm"
           surface="transparent"
           onPress={onAddTextSticker}
           accessibilityLabel={t('entryAddTextStickerA11y')}
         />
         <IconCircleButton
-          icon="sticker-outline"
+          icon="sticker-plus-outline"
           size="sm"
           surface="transparent"
           onPress={onOpenStickerPicker}
