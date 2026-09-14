@@ -23,6 +23,7 @@ export const PlacedStickerSchema = z.object({
   opacity: z.number().min(0.2).max(1).optional(),
   // Optional keeps stickers saved before this feature readable on restore.
   behindText: z.boolean().optional().default(false),
+  wrapText: z.boolean().optional(),
 });
 
 export type PlacedSticker = z.infer<typeof PlacedStickerSchema>;

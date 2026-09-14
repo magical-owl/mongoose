@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { MarkdownText } from '@shared/components/MarkdownText';
@@ -6,6 +6,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
+import { getStickerTextAvoidanceInsets } from '@/features/diary/domain/StickerLayout';
 import { resolveAppFontFamily } from '@/theme/fonts';
 
 import { StickerCanvasItem } from './StickerCanvasItem';
@@ -33,6 +34,11 @@ export function DiaryEntryBodyPreview({
   const behindStickers = useMemo(() => stickers.filter((sticker) => sticker.behindText), [stickers]);
   const foregroundStickers = useMemo(() => stickers.filter((sticker) => !sticker.behindText), [stickers]);
   const contentHeight = Math.max(1, bodyCanvasHeight);
+  const [bodyLayout, setBodyLayout] = useState({ width: 0, height: contentHeight });
+  const textAvoidanceInsets = useMemo(
+    () => getStickerTextAvoidanceInsets(stickers, bodyLayout),
+    [bodyLayout, stickers],
+  );
 
   return (
     <View
@@ -40,6 +46,9 @@ export function DiaryEntryBodyPreview({
       style={[styles.canvas, { minHeight: contentHeight }]}
       onLayout={(event) => {
         const { y, width, height } = event.nativeEvent.layout;
+        setBodyLayout((current) => (
+          current.width === width && current.height === height ? current : { width, height }
+        ));
         onBodyLayout({ y, width, height });
       }}
     >
@@ -52,7 +61,7 @@ export function DiaryEntryBodyPreview({
           isEditable={false}
         />
       ))}
-      <View style={styles.textLayer}>
+      <View style={[styles.textLayer, textAvoidanceInsets]}>
         <MarkdownText
           style={[
             styles.text,

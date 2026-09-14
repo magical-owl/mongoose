@@ -57,7 +57,7 @@ import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimit
 import { APP_IDENTITY } from '@/config/appIdentity';
 import { releaseFeatures } from '@/config/releaseFeatures';
 import { useScrollCollapse } from '@/shared/hooks/useScrollCollapse';
-import { getStickerBodyPreviewBottom } from '@/features/diary/domain/StickerLayout';
+import { getStickerBodyPreviewBottom, getStickerTextAvoidanceInsets } from '@/features/diary/domain/StickerLayout';
 import { resolveAppFontFamilyForWebContent } from '@/theme/fonts';
 import {
   DiaryEntryEditorFooter,
@@ -295,6 +295,7 @@ export default function CreateEntryScreen() {
   const availableTags = useMemo(() => normalizeDiaryTags(entries.flatMap((entry) => entry.tags)), [entries]);
   const behindStickers = useMemo(() => stickers.filter((sticker) => sticker.behindText), [stickers]);
   const foregroundStickers = useMemo(() => stickers.filter((sticker) => !sticker.behindText), [stickers]);
+  const textAvoidanceInsets = useMemo(() => getStickerTextAvoidanceInsets(stickers, bodyLayout), [bodyLayout, stickers]);
   const getVisibleStickerPosition = useCallback((index: number, stickerWidth = STICKER_PLACEMENT_SIZE) => {
     const horizontalPadding = theme.spacing.lg * 2;
     const usableWidth = Math.max(stickerWidth, bodyLayout.width || windowWidth - horizontalPadding);
@@ -708,7 +709,7 @@ export default function CreateEntryScreen() {
                   horizontalEdgeAllowanceRatio={EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO}
                 />
               ))}
-              <View style={styles.entryBodyLayer}>
+              <View style={[styles.entryBodyLayer, textAvoidanceInsets]}>
                 {/* Rich content editor — toolbar hidden, controlled from floating bar */}
                 <RichTextEditor
                   ref={editorRef}

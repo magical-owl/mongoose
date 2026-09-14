@@ -28,10 +28,19 @@ export type StickerPosition = {
   readonly y: number;
 };
 
+export type StickerTextAvoidanceInsets = {
+  readonly paddingLeft: number;
+  readonly paddingRight: number;
+  readonly paddingTop: number;
+};
+
 export type StickerClampOptions = {
   readonly allowBottomOverflow?: boolean;
   readonly horizontalEdgeAllowanceRatio?: number;
 };
+
+export const DIARY_STICKER_TEXT_WRAP_GUTTER = 12;
+const DIARY_STICKER_TEXT_WRAP_MIN_TEXT_WIDTH = 156;
 
 export function getStickerVisualSize(sticker: PlacedSticker): StickerSize {
   if (sticker.text !== undefined) {
@@ -106,4 +115,46 @@ export function clampStickerPosition(
     x: Math.max(minX, Math.min(maxX, position.x)),
     y: Math.max(minY, Math.min(maxY, position.y)),
   };
+}
+
+export function getStickerTextAvoidanceInsets(
+  stickers: readonly PlacedSticker[],
+  bounds: StickerBounds | undefined,
+  gutter = DIARY_STICKER_TEXT_WRAP_GUTTER,
+): StickerTextAvoidanceInsets {
+  if (!bounds || bounds.width <= 0) {
+    return { paddingLeft: 0, paddingRight: 0, paddingTop: 0 };
+  }
+
+  const maxSideInset = Math.max(0, bounds.width - DIARY_STICKER_TEXT_WRAP_MIN_TEXT_WIDTH);
+  let paddingLeft = 0;
+  let paddingRight = 0;
+  let paddingTop = 0;
+
+  for (const sticker of stickers) {
+    if (!sticker.wrapText) continue;
+
+    const visualSize = getStickerVisualSize(sticker);
+    const scaledWidth = visualSize.width * sticker.scale;
+    const scaledHeight = visualSize.height * sticker.scale;
+    const stickerLeft = sticker.x;
+    const stickerRight = sticker.x + scaledWidth;
+    const stickerBottom = sticker.y + scaledHeight;
+    const stickerCenter = stickerLeft + scaledWidth / 2;
+    const leftInset = Math.max(0, stickerRight + gutter);
+    const rightInset = Math.max(0, bounds.width - stickerLeft + gutter);
+
+    if (stickerCenter <= bounds.width / 2 && leftInset <= maxSideInset) {
+      paddingLeft = Math.max(paddingLeft, leftInset);
+      continue;
+    }
+    if (stickerCenter > bounds.width / 2 && rightInset <= maxSideInset) {
+      paddingRight = Math.max(paddingRight, rightInset);
+      continue;
+    }
+
+    paddingTop = Math.max(paddingTop, Math.max(0, stickerBottom + gutter));
+  }
+
+  return { paddingLeft, paddingRight, paddingTop };
 }

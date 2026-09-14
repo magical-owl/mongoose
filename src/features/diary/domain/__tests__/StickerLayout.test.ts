@@ -2,11 +2,13 @@ import {
   DIARY_PHOTO_STICKER_BASE_WIDTH,
   DIARY_PHOTO_STICKER_MAX_HEIGHT,
   DIARY_STICKER_BASE_SIZE,
+  DIARY_STICKER_TEXT_WRAP_GUTTER,
   DIARY_TEXT_STICKER_BASE_HEIGHT,
   DIARY_TEXT_STICKER_BASE_WIDTH,
   clampStickerPosition,
   getStickerBodyPreviewBottom,
   getStickerPreviewHeight,
+  getStickerTextAvoidanceInsets,
   getStickerVisualSize,
   mapStickerToBodyPreview,
 } from '../StickerLayout';
@@ -163,5 +165,50 @@ describe('StickerLayout', () => {
     );
 
     expect(position.x).toBe(300 - DIARY_PHOTO_STICKER_BASE_WIDTH * 2 + DIARY_PHOTO_STICKER_BASE_WIDTH);
+  });
+
+  it('does not add text avoidance without wrapped stickers', () => {
+    expect(getStickerTextAvoidanceInsets([baseSticker], { width: 320, height: 480 })).toEqual({
+      paddingLeft: 0,
+      paddingRight: 0,
+      paddingTop: 0,
+    });
+  });
+
+  it('adds left text avoidance for a wrapped sticker on the left side', () => {
+    const insets = getStickerTextAvoidanceInsets(
+      [{ ...baseSticker, x: 24, scale: 1, wrapText: true }],
+      { width: 320, height: 480 },
+    );
+
+    expect(insets).toEqual({
+      paddingLeft: 24 + DIARY_STICKER_BASE_SIZE + DIARY_STICKER_TEXT_WRAP_GUTTER,
+      paddingRight: 0,
+      paddingTop: 0,
+    });
+  });
+
+  it('adds right text avoidance for a wrapped sticker on the right side', () => {
+    const insets = getStickerTextAvoidanceInsets(
+      [{ ...baseSticker, x: 220, scale: 1, wrapText: true }],
+      { width: 320, height: 480 },
+    );
+
+    expect(insets).toEqual({
+      paddingLeft: 0,
+      paddingRight: 320 - 220 + DIARY_STICKER_TEXT_WRAP_GUTTER,
+      paddingTop: 0,
+    });
+  });
+
+  it('moves text below wrapped stickers when horizontal space is too narrow', () => {
+    const insets = getStickerTextAvoidanceInsets(
+      [{ ...baseSticker, x: 0, scale: 4, wrapText: true }],
+      { width: 320, height: 480 },
+    );
+
+    expect(insets.paddingLeft).toBe(0);
+    expect(insets.paddingRight).toBe(0);
+    expect(insets.paddingTop).toBe(48 + DIARY_STICKER_BASE_SIZE * 4 + DIARY_STICKER_TEXT_WRAP_GUTTER);
   });
 });

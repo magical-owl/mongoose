@@ -239,6 +239,10 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
     onUpdate(buildUpdatedSticker({ behindText: !stickerRef.current.behindText }));
   }, [onUpdate, setStickerSelected]);
 
+  const handleToggleWrapText = useCallback(() => {
+    onUpdate(buildUpdatedSticker({ wrapText: !stickerRef.current.wrapText }));
+  }, [onUpdate]);
+
   const handleChangeText = useCallback((text: string) => {
     draftTextRef.current = text;
     setDraftText(text);
@@ -390,7 +394,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
     transform: [{ rotate: `${currentRotation}deg` }],
   };
   const isPhotoSticker = Boolean(sticker.imageUri);
-  const primaryControlCount = isTextSticker ? 5 : isPhotoSticker ? 5 : 4;
+  const primaryControlCount = isTextSticker ? 6 : isPhotoSticker ? 6 : 5;
   const primaryControlsWidth = primaryControlCount * STICKER_CONTROL_SIZE + (primaryControlCount - 1) * STICKER_CONTROL_GAP;
   const stickerRightEdge = position.current.x + stickerVisualSize.width * currentScale;
   const stickerBottomEdge = position.current.y + stickerVisualSize.height * currentScale;
@@ -610,6 +614,18 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
                     <MaterialCommunityIcons name="shape-outline" size={16} color={theme.colors.stickerControlText} />
                   </TouchableOpacity>
                 ) : null}
+                <TouchableOpacity
+                  style={[
+                    styles.controlBtn,
+                    { backgroundColor: sticker.wrapText ? theme.colors.stickerControlActive : theme.colors.stickerControl },
+                  ]}
+                  onPress={handleToggleWrapText}
+                  accessibilityLabel={t('stickerWrapTextA11y')}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: Boolean(sticker.wrapText) }}
+                >
+                  <MaterialCommunityIcons name="format-text-wrapping-wrap" size={16} color={theme.colors.stickerControlText} />
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={[
                     styles.controlBtn,

@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { fireEvent } from '@testing-library/react-native';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { renderWithProviders } from '@tests/helpers';
@@ -122,6 +123,25 @@ describe('StickerCanvasItem', () => {
     );
 
     expect(queryByLabelText('Change photo sticker shape')).toBeNull();
+  });
+
+  it('toggles text wrapping for selected stickers', async () => {
+    const onUpdate = jest.fn();
+    const { getByLabelText } = await renderWithProviders(
+      <StickerCanvasItem
+        sticker={baseSticker}
+        onUpdate={onUpdate}
+        onDelete={jest.fn()}
+        isEditable
+        isSelected
+        testID="sticker-item"
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    fireEvent.press(getByLabelText('Wrap text around sticker'));
+
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ wrapText: true }));
   });
 
   it('shows visible resize handles around a selected sticker', async () => {

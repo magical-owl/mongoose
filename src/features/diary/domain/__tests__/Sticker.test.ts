@@ -98,4 +98,20 @@ describe('Sticker catalog', () => {
 
     expect(result.imageShape).toBe('circle');
   });
+
+  it('accepts sticker text wrapping preference', () => {
+    const result = PlacedStickerSchema.parse({
+      id: '123e4567-e89b-12d3-a456-426614174003',
+      stickerId: 'cat_sleepy',
+      category: 'cat-img',
+      x: 20,
+      y: 30,
+      scale: 1,
+      rotation: 0,
+      zIndex: 1,
+      wrapText: true,
+    });
+
+    expect(result.wrapText).toBe(true);
+  });
 });

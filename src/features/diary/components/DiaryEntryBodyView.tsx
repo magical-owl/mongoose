@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { MarkdownText } from '@shared/components/MarkdownText';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -8,6 +8,7 @@ import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor } from '@/fea
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { resolveAppFontFamily } from '@/theme/fonts';
+import { getStickerTextAvoidanceInsets } from '@/features/diary/domain/StickerLayout';
 
 interface DiaryEntryBodyViewProps {
   readonly entry: DiaryEntry;
@@ -52,6 +53,11 @@ export function DiaryEntryBodyView({
   const handleUpdateSticker = onUpdateSticker ?? (() => {});
   const handleDeleteSticker = onDeleteSticker ?? (() => {});
   const sanitizedContent = useMemo(() => sanitizeRichBodyHtml(normalizeHtmlContent(entry.content)), [entry.content]);
+  const [bodyLayout, setBodyLayout] = useState({ width: 0, height: contentHeight });
+  const textAvoidanceInsets = useMemo(
+    () => getStickerTextAvoidanceInsets(stickers, bodyLayout),
+    [bodyLayout, stickers],
+  );
 
   return (
     <View
@@ -59,6 +65,9 @@ export function DiaryEntryBodyView({
       style={[styles.bodyStickerCanvas, { minHeight: contentHeight }]}
       onLayout={(event) => {
         const { y, width, height } = event.nativeEvent.layout;
+        setBodyLayout((current) => (
+          current.width === width && current.height === height ? current : { width, height }
+        ));
         onBodyLayout({ y, width, height });
       }}
     >
@@ -72,7 +81,7 @@ export function DiaryEntryBodyView({
           onDragStateChange={onStickerDragStateChange}
         />
       ))}
-      <View style={styles.entryBodyLayer}>
+      <View style={[styles.entryBodyLayer, textAvoidanceInsets]}>
         <MarkdownText
           style={[
             styles.bodyText,

@@ -1,4 +1,4 @@
-import { useCallback, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
+import { useCallback, useMemo, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import { StyleSheet, TextInput as NativeTextInput, View, type GestureResponderEvent } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
@@ -15,6 +15,7 @@ import {
   ENTRY_EDITOR_BODY_MIN_HEIGHT,
 } from '@/features/diary/components/DiaryEntryEditorChrome';
 import { ENTRY_DETAIL_EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO } from '@/features/diary/components/EntryDetailLayout';
+import { getStickerTextAvoidanceInsets } from '@/features/diary/domain/StickerLayout';
 
 interface EntryEditBodyFormProps {
   readonly editorRef: RefObject<RichTextEditorHandle | null>;
@@ -73,6 +74,11 @@ export function EntryEditBodyForm({
     setSelectedStickerId((current) => (current === stickerId ? undefined : current));
     onDeleteSticker(stickerId);
   }, [onDeleteSticker]);
+  const stickers = useMemo(() => [...behindStickers, ...foregroundStickers], [behindStickers, foregroundStickers]);
+  const textAvoidanceInsets = useMemo(
+    () => getStickerTextAvoidanceInsets(stickers, bodyLayout),
+    [bodyLayout, stickers],
+  );
 
   return (
     <>
@@ -125,7 +131,7 @@ export function EntryEditBodyForm({
             testID={`entry-edit-sticker-${sticker.id}`}
           />
         ))}
-        <View style={styles.entryBodyLayer}>
+        <View style={[styles.entryBodyLayer, textAvoidanceInsets]}>
           <RichTextEditor
             ref={editorRef}
             value={editContent}
