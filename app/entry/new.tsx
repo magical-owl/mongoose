@@ -295,7 +295,10 @@ export default function CreateEntryScreen() {
   const availableTags = useMemo(() => normalizeDiaryTags(entries.flatMap((entry) => entry.tags)), [entries]);
   const behindStickers = useMemo(() => stickers.filter((sticker) => sticker.behindText), [stickers]);
   const foregroundStickers = useMemo(() => stickers.filter((sticker) => !sticker.behindText), [stickers]);
-  const textAvoidanceInsets = useMemo(() => getStickerTextAvoidanceInsets(stickers, bodyLayout), [bodyLayout, stickers]);
+  const textAvoidanceInsets = useMemo(() => {
+    const insets = getStickerTextAvoidanceInsets(stickers, bodyLayout);
+    return { paddingLeft: insets.paddingLeft, paddingRight: insets.paddingRight };
+  }, [bodyLayout, stickers]);
   const getVisibleStickerPosition = useCallback((index: number, stickerWidth = STICKER_PLACEMENT_SIZE) => {
     const horizontalPadding = theme.spacing.lg * 2;
     const usableWidth = Math.max(stickerWidth, bodyLayout.width || windowWidth - horizontalPadding);

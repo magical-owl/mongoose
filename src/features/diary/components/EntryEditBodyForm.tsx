@@ -76,7 +76,10 @@ export function EntryEditBodyForm({
   }, [onDeleteSticker]);
   const stickers = useMemo(() => [...behindStickers, ...foregroundStickers], [behindStickers, foregroundStickers]);
   const textAvoidanceInsets = useMemo(
-    () => getStickerTextAvoidanceInsets(stickers, bodyLayout),
+    () => {
+      const insets = getStickerTextAvoidanceInsets(stickers, bodyLayout);
+      return { paddingLeft: insets.paddingLeft, paddingRight: insets.paddingRight };
+    },
     [bodyLayout, stickers],
   );
 

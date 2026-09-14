@@ -9,6 +9,7 @@ import {
   getStickerBodyPreviewBottom,
   getStickerPreviewHeight,
   getStickerTextAvoidanceInsets,
+  getStickerTextAvoidanceZones,
   getStickerVisualSize,
   mapStickerToBodyPreview,
 } from '../StickerLayout';
@@ -210,5 +211,35 @@ describe('StickerLayout', () => {
     expect(insets.paddingLeft).toBe(0);
     expect(insets.paddingRight).toBe(0);
     expect(insets.paddingTop).toBe(48 + DIARY_STICKER_BASE_SIZE * 4 + DIARY_STICKER_TEXT_WRAP_GUTTER);
+  });
+
+  it('creates vertical text avoidance zones for wrapped stickers', () => {
+    expect(getStickerTextAvoidanceZones(
+      [{ ...baseSticker, x: 24, y: 40, scale: 1, wrapText: true }],
+      { width: 320, height: 480 },
+    )).toEqual([
+      {
+        top: 40 - DIARY_STICKER_TEXT_WRAP_GUTTER,
+        bottom: 40 + DIARY_STICKER_BASE_SIZE + DIARY_STICKER_TEXT_WRAP_GUTTER,
+        paddingLeft: 24 + DIARY_STICKER_BASE_SIZE + DIARY_STICKER_TEXT_WRAP_GUTTER,
+        paddingRight: 0,
+        pushBelow: false,
+      },
+    ]);
+  });
+
+  it('creates a push-below zone when a wrapped sticker cannot leave enough horizontal text space', () => {
+    expect(getStickerTextAvoidanceZones(
+      [{ ...baseSticker, x: 0, scale: 4, wrapText: true }],
+      { width: 320, height: 480 },
+    )).toEqual([
+      {
+        top: 48 - DIARY_STICKER_TEXT_WRAP_GUTTER,
+        bottom: 48 + DIARY_STICKER_BASE_SIZE * 4 + DIARY_STICKER_TEXT_WRAP_GUTTER,
+        paddingLeft: 0,
+        paddingRight: 0,
+        pushBelow: true,
+      },
+    ]);
   });
 });

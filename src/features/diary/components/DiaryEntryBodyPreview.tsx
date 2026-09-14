@@ -6,7 +6,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
-import { getStickerTextAvoidanceInsets } from '@/features/diary/domain/StickerLayout';
+import { getStickerTextAvoidanceZones } from '@/features/diary/domain/StickerLayout';
 import { resolveAppFontFamily } from '@/theme/fonts';
 
 import { StickerCanvasItem } from './StickerCanvasItem';
@@ -35,8 +35,8 @@ export function DiaryEntryBodyPreview({
   const foregroundStickers = useMemo(() => stickers.filter((sticker) => !sticker.behindText), [stickers]);
   const contentHeight = Math.max(1, bodyCanvasHeight);
   const [bodyLayout, setBodyLayout] = useState({ width: 0, height: contentHeight });
-  const textAvoidanceInsets = useMemo(
-    () => getStickerTextAvoidanceInsets(stickers, bodyLayout),
+  const textAvoidanceZones = useMemo(
+    () => getStickerTextAvoidanceZones(stickers, bodyLayout),
     [bodyLayout, stickers],
   );
 
@@ -61,8 +61,9 @@ export function DiaryEntryBodyPreview({
           isEditable={false}
         />
       ))}
-      <View style={[styles.textLayer, textAvoidanceInsets]}>
+      <View style={styles.textLayer}>
         <MarkdownText
+          avoidanceZones={textAvoidanceZones}
           style={[
             styles.text,
             {
