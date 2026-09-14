@@ -56,6 +56,36 @@ describe('StickerLayout', () => {
     expect(getStickerPreviewHeight(tallPhoto)).toBe(DIARY_PHOTO_STICKER_MAX_HEIGHT);
   });
 
+  it('uses fixed square bounds for circular photo stickers', () => {
+    const circlePhoto: PlacedSticker = {
+      ...baseSticker,
+      imageUri: 'file:///photo.jpg',
+      imageWidth: 1200,
+      imageHeight: 800,
+      imageShape: 'circle',
+    };
+
+    expect(getStickerVisualSize(circlePhoto)).toEqual({
+      width: DIARY_PHOTO_STICKER_BASE_WIDTH,
+      height: DIARY_PHOTO_STICKER_BASE_WIDTH,
+    });
+  });
+
+  it('uses compact horizontal bounds for oval photo stickers', () => {
+    const ovalPhoto: PlacedSticker = {
+      ...baseSticker,
+      imageUri: 'file:///photo.jpg',
+      imageWidth: 1200,
+      imageHeight: 800,
+      imageShape: 'oval',
+    };
+
+    expect(getStickerVisualSize(ovalPhoto)).toEqual({
+      width: DIARY_PHOTO_STICKER_BASE_WIDTH,
+      height: DIARY_PHOTO_STICKER_BASE_WIDTH * 0.72,
+    });
+  });
+
   it('calculates preview bottom from mapped top and visual height', () => {
     const photo: PlacedSticker = {
       ...baseSticker,

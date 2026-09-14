@@ -79,4 +79,23 @@ describe('Sticker catalog', () => {
     expect(result.textBackgroundColor).toBe('#FEF3C7');
     expect(result.opacity).toBe(0.75);
   });
+
+  it('accepts album photo sticker shapes', () => {
+    const result = PlacedStickerSchema.parse({
+      id: '123e4567-e89b-12d3-a456-426614174001',
+      stickerId: 'photo:123e4567-e89b-12d3-a456-426614174002',
+      category: 'photos',
+      x: 20,
+      y: 30,
+      scale: 1,
+      rotation: 0,
+      zIndex: 1,
+      imageUri: 'file:///photo.jpg',
+      imageWidth: 1200,
+      imageHeight: 800,
+      imageShape: 'circle',
+    });
+
+    expect(result.imageShape).toBe('circle');
+  });
 });

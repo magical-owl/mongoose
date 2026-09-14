@@ -159,6 +159,7 @@ export function createPlacedPhotoSticker(photo: DiaryPhoto, index: number): Plac
     imageUri: resolveImportedDiaryPhotoUri(photo.uri),
     imageWidth: photo.width,
     imageHeight: photo.height,
+    imageShape: 'rectangle',
     x: 36 + (index % 3) * 42,
     y: 132 + (index % 4) * 34,
     scale: 1,

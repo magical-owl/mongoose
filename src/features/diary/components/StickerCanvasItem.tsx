@@ -31,7 +31,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { PlacedSticker, findStickerItem } from '../domain/Sticker';
+import { PlacedSticker, findStickerItem, type PhotoStickerShape } from '../domain/Sticker';
 import { useTranslation } from '@/localization/i18n';
 import { useTheme } from '@/providers/ThemeProvider';
 import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
@@ -53,6 +53,13 @@ const STICKER_CONTROL_SIZE = 34;
 const STICKER_CONTROL_GAP = 4;
 const STICKER_CONTROL_OFFSET = 46;
 const STICKER_CONTROL_EDGE_SPACE = 12;
+const PHOTO_STICKER_SHAPES: readonly PhotoStickerShape[] = ['rectangle', 'rounded', 'circle', 'oval'];
+
+function getPhotoStickerBorderRadius(shape: PhotoStickerShape, width: number, height: number): number {
+  if (shape === 'rectangle') return 8;
+  if (shape === 'rounded') return 24;
+  return Math.min(width, height) / 2;
+}
 
 interface StickerCanvasItemProps {
   readonly sticker: PlacedSticker;
@@ -135,7 +142,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
   const stickerIcon = stickerItem?.icon ?? '⭐';
   const stickerSource = stickerItem?.source;
   const photoStickerSource = sticker.imageUri ? getDiaryPhotoImageSource(sticker.imageUri) : undefined;
-  const photoAspectRatio = sticker.imageWidth && sticker.imageHeight ? sticker.imageWidth / sticker.imageHeight : 1;
+  const photoShape: PhotoStickerShape = sticker.imageShape ?? 'rectangle';
   const textColor = sticker.textColor ?? DEFAULT_TEXT_STICKER_COLOR;
   const textBackgroundColor = sticker.textBackgroundColor ?? DEFAULT_TEXT_STICKER_BACKGROUND_COLOR;
   const stickerOpacity = sticker.opacity ?? 1;
@@ -280,6 +287,12 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
     onUpdate(buildUpdatedSticker({ textBackgroundColor: nextColor }));
   }, [onUpdate, textBackgroundColor]);
 
+  const handleCyclePhotoShape = useCallback(() => {
+    const currentIndex = PHOTO_STICKER_SHAPES.findIndex((shape) => shape === (stickerRef.current.imageShape ?? 'rectangle'));
+    const nextShape = PHOTO_STICKER_SHAPES[(currentIndex + 1) % PHOTO_STICKER_SHAPES.length] ?? 'rectangle';
+    onUpdate(buildUpdatedSticker({ imageShape: nextShape }));
+  }, [onUpdate]);
+
   const rotateGestureStart = useRef({ rotation: sticker.rotation, moved: false });
   const rotatePanResponder = useRef(
     PanResponder.create({
@@ -376,7 +389,8 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
     top: -(scaledStickerHeight - stickerVisualSize.height) / 2,
     transform: [{ rotate: `${currentRotation}deg` }],
   };
-  const primaryControlCount = isTextSticker ? 5 : 4;
+  const isPhotoSticker = Boolean(sticker.imageUri);
+  const primaryControlCount = isTextSticker ? 5 : isPhotoSticker ? 5 : 4;
   const primaryControlsWidth = primaryControlCount * STICKER_CONTROL_SIZE + (primaryControlCount - 1) * STICKER_CONTROL_GAP;
   const stickerRightEdge = position.current.x + stickerVisualSize.width * currentScale;
   const stickerBottomEdge = position.current.y + stickerVisualSize.height * currentScale;
@@ -464,7 +478,15 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
               photoStickerSource ? (
                 <Image
                   source={photoStickerSource}
-                  style={[styles.photoStickerImage, { aspectRatio: photoAspectRatio }, isSelected && styles.selectedOverlay]}
+                  style={[
+                    styles.photoStickerImage,
+                    {
+                      width: stickerVisualSize.width,
+                      height: stickerVisualSize.height,
+                      borderRadius: getPhotoStickerBorderRadius(photoShape, stickerVisualSize.width, stickerVisualSize.height),
+                    },
+                    isSelected && styles.selectedOverlay,
+                  ]}
                   resizeMode="cover"
                 />
               ) : null
@@ -576,6 +598,16 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
                     accessibilityState={{ expanded: showTextOptions }}
                   >
                     <MaterialCommunityIcons name="dots-horizontal" size={17} color={theme.colors.stickerControlText} />
+                  </TouchableOpacity>
+                ) : null}
+                {isPhotoSticker ? (
+                  <TouchableOpacity
+                    style={[styles.controlBtn, { backgroundColor: theme.colors.stickerControl }]}
+                    onPress={handleCyclePhotoShape}
+                    accessibilityLabel={t('stickerPhotoShapeA11y')}
+                    accessibilityRole="button"
+                  >
+                    <MaterialCommunityIcons name="shape-outline" size={16} color={theme.colors.stickerControlText} />
                   </TouchableOpacity>
                 ) : null}
                 <TouchableOpacity

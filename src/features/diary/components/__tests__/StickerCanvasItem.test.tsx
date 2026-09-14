@@ -83,6 +83,47 @@ describe('StickerCanvasItem', () => {
     expect(mockGetDiaryPhotoImageSource).toHaveBeenCalledWith('file:///document/diary-photos/encrypted-photo.jpg');
   });
 
+  it('shows a shape control for selected photo stickers', async () => {
+    const photoSticker: PlacedSticker = {
+      ...baseSticker,
+      stickerId: 'photo:asset',
+      category: 'photos',
+      text: undefined,
+      imageUri: 'file:///document/diary-photos/encrypted-photo.jpg',
+      imageWidth: 1200,
+      imageHeight: 800,
+    };
+    const { getByLabelText } = await renderWithProviders(
+      <StickerCanvasItem
+        sticker={photoSticker}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
+        isEditable
+        isSelected
+        testID="sticker-item"
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByLabelText('Change photo sticker shape')).toBeTruthy();
+  });
+
+  it('hides the shape control for non-photo stickers', async () => {
+    const { queryByLabelText } = await renderWithProviders(
+      <StickerCanvasItem
+        sticker={baseSticker}
+        onUpdate={jest.fn()}
+        onDelete={jest.fn()}
+        isEditable
+        isSelected
+        testID="sticker-item"
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(queryByLabelText('Change photo sticker shape')).toBeNull();
+  });
+
   it('shows visible resize handles around a selected sticker', async () => {
     const { getByTestId } = await renderWithProviders(
       <StickerCanvasItem

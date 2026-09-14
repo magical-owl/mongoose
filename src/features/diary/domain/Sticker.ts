@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { STICKER_IMAGES } from './StickerImages';
 
+export const PhotoStickerShapeSchema = z.enum(['rectangle', 'rounded', 'circle', 'oval']);
+export type PhotoStickerShape = z.infer<typeof PhotoStickerShapeSchema>;
+
 export const PlacedStickerSchema = z.object({
   id: z.string().uuid(),
   stickerId: z.string(),       // e.g. "cat-boba", "cat_sleepy"
@@ -13,6 +16,7 @@ export const PlacedStickerSchema = z.object({
   imageUri: z.string().min(1).optional(),
   imageWidth: z.number().positive().optional(),
   imageHeight: z.number().positive().optional(),
+  imageShape: PhotoStickerShapeSchema.optional(),
   text: z.string().max(500).optional(),
   textColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   textBackgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),

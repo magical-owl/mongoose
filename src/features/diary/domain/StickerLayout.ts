@@ -41,6 +41,12 @@ export function getStickerVisualSize(sticker: PlacedSticker): StickerSize {
     const aspectRatio = sticker.imageWidth && sticker.imageHeight
       ? sticker.imageWidth / sticker.imageHeight
       : 1;
+    if (sticker.imageShape === 'circle') {
+      return { width: DIARY_PHOTO_STICKER_BASE_WIDTH, height: DIARY_PHOTO_STICKER_BASE_WIDTH };
+    }
+    if (sticker.imageShape === 'oval') {
+      return { width: DIARY_PHOTO_STICKER_BASE_WIDTH, height: DIARY_PHOTO_STICKER_BASE_WIDTH * 0.72 };
+    }
     return {
       width: DIARY_PHOTO_STICKER_BASE_WIDTH,
       height: Math.min(DIARY_PHOTO_STICKER_MAX_HEIGHT, DIARY_PHOTO_STICKER_BASE_WIDTH / aspectRatio),
