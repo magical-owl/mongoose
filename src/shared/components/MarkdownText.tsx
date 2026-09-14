@@ -8,18 +8,9 @@
  * No native dependencies — works in Expo Go.
  */
 
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import {
-  View,
-  StyleSheet,
-  type LayoutChangeEvent,
-  type StyleProp,
-  type TextStyle,
-  type ViewStyle,
-} from 'react-native';
+import { View, StyleSheet, type StyleProp, type TextStyle } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';
-import type { StickerTextAvoidanceZone } from '@/features/diary/domain/StickerLayout';
 
 function convertHtmlToMarkdown(html: string): string {
   if (!html) return '';
@@ -154,49 +145,12 @@ function parseLine(raw: string): BlockLine {
 interface MarkdownTextProps {
   readonly children: string;
   readonly style?: StyleProp<TextStyle>;
-  readonly avoidanceZones?: readonly StickerTextAvoidanceZone[];
   readonly testID?: string;
 }
 
-type BlockLayout = {
-  readonly y: number;
-  readonly height: number;
-};
-
-function getBlockAvoidanceStyle(
-  blockLayout: BlockLayout | undefined,
-  avoidanceZones: readonly StickerTextAvoidanceZone[],
-): ViewStyle | undefined {
-  if (!blockLayout || avoidanceZones.length === 0) return undefined;
-
-  const blockTop = blockLayout.y;
-  const blockBottom = blockLayout.y + blockLayout.height;
-  let paddingLeft = 0;
-  let paddingRight = 0;
-  let marginTop = 0;
-
-  for (const zone of avoidanceZones) {
-    const overlapsZone = blockTop < zone.bottom && blockBottom > zone.top;
-    if (!overlapsZone) continue;
-
-    if (zone.pushBelow) {
-      marginTop = Math.max(marginTop, zone.bottom - blockTop);
-      continue;
-    }
-
-    paddingLeft = Math.max(paddingLeft, zone.paddingLeft);
-    paddingRight = Math.max(paddingRight, zone.paddingRight);
-  }
-
-  if (paddingLeft === 0 && paddingRight === 0 && marginTop === 0) return undefined;
-
-  return { paddingLeft, paddingRight, marginTop };
-}
-
-export function MarkdownText({ children, style, avoidanceZones = [], testID }: MarkdownTextProps) {
+export function MarkdownText({ children, style, testID }: MarkdownTextProps) {
   const theme = useTheme();
   const flattenedStyle = StyleSheet.flatten(style) ?? {};
-  const [blockLayouts, setBlockLayouts] = useState<Readonly<Record<number, BlockLayout>>>({});
 
   const baseText = {
     color: theme.colors.text,
@@ -219,41 +173,21 @@ export function MarkdownText({ children, style, avoidanceZones = [], testID }: M
     h3: Math.round(bodyLineHeight * 1.12),
   };
 
-  const normalizedText = useMemo(() => convertHtmlToMarkdown(children || ''), [children]);
-  const blocks = useMemo<BlockLine[]>(() => normalizedText.split('\n').map(parseLine), [normalizedText]);
-  const handleBlockLayout = useCallback((index: number, event: LayoutChangeEvent) => {
-    const { y, height } = event.nativeEvent.layout;
-    setBlockLayouts((current) => {
-      const existing = current[index];
-      if (existing?.y === y && existing.height === height) return current;
-      return { ...current, [index]: { y, height } };
-    });
-  }, []);
-  const blockStyles = useMemo(
-    () => blocks.map((_block, index) => getBlockAvoidanceStyle(blockLayouts[index], avoidanceZones)),
-    [avoidanceZones, blockLayouts, blocks],
-  );
-  const renderBlock = (index: number, children: ReactNode): React.JSX.Element => (
-    <View
-      key={index}
-      style={blockStyles[index]}
-      onLayout={(event) => handleBlockLayout(index, event)}
-      testID={testID ? `${testID}-block-${index}` : undefined}
-    >
-      {children}
-    </View>
-  );
+  const normalizedText = convertHtmlToMarkdown(children || '');
+  const lines = normalizedText.split('\n');
+  const blocks: BlockLine[] = lines.map(parseLine);
 
   return (
     <View testID={testID}>
       {blocks.map((block, i) => {
         switch (block.kind) {
           case 'blank':
-            return renderBlock(i, <View style={{ height: 10 }} />);
+            return <View key={i} style={{ height: 10 }} />;
 
           case 'h1':
-            return renderBlock(i,
+            return (
               <InlineSegments
+                key={i}
                 segments={parseInline(block.text)}
                 tintColor={theme.colors.tint}
                 baseStyle={{
@@ -265,12 +199,13 @@ export function MarkdownText({ children, style, avoidanceZones = [], testID }: M
                   marginBottom: 6,
                   marginTop: i > 0 ? 12 : 0,
                 }}
-              />,
+              />
             );
 
           case 'h2':
-            return renderBlock(i,
+            return (
               <InlineSegments
+                key={i}
                 segments={parseInline(block.text)}
                 tintColor={theme.colors.tint}
                 baseStyle={{
@@ -282,12 +217,13 @@ export function MarkdownText({ children, style, avoidanceZones = [], testID }: M
                   marginBottom: 4,
                   marginTop: i > 0 ? 10 : 0,
                 }}
-              />,
+              />
             );
 
           case 'h3':
-            return renderBlock(i,
+            return (
               <InlineSegments
+                key={i}
                 segments={parseInline(block.text)}
                 tintColor={theme.colors.tint}
                 baseStyle={{
@@ -299,24 +235,25 @@ export function MarkdownText({ children, style, avoidanceZones = [], testID }: M
                   marginBottom: 2,
                   marginTop: i > 0 ? 8 : 0,
                 }}
-              />,
+              />
             );
 
           case 'bullet':
-            return renderBlock(i,
-              <View style={styles.bulletRow}>
+            return (
+              <View key={i} style={styles.bulletRow}>
                 <Text style={[styles.bulletDot, { color: theme.colors.tint }]}>•</Text>
                 <InlineSegments
                   segments={parseInline(block.text)}
                   tintColor={theme.colors.tint}
                   baseStyle={[baseText, { flex: 1 }]}
                 />
-              </View>,
+              </View>
             );
 
           case 'quote':
-            return renderBlock(i,
+            return (
               <View
+                key={i}
                 style={[
                   styles.quoteBlock,
                   {
@@ -330,16 +267,17 @@ export function MarkdownText({ children, style, avoidanceZones = [], testID }: M
                   tintColor={theme.colors.tint}
                   baseStyle={[baseText, { fontStyle: 'italic', color: theme.colors.textSecondary }]}
                 />
-              </View>,
+              </View>
             );
 
           default:
-            return renderBlock(i,
+            return (
               <InlineSegments
+                key={i}
                 segments={parseInline(block.text)}
                 tintColor={theme.colors.tint}
                 baseStyle={baseText}
-              />,
+              />
             );
         }
       })}

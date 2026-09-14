@@ -34,14 +34,6 @@ export type StickerTextAvoidanceInsets = {
   readonly paddingTop: number;
 };
 
-export type StickerTextAvoidanceZone = {
-  readonly top: number;
-  readonly bottom: number;
-  readonly paddingLeft: number;
-  readonly paddingRight: number;
-  readonly pushBelow: boolean;
-};
-
 export type StickerClampOptions = {
   readonly allowBottomOverflow?: boolean;
   readonly horizontalEdgeAllowanceRatio?: number;
@@ -165,61 +157,4 @@ export function getStickerTextAvoidanceInsets(
   }
 
   return { paddingLeft, paddingRight, paddingTop };
-}
-
-export function getStickerTextAvoidanceZones(
-  stickers: readonly PlacedSticker[],
-  bounds: StickerBounds | undefined,
-  gutter = DIARY_STICKER_TEXT_WRAP_GUTTER,
-): readonly StickerTextAvoidanceZone[] {
-  if (!bounds || bounds.width <= 0) {
-    return [];
-  }
-
-  const maxSideInset = Math.max(0, bounds.width - DIARY_STICKER_TEXT_WRAP_MIN_TEXT_WIDTH);
-  const zones: StickerTextAvoidanceZone[] = [];
-
-  for (const sticker of stickers) {
-    if (!sticker.wrapText) continue;
-
-    const visualSize = getStickerVisualSize(sticker);
-    const scaledWidth = visualSize.width * sticker.scale;
-    const scaledHeight = visualSize.height * sticker.scale;
-    const stickerLeft = sticker.x;
-    const stickerRight = sticker.x + scaledWidth;
-    const stickerCenter = stickerLeft + scaledWidth / 2;
-    const leftInset = Math.max(0, stickerRight + gutter);
-    const rightInset = Math.max(0, bounds.width - stickerLeft + gutter);
-
-    if (stickerCenter <= bounds.width / 2 && leftInset <= maxSideInset) {
-      zones.push({
-        top: Math.max(0, sticker.y - gutter),
-        bottom: Math.max(0, sticker.y + scaledHeight + gutter),
-        paddingLeft: leftInset,
-        paddingRight: 0,
-        pushBelow: false,
-      });
-      continue;
-    }
-    if (stickerCenter > bounds.width / 2 && rightInset <= maxSideInset) {
-      zones.push({
-        top: Math.max(0, sticker.y - gutter),
-        bottom: Math.max(0, sticker.y + scaledHeight + gutter),
-        paddingLeft: 0,
-        paddingRight: rightInset,
-        pushBelow: false,
-      });
-      continue;
-    }
-
-    zones.push({
-      top: Math.max(0, sticker.y - gutter),
-      bottom: Math.max(0, sticker.y + scaledHeight + gutter),
-      paddingLeft: 0,
-      paddingRight: 0,
-      pushBelow: true,
-    });
-  }
-
-  return zones;
 }

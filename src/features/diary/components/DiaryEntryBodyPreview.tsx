@@ -6,7 +6,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
-import { getStickerTextAvoidanceZones } from '@/features/diary/domain/StickerLayout';
+import { getStickerTextAvoidanceInsets } from '@/features/diary/domain/StickerLayout';
 import { resolveAppFontFamily } from '@/theme/fonts';
 
 import { StickerCanvasItem } from './StickerCanvasItem';
@@ -17,6 +17,7 @@ interface DiaryEntryBodyPreviewProps {
   readonly bodyFontSize: number;
   readonly bodyLineHeight: number;
   readonly stickers: readonly PlacedSticker[];
+  readonly coordinateScale?: number;
   readonly onBodyLayout: (layout: { readonly y: number; readonly width: number; readonly height: number }) => void;
 }
 
@@ -26,18 +27,31 @@ export function DiaryEntryBodyPreview({
   bodyFontSize,
   bodyLineHeight,
   stickers,
+  coordinateScale = 1,
   onBodyLayout,
 }: DiaryEntryBodyPreviewProps): React.JSX.Element {
   const theme = useTheme();
   const bodyTextColor = normalizeDiaryBodyTextColor(entry.bodyTextColor) ?? theme.colors.text;
   const bodyFontFamily = resolveAppFontFamily(normalizeDiaryBodyFontFamily(entry.bodyFontFamily), true);
-  const behindStickers = useMemo(() => stickers.filter((sticker) => sticker.behindText), [stickers]);
-  const foregroundStickers = useMemo(() => stickers.filter((sticker) => !sticker.behindText), [stickers]);
+  const scaledStickers = useMemo(
+    () => stickers.map((sticker) => ({
+      ...sticker,
+      x: sticker.x * coordinateScale,
+      y: sticker.y * coordinateScale,
+      scale: sticker.scale * coordinateScale,
+    })),
+    [coordinateScale, stickers],
+  );
+  const behindStickers = useMemo(() => scaledStickers.filter((sticker) => sticker.behindText), [scaledStickers]);
+  const foregroundStickers = useMemo(() => scaledStickers.filter((sticker) => !sticker.behindText), [scaledStickers]);
   const contentHeight = Math.max(1, bodyCanvasHeight);
   const [bodyLayout, setBodyLayout] = useState({ width: 0, height: contentHeight });
-  const textAvoidanceZones = useMemo(
-    () => getStickerTextAvoidanceZones(stickers, bodyLayout),
-    [bodyLayout, stickers],
+  const textAvoidanceInsets = useMemo(
+    () => {
+      const insets = getStickerTextAvoidanceInsets(scaledStickers, bodyLayout);
+      return { paddingLeft: insets.paddingLeft, paddingRight: insets.paddingRight };
+    },
+    [bodyLayout, scaledStickers],
   );
 
   return (
@@ -61,9 +75,8 @@ export function DiaryEntryBodyPreview({
           isEditable={false}
         />
       ))}
-      <View style={styles.textLayer}>
+      <View style={[styles.textLayer, textAvoidanceInsets]}>
         <MarkdownText
-          avoidanceZones={textAvoidanceZones}
           style={[
             styles.text,
             {

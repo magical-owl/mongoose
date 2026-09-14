@@ -8,7 +8,7 @@ import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor } from '@/fea
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { resolveAppFontFamily } from '@/theme/fonts';
-import { getStickerTextAvoidanceZones } from '@/features/diary/domain/StickerLayout';
+import { getStickerTextAvoidanceInsets } from '@/features/diary/domain/StickerLayout';
 
 interface DiaryEntryBodyViewProps {
   readonly entry: DiaryEntry;
@@ -54,8 +54,11 @@ export function DiaryEntryBodyView({
   const handleDeleteSticker = onDeleteSticker ?? (() => {});
   const sanitizedContent = useMemo(() => sanitizeRichBodyHtml(normalizeHtmlContent(entry.content)), [entry.content]);
   const [bodyLayout, setBodyLayout] = useState({ width: 0, height: contentHeight });
-  const textAvoidanceZones = useMemo(
-    () => getStickerTextAvoidanceZones(stickers, bodyLayout),
+  const textAvoidanceInsets = useMemo(
+    () => {
+      const insets = getStickerTextAvoidanceInsets(stickers, bodyLayout);
+      return { paddingLeft: insets.paddingLeft, paddingRight: insets.paddingRight };
+    },
     [bodyLayout, stickers],
   );
 
@@ -81,9 +84,8 @@ export function DiaryEntryBodyView({
           onDragStateChange={onStickerDragStateChange}
         />
       ))}
-      <View style={styles.entryBodyLayer}>
+      <View style={[styles.entryBodyLayer, textAvoidanceInsets]}>
         <MarkdownText
-          avoidanceZones={textAvoidanceZones}
           style={[
             styles.bodyText,
             {
