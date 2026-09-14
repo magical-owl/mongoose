@@ -99,6 +99,10 @@ describe('StickerCanvasItem', () => {
     expect(getByTestId('sticker-item-corner-top-right')).toBeTruthy();
     expect(getByTestId('sticker-item-corner-bottom-left')).toBeTruthy();
     expect(getByTestId('sticker-item-corner-bottom-right')).toBeTruthy();
+    expect(getByTestId('sticker-item-side-top')).toBeTruthy();
+    expect(getByTestId('sticker-item-side-right')).toBeTruthy();
+    expect(getByTestId('sticker-item-side-bottom')).toBeTruthy();
+    expect(getByTestId('sticker-item-side-left')).toBeTruthy();
   });
 
   it('hides resize handles when controlled as unselected', async () => {

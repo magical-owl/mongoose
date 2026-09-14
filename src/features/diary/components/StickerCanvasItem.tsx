@@ -9,7 +9,7 @@
  *   • Drag to move
  *   • Tap to select (shows control strip)
  *   • Rotate control supports tap and horizontal drag
- *   • Drag the selected dotted outline to resize
+ *   • Drag any selected-frame handle to resize
  *   • Send an individual sticker behind the text canvas
  *   • ✕ button to delete
  *
@@ -340,9 +340,13 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
 
   const resizeGestureStart = useRef({ scale: sticker.scale });
   const resizeTopLeftPanResponder = useRef(createResizePanResponder(-1, -1)).current;
+  const resizeTopPanResponder = useRef(createResizePanResponder(0, -1)).current;
   const resizeTopRightPanResponder = useRef(createResizePanResponder(1, -1)).current;
+  const resizeRightPanResponder = useRef(createResizePanResponder(1, 0)).current;
   const resizeBottomLeftPanResponder = useRef(createResizePanResponder(-1, 1)).current;
+  const resizeBottomPanResponder = useRef(createResizePanResponder(0, 1)).current;
   const resizeBottomRightPanResponder = useRef(createResizePanResponder(1, 1)).current;
+  const resizeLeftPanResponder = useRef(createResizePanResponder(-1, 0)).current;
 
   const stickerCanvasLayerIndex = sticker.behindText ? 1 : stickerLayerIndex + 3;
   const activeStickerCanvasLayerIndex = isSelected ? 999 : stickerCanvasLayerIndex;
@@ -494,11 +498,25 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
               testID={testID ? `${testID}-corner-top-left` : undefined}
             />
             <View
+              style={[styles.sideHandle, styles.sideTop, { borderColor: theme.colors.stickerSelectionOutline }]}
+              {...resizeTopPanResponder.panHandlers}
+              accessibilityLabel={t('stickerResizeA11y')}
+              accessibilityRole="adjustable"
+              testID={testID ? `${testID}-side-top` : undefined}
+            />
+            <View
               style={[styles.cornerHandle, styles.cornerTopRight, { borderColor: theme.colors.stickerSelectionOutline }]}
               {...resizeTopRightPanResponder.panHandlers}
               accessibilityLabel={t('stickerResizeA11y')}
               accessibilityRole="adjustable"
               testID={testID ? `${testID}-corner-top-right` : undefined}
+            />
+            <View
+              style={[styles.sideHandle, styles.sideRight, { borderColor: theme.colors.stickerSelectionOutline }]}
+              {...resizeRightPanResponder.panHandlers}
+              accessibilityLabel={t('stickerResizeA11y')}
+              accessibilityRole="adjustable"
+              testID={testID ? `${testID}-side-right` : undefined}
             />
             <View
               style={[styles.cornerHandle, styles.cornerBottomLeft, { borderColor: theme.colors.stickerSelectionOutline }]}
@@ -508,11 +526,25 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
               testID={testID ? `${testID}-corner-bottom-left` : undefined}
             />
             <View
+              style={[styles.sideHandle, styles.sideBottom, { borderColor: theme.colors.stickerSelectionOutline }]}
+              {...resizeBottomPanResponder.panHandlers}
+              accessibilityLabel={t('stickerResizeA11y')}
+              accessibilityRole="adjustable"
+              testID={testID ? `${testID}-side-bottom` : undefined}
+            />
+            <View
               style={[styles.cornerHandle, styles.cornerBottomRight, { borderColor: theme.colors.stickerSelectionOutline }]}
               {...resizeBottomRightPanResponder.panHandlers}
               accessibilityLabel={t('stickerResizeA11y')}
               accessibilityRole="adjustable"
               testID={testID ? `${testID}-corner-bottom-right` : undefined}
+            />
+            <View
+              style={[styles.sideHandle, styles.sideLeft, { borderColor: theme.colors.stickerSelectionOutline }]}
+              {...resizeLeftPanResponder.panHandlers}
+              accessibilityLabel={t('stickerResizeA11y')}
+              accessibilityRole="adjustable"
+              testID={testID ? `${testID}-side-left` : undefined}
             />
             <View style={styles.frameControls} pointerEvents="box-none">
               <View style={primaryControlsPositionStyle}>
@@ -663,6 +695,36 @@ const styles = StyleSheet.create({
   cornerBottomRight: {
     right: -9,
     bottom: -9,
+  },
+  sideHandle: {
+    position: 'absolute',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
+    backgroundColor: '#F8FAFC',
+    zIndex: 5,
+    elevation: 5,
+  },
+  sideTop: {
+    top: -7,
+    left: '50%',
+    marginLeft: -7,
+  },
+  sideRight: {
+    right: -7,
+    top: '50%',
+    marginTop: -7,
+  },
+  sideBottom: {
+    bottom: -7,
+    left: '50%',
+    marginLeft: -7,
+  },
+  sideLeft: {
+    left: -7,
+    top: '50%',
+    marginTop: -7,
   },
   emoji: {
     fontSize: 48,
