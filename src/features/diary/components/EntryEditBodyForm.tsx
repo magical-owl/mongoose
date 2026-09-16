@@ -96,7 +96,7 @@ export function EntryEditBodyForm({
         returnKeyType="next"
         accessibilityLabel={t('entryTitleA11y')}
       />
-      <View style={[styles.divider, { backgroundColor: theme.colors.borderLight }]} />
+      <View style={styles.titleBodyGap} />
       <View
         testID="entry-edit-body-sticker-canvas"
         style={[
@@ -185,10 +185,6 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderRadius: 8,
   },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    marginBottom: 18,
-  },
   entryBodyLayer: {
     position: 'relative',
     zIndex: 2,
@@ -201,5 +197,9 @@ const styles = StyleSheet.create({
     lineHeight: 40,
     padding: 0,
     marginBottom: 2,
+  },
+  titleBodyGap: {
+    height: StyleSheet.hairlineWidth,
+    marginBottom: 18,
   },
 });

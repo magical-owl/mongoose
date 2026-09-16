@@ -695,8 +695,7 @@ export default function CreateEntryScreen() {
               accessibilityHint={t('entryTitleHint')}
             />
 
-            {/* Divider */}
-            <View style={[styles.divider, { backgroundColor: theme.colors.borderLight }]} />
+            <View style={styles.titleBodyGap} />
 
             <View
               style={[
@@ -1047,7 +1046,7 @@ const styles = StyleSheet.create({
     padding: 0,
     marginBottom: 2,
   },
-  divider: {
+  titleBodyGap: {
     height: StyleSheet.hairlineWidth,
     marginBottom: 18,
   },
