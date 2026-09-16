@@ -44,9 +44,11 @@ import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryCoverPhotoPicker } from '@/features/diary/components/DiaryCoverPhotoPicker';
 import { DiaryPaperCanvas } from '@/features/diary/components/DiaryPaperCanvas';
 import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/DiaryPaperBackgroundPickerModal';
+import { DiaryStylePresetPickerModal } from '@/features/diary/components/DiaryStylePresetPickerModal';
+import { EntryEditToolMenuModal } from '@/features/diary/components/EntryEditToolMenuModal';
 import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataModal';
-import { DEFAULT_DIARY_PAPER_BACKGROUND_ID } from '@/features/diary/domain/DiaryPaperBackgrounds';
 import { DIARY_BODY_DEFAULT_FONT_FAMILY, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
+import { getDiaryStylePreset, type DiaryStylePresetId } from '@/features/diary/domain/DiaryStylePreset';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { shouldPromptForEntryMetadataBeforeSave } from '@/features/diary/services/EntryMetadataSavePrompt';
 import { chooseDiaryPhoto, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
@@ -128,6 +130,9 @@ export default function CreateEntryScreen() {
   const { journals } = useJournals();
   const selectedCalendarDate = useAppStore((state) => state.selectedCalendarDate);
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
+  const diaryStylePresetId = useAppStore((state) => state.diaryStylePresetId);
+  const setDiaryStylePresetId = useAppStore((state) => state.setDiaryStylePresetId);
+  const initialStylePreset = getDiaryStylePreset(diaryStylePresetId);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const isHydratingDraft = useRef(true);
   const stickerBoundsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -154,12 +159,15 @@ export default function CreateEntryScreen() {
   });
   const [stickers, setStickers] = useState<PlacedSticker[]>([]);
   const [coverPhoto, setCoverPhoto] = useState<DiaryPhoto | undefined>();
-  const [paperBackgroundId, setPaperBackgroundId] = useState<string>(DEFAULT_DIARY_PAPER_BACKGROUND_ID);
-  const [bodyFontFamily, setBodyFontFamily] = useState<DiaryBodyFontFamily>(DIARY_BODY_DEFAULT_FONT_FAMILY);
-  const [bodyTextColor, setBodyTextColor] = useState<DiaryBodyTextColor | undefined>();
+  const [paperBackgroundId, setPaperBackgroundId] = useState<string>(initialStylePreset.paperBackgroundId);
+  const [bodyFontFamily, setBodyFontFamily] = useState<DiaryBodyFontFamily>(initialStylePreset.bodyFontFamily ?? DIARY_BODY_DEFAULT_FONT_FAMILY);
+  const [bodyTextColor, setBodyTextColor] = useState<DiaryBodyTextColor | undefined>(initialStylePreset.bodyTextColor);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [showStylePresetPicker, setShowStylePresetPicker] = useState(false);
   const [showPaperBackgroundPicker, setShowPaperBackgroundPicker] = useState(false);
+  const [showCustomizeTools, setShowCustomizeTools] = useState(false);
+  const [showInsertTools, setShowInsertTools] = useState(false);
   const [showFormattingTools, setShowFormattingTools] = useState(false);
   const [showEntryMetadata, setShowEntryMetadata] = useState(false);
   const [isEntryMetadataSavePrompt, setIsEntryMetadataSavePrompt] = useState(false);
@@ -281,6 +289,18 @@ export default function CreateEntryScreen() {
   const closeFormattingTools = useCallback(() => {
     setShowFormattingTools(false);
   }, []);
+
+  const handleSelectStylePreset = useCallback((presetId: DiaryStylePresetId) => {
+    const preset = getDiaryStylePreset(presetId);
+    setPaperBackgroundId(preset.paperBackgroundId);
+    setBodyFontFamily(preset.bodyFontFamily);
+    setBodyTextColor(preset.bodyTextColor);
+    setDiaryStylePresetId(preset.id);
+    editorRef.current?.setBodyStyle({
+      fontFamily: resolveAppFontFamilyForWebContent(preset.bodyFontFamily),
+      textColor: preset.bodyTextColor ?? theme.colors.text,
+    });
+  }, [setDiaryStylePresetId, theme.colors.text]);
 
   // Track keyboard height to float toolbar above it
   useEffect(() => {
@@ -782,50 +802,21 @@ export default function CreateEntryScreen() {
 
           <View style={[diaryEntryEditorChromeStyles.toolbarDivider, { backgroundColor: theme.colors.border }]} />
           <IconCircleButton
-            icon="notebook-edit-outline"
+            icon="palette-outline"
             size="sm"
             surface="transparent"
-            onPress={() => setShowTemplatePicker(true)}
-            accessibilityLabel={t('entryChooseTemplateA11y')}
+            onPress={() => setShowCustomizeTools(true)}
+            accessibilityLabel={t('entryCustomizeToolsA11y')}
+            testID="entry-customize-tools-button"
           />
           <IconCircleButton
-            icon="brush-variant"
+            icon="plus-box-outline"
             size="sm"
             surface="transparent"
-            onPress={() => setShowPaperBackgroundPicker(true)}
-            accessibilityLabel={t('entryPaperBackgroundPickerA11y')}
-            testID="entry-paper-background-button"
+            onPress={() => setShowInsertTools(true)}
+            accessibilityLabel={t('entryInsertToolsA11y')}
+            testID="entry-insert-tools-button"
           />
-
-          <View style={diaryEntryEditorChromeStyles.toolbarPlainGroup}>
-            <IconCircleButton
-              icon="image-plus"
-              size="sm"
-              surface="transparent"
-              onPress={() => { void handleAddPhotoStickers(); }}
-              accessibilityLabel={t('entryChoosePhotoA11y')}
-              testID="entry-add-photo-sticker-button"
-            />
-
-            <IconCircleButton
-              icon="card-text-outline"
-              size="sm"
-              surface="transparent"
-              onPress={handleAddTextSticker}
-              accessibilityLabel={t('entryAddTextStickerA11y')}
-            />
-
-            <IconCircleButton
-              icon="sticker-plus-outline"
-              size="sm"
-              surface="transparent"
-              onPress={() => {
-                setShowStickerPicker(true);
-                revealStickerBounds();
-              }}
-              accessibilityLabel={`${t('entryAddStickerA11y')} ${stickers.length} ${t('entryStickerPlacedA11y')}`}
-            />
-          </View>
           {keyboardHeight > 0 ? (
             <IconCircleButton
               icon="keyboard-close"
@@ -838,6 +829,70 @@ export default function CreateEntryScreen() {
       </DiaryEntryEditorFooter>
 
       {/* Modals */}
+      <EntryEditToolMenuModal
+        visible={showCustomizeTools}
+        title={t('entryCustomizeToolsTitle')}
+        accessibilityLabel={t('entryCustomizeToolsA11y')}
+        onDismiss={() => setShowCustomizeTools(false)}
+        actions={[
+          {
+            id: 'template',
+            icon: 'notebook-edit-outline',
+            label: t('entryToolTemplateLabel'),
+            description: t('entryToolTemplateDescription'),
+            onPress: () => setShowTemplatePicker(true),
+          },
+          {
+            id: 'style',
+            icon: 'palette-outline',
+            label: t('entryToolStyleLabel'),
+            description: t('entryToolStyleDescription'),
+            onPress: () => setShowStylePresetPicker(true),
+            testID: 'entry-style-preset-button',
+          },
+          {
+            id: 'paper',
+            icon: 'brush-variant',
+            label: t('entryToolPaperLabel'),
+            description: t('entryToolPaperDescription'),
+            onPress: () => setShowPaperBackgroundPicker(true),
+            testID: 'entry-paper-background-button',
+          },
+        ]}
+      />
+      <EntryEditToolMenuModal
+        visible={showInsertTools}
+        title={t('entryInsertToolsTitle')}
+        accessibilityLabel={t('entryInsertToolsA11y')}
+        onDismiss={() => setShowInsertTools(false)}
+        actions={[
+          {
+            id: 'photo-sticker',
+            icon: 'image-plus',
+            label: t('entryToolPhotoStickerLabel'),
+            description: t('entryToolPhotoStickerDescription'),
+            onPress: () => { void handleAddPhotoStickers(); },
+            testID: 'entry-add-photo-sticker-button',
+          },
+          {
+            id: 'text-sticker',
+            icon: 'card-text-outline',
+            label: t('entryToolTextStickerLabel'),
+            description: t('entryToolTextStickerDescription'),
+            onPress: handleAddTextSticker,
+          },
+          {
+            id: 'sticker',
+            icon: 'sticker-plus-outline',
+            label: t('entryToolStickerLabel'),
+            description: `${t('entryToolStickerDescription')} ${stickers.length} ${t('entryStickerPlacedA11y')}`,
+            onPress: () => {
+              setShowStickerPicker(true);
+              revealStickerBounds();
+            },
+          },
+        ]}
+      />
       <RichTextFormattingDrawer
         visible={showFormattingTools}
         onDismiss={closeFormattingTools}
@@ -868,6 +923,12 @@ export default function CreateEntryScreen() {
         visible={showTemplatePicker}
         onClose={() => setShowTemplatePicker(false)}
         onSelectTemplate={handleSelectTemplate}
+      />
+      <DiaryStylePresetPickerModal
+        visible={showStylePresetPicker}
+        selectedPresetId={diaryStylePresetId}
+        onSelect={handleSelectStylePreset}
+        onDismiss={() => setShowStylePresetPicker(false)}
       />
       <DiaryPaperBackgroundPickerModal
         visible={showPaperBackgroundPicker}

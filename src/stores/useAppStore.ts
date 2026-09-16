@@ -17,6 +17,10 @@ import {
   DEFAULT_PATTERN_BACKGROUND_VARIANT,
   type PatternBackgroundVariant,
 } from '@/theme/patternBackgrounds';
+import {
+  DEFAULT_DIARY_STYLE_PRESET_ID,
+  type DiaryStylePresetId,
+} from '@/features/diary/domain/DiaryStylePreset';
 
 const storage = createSafeMMKV({ id: 'app-store' });
 
@@ -74,6 +78,7 @@ export interface AppState {
   homeViewModes: Record<HomeViewMode, boolean>;
   homeViewMode: HomeViewMode;
   entryHierarchyMode: EntryHierarchyMode;
+  diaryStylePresetId: DiaryStylePresetId;
   appLanguage: AppLanguage;
   premiumOnboardingPromptShown: boolean;
   premiumPromptDismissedAt: string | null;
@@ -101,6 +106,7 @@ export interface AppState {
   setHomeViewModeEnabled: (mode: HomeViewMode, enabled: boolean) => void;
   setHomeViewMode: (mode: HomeViewMode) => void;
   setEntryHierarchyMode: (mode: EntryHierarchyMode) => void;
+  setDiaryStylePresetId: (presetId: DiaryStylePresetId) => void;
   setAppLanguage: (language: AppLanguage) => void;
   markPremiumOnboardingPromptShown: (shownAt: string) => void;
   markPremiumPromptDismissed: (dismissedAt: string) => void;
@@ -132,6 +138,7 @@ const initialState: Pick<
   | 'homeViewModes'
   | 'homeViewMode'
   | 'entryHierarchyMode'
+  | 'diaryStylePresetId'
   | 'appLanguage'
   | 'premiumOnboardingPromptShown'
   | 'premiumPromptDismissedAt'
@@ -159,6 +166,7 @@ const initialState: Pick<
   homeViewModes: { detailed: true, timeline: true, feed: true },
   homeViewMode: 'timeline',
   entryHierarchyMode: 'none',
+  diaryStylePresetId: DEFAULT_DIARY_STYLE_PRESET_ID,
   appLanguage: 'en',
   premiumOnboardingPromptShown: false,
   premiumPromptDismissedAt: null,
@@ -205,6 +213,7 @@ export const useAppStore = create<AppState>()(
       })),
       setHomeViewMode: (homeViewMode: HomeViewMode) => set({ homeViewMode }),
       setEntryHierarchyMode: (entryHierarchyMode: EntryHierarchyMode) => set({ entryHierarchyMode }),
+      setDiaryStylePresetId: (diaryStylePresetId: DiaryStylePresetId) => set({ diaryStylePresetId }),
       setAppLanguage: (appLanguage: AppLanguage) => set({ appLanguage }),
       markPremiumOnboardingPromptShown: (shownAt: string) => set({
         premiumOnboardingPromptShown: true,
@@ -250,6 +259,7 @@ export const useAppStore = create<AppState>()(
         homeViewModes: state.homeViewModes,
         homeViewMode: state.homeViewMode,
         entryHierarchyMode: state.entryHierarchyMode,
+        diaryStylePresetId: state.diaryStylePresetId,
         appLanguage: state.appLanguage,
         premiumOnboardingPromptShown: state.premiumOnboardingPromptShown,
         premiumPromptDismissedAt: state.premiumPromptDismissedAt,

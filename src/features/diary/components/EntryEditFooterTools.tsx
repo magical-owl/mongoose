@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { View } from 'react-native';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useTranslation } from '@/localization/i18n';
+import { EntryEditToolMenuModal } from '@/features/diary/components/EntryEditToolMenuModal';
 import {
   DiaryEntryEditorFooter,
   diaryEntryEditorChromeStyles,
@@ -16,6 +18,7 @@ interface EntryEditFooterToolsProps {
   readonly onOpenMetadata: () => void;
   readonly onOpenFormatting: () => void;
   readonly onOpenTemplatePicker: () => void;
+  readonly onOpenStylePresetPicker: () => void;
   readonly onOpenPaperBackgroundPicker: () => void;
   readonly onAddPhotoSticker: () => void;
   readonly onAddTextSticker: () => void;
@@ -32,6 +35,7 @@ export function EntryEditFooterTools({
   onOpenMetadata,
   onOpenFormatting,
   onOpenTemplatePicker,
+  onOpenStylePresetPicker,
   onOpenPaperBackgroundPicker,
   onAddPhotoSticker,
   onAddTextSticker,
@@ -40,23 +44,25 @@ export function EntryEditFooterTools({
 }: EntryEditFooterToolsProps) {
   const theme = useTheme();
   const t = useTranslation();
+  const [showCustomizeTools, setShowCustomizeTools] = useState(false);
+  const [showInsertTools, setShowInsertTools] = useState(false);
 
   return (
-    <DiaryEntryEditorFooter
-      bottom={bottom}
-      wordCount={wordCount}
-      trailing={(
-        <IconCircleButton
-          icon="tune-variant"
-          size="sm"
-          surface="transparent"
-          onPress={onOpenMetadata}
-          accessibilityLabel={t('entryDetailsA11y')}
-          testID="entry-edit-metadata-button"
-        />
-      )}
-    >
-      <View>
+    <>
+      <DiaryEntryEditorFooter
+        bottom={bottom}
+        wordCount={wordCount}
+        trailing={(
+          <IconCircleButton
+            icon="tune-variant"
+            size="sm"
+            surface="transparent"
+            onPress={onOpenMetadata}
+            accessibilityLabel={t('entryDetailsA11y')}
+            testID="entry-edit-metadata-button"
+          />
+        )}
+      >
         <IconCircleButton
           icon="fountain-pen-tip"
           size="sm"
@@ -65,56 +71,95 @@ export function EntryEditFooterTools({
           onPress={onOpenFormatting}
           accessibilityLabel={showFormattingTools ? t('entryHideFormattingA11y') : t('entryShowFormattingA11y')}
         />
-      </View>
-      <View style={[diaryEntryEditorChromeStyles.toolbarDivider, { backgroundColor: theme.colors.border }]} />
-      <IconCircleButton
-        icon="notebook-edit-outline"
-        size="sm"
-        surface="transparent"
-        onPress={onOpenTemplatePicker}
-        accessibilityLabel={t('entryChooseTemplateA11y')}
+        <View style={[diaryEntryEditorChromeStyles.toolbarDivider, { backgroundColor: theme.colors.border }]} />
+        <IconCircleButton
+          icon="palette-outline"
+          size="sm"
+          surface="transparent"
+          onPress={() => setShowCustomizeTools(true)}
+          accessibilityLabel={t('entryCustomizeToolsA11y')}
+          testID="entry-edit-customize-tools-button"
+        />
+        <IconCircleButton
+          icon="plus-box-outline"
+          size="sm"
+          surface="transparent"
+          onPress={() => setShowInsertTools(true)}
+          accessibilityLabel={t('entryInsertToolsA11y')}
+          testID="entry-edit-insert-tools-button"
+        />
+        {showKeyboardDismiss ? (
+          <IconCircleButton
+            icon="keyboard-close"
+            size="sm"
+            surface="transparent"
+            onPress={onDismissKeyboard}
+            accessibilityLabel={t('entryDismissKeyboardA11y')}
+          />
+        ) : null}
+      </DiaryEntryEditorFooter>
+      <EntryEditToolMenuModal
+        visible={showCustomizeTools}
+        title={t('entryCustomizeToolsTitle')}
+        accessibilityLabel={t('entryCustomizeToolsA11y')}
+        onDismiss={() => setShowCustomizeTools(false)}
+        actions={[
+          {
+            id: 'template',
+            icon: 'notebook-edit-outline',
+            label: t('entryToolTemplateLabel'),
+            description: t('entryToolTemplateDescription'),
+            onPress: onOpenTemplatePicker,
+            testID: 'entry-edit-template-menu-action',
+          },
+          {
+            id: 'style',
+            icon: 'palette-outline',
+            label: t('entryToolStyleLabel'),
+            description: t('entryToolStyleDescription'),
+            onPress: onOpenStylePresetPicker,
+            testID: 'entry-edit-style-preset-button',
+          },
+          {
+            id: 'paper',
+            icon: 'brush-variant',
+            label: t('entryToolPaperLabel'),
+            description: t('entryToolPaperDescription'),
+            onPress: onOpenPaperBackgroundPicker,
+            testID: 'entry-edit-paper-background-button',
+          },
+        ]}
       />
-      <IconCircleButton
-        icon="brush-variant"
-        size="sm"
-        surface="transparent"
-        onPress={onOpenPaperBackgroundPicker}
-        accessibilityLabel={t('entryPaperBackgroundPickerA11y')}
-        testID="entry-edit-paper-background-button"
+      <EntryEditToolMenuModal
+        visible={showInsertTools}
+        title={t('entryInsertToolsTitle')}
+        accessibilityLabel={t('entryInsertToolsA11y')}
+        onDismiss={() => setShowInsertTools(false)}
+        actions={[
+          {
+            id: 'photo-sticker',
+            icon: 'image-plus',
+            label: t('entryToolPhotoStickerLabel'),
+            description: t('entryToolPhotoStickerDescription'),
+            onPress: onAddPhotoSticker,
+            testID: 'entry-edit-add-photo-sticker-button',
+          },
+          {
+            id: 'text-sticker',
+            icon: 'card-text-outline',
+            label: t('entryToolTextStickerLabel'),
+            description: t('entryToolTextStickerDescription'),
+            onPress: onAddTextSticker,
+          },
+          {
+            id: 'sticker',
+            icon: 'sticker-plus-outline',
+            label: t('entryToolStickerLabel'),
+            description: `${t('entryToolStickerDescription')} ${stickerCount} ${t('entryStickerPlacedA11y')}`,
+            onPress: onOpenStickerPicker,
+          },
+        ]}
       />
-      <View style={diaryEntryEditorChromeStyles.toolbarPlainGroup}>
-        <IconCircleButton
-          icon="image-plus"
-          size="sm"
-          surface="transparent"
-          onPress={onAddPhotoSticker}
-          accessibilityLabel={t('entryChoosePhotoA11y')}
-          testID="entry-edit-add-photo-sticker-button"
-        />
-        <IconCircleButton
-          icon="card-text-outline"
-          size="sm"
-          surface="transparent"
-          onPress={onAddTextSticker}
-          accessibilityLabel={t('entryAddTextStickerA11y')}
-        />
-        <IconCircleButton
-          icon="sticker-plus-outline"
-          size="sm"
-          surface="transparent"
-          onPress={onOpenStickerPicker}
-          accessibilityLabel={`${t('entryAddStickerA11y')} ${stickerCount} ${t('entryStickerPlacedA11y')}`}
-        />
-      </View>
-      {showKeyboardDismiss ? (
-        <IconCircleButton
-          icon="keyboard-close"
-          size="sm"
-          surface="transparent"
-          onPress={onDismissKeyboard}
-          accessibilityLabel={t('entryDismissKeyboardA11y')}
-        />
-      ) : null}
-    </DiaryEntryEditorFooter>
+    </>
   );
 }

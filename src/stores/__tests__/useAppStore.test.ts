@@ -18,4 +18,10 @@ describe('useAppStore', () => {
 
     expect(useAppStore.getState().patternBackgroundVariant).toBe('none');
   });
+
+  it('updates the default diary style preset', () => {
+    useAppStore.getState().setDiaryStylePresetId('kraft');
+
+    expect(useAppStore.getState().diaryStylePresetId).toBe('kraft');
+  });
 });

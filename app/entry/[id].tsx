@@ -38,6 +38,7 @@ import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import type { RichTextEditorHandle } from '@shared/components/RichTextEditor';
 import { DiaryEntry, getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
 import { getDiaryEntryViewCount } from '@/features/diary/domain/DiaryEntryViewHistory';
+import { getDiaryStylePreset, type DiaryStylePresetId } from '@/features/diary/domain/DiaryStylePreset';
 import { Template } from '@/features/diary/domain/Template';
 import type { RichTextFormatItem } from '@/features/diary/components/RichTextFormattingDrawer';
 import { EntryDetailHeaderCover } from '@/features/diary/components/EntryDetailHeaderCover';
@@ -45,6 +46,7 @@ import { EntryEditBodyForm } from '@/features/diary/components/EntryEditBodyForm
 import { EntryEditFooterTools } from '@/features/diary/components/EntryEditFooterTools';
 import { EntryViewBodyContent } from '@/features/diary/components/EntryViewBodyContent';
 import { DiaryPaperCanvas } from '@/features/diary/components/DiaryPaperCanvas';
+import { DiaryStylePresetPickerModal } from '@/features/diary/components/DiaryStylePresetPickerModal';
 import { EntryDetailModals } from '@/features/diary/components/EntryDetailModals';
 import { EntryMetaRow } from '@/features/diary/components/EntryMetaRow';
 import { EntryViewHistoryModal } from '@/features/diary/components/EntryViewHistoryModal';
@@ -113,6 +115,8 @@ export default function EntryDetailScreen() {
   const { journals } = useJournals();
   const { profile } = useProfileForm();
   const timeFormat = useAppStore((state) => state.timeFormat);
+  const diaryStylePresetId = useAppStore((state) => state.diaryStylePresetId);
+  const setDiaryStylePresetId = useAppStore((state) => state.setDiaryStylePresetId);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const lastRecordedViewedEntryId = useRef<string | null>(null);
   const handleCoverScrollBeginDrag = useCallback(() => {
@@ -161,6 +165,7 @@ export default function EntryDetailScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
   const [showViewHistory, setShowViewHistory] = useState(false);
+  const [showStylePresetPicker, setShowStylePresetPicker] = useState(false);
   const {
     showEntryMetadata,
     setShowEntryMetadata,
@@ -233,6 +238,25 @@ export default function EntryDetailScreen() {
       editorRef.current?.setContentHTML(newContent);
     }, 50);
   };
+
+  const handleSelectStylePreset = useCallback((presetId: DiaryStylePresetId) => {
+    const preset = getDiaryStylePreset(presetId);
+    setEditPaperBackgroundId(preset.paperBackgroundId);
+    setEditBodyFontFamily(preset.bodyFontFamily);
+    setEditBodyTextColor(preset.bodyTextColor);
+    setDiaryStylePresetId(preset.id);
+    editorRef.current?.setBodyStyle({
+      fontFamily: resolveAppFontFamilyForWebContent(preset.bodyFontFamily),
+      textColor: preset.bodyTextColor ?? theme.colors.text,
+    });
+  }, [
+    setDiaryStylePresetId,
+    setEditBodyFontFamily,
+    setEditBodyTextColor,
+    setEditPaperBackgroundId,
+    theme.colors.text,
+  ]);
+
   useEffect(() => {
     if (isEditing || !id || !entry || entry.id !== id || lastRecordedViewedEntryId.current === entry.id) return;
     lastRecordedViewedEntryId.current = entry.id;
@@ -604,6 +628,7 @@ export default function EntryDetailScreen() {
           onOpenMetadata={() => setShowEntryMetadata(true)}
           onOpenFormatting={openFormattingTools}
           onOpenTemplatePicker={() => setShowTemplatePicker(true)}
+          onOpenStylePresetPicker={() => setShowStylePresetPicker(true)}
           onOpenPaperBackgroundPicker={() => setShowPaperBackgroundPicker(true)}
           onAddPhotoSticker={() => { void handleAddPhotoStickers(); }}
           onAddTextSticker={handleAddTextSticker}
@@ -664,6 +689,12 @@ export default function EntryDetailScreen() {
         onChangeMoods={setEditMoods}
         onChangeJournalIds={setEditJournalIds}
         onChangeTags={setEditTags}
+      />
+      <DiaryStylePresetPickerModal
+        visible={showStylePresetPicker}
+        selectedPresetId={diaryStylePresetId}
+        onSelect={handleSelectStylePreset}
+        onDismiss={() => setShowStylePresetPicker(false)}
       />
       {showViewHistory ? (
         <EntryViewHistoryModal
