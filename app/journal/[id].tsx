@@ -51,6 +51,7 @@ import { useScrollCollapse } from "@/shared/hooks/useScrollCollapse";
 import { useSubscription } from "@/features/subscription/hooks/useSubscription";
 import { APP_IDENTITY } from "@/config/appIdentity";
 import { releaseFeatures } from "@/config/releaseFeatures";
+import type { Journal } from "@/features/journal/domain/Journal";
 import type { HomeViewMode } from "@/stores/useAppStore";
 import { type DiaryEntry, type DiaryPhoto, type ManualMood } from "@/features/diary/domain/DiaryEntry";
 import type { MemoryReaction } from "@/features/diary/domain/MemoryReaction";
@@ -140,6 +141,9 @@ export default function JournalEntriesScreen() {
   const entryPaginationKeyRef = useRef("");
   const isLoadingMoreEntriesRef = useRef(false);
   const premiumPromptShownThisSession = useRef(false);
+  const pendingEntryNavigationRef = useRef<string | null>(null);
+  const pendingJournalSuggestionNavigationRef = useRef<string | null>(null);
+  const lastFocusedJournalIdRef = useRef<string | null>(null);
   const selectedJournal = journals.find((journal) => journal.id === journalId);
   const journalEntries = useMemo(() => {
     if (journalId === ALL_ENTRIES_JOURNAL_ID) return entries;
@@ -186,14 +190,25 @@ export default function JournalEntriesScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      resetScrollCollapse();
+      pendingEntryNavigationRef.current = null;
+      pendingJournalSuggestionNavigationRef.current = null;
+      if (lastFocusedJournalIdRef.current !== journalId) {
+        lastFocusedJournalIdRef.current = journalId;
+        resetScrollCollapse();
+      }
       refresh();
       void refreshJournals();
       return () => {
         closeMemoryReactionPanels();
       };
-    }, [refresh, refreshJournals, resetScrollCollapse]),
+    }, [journalId, refresh, refreshJournals, resetScrollCollapse]),
   );
+
+  const handlePressJournalSuggestion = useCallback((journal: Journal) => {
+    if (pendingJournalSuggestionNavigationRef.current) return;
+    pendingJournalSuggestionNavigationRef.current = journal.id;
+    router.push({ pathname: "/journal/[id]", params: { id: journal.id, title: journal.title } });
+  }, [router]);
 
   useEffect(() => {
     if (!releaseFeatures.monetization) return;
@@ -597,7 +612,14 @@ export default function JournalEntriesScreen() {
   );
 
   const handleEntryPress = useCallback(async (entry: DiaryEntry) => {
-    if (entry.isLockbox && !(await appLockService.authenticate())) return;
+    if (pendingEntryNavigationRef.current) return;
+    pendingEntryNavigationRef.current = entry.id;
+
+    if (entry.isLockbox && !(await appLockService.authenticate())) {
+      pendingEntryNavigationRef.current = null;
+      return;
+    }
+
     router.push(`/entry/${entry.id}`);
   }, [router]);
 
@@ -754,9 +776,7 @@ export default function JournalEntriesScreen() {
             onToggleReflectionMemoryReaction={handleToggleReflectionMemoryReaction}
             onAddReflectionReply={viewMode === "timeline" || viewMode === "feed" ? handleAddReflectionReply : undefined}
             onDeleteReflectionReply={viewMode === "timeline" || viewMode === "feed" ? handleDeleteReflectionReply : undefined}
-            onPressJournalSuggestion={(journal) => {
-              router.push({ pathname: "/journal/[id]", params: { id: journal.id, title: journal.title } });
-            }}
+            onPressJournalSuggestion={handlePressJournalSuggestion}
             onPressSuggestionsTitle={() => router.push("/(tabs)")}
             onScroll={handleJournalScroll}
             contentContainerStyle={[

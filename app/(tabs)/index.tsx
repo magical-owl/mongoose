@@ -110,9 +110,11 @@ export default function JournalsScreen(): React.JSX.Element {
   const [showJournalMenu, setShowJournalMenu] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const premiumPromptShownThisSession = useRef(false);
+  const pendingJournalNavigationRef = useRef<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
+      pendingJournalNavigationRef.current = null;
       void refreshEntries();
       void refreshJournals();
     }, [refreshEntries, refreshJournals]),
@@ -221,6 +223,13 @@ export default function JournalsScreen(): React.JSX.Element {
     if (!query) return journalItems;
     return journalItems.filter((journal) => journal.title.toLocaleLowerCase().includes(query));
   }, [journalItems, journalSearchQuery]);
+
+  const handlePressJournal = useCallback((journal: JournalHomeItem) => {
+    if (pendingJournalNavigationRef.current) return;
+    pendingJournalNavigationRef.current = journal.id;
+    setOpenJournalOptionsId(null);
+    router.push({ pathname: '/journal/[id]', params: { id: journal.id, title: journal.title } });
+  }, [router]);
   const drawerProfile = useMemo(
     () => ({
       displayName: profile?.displayName.trim() || t('profileFallbackName'),
@@ -478,7 +487,7 @@ export default function JournalsScreen(): React.JSX.Element {
         assigningCoverJournalId={assigningCoverJournalId}
         deletingJournalId={deletingJournalId}
         contentBottomPadding={insets.bottom + 88}
-        onPressJournal={(journal) => router.push({ pathname: '/journal/[id]', params: { id: journal.id, title: journal.title } })}
+        onPressJournal={handlePressJournal}
         onToggleOptions={(journalId) => setOpenJournalOptionsId((current) => current === journalId ? null : journalId)}
         onEditJournal={handleOpenRenameJournal}
         onDeleteJournal={handleDeleteJournal}
