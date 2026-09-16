@@ -33,6 +33,9 @@ interface DiaryTimelineListProps {
   readonly onReflectionInputFocus?: (entryId: string) => void;
   readonly onReflectionSummaryPress?: (entryId: string) => void;
   readonly onToggleMemoryReaction?: (entryId: string, reaction: MemoryReaction) => Promise<boolean>;
+  readonly onToggleReflectionMemoryReaction?: (entryId: string, reflectionId: string, reaction: MemoryReaction) => Promise<boolean>;
+  readonly onAddReflectionReply?: (entryId: string, reflectionId: string, text: string) => Promise<boolean>;
+  readonly onDeleteReflectionReply?: (entryId: string, reflectionId: string, replyId: string) => void;
 }
 
 function formatTimelineMonth(value: string): string {
@@ -64,6 +67,9 @@ export function DiaryTimelineList({
   onReflectionInputFocus,
   onReflectionSummaryPress,
   onToggleMemoryReaction,
+  onToggleReflectionMemoryReaction,
+  onAddReflectionReply,
+  onDeleteReflectionReply,
 }: DiaryTimelineListProps): React.JSX.Element {
   const theme = useTheme();
 
@@ -166,6 +172,9 @@ export function DiaryTimelineList({
                       onReflectionInputFocus={onReflectionInputFocus}
                       onReflectionSummaryPress={onReflectionSummaryPress}
                       onToggleMemoryReaction={onToggleMemoryReaction}
+                      onToggleReflectionMemoryReaction={onToggleReflectionMemoryReaction}
+                      onAddReflectionReply={onAddReflectionReply}
+                      onDeleteReflectionReply={onDeleteReflectionReply}
                     />
                   </View>
                 ))}

@@ -8,7 +8,14 @@ import { buildDiaryEntry, buildDiaryPhoto, buildDiaryReflection } from '@tests/f
 
 type DiaryActions = Pick<
   ReturnType<typeof useDiary>,
-  'saveDiaryEntry' | 'deleteDiaryEntry' | 'addReflection' | 'deleteReflection' | 'toggleMemoryReaction' | 'toggleReflectionMemoryReaction'
+  | 'saveDiaryEntry'
+  | 'deleteDiaryEntry'
+  | 'addReflection'
+  | 'deleteReflection'
+  | 'addReflectionReply'
+  | 'deleteReflectionReply'
+  | 'toggleMemoryReaction'
+  | 'toggleReflectionMemoryReaction'
 >;
 
 const t = ((key: string) => key) as ReturnType<typeof useTranslation>;
@@ -33,6 +40,8 @@ function ActionsHarness({
   deleteDiaryEntry = jest.fn<ReturnType<DiaryActions['deleteDiaryEntry']>, Parameters<DiaryActions['deleteDiaryEntry']>>(),
   addReflection = jest.fn<ReturnType<DiaryActions['addReflection']>, Parameters<DiaryActions['addReflection']>>(),
   deleteReflection = jest.fn<ReturnType<DiaryActions['deleteReflection']>, Parameters<DiaryActions['deleteReflection']>>(),
+  addReflectionReply = jest.fn<ReturnType<DiaryActions['addReflectionReply']>, Parameters<DiaryActions['addReflectionReply']>>(),
+  deleteReflectionReply = jest.fn<ReturnType<DiaryActions['deleteReflectionReply']>, Parameters<DiaryActions['deleteReflectionReply']>>(),
   toggleMemoryReaction = jest.fn<ReturnType<DiaryActions['toggleMemoryReaction']>, Parameters<DiaryActions['toggleMemoryReaction']>>(),
   toggleReflectionMemoryReaction = jest.fn<ReturnType<DiaryActions['toggleReflectionMemoryReaction']>, Parameters<DiaryActions['toggleReflectionMemoryReaction']>>(),
   setShowPremiumModal = jest.fn(),
@@ -44,6 +53,8 @@ function ActionsHarness({
   readonly deleteDiaryEntry?: DiaryActions['deleteDiaryEntry'];
   readonly addReflection?: DiaryActions['addReflection'];
   readonly deleteReflection?: DiaryActions['deleteReflection'];
+  readonly addReflectionReply?: DiaryActions['addReflectionReply'];
+  readonly deleteReflectionReply?: DiaryActions['deleteReflectionReply'];
   readonly toggleMemoryReaction?: DiaryActions['toggleMemoryReaction'];
   readonly toggleReflectionMemoryReaction?: DiaryActions['toggleReflectionMemoryReaction'];
   readonly setShowPremiumModal?: (isVisible: boolean) => void;
@@ -74,6 +85,8 @@ function ActionsHarness({
     deleteDiaryEntry,
     addReflection,
     deleteReflection,
+    addReflectionReply,
+    deleteReflectionReply,
     toggleMemoryReaction,
     toggleReflectionMemoryReaction,
     t,
@@ -89,6 +102,16 @@ function ActionsHarness({
       </TouchableOpacity>
       <TouchableOpacity testID="add-reflection" onPress={() => void actions.handleAddReflection(initialEntry?.id ?? 'missing', '  A thought.  ', reflectionPhoto)}>
         <Text>Add reflection</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="add-reflection-reply"
+        onPress={() => void actions.handleAddReflectionReply(
+          initialEntry?.id ?? 'missing',
+          '22222222-2222-4222-8222-222222222222',
+          '  A reply.  ',
+        )}
+      >
+        <Text>Add reflection reply</Text>
       </TouchableOpacity>
       <TouchableOpacity testID="toggle-reaction" onPress={() => void actions.handleToggleMemoryReaction('cherish')}>
         <Text>React</Text>
@@ -148,6 +171,38 @@ describe('useEntryDetailActions', () => {
     await fireEvent.press(getByTestId('add-reflection'));
 
     expect(addReflection).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', 'A thought.', reflectionPhoto);
+  });
+
+  it('adds a trimmed reply to a reflection thread', async () => {
+    const updatedEntry = createEntry({
+      reflections: [
+        buildDiaryReflection({
+          id: '22222222-2222-4222-8222-222222222222',
+          replies: [
+            {
+              id: '33333333-3333-4333-8333-333333333333',
+              text: 'A reply.',
+              createdAt: '2026-08-29T01:00:00.000Z',
+              updatedAt: '2026-08-29T01:00:00.000Z',
+            },
+          ],
+        }),
+      ],
+    });
+    const addReflectionReply = jest.fn<
+      ReturnType<DiaryActions['addReflectionReply']>,
+      Parameters<DiaryActions['addReflectionReply']>
+    >();
+    addReflectionReply.mockResolvedValue({ success: true, data: updatedEntry });
+    const { getByTestId } = await render(<ActionsHarness addReflectionReply={addReflectionReply} />);
+
+    await fireEvent.press(getByTestId('add-reflection-reply'));
+
+    expect(addReflectionReply).toHaveBeenCalledWith(
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222',
+      'A reply.',
+    );
   });
 
   it('replaces the entry after selecting a memory reaction', async () => {

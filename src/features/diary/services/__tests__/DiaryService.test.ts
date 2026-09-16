@@ -167,6 +167,49 @@ describe('DiaryService', () => {
     expect(photoCleanup.deletedPhotoIds).toEqual([photo.id]);
   });
 
+  it('should add and delete text-only replies on a reflection thread', async () => {
+    await service.saveEntry(mockEntry);
+    const addReflectionResult = await service.addReflection(mockEntry.id, 'I understand this differently now.');
+    expect(addReflectionResult.success).toBe(true);
+    if (!addReflectionResult.success) return;
+    const reflectionId = addReflectionResult.data.reflections[0]?.id;
+    expect(reflectionId).toBeDefined();
+    if (!reflectionId) return;
+
+    const addReplyResult = await service.addReflectionReply(mockEntry.id, reflectionId, '  A smaller follow-up.  ');
+    expect(addReplyResult.success).toBe(true);
+    if (!addReplyResult.success) return;
+    expect(addReplyResult.data.reflections[0]?.replies).toHaveLength(1);
+    expect(addReplyResult.data.reflections[0]?.replies[0]?.text).toBe('A smaller follow-up.');
+
+    const replyId = addReplyResult.data.reflections[0]?.replies[0]?.id;
+    expect(replyId).toBeDefined();
+    if (!replyId) return;
+
+    const deleteReplyResult = await service.deleteReflectionReply(mockEntry.id, reflectionId, replyId);
+    expect(deleteReplyResult.success).toBe(true);
+    if (deleteReplyResult.success) {
+      expect(deleteReplyResult.data.reflections[0]?.replies).toHaveLength(0);
+    }
+  });
+
+  it('rejects empty reflection replies', async () => {
+    await service.saveEntry(mockEntry);
+    const addReflectionResult = await service.addReflection(mockEntry.id, 'I understand this differently now.');
+    expect(addReflectionResult.success).toBe(true);
+    if (!addReflectionResult.success) return;
+    const reflectionId = addReflectionResult.data.reflections[0]?.id;
+    expect(reflectionId).toBeDefined();
+    if (!reflectionId) return;
+
+    const result = await service.addReflectionReply(mockEntry.id, reflectionId, '   ');
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe('VALIDATION_ERROR');
+    }
+  });
+
   it('should toggle memory reactions on an entry', async () => {
     await service.saveEntry(mockEntry);
 

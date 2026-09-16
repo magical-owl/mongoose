@@ -1,7 +1,7 @@
 import { DiaryEntry, DiaryEntrySchema, getEntryManualMoods, getPrimaryManualMood } from './DiaryEntry';
 import { normalizeMemoryReactions } from './MemoryReaction';
 
-export const CURRENT_DIARY_SCHEMA_VERSION = 9;
+export const CURRENT_DIARY_SCHEMA_VERSION = 10;
 
 export interface DiaryStorageEnvelope {
   readonly version: number;
@@ -41,6 +41,7 @@ function parseEntries(items: unknown[]): DiaryEntry[] {
       reflections: result.data.reflections.map((reflection) => ({
         ...reflection,
         memoryReactions: normalizeMemoryReactions(reflection.memoryReactions),
+        replies: reflection.replies,
       })),
     }];
   });

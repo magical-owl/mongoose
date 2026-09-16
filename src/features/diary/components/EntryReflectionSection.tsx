@@ -12,6 +12,7 @@ import { ReflectionComposer } from './ReflectionComposer';
 import { ReflectionPhotoPreview } from './ReflectionPhotoPreview';
 import type { MemoryReaction } from '../domain/MemoryReaction';
 import { ReflectionReactionFooter } from './ReflectionReactionFooter';
+import { ReflectionReplyThread } from './ReflectionReplyThread';
 
 type EntryReflectionSectionVariant = 'feed' | 'timeline';
 
@@ -23,6 +24,8 @@ interface EntryReflectionSectionProps {
   readonly onAddReflection?: (entryId: string, text: string, photo?: DiaryPhoto) => Promise<boolean>;
   readonly onReflectionInputFocus?: (entryId: string) => void;
   readonly onToggleReflectionMemoryReaction?: (entryId: string, reflectionId: string, reaction: MemoryReaction) => Promise<boolean>;
+  readonly onAddReflectionReply?: (entryId: string, reflectionId: string, text: string) => Promise<boolean>;
+  readonly onDeleteReflectionReply?: (entryId: string, reflectionId: string, replyId: string) => void;
 }
 
 export function EntryReflectionSection({
@@ -33,6 +36,8 @@ export function EntryReflectionSection({
   onAddReflection,
   onReflectionInputFocus,
   onToggleReflectionMemoryReaction,
+  onAddReflectionReply,
+  onDeleteReflectionReply,
 }: EntryReflectionSectionProps): React.JSX.Element | null {
   const theme = useTheme();
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -138,6 +143,15 @@ export function EntryReflectionSection({
                     testID={`entry-reflection-reaction-${reflection.id}`}
                   />
                 ) : null}
+                <ReflectionReplyThread
+                  entryId={entryId}
+                  reflectionId={reflection.id}
+                  replies={reflection.replies}
+                  timeFormat={timeFormat}
+                  onAddReply={onAddReflectionReply}
+                  onDeleteReply={onDeleteReflectionReply}
+                  testID={`entry-reflection-replies-${reflection.id}`}
+                />
               </View>
             </View>
           ))}

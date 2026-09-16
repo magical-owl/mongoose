@@ -1,6 +1,6 @@
 const { createStressData, parseArgs } = require('../generate-stress-journal-data');
 
-const CURRENT_DIARY_SCHEMA_VERSION = 7;
+const CURRENT_DIARY_SCHEMA_VERSION = 10;
 const CURRENT_COVER_URIS = new Set([
   'builtin://journal-background/default-journal',
   'builtin://journal-background/meadow-day',
@@ -55,6 +55,34 @@ describe('generate-stress-journal-data', () => {
     expect(data.storage.journals.journals.every((journal) => CURRENT_COVER_URIS.has(journal.coverImageUri))).toBe(true);
     expect(data.storage.diaryEntries.entries.every((entry) => CURRENT_COVER_URIS.has(entry.coverPhoto.uri))).toBe(true);
     expect(data.storage.diaryEntries.entries.every((entry) => entry.viewCount >= 0)).toBe(true);
+    expect(data.storage.diaryEntries.entries.every((entry) => Array.isArray(entry.viewHistory))).toBe(true);
     expect(data.storage.diaryEntries.entries.every((entry) => entry.memoryReactions.length <= 1)).toBe(true);
+    expect(data.storage.diaryEntries.entries.every((entry) =>
+      entry.reflections.every((reflection) => Array.isArray(reflection.memoryReactions) && Array.isArray(reflection.replies)),
+    )).toBe(true);
+  });
+
+  it('does not emit diary password or passcode data', () => {
+    const data = createStressData(parseArgs([
+      '--today',
+      '2026-08-31',
+      '--seed',
+      'security-seed',
+      '--journals',
+      '3',
+      '--days-per-month',
+      '1',
+    ]));
+
+    expect(findSensitiveKeys(data)).toEqual([]);
   });
 });
+
+function findSensitiveKeys(value, path = 'root') {
+  if (!value || typeof value !== 'object') return [];
+  return Object.entries(value).flatMap(([key, child]) => {
+    const nextPath = `${path}.${key}`;
+    const matchesKey = /\b(passcode|password)\b/i.test(key) ? [nextPath] : [];
+    return [...matchesKey, ...findSensitiveKeys(child, nextPath)];
+  });
+}

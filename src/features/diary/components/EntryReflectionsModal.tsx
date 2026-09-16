@@ -13,6 +13,7 @@ import { formatFriendlyTimestamp } from '@/shared/utils/timeFormat';
 import { ReflectionComposer } from './ReflectionComposer';
 import { ReflectionPhotoPreview } from './ReflectionPhotoPreview';
 import { ReflectionReactionFooter } from './ReflectionReactionFooter';
+import { ReflectionReplyThread } from './ReflectionReplyThread';
 
 interface EntryReflectionsModalProps {
   readonly visible: boolean;
@@ -23,6 +24,8 @@ interface EntryReflectionsModalProps {
   readonly onAddReflection: (entryId: string, text: string, photo?: DiaryPhoto) => Promise<boolean>;
   readonly onDeleteReflection: (entryId: string, reflectionId: string) => void;
   readonly onToggleReflectionMemoryReaction?: (entryId: string, reflectionId: string, reaction: MemoryReaction) => Promise<boolean>;
+  readonly onAddReflectionReply?: (entryId: string, reflectionId: string, text: string) => Promise<boolean>;
+  readonly onDeleteReflectionReply?: (entryId: string, reflectionId: string, replyId: string) => void;
 }
 
 export function EntryReflectionsModal({
@@ -34,6 +37,8 @@ export function EntryReflectionsModal({
   onAddReflection,
   onDeleteReflection,
   onToggleReflectionMemoryReaction,
+  onAddReflectionReply,
+  onDeleteReflectionReply,
 }: EntryReflectionsModalProps): React.JSX.Element {
   const theme = useTheme();
   const t = useTranslation();
@@ -112,6 +117,15 @@ export function EntryReflectionsModal({
                         testID={`entry-modal-reflection-reaction-${reflection.id}`}
                       />
                     ) : null}
+                    <ReflectionReplyThread
+                      entryId={entry.id}
+                      reflectionId={reflection.id}
+                      replies={reflection.replies}
+                      timeFormat={timeFormat}
+                      onAddReply={onAddReflectionReply}
+                      onDeleteReply={onDeleteReflectionReply}
+                      testID={`entry-modal-reflection-replies-${reflection.id}`}
+                    />
                   </View>
                 </View>
               ))}

@@ -53,6 +53,8 @@ interface EntryDetailModalsProps {
   readonly onAddReflection: (entryId: string, text: string, photo?: DiaryPhoto) => Promise<boolean>;
   readonly onDeleteReflection: (entryId: string, reflectionId: string) => void;
   readonly onToggleReflectionMemoryReaction: (entryId: string, reflectionId: string, reaction: MemoryReaction) => Promise<boolean>;
+  readonly onAddReflectionReply: (entryId: string, reflectionId: string, text: string) => Promise<boolean>;
+  readonly onDeleteReflectionReply: (entryId: string, reflectionId: string, replyId: string) => void;
   readonly onDismissEntryMetadata: () => void;
   readonly onChangeMoods: (moods: ManualMood[]) => void;
   readonly onChangeJournalIds: (journalIds: string[]) => void;
@@ -96,6 +98,8 @@ export function EntryDetailModals({
   onAddReflection,
   onDeleteReflection,
   onToggleReflectionMemoryReaction,
+  onAddReflectionReply,
+  onDeleteReflectionReply,
   onDismissEntryMetadata,
   onChangeMoods,
   onChangeJournalIds,
@@ -158,6 +162,8 @@ export function EntryDetailModals({
         onAddReflection={onAddReflection}
         onDeleteReflection={onDeleteReflection}
         onToggleReflectionMemoryReaction={onToggleReflectionMemoryReaction}
+        onAddReflectionReply={onAddReflectionReply}
+        onDeleteReflectionReply={onDeleteReflectionReply}
       />
       <EntryMetadataModal
         visible={showEntryMetadata}

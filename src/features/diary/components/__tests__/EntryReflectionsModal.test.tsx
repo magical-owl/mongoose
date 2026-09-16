@@ -169,6 +169,67 @@ describe('EntryReflectionsModal', () => {
     );
   });
 
+  it('adds a reply to a reflection thread in the modal', async () => {
+    const onAddReflectionReply = jest.fn().mockResolvedValue(true);
+    const { getByLabelText, getByTestId } = await renderWithProviders(
+      <EntryReflectionsModal
+        visible
+        entry={entry}
+        profile={profile}
+        timeFormat="24-hour"
+        onDismiss={jest.fn()}
+        onAddReflection={jest.fn().mockResolvedValue(true)}
+        onDeleteReflection={jest.fn()}
+        onAddReflectionReply={onAddReflectionReply}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    await fireEvent.press(getByTestId('entry-modal-reflection-replies-22222222-2222-4222-8222-222222222222-add-button'));
+    await fireEvent.changeText(getByLabelText('Reflection reply text'), 'A modal reply');
+    await act(async () => {
+      await fireEvent.press(getByTestId('entry-modal-reflection-replies-22222222-2222-4222-8222-222222222222-submit'));
+    });
+
+    expect(onAddReflectionReply).toHaveBeenCalledWith(
+      entry.id,
+      '22222222-2222-4222-8222-222222222222',
+      'A modal reply',
+    );
+  });
+
+  it('renders existing reflection replies in the modal', async () => {
+    const { getByText } = await renderWithProviders(
+      <EntryReflectionsModal
+        visible
+        entry={{
+          ...entry,
+          reflections: [
+            {
+              ...entry.reflections[0]!,
+              replies: [
+                {
+                  id: '55555555-5555-4555-8555-555555555555',
+                  text: 'A reply in history.',
+                  createdAt: '2026-08-29T02:14:00.000Z',
+                  updatedAt: '2026-08-29T02:14:00.000Z',
+                },
+              ],
+            },
+          ],
+        }}
+        profile={profile}
+        timeFormat="24-hour"
+        onDismiss={jest.fn()}
+        onAddReflection={jest.fn().mockResolvedValue(true)}
+        onDeleteReflection={jest.fn()}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByText('A reply in history.')).toBeTruthy();
+  });
+
   it('places text-only reflection reactions in a footer in the modal', async () => {
     const { getByTestId } = await renderWithProviders(
       <EntryReflectionsModal

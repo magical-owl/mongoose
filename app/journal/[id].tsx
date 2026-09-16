@@ -72,7 +72,17 @@ export default function JournalEntriesScreen() {
   const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { height: windowHeight } = useWindowDimensions();
-  const { entries, isLoading, refresh, addReflection, deleteReflection, toggleMemoryReaction, toggleReflectionMemoryReaction } = useDiary();
+  const {
+    entries,
+    isLoading,
+    refresh,
+    addReflection,
+    deleteReflection,
+    addReflectionReply,
+    deleteReflectionReply,
+    toggleMemoryReaction,
+    toggleReflectionMemoryReaction,
+  } = useDiary();
   const { journals, refresh: refreshJournals } = useJournals();
   const { profile } = useProfileForm();
   const { isPro } = useSubscription();
@@ -297,6 +307,37 @@ export default function JournalEntriesScreen() {
       return true;
     },
     [toggleReflectionMemoryReaction, t],
+  );
+
+  const handleAddReflectionReply = useCallback(
+    async (entryId: string, reflectionId: string, text: string) => {
+      const result = await addReflectionReply(entryId, reflectionId, text);
+      if (!result.success) {
+        Alert.alert(t("reflectionReplyNotSavedTitle"), result.error.message);
+        return false;
+      }
+      return true;
+    },
+    [addReflectionReply, t],
+  );
+
+  const handleDeleteReflectionReply = useCallback(
+    (entryId: string, reflectionId: string, replyId: string) => {
+      Alert.alert(t("reflectionReplyDeleteTitle"), t("reflectionReplyDeleteMessage"), [
+        { text: t("entryCancel"), style: "cancel" },
+        {
+          text: t("entryDelete"),
+          style: "destructive",
+          onPress: async () => {
+            const result = await deleteReflectionReply(entryId, reflectionId, replyId);
+            if (!result.success) {
+              Alert.alert(t("reflectionReplyNotDeletedTitle"), result.error.message);
+            }
+          },
+        },
+      ]);
+    },
+    [deleteReflectionReply, t],
   );
 
   const scrollReflectionInputIntoView = useCallback((entryId: string) => {
@@ -711,6 +752,8 @@ export default function JournalEntriesScreen() {
             onReflectionSummaryPress={viewMode === "timeline" || viewMode === "feed" ? undefined : handleReflectionSummaryPress}
             onToggleMemoryReaction={handleToggleMemoryReaction}
             onToggleReflectionMemoryReaction={handleToggleReflectionMemoryReaction}
+            onAddReflectionReply={viewMode === "timeline" || viewMode === "feed" ? handleAddReflectionReply : undefined}
+            onDeleteReflectionReply={viewMode === "timeline" || viewMode === "feed" ? handleDeleteReflectionReply : undefined}
             onPressJournalSuggestion={(journal) => {
               router.push({ pathname: "/journal/[id]", params: { id: journal.id, title: journal.title } });
             }}
@@ -768,6 +811,8 @@ export default function JournalEntriesScreen() {
         onAddReflection={handleAddReflection}
         onDeleteReflection={handleDeleteReflection}
         onToggleReflectionMemoryReaction={handleToggleReflectionMemoryReaction}
+        onAddReflectionReply={handleAddReflectionReply}
+        onDeleteReflectionReply={handleDeleteReflectionReply}
       />
     </AppPatternBackground>
   );

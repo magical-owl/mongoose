@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const CURRENT_DIARY_SCHEMA_VERSION = 7;
+const CURRENT_DIARY_SCHEMA_VERSION = 10;
 const JOURNAL_STORAGE_VERSION = 1;
 const DEFAULT_OUTPUT = path.join('generated', 'stress-data', 'journal-entry-stress-data.json');
 
@@ -204,6 +204,7 @@ function createEntry({ date, entryIndex, sequence, journal, random }) {
   const moods = createMoods(random);
   const cover = COVER_IMAGES[randomInt(random, 0, COVER_IMAGES.length - 1)];
   const tagCount = randomInt(random, 1, 3);
+  const viewHistory = createViewHistory(createdAt, random);
   return {
     id: uuidFromParts(dateKey.replaceAll('-', ''), sequence + 1),
     title: entryTitle(date, journal.title, entryIndex),
@@ -211,10 +212,12 @@ function createEntry({ date, entryIndex, sequence, journal, random }) {
     date: dateKey,
     paperBackgroundId: 'vintage-parchment',
     bodyFontFamily: 'system',
+    bodyTextColor: random() > 0.76 ? randomBodyTextColor(random) : undefined,
     stickers: [],
     companion: COMPANIONS[randomInt(random, 0, COMPANIONS.length - 1)],
     isFavorite: random() > 0.82,
-    viewCount: random() > 0.22 ? randomInt(random, 1, 24) : 0,
+    viewCount: viewHistory.length,
+    viewHistory,
     memoryReactions: random() > 0.62 ? [MEMORY_REACTIONS[randomInt(random, 0, MEMORY_REACTIONS.length - 1)]] : [],
     tags: sample(TAGS, tagCount, random),
     createdAt,
@@ -257,7 +260,36 @@ function createReflection(createdAt, random) {
     text: 'Synthetic follow-up reflection for stress testing threaded entry layout.',
     createdAt: updatedAt,
     updatedAt,
+    memoryReactions: random() > 0.58 ? [MEMORY_REACTIONS[randomInt(random, 0, MEMORY_REACTIONS.length - 1)]] : [],
+    replies: random() > 0.58 ? createReflectionReplies(updatedAt, random) : [],
   };
+}
+
+function createReflectionReplies(createdAt, random) {
+  const replyCount = randomInt(random, 1, 2);
+  return Array.from({ length: replyCount }, (_, index) => {
+    const timestamp = new Date(new Date(createdAt).getTime() + (index + 1) * randomInt(random, 20, 90) * 60000).toISOString();
+    return {
+      id: uuidFromParts('44444444', Math.floor(random() * 999999)),
+      text: index === 0
+        ? 'A small reply on that thought.'
+        : 'Another short note in the same reflection thread.',
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+  });
+}
+
+function createViewHistory(createdAt, random) {
+  const viewCount = random() > 0.22 ? randomInt(random, 1, 24) : 0;
+  return Array.from({ length: viewCount }, (_, index) => {
+    const viewedAt = new Date(new Date(createdAt).getTime() + (index + 1) * randomInt(random, 8, 48) * 3600000).toISOString();
+    return { viewedAt };
+  });
+}
+
+function randomBodyTextColor(random) {
+  return ['#FFF7E6', '#2F2A24', '#6B4E3D', '#DCE8C8', '#F3C6C1', '#D7E7FF'][randomInt(random, 0, 5)];
 }
 
 function entryTitle(date, journalTitle, entryIndex) {

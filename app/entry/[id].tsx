@@ -98,7 +98,18 @@ export default function EntryDetailScreen() {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const t = useTranslation();
-  const { entries, saveDiaryEntry, deleteDiaryEntry, addReflection, deleteReflection, toggleMemoryReaction, toggleReflectionMemoryReaction, recordEntryView } = useDiary();
+  const {
+    entries,
+    saveDiaryEntry,
+    deleteDiaryEntry,
+    addReflection,
+    deleteReflection,
+    addReflectionReply,
+    deleteReflectionReply,
+    toggleMemoryReaction,
+    toggleReflectionMemoryReaction,
+    recordEntryView,
+  } = useDiary();
   const { journals } = useJournals();
   const { profile } = useProfileForm();
   const timeFormat = useAppStore((state) => state.timeFormat);
@@ -252,6 +263,8 @@ export default function EntryDetailScreen() {
     handleDelete,
     handleAddReflection,
     handleDeleteReflection,
+    handleAddReflectionReply,
+    handleDeleteReflectionReply,
     handleToggleMemoryReaction,
     handleToggleReflectionMemoryReaction,
   } = useEntryDetailActions({
@@ -271,6 +284,8 @@ export default function EntryDetailScreen() {
     deleteDiaryEntry,
     addReflection,
     deleteReflection,
+    addReflectionReply,
+    deleteReflectionReply,
     toggleMemoryReaction,
     toggleReflectionMemoryReaction,
     t,
@@ -642,6 +657,8 @@ export default function EntryDetailScreen() {
         onDismissReflections={() => setShowReflections(false)}
         onAddReflection={handleAddReflection}
         onDeleteReflection={handleDeleteReflection}
+        onAddReflectionReply={handleAddReflectionReply}
+        onDeleteReflectionReply={handleDeleteReflectionReply}
         onToggleReflectionMemoryReaction={handleToggleReflectionMemoryReaction}
         onDismissEntryMetadata={() => setShowEntryMetadata(false)}
         onChangeMoods={setEditMoods}

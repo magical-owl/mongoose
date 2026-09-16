@@ -8,7 +8,14 @@ import type { useTranslation } from '@/localization/i18n';
 
 type DiaryActions = Pick<
   ReturnType<typeof useDiary>,
-  'saveDiaryEntry' | 'deleteDiaryEntry' | 'addReflection' | 'deleteReflection' | 'toggleMemoryReaction' | 'toggleReflectionMemoryReaction'
+  | 'saveDiaryEntry'
+  | 'deleteDiaryEntry'
+  | 'addReflection'
+  | 'deleteReflection'
+  | 'addReflectionReply'
+  | 'deleteReflectionReply'
+  | 'toggleMemoryReaction'
+  | 'toggleReflectionMemoryReaction'
 >;
 
 interface UseEntryDetailActionsOptions extends DiaryActions {
@@ -44,6 +51,8 @@ export function useEntryDetailActions({
   deleteDiaryEntry,
   addReflection,
   deleteReflection,
+  addReflectionReply,
+  deleteReflectionReply,
   toggleMemoryReaction,
   toggleReflectionMemoryReaction,
   t,
@@ -139,6 +148,37 @@ export function useEntryDetailActions({
     ]);
   }, [deleteReflection, entry, setEntry, t]);
 
+  const handleAddReflectionReply = useCallback(async (entryId: string, reflectionId: string, text: string) => {
+    if (!entry || entry.id !== entryId) return false;
+    const trimmed = text.trim();
+    if (!trimmed) return false;
+
+    const result = await addReflectionReply(entryId, reflectionId, trimmed);
+    if (result.success) {
+      setEntry(result.data);
+      return true;
+    }
+
+    Alert.alert(t('reflectionReplyNotSavedTitle'), result.error.message);
+    return false;
+  }, [addReflectionReply, entry, setEntry, t]);
+
+  const handleDeleteReflectionReply = useCallback((entryId: string, reflectionId: string, replyId: string) => {
+    if (!entry || entry.id !== entryId) return;
+    Alert.alert(t('reflectionReplyDeleteTitle'), t('reflectionReplyDeleteMessage'), [
+      { text: t('entryCancel'), style: 'cancel' },
+      {
+        text: t('entryDelete'),
+        style: 'destructive',
+        onPress: async () => {
+          const result = await deleteReflectionReply(entryId, reflectionId, replyId);
+          if (result.success) setEntry(result.data);
+          else Alert.alert(t('reflectionReplyNotDeletedTitle'), result.error.message);
+        },
+      },
+    ]);
+  }, [deleteReflectionReply, entry, setEntry, t]);
+
   const handleToggleMemoryReaction = useCallback(async (reaction: MemoryReaction) => {
     if (!entry) return;
     const result = await toggleMemoryReaction(entry.id, reaction);
@@ -171,6 +211,8 @@ export function useEntryDetailActions({
     handleDelete,
     handleAddReflection,
     handleDeleteReflection,
+    handleAddReflectionReply,
+    handleDeleteReflectionReply,
     handleToggleMemoryReaction,
     handleToggleReflectionMemoryReaction,
   };

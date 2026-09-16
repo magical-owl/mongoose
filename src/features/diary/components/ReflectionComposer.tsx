@@ -34,6 +34,10 @@ interface ReflectionComposerProps {
   readonly minHeight?: number;
   readonly inputHeight?: number;
   readonly backgroundColor?: string;
+  readonly allowPhoto?: boolean;
+  readonly placeholder?: string;
+  readonly accessibilityLabel?: string;
+  readonly submitAccessibilityLabel?: string;
 }
 
 export function ReflectionComposer({
@@ -53,6 +57,10 @@ export function ReflectionComposer({
   minHeight,
   inputHeight,
   backgroundColor,
+  allowPhoto = true,
+  placeholder,
+  accessibilityLabel,
+  submitAccessibilityLabel,
 }: ReflectionComposerProps): React.JSX.Element {
   const theme = useTheme();
   const t = useTranslation();
@@ -147,24 +155,26 @@ export function ReflectionComposer({
         ]}
         testID={inputBoxTestID}
       >
-        <TouchableOpacity
-          onPress={() => { void handleChoosePhoto(); }}
-          disabled={isPickingPhoto}
-          style={styles.iconButton}
-          accessibilityRole="button"
-          accessibilityLabel={photo ? t('reflectionChangePhotoA11y') : t('reflectionAddPhotoA11y')}
-          testID={attachButtonTestID}
-        >
-          <MaterialCommunityIcons
-            name={photo ? 'image-edit-outline' : 'image-plus'}
-            size={18}
-            color={theme.colors.textSecondary}
-          />
-        </TouchableOpacity>
+        {allowPhoto ? (
+          <TouchableOpacity
+            onPress={() => { void handleChoosePhoto(); }}
+            disabled={isPickingPhoto}
+            style={styles.iconButton}
+            accessibilityRole="button"
+            accessibilityLabel={photo ? t('reflectionChangePhotoA11y') : t('reflectionAddPhotoA11y')}
+            testID={attachButtonTestID}
+          >
+            <MaterialCommunityIcons
+              name={photo ? 'image-edit-outline' : 'image-plus'}
+              size={18}
+              color={theme.colors.textSecondary}
+            />
+          </TouchableOpacity>
+        ) : null}
         <TextInput
           value={text}
           onChangeText={setText}
-          placeholder={t('addReflectionPlaceholder')}
+          placeholder={placeholder ?? t('addReflectionPlaceholder')}
           placeholderTextColor={theme.colors.textSecondary}
           style={[
             styles.input,
@@ -186,7 +196,7 @@ export function ReflectionComposer({
             setIsFocused(false);
             onBlur?.();
           }}
-          accessibilityLabel={t('reflectionTextA11y')}
+          accessibilityLabel={accessibilityLabel ?? t('reflectionTextA11y')}
         />
         {showKeyboardDismissButton && isFocused ? (
           <TouchableOpacity
@@ -203,7 +213,7 @@ export function ReflectionComposer({
           disabled={!isSubmitActive}
           style={[styles.iconButton, { backgroundColor: submitBackgroundColor }]}
           accessibilityRole="button"
-          accessibilityLabel={t('reflectionSaveA11y')}
+          accessibilityLabel={submitAccessibilityLabel ?? t('reflectionSaveA11y')}
           testID={submitButtonTestID}
         >
           <MaterialCommunityIcons name="plus" size={18} color={submitIconColor} />

@@ -23,6 +23,7 @@ const reflections: readonly DiaryReflection[] = [
     createdAt: '2026-08-29T02:12:00.000Z',
     updatedAt: '2026-08-29T02:12:00.000Z',
     memoryReactions: [],
+    replies: [],
     photo: {
       id: '33333333-3333-4333-8333-333333333333',
       uri: 'file:///document/diary-photos/reflection.jpg',
@@ -120,6 +121,59 @@ describe('EntryReflectionSection', () => {
       '22222222-2222-4222-8222-222222222222',
       'cherish',
     );
+  });
+
+  it('adds a reply to a reflection thread', async () => {
+    const onAddReflectionReply = jest.fn().mockResolvedValue(true);
+    const { getByLabelText, getByTestId } = await renderWithProviders(
+      <EntryReflectionSection
+        entryId="11111111-1111-4111-8111-111111111111"
+        reflections={reflections}
+        variant="timeline"
+        onAddReflectionReply={onAddReflectionReply}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    const replyButton = getByTestId('entry-reflection-replies-22222222-2222-4222-8222-222222222222-add-button');
+    expect(StyleSheet.flatten(replyButton.props.style).alignSelf).toBe('flex-end');
+
+    await fireEvent.press(replyButton);
+    await fireEvent.changeText(getByLabelText('Reflection reply text'), 'A threaded note');
+    await act(async () => {
+      await fireEvent.press(getByTestId('entry-reflection-replies-22222222-2222-4222-8222-222222222222-submit'));
+    });
+
+    expect(onAddReflectionReply).toHaveBeenCalledWith(
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222',
+      'A threaded note',
+    );
+  });
+
+  it('renders existing reflection replies', async () => {
+    const { getByText } = await renderWithProviders(
+      <EntryReflectionSection
+        entryId="11111111-1111-4111-8111-111111111111"
+        reflections={[
+          {
+            ...reflections[0]!,
+            replies: [
+              {
+                id: '55555555-5555-4555-8555-555555555555',
+                text: 'A reply below the reflection.',
+                createdAt: '2026-08-29T02:14:00.000Z',
+                updatedAt: '2026-08-29T02:14:00.000Z',
+              },
+            ],
+          },
+        ]}
+        variant="timeline"
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByText('A reply below the reflection.')).toBeTruthy();
   });
 
   it('places text-only reflection reactions in a footer', async () => {

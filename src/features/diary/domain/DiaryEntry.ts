@@ -109,12 +109,21 @@ export const DiaryPhotoSchema = z.object({
 });
 export type DiaryPhoto = z.infer<typeof DiaryPhotoSchema>;
 
+export const DiaryReflectionReplySchema = z.object({
+  id: z.string().uuid(),
+  text: z.string().min(1).max(2000),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+export type DiaryReflectionReply = z.infer<typeof DiaryReflectionReplySchema>;
+
 export const DiaryReflectionSchema = z.object({
   id: z.string().uuid(),
   text: z.string().min(1).max(2000),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   memoryReactions: z.array(MemoryReactionSchema).default([]),
+  replies: z.array(DiaryReflectionReplySchema).default([]),
   photo: DiaryPhotoSchema.optional(),
 });
 export type DiaryReflection = z.infer<typeof DiaryReflectionSchema>;

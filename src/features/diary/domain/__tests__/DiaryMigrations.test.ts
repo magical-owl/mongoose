@@ -60,6 +60,7 @@ describe('Diary migrations', () => {
     ]);
 
     expect(result.entries[0]?.reflections[0]?.memoryReactions).toEqual([]);
+    expect(result.entries[0]?.reflections[0]?.replies).toEqual([]);
     expect(result.entries[0]?.reflections[1]?.memoryReactions).toEqual(['cherish']);
   });
 

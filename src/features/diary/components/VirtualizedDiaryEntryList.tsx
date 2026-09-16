@@ -87,6 +87,8 @@ interface VirtualizedDiaryEntryListProps {
   readonly onReflectionSummaryPress?: (entryId: string) => void;
   readonly onToggleMemoryReaction?: (entryId: string, reaction: MemoryReaction) => Promise<boolean>;
   readonly onToggleReflectionMemoryReaction?: (entryId: string, reflectionId: string, reaction: MemoryReaction) => Promise<boolean>;
+  readonly onAddReflectionReply?: (entryId: string, reflectionId: string, text: string) => Promise<boolean>;
+  readonly onDeleteReflectionReply?: (entryId: string, reflectionId: string, replyId: string) => void;
   readonly onPressJournalSuggestion: (journal: Journal) => void;
   readonly onPressSuggestionsTitle: () => void;
   readonly searchQuery: string;
@@ -194,6 +196,8 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
       onReflectionSummaryPress,
       onToggleMemoryReaction,
       onToggleReflectionMemoryReaction,
+      onAddReflectionReply,
+      onDeleteReflectionReply,
       onPressJournalSuggestion,
       onPressSuggestionsTitle,
       searchQuery,
@@ -324,6 +328,8 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
             onReflectionSummaryPress={mode === 'timeline' || mode === 'feed' ? undefined : onReflectionSummaryPress}
             onToggleMemoryReaction={onToggleMemoryReaction}
             onToggleReflectionMemoryReaction={onToggleReflectionMemoryReaction}
+            onAddReflectionReply={mode === 'timeline' || mode === 'feed' ? onAddReflectionReply : undefined}
+            onDeleteReflectionReply={mode === 'timeline' || mode === 'feed' ? onDeleteReflectionReply : undefined}
           />
         </View>
       );
@@ -339,6 +345,8 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
       onReflectionSummaryPress,
       onToggleMemoryReaction,
       onToggleReflectionMemoryReaction,
+      onAddReflectionReply,
+      onDeleteReflectionReply,
       onToggleDate,
       onToggleMonth,
       onToggleYear,

@@ -148,6 +148,7 @@ export class DiaryService {
       createdAt: now,
       updatedAt: now,
       memoryReactions: [],
+      replies: [],
       ...(photo ? { photo } : {}),
     };
     const updated: DiaryEntry = {
@@ -189,6 +190,102 @@ export class DiaryService {
       ...entryResult.data,
       reflections: nextReflections,
       updatedAt: new Date().toISOString(),
+    };
+    return await this.repo.save(updated);
+  }
+
+  public async addReflectionReply(entryId: string, reflectionId: string, text: string): Promise<Result<DiaryEntry>> {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return failure({
+        code: 'VALIDATION_ERROR',
+        message: 'Reply cannot be empty',
+      });
+    }
+
+    const entryResult = await this.repo.getById(entryId);
+    if (!entryResult.success) return entryResult;
+    if (!entryResult.data) {
+      return failure({
+        code: 'NOT_FOUND',
+        message: 'Diary entry not found',
+      });
+    }
+
+    let didUpdateReflection = false;
+    const now = new Date().toISOString();
+    const reflections = entryResult.data.reflections.map((reflection) => {
+      if (reflection.id !== reflectionId) return reflection;
+      didUpdateReflection = true;
+      return {
+        ...reflection,
+        replies: [
+          ...reflection.replies,
+          {
+            id: generateUUID(),
+            text: trimmed,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+        updatedAt: now,
+      };
+    });
+
+    if (!didUpdateReflection) {
+      return failure({
+        code: 'NOT_FOUND',
+        message: 'Reflection not found',
+      });
+    }
+
+    const updated: DiaryEntry = {
+      ...entryResult.data,
+      reflections,
+      updatedAt: now,
+    };
+    return await this.repo.save(updated);
+  }
+
+  public async deleteReflectionReply(
+    entryId: string,
+    reflectionId: string,
+    replyId: string,
+  ): Promise<Result<DiaryEntry>> {
+    const entryResult = await this.repo.getById(entryId);
+    if (!entryResult.success) return entryResult;
+    if (!entryResult.data) {
+      return failure({
+        code: 'NOT_FOUND',
+        message: 'Diary entry not found',
+      });
+    }
+
+    let didFindReflection = false;
+    let didDeleteReply = false;
+    const now = new Date().toISOString();
+    const reflections = entryResult.data.reflections.map((reflection) => {
+      if (reflection.id !== reflectionId) return reflection;
+      didFindReflection = true;
+      const nextReplies = reflection.replies.filter((reply) => reply.id !== replyId);
+      didDeleteReply = nextReplies.length !== reflection.replies.length;
+      return didDeleteReply
+        ? { ...reflection, replies: nextReplies, updatedAt: now }
+        : reflection;
+    });
+
+    if (!didFindReflection) {
+      return failure({
+        code: 'NOT_FOUND',
+        message: 'Reflection not found',
+      });
+    }
+    if (!didDeleteReply) return success(entryResult.data);
+
+    const updated: DiaryEntry = {
+      ...entryResult.data,
+      reflections,
+      updatedAt: now,
     };
     return await this.repo.save(updated);
   }
