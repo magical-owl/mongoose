@@ -43,6 +43,14 @@ describe('EntryViewBodyContent', () => {
     expect(getByText('A quiet morning')).toBeTruthy();
     expect(getByText('Yesterday at 08:33')).toBeTruthy();
     expect(getByTestId('mock-diary-entry-body-view')).toBeTruthy();
+    expect(StyleSheet.flatten(getByText('A quiet morning').props.style)).toEqual(
+      expect.objectContaining({
+        fontSize: 30,
+        fontStyle: 'italic',
+        fontWeight: '600',
+        lineHeight: 40,
+      }),
+    );
   });
 
   it('hides the no-cover header when a cover photo is present', async () => {

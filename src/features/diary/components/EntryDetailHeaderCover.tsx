@@ -278,9 +278,10 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   coverTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    lineHeight: 34,
+    fontSize: 30,
+    fontStyle: 'italic',
+    fontWeight: '600',
+    lineHeight: 40,
     marginBottom: 8,
   },
   coverViewCountBadge: {

@@ -695,6 +695,7 @@ export default function EntryDetailScreen() {
         selectedPresetId={diaryStylePresetId}
         onSelect={handleSelectStylePreset}
         onDismiss={() => setShowStylePresetPicker(false)}
+        onRequestPremium={() => setShowPremiumModal(true)}
       />
       {showViewHistory ? (
         <EntryViewHistoryModal

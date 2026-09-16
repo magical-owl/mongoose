@@ -60,7 +60,6 @@ export function DiaryPaperBackgroundPickerModal({
                   return;
                 }
                 onSelect(background.id);
-                onDismiss();
               }}
               style={[
                 styles.option,

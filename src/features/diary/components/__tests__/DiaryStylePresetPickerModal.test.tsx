@@ -1,7 +1,11 @@
-import { fireEvent } from '@testing-library/react-native';
+import { act, fireEvent } from '@testing-library/react-native';
 import type React from 'react';
 import { DiaryStylePresetPickerModal } from '@/features/diary/components/DiaryStylePresetPickerModal';
 import { renderWithProviders } from '@tests/helpers';
+
+jest.mock('@/features/subscription/hooks/useSubscription', () => ({
+  useSubscription: () => ({ isPro: false }),
+}));
 
 jest.mock('@shared/components/Modal', () => {
   const { View } = jest.requireActual<typeof import('react-native')>('react-native');
@@ -20,7 +24,7 @@ jest.mock('@shared/components/Modal', () => {
 });
 
 describe('DiaryStylePresetPickerModal', () => {
-  it('selects a style preset and dismisses the modal', async () => {
+  it('selects a style preset without dismissing the modal', async () => {
     const onSelect = jest.fn();
     const onDismiss = jest.fn();
     const { getByTestId } = await renderWithProviders(
@@ -29,6 +33,7 @@ describe('DiaryStylePresetPickerModal', () => {
         selectedPresetId="classic"
         onSelect={onSelect}
         onDismiss={onDismiss}
+        onRequestPremium={jest.fn()}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
@@ -36,7 +41,7 @@ describe('DiaryStylePresetPickerModal', () => {
     await fireEvent.press(getByTestId('entry-style-preset-kraft'));
 
     expect(onSelect).toHaveBeenCalledWith('kraft');
-    expect(onDismiss).toHaveBeenCalledTimes(1);
+    expect(onDismiss).not.toHaveBeenCalled();
   });
 
   it('falls back to the default selected preset for unknown persisted values', async () => {
@@ -46,10 +51,38 @@ describe('DiaryStylePresetPickerModal', () => {
         selectedPresetId="missing"
         onSelect={jest.fn()}
         onDismiss={jest.fn()}
+        onRequestPremium={jest.fn()}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    expect(getByTestId('entry-style-preset-classic')).toHaveProp('accessibilityState', { selected: true });
+    expect(getByTestId('entry-style-preset-classic')).toHaveProp('accessibilityState', expect.objectContaining({ selected: true }));
+  });
+
+  it('requests premium instead of selecting locked premium presets', async () => {
+    jest.useFakeTimers();
+    const onSelect = jest.fn();
+    const onDismiss = jest.fn();
+    const onRequestPremium = jest.fn();
+    const { getByTestId } = await renderWithProviders(
+      <DiaryStylePresetPickerModal
+        visible
+        selectedPresetId="classic"
+        onSelect={onSelect}
+        onDismiss={onDismiss}
+        onRequestPremium={onRequestPremium}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    await fireEvent.press(getByTestId('entry-style-preset-pressed-petal'));
+    act(() => {
+      jest.advanceTimersByTime(250);
+    });
+
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+    expect(onRequestPremium).toHaveBeenCalledTimes(1);
+    jest.useRealTimers();
   });
 });

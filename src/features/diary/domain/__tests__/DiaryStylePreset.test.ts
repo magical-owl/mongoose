@@ -19,12 +19,16 @@ describe('DiaryStylePreset', () => {
     expect(isDiaryStylePresetId('unknown')).toBe(false);
   });
 
-  it('keeps presets on free diary paper backgrounds only', () => {
-    expect(DIARY_STYLE_PRESETS.map((preset) => preset.paperBackgroundId)).toEqual([
+  it('keeps the base presets on free diary paper backgrounds', () => {
+    expect(DIARY_STYLE_PRESETS.filter((preset) => preset.accessTier === 'free').map((preset) => preset.paperBackgroundId)).toEqual([
       'vintage-parchment',
       'soft-lined-paper',
       'recycled-kraft-paper',
       'blank',
     ]);
+  });
+
+  it('includes five premium diary style presets', () => {
+    expect(DIARY_STYLE_PRESETS.filter((preset) => preset.accessTier === 'premium')).toHaveLength(5);
   });
 });

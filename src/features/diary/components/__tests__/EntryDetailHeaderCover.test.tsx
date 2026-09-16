@@ -1,4 +1,4 @@
-import { Animated } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
 import { fireEvent } from '@testing-library/react-native';
 import { EntryDetailHeaderCover } from '@/features/diary/components/EntryDetailHeaderCover';
 import type { DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
@@ -87,6 +87,14 @@ describe('EntryDetailHeaderCover', () => {
     expect(getByText('A quiet morning')).toBeTruthy();
     expect(getByText('Yesterday at 08:33')).toBeTruthy();
     expect(getByTestId('entry-view-count')).toBeTruthy();
+    expect(StyleSheet.flatten(getByText('A quiet morning').props.style)).toEqual(
+      expect.objectContaining({
+        fontSize: 30,
+        fontStyle: 'italic',
+        fontWeight: '600',
+        lineHeight: 40,
+      }),
+    );
 
     await fireEvent.press(getByLabelText('Viewed 7 times.'));
     expect(onViewCountPress).toHaveBeenCalled();

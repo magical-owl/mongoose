@@ -28,7 +28,7 @@ describe('DiaryPaperBackgroundPickerModal', () => {
     jest.useRealTimers();
   });
 
-  it('selects a diary paper background and dismisses the modal', async () => {
+  it('selects a diary paper background without dismissing the modal', async () => {
     const onSelect = jest.fn();
     const onDismiss = jest.fn();
     const { getByTestId } = await renderWithProviders(
@@ -45,10 +45,10 @@ describe('DiaryPaperBackgroundPickerModal', () => {
     await fireEvent.press(getByTestId('entry-paper-background-soft-lined-paper'));
 
     expect(onSelect).toHaveBeenCalledWith('soft-lined-paper');
-    expect(onDismiss).toHaveBeenCalledTimes(1);
+    expect(onDismiss).not.toHaveBeenCalled();
   });
 
-  it('allows selecting a blank diary background', async () => {
+  it('allows selecting a blank diary background without dismissing the modal', async () => {
     const onSelect = jest.fn();
     const onDismiss = jest.fn();
     const { getByTestId } = await renderWithProviders(
@@ -65,7 +65,7 @@ describe('DiaryPaperBackgroundPickerModal', () => {
     await fireEvent.press(getByTestId('entry-paper-background-blank'));
 
     expect(onSelect).toHaveBeenCalledWith('blank');
-    expect(onDismiss).toHaveBeenCalledTimes(1);
+    expect(onDismiss).not.toHaveBeenCalled();
   });
 
   it('requests premium instead of selecting locked premium paper', async () => {

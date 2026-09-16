@@ -929,6 +929,11 @@ export default function CreateEntryScreen() {
         selectedPresetId={diaryStylePresetId}
         onSelect={handleSelectStylePreset}
         onDismiss={() => setShowStylePresetPicker(false)}
+        onRequestPremium={() => {
+          if (releaseFeatures.monetization) {
+            setShowPremiumModal(true);
+          }
+        }}
       />
       <DiaryPaperBackgroundPickerModal
         visible={showPaperBackgroundPicker}

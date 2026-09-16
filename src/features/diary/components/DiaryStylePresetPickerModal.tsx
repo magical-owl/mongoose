@@ -12,12 +12,15 @@ import {
 } from '@/features/diary/domain/DiaryStylePreset';
 import { useTranslation } from '@/localization/i18n';
 import { resolveAppFontFamily } from '@/theme/fonts';
+import { useSubscription } from '@/features/subscription/hooks/useSubscription';
+import { canUsePremiumFeature } from '@/features/subscription/services/PremiumAccessService';
 
 interface DiaryStylePresetPickerModalProps {
   readonly visible: boolean;
   readonly selectedPresetId: string;
   readonly onSelect: (presetId: DiaryStylePresetId) => void;
   readonly onDismiss: () => void;
+  readonly onRequestPremium: () => void;
 }
 
 function getPresetLabelKey(id: DiaryStylePresetId) {
@@ -28,6 +31,16 @@ function getPresetLabelKey(id: DiaryStylePresetId) {
       return 'entryStylePresetKraft';
     case 'minimal':
       return 'entryStylePresetMinimal';
+    case 'pressed-petal':
+      return 'entryStylePresetPressedPetal';
+    case 'taped-note':
+      return 'entryStylePresetTapedNote';
+    case 'rose-letter':
+      return 'entryStylePresetRoseLetter';
+    case 'blue-study':
+      return 'entryStylePresetBlueStudy';
+    case 'cream-letter':
+      return 'entryStylePresetCreamLetter';
     case 'classic':
     default:
       return 'entryStylePresetClassic';
@@ -42,6 +55,16 @@ function getPresetDescriptionKey(id: DiaryStylePresetId) {
       return 'entryStylePresetKraftDescription';
     case 'minimal':
       return 'entryStylePresetMinimalDescription';
+    case 'pressed-petal':
+      return 'entryStylePresetPressedPetalDescription';
+    case 'taped-note':
+      return 'entryStylePresetTapedNoteDescription';
+    case 'rose-letter':
+      return 'entryStylePresetRoseLetterDescription';
+    case 'blue-study':
+      return 'entryStylePresetBlueStudyDescription';
+    case 'cream-letter':
+      return 'entryStylePresetCreamLetterDescription';
     case 'classic':
     default:
       return 'entryStylePresetClassicDescription';
@@ -53,8 +76,10 @@ export function DiaryStylePresetPickerModal({
   selectedPresetId,
   onSelect,
   onDismiss,
+  onRequestPremium,
 }: DiaryStylePresetPickerModalProps): React.JSX.Element {
   const t = useTranslation();
+  const { isPro } = useSubscription();
   const selectedPreset = getDiaryStylePreset(selectedPresetId);
 
   return (
@@ -72,16 +97,23 @@ export function DiaryStylePresetPickerModal({
       >
         {DIARY_STYLE_PRESETS.map((preset) => {
           const selected = selectedPreset.id === preset.id;
+          const locked = preset.accessTier === 'premium'
+            && !canUsePremiumFeature('premium-diary-style-presets', { isPro });
           return (
             <StylePresetCard
               key={preset.id}
               preset={preset}
               selected={selected}
+              locked={locked}
               label={t(getPresetLabelKey(preset.id))}
               description={t(getPresetDescriptionKey(preset.id))}
               onPress={() => {
+                if (locked) {
+                  onDismiss();
+                  setTimeout(onRequestPremium, 250);
+                  return;
+                }
                 onSelect(preset.id);
-                onDismiss();
               }}
             />
           );
@@ -94,6 +126,7 @@ export function DiaryStylePresetPickerModal({
 interface StylePresetCardProps {
   readonly preset: DiaryStylePreset;
   readonly selected: boolean;
+  readonly locked: boolean;
   readonly label: string;
   readonly description: string;
   readonly onPress: () => void;
@@ -102,6 +135,7 @@ interface StylePresetCardProps {
 function StylePresetCard({
   preset,
   selected,
+  locked,
   label,
   description,
   onPress,
@@ -118,10 +152,11 @@ function StylePresetCard({
           borderColor: selected ? theme.colors.tint : theme.colors.border,
           backgroundColor: theme.colors.surface,
         },
+        locked && styles.lockedOption,
       ]}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
-      accessibilityLabel={`${label}. ${description}`}
+      accessibilityLabel={`${locked ? 'Locked. ' : ''}${label}. ${description}`}
       testID={`entry-style-preset-${preset.id}`}
     >
       <DiaryPaperCanvas
@@ -148,6 +183,11 @@ function StylePresetCard({
         {selected ? (
           <View style={[styles.selectedBadge, { backgroundColor: theme.colors.tint }]}>
             <MaterialCommunityIcons name="check" size={16} color={theme.colors.background} />
+          </View>
+        ) : null}
+        {locked ? (
+          <View style={[styles.lockBadge, { backgroundColor: theme.colors.background }]}>
+            <MaterialCommunityIcons name="lock" size={13} color={theme.colors.tint} />
           </View>
         ) : null}
       </DiaryPaperCanvas>
@@ -207,6 +247,19 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  lockBadge: {
+    position: 'absolute',
+    left: 8,
+    top: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockedOption: {
+    opacity: 0.76,
   },
   label: {
     paddingHorizontal: 10,
