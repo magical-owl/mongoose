@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Modal } from '@shared/components/Modal';
 import { Text } from '@shared/components/Text';
+import { Icon } from '@shared/components/Icon';
 import { ProfileAvatar } from '@/features/profile/components/ProfileAvatar';
 import type { Profile } from '@/features/profile/domain/Profile';
 import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
@@ -88,10 +89,12 @@ export function EntryReflectionsModal({
                       <View style={styles.reflectionActions}>
                         <TouchableOpacity
                           onPress={() => onDeleteReflection(entry.id, reflection.id)}
+                          style={[styles.deleteIconButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.card }]}
                           accessibilityRole="button"
                           accessibilityLabel={t('reflectionDeleteA11y')}
+                          hitSlop={8}
                         >
-                          <Text preset="caption" color="textSecondary">{t('entryDelete')}</Text>
+                          <Icon name="close" size={14} color="textSecondary" />
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -172,6 +175,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  deleteIconButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   reflectionText: { lineHeight: 20, marginTop: 2 },
   reflectionPhoto: {

@@ -13,6 +13,7 @@ import type { IJournalRepository } from '@/features/journal/repositories/IJourna
 import { clearCachedJournals } from '@/features/journal/services/JournalCache';
 import type { ArchitectureError, Result } from '@/shared/types/architecture';
 import { failure, success } from '@/shared/utils/result';
+import bundledStressData from '../../generated/stress-data/journal-entry-stress-data.json';
 
 interface StressDataImportPayload {
   readonly entries: readonly DiaryEntry[];
@@ -64,7 +65,29 @@ export class DevStressDataImportService {
       });
     }
 
-    const payloadResult = this.parsePayload(jsonText);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch (error) {
+      return failure(this.toError('STRESS_DATA_INVALID', 'Selected file is not valid stress data.', error));
+    }
+
+    return this.importFromParsedPayload(parsed);
+  }
+
+  public async importBundledStressData(): Promise<Result<StressDataImportSummary>> {
+    if (!this.appConfig.isDev) {
+      return failure({
+        code: 'DEV_ONLY',
+        message: 'Stress data import is only available in development builds.',
+      });
+    }
+
+    return this.importFromParsedPayload(bundledStressData);
+  }
+
+  private async importFromParsedPayload(parsed: unknown): Promise<Result<StressDataImportSummary>> {
+    const payloadResult = this.parsePayload(parsed);
     if (!payloadResult.success) return payloadResult;
 
     const clearEntriesResult = await this.diaryRepo.clearAll();
@@ -90,9 +113,8 @@ export class DevStressDataImportService {
     });
   }
 
-  private parsePayload(jsonText: string): Result<StressDataImportPayload> {
+  private parsePayload(parsed: unknown): Result<StressDataImportPayload> {
     try {
-      const parsed: unknown = JSON.parse(jsonText);
       const record = z.object({
         storage: z.object({
           diaryEntries: z.unknown(),

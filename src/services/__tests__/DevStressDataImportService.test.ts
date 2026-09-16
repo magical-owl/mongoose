@@ -135,6 +135,24 @@ describe('DevStressDataImportService', () => {
     expect(journalRepo.journals).toEqual([journal]);
   });
 
+  it('imports the bundled generated stress data without using the document picker', async () => {
+    const diaryRepo = new MemoryDiaryRepository();
+    const journalRepo = new MemoryJournalRepository();
+    const service = new DevStressDataImportService(diaryRepo, journalRepo, { isDev: true });
+
+    const result = await service.importBundledStressData();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.entryCount).toBeGreaterThan(1000);
+      expect(result.data.journalCount).toBe(12);
+    }
+    expect(diaryRepo.clearCalls).toBe(1);
+    expect(journalRepo.clearCalls).toBe(1);
+    expect(diaryRepo.entries.length).toBeGreaterThan(1000);
+    expect(journalRepo.journals).toHaveLength(12);
+  });
+
   it('blocks stress data imports outside development builds', async () => {
     const service = new DevStressDataImportService(new MemoryDiaryRepository(), new MemoryJournalRepository(), { isDev: false });
 

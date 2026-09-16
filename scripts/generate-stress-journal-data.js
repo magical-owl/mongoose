@@ -11,7 +11,7 @@ const MOODS = ['excited', 'happy', 'grateful', 'calm', 'neutral', 'tired', 'anxi
 const WEATHER = ['sunny', 'calm', 'neutral', 'cloudy', 'stormy'];
 const COMPANIONS = ['cat', 'dog', 'alien', 'girl', 'man'];
 const WRITING_MODES = ['free-write', 'one-line', 'five-minute', 'gratitude', 'travel', 'dream', 'evening-review'];
-const MEMORY_REACTIONS = ['cherish', 'treasure', 'smile', 'heavy', 'tender', 'stormy', 'wonder'];
+const MEMORY_REACTIONS = ['cherish', 'treasure', 'smile', 'heavy', 'tender', 'stormy'];
 const COVER_IMAGES = [
   { uri: 'builtin://journal-background/default-journal', width: 1672, height: 941 },
   { uri: 'builtin://journal-background/meadow-day', width: 1672, height: 941 },

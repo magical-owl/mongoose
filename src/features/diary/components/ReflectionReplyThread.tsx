@@ -4,6 +4,7 @@ import { useTheme } from '@/providers/ThemeProvider';
 import { useTranslation } from '@/localization/i18n';
 import { formatFriendlyTimestamp } from '@/shared/utils/timeFormat';
 import { Text } from '@shared/components/Text';
+import { Icon } from '@shared/components/Icon';
 import type { TimeFormat } from '@/stores/useAppStore';
 import type { DiaryReflectionReply } from '@/features/diary/domain/DiaryEntry';
 import { ReflectionComposer } from './ReflectionComposer';
@@ -62,10 +63,12 @@ export function ReflectionReplyThread({
                 {onDeleteReply ? (
                   <TouchableOpacity
                     onPress={() => onDeleteReply(entryId, reflectionId, reply.id)}
+                    style={[styles.deleteIconButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
                     accessibilityRole="button"
                     accessibilityLabel={t('reflectionReplyDeleteA11y')}
+                    hitSlop={8}
                   >
-                    <Text preset="caption" color="textSecondary">{t('entryDelete')}</Text>
+                    <Icon name="close" size={13} color="textSecondary" />
                   </TouchableOpacity>
                 ) : null}
               </View>
@@ -138,6 +141,14 @@ const styles = StyleSheet.create({
   replyText: {
     lineHeight: 19,
     marginTop: 2,
+  },
+  deleteIconButton: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   replyButton: {
     alignSelf: 'flex-end',

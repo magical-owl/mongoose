@@ -6,7 +6,7 @@ import {
 
 describe('MemoryReaction', () => {
   it('normalizes reactions to a single selected reaction', () => {
-    expect(normalizeMemoryReactions(['cherish', 'treasure', 'wonder', 'cherish'])).toEqual([
+    expect(normalizeMemoryReactions(['cherish', 'treasure', 'stormy', 'cherish'])).toEqual([
       'cherish',
     ]);
   });

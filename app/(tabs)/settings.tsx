@@ -435,6 +435,32 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const handleImportBundledStressData = () => {
+    Alert.alert(t('settingsDevStressImportPromptTitle'), t('settingsDevStressImportBundledPromptMessage'), [
+      { text: t('entryCancel'), style: 'cancel' },
+      {
+        text: t('settingsDevStressImportAction'),
+        style: 'destructive',
+        onPress: async () => {
+          const result = await devStressDataImportService.importBundledStressData();
+          if (!result.success) {
+            Alert.alert(t('entryErrorTitle'), result.error.message);
+            return;
+          }
+          await refresh();
+          await refreshJournals();
+          setShowDeveloperModal(false);
+          Alert.alert(
+            t('settingsDevStressImportDoneTitle'),
+            t('settingsDevStressImportDoneMessage')
+              .replace('{entries}', String(result.data.entryCount))
+              .replace('{journals}', String(result.data.journalCount)),
+          );
+        },
+      },
+    ]);
+  };
+
   const handleOpenProfileModal = () => {
     setShowProfileModal(true);
   };
@@ -1256,6 +1282,18 @@ export default function SettingsScreen() {
               <View style={{ flex: 1 }}>
                 <Text preset="label" color="text">{t('settingsDevStressImportTitle')}</Text>
                 <Text preset="caption" color="textSecondary">{t('settingsDevStressImportSubtitle')}</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalRowBtn, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+              onPress={handleImportBundledStressData}
+              accessibilityRole="button"
+              accessibilityLabel={t('settingsDevStressImportBundledTitle')}
+            >
+              <Icon name="albums-outline" size={24} color="textSecondary" style={{ marginRight: 12 }} />
+              <View style={{ flex: 1 }}>
+                <Text preset="label" color="text">{t('settingsDevStressImportBundledTitle')}</Text>
+                <Text preset="caption" color="textSecondary">{t('settingsDevStressImportBundledSubtitle')}</Text>
               </View>
             </TouchableOpacity>
           </View>

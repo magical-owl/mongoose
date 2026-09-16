@@ -15,7 +15,6 @@ const reactionImages: Readonly<Record<MemoryReaction, ImageSourcePropType>> = {
   heavy: require('../../../../assets/reactions/heavy.png') as ImageSourcePropType,
   tender: require('../../../../assets/reactions/tender.png') as ImageSourcePropType,
   stormy: require('../../../../assets/reactions/stormy.png') as ImageSourcePropType,
-  wonder: require('../../../../assets/reactions/wonder.png') as ImageSourcePropType,
 };
 
 export function MemoryReactionIcon({

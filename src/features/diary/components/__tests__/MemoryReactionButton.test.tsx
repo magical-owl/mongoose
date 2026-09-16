@@ -94,7 +94,6 @@ describe('MemoryReactionButton', () => {
     expect(getByTestId('memory-reaction-heavy')).toBeTruthy();
     expect(getByTestId('memory-reaction-tender')).toBeTruthy();
     expect(getByTestId('memory-reaction-stormy')).toBeTruthy();
-    expect(getByTestId('memory-reaction-wonder')).toBeTruthy();
     expect(getByTestId('memory-reaction-cherish-icon')).toBeTruthy();
     expect(getByTestId('memory-reaction-treasure-icon')).toBeTruthy();
     expect(getByTestId('memory-reaction-stormy-icon')).toBeTruthy();

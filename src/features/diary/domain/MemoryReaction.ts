@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const MemoryReactionSchema = z.enum(['cherish', 'treasure', 'smile', 'heavy', 'tender', 'stormy', 'wonder']);
+export const MemoryReactionSchema = z.enum(['cherish', 'treasure', 'smile', 'heavy', 'tender', 'stormy']);
 export type MemoryReaction = z.infer<typeof MemoryReactionSchema>;
 
 export const MEMORY_REACTION_OPTIONS: readonly MemoryReaction[] = [
@@ -10,7 +10,6 @@ export const MEMORY_REACTION_OPTIONS: readonly MemoryReaction[] = [
   'heavy',
   'tender',
   'stormy',
-  'wonder',
 ];
 
 interface MemoryReactionStatsSource {
