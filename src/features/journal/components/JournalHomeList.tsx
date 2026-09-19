@@ -10,7 +10,7 @@ import { useTranslation } from '@/localization/i18n';
 import type { JournalColumnCount } from '@/stores/useAppStore';
 import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
-import { getJournalCoverImageSource } from '../domain/JournalBackgrounds';
+import { getJournalCoverRenderableSource } from '../services/JournalCoverImageService';
 
 const JOURNAL_GRID_GAP = 12;
 const JOURNAL_COVER_ASPECT_RATIO = 0.96;
@@ -190,7 +190,7 @@ export function JournalHomeList({
   ), [onCreateJournal, t, theme.colors.border, theme.colors.tint, totalItemCount, translucentSurfaceColor]);
 
   const renderItem = useCallback<ListRenderItem<JournalHomeItem>>(({ item: journal }) => {
-    const journalCoverSource = getJournalCoverImageSource(journal.coverImageUri);
+    const journalCoverSource = getJournalCoverRenderableSource(journal.coverImageUri);
 
     return (
       <TouchableOpacity

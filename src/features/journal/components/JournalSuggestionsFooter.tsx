@@ -4,8 +4,8 @@ import { Text } from '@shared/components/Text';
 import { useTheme } from '@providers/ThemeProvider';
 import {
   DEFAULT_JOURNAL_BACKGROUND_URI,
-  getJournalCoverImageSource,
 } from '@/features/journal/domain/JournalBackgrounds';
+import { getJournalCoverRenderableSource } from '@/features/journal/services/JournalCoverImageService';
 import type { Journal } from '@/features/journal/domain/Journal';
 import { type TranslationKey, useTranslation } from '@/localization/i18n';
 import { getTranslucentSurfaceColor } from '@/theme/surfaces';
@@ -61,7 +61,7 @@ export function JournalSuggestionsFooter({
         accessibilityLabel={t('journalSuggestionsA11y')}
       >
         {suggestedJournals.map((journal) => {
-          const coverSource = getJournalCoverImageSource(journal.coverImageUri ?? DEFAULT_JOURNAL_BACKGROUND_URI);
+          const coverSource = getJournalCoverRenderableSource(journal.coverImageUri ?? DEFAULT_JOURNAL_BACKGROUND_URI);
           const count = entryCountsByJournalId.get(journal.id) ?? 0;
 
           return (

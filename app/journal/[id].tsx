@@ -21,8 +21,8 @@ import { useProfileForm } from "@/features/profile/hooks/useProfileForm";
 import { resolveImportedProfilePhotoUri } from "@/features/profile/services/ProfilePhotoService";
 import {
   DEFAULT_JOURNAL_BACKGROUND_URI,
-  getJournalCoverImageSource,
 } from "@/features/journal/domain/JournalBackgrounds";
+import { getJournalCoverRenderableSource } from "@/features/journal/services/JournalCoverImageService";
 import { isDiaryEntryVisible } from "@/features/diary/services/DiaryEntryVisibility";
 import { filterVisibleDiaryEntries } from "@/features/diary/services/DiaryEntryListFilter";
 import { getDiaryEntryFilterOptions, sortDiaryEntriesByDateDesc } from "@/features/diary/services/DiaryEntryListQuery";
@@ -174,7 +174,7 @@ export default function JournalEntriesScreen() {
       ? DEFAULT_JOURNAL_BACKGROUND_URI
       : undefined
   );
-  const journalCoverImageSource = getJournalCoverImageSource(journalCoverImageUri);
+  const journalCoverImageSource = getJournalCoverRenderableSource(journalCoverImageUri);
   const drawerProfile = useMemo(
     () => ({
       displayName: profile?.displayName.trim() || t("profileFallbackName"),

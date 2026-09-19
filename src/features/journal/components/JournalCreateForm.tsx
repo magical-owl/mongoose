@@ -9,7 +9,8 @@ import { useTheme } from '@/providers/ThemeProvider';
 import { useTranslation } from '@/localization/i18n';
 import { chooseDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
-import { BUILTIN_JOURNAL_BACKGROUNDS, getJournalCoverImageSource } from '@/features/journal/domain/JournalBackgrounds';
+import { BUILTIN_JOURNAL_BACKGROUNDS } from '@/features/journal/domain/JournalBackgrounds';
+import { getJournalCoverRenderableSource } from '@/features/journal/services/JournalCoverImageService';
 import type { CreateJournalInput } from '@/features/journal/services/JournalService';
 import { useSubscription } from '@/features/subscription/hooks/useSubscription';
 import { canUsePremiumFeature } from '@/features/subscription/services/PremiumAccessService';
@@ -57,7 +58,7 @@ export function JournalCreateForm({
         }
       : null,
   );
-  const selectedCoverSource = getJournalCoverImageSource(cover?.coverImageUri);
+  const selectedCoverSource = getJournalCoverRenderableSource(cover?.coverImageUri);
 
   const chooseGalleryCover = () => {
     void (async () => {
