@@ -125,11 +125,13 @@ describe('EntryReflectionSection', () => {
 
   it('adds a reply to a reflection thread', async () => {
     const onAddReflectionReply = jest.fn().mockResolvedValue(true);
+    const onReflectionInputFocus = jest.fn();
     const { getByLabelText, getByTestId } = await renderWithProviders(
       <EntryReflectionSection
         entryId="11111111-1111-4111-8111-111111111111"
         reflections={reflections}
         variant="timeline"
+        onReflectionInputFocus={onReflectionInputFocus}
         onAddReflectionReply={onAddReflectionReply}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
@@ -139,11 +141,13 @@ describe('EntryReflectionSection', () => {
     expect(StyleSheet.flatten(replyButton.props.style).alignSelf).toBe('flex-end');
 
     await fireEvent.press(replyButton);
+    await fireEvent(getByLabelText('Reflection reply text'), 'focus');
     await fireEvent.changeText(getByLabelText('Reflection reply text'), 'A threaded note');
     await act(async () => {
       await fireEvent.press(getByTestId('entry-reflection-replies-22222222-2222-4222-8222-222222222222-submit'));
     });
 
+    expect(onReflectionInputFocus).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111');
     expect(onAddReflectionReply).toHaveBeenCalledWith(
       '11111111-1111-4111-8111-111111111111',
       '22222222-2222-4222-8222-222222222222',

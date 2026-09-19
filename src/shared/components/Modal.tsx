@@ -4,10 +4,11 @@
  * A themed modal with slide-up panel, drag handle, backdrop, and optional title.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
+  Keyboard,
   Modal as RNModal,
   PanResponder,
   TouchableOpacity,
@@ -50,6 +51,7 @@ export function Modal({
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(PANEL_HEIGHT)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
     if (visible) {
@@ -62,6 +64,28 @@ export function Modal({
       backdropOpacity.setValue(0);
     }
   }, [visible, translateY, backdropOpacity]);
+
+  useEffect(() => {
+    if (!visible) {
+      return undefined;
+    }
+
+    const handleShow = (event: { endCoordinates: { height: number } }) => {
+      setKeyboardHeight(Math.max(0, event.endCoordinates.height - insets.bottom));
+    };
+    const handleHide = () => setKeyboardHeight(0);
+
+    const subscriptions = [
+      Keyboard.addListener('keyboardWillShow', handleShow),
+      Keyboard.addListener('keyboardDidShow', handleShow),
+      Keyboard.addListener('keyboardWillHide', handleHide),
+      Keyboard.addListener('keyboardDidHide', handleHide),
+    ];
+
+    return () => {
+      subscriptions.forEach((subscription) => subscription.remove());
+    };
+  }, [insets.bottom, visible]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -94,7 +118,7 @@ export function Modal({
         <Animated.View
           style={{
             position: 'absolute',
-            bottom: 0,
+            bottom: keyboardHeight,
             left: 0,
             right: 0,
             maxHeight: PANEL_HEIGHT,

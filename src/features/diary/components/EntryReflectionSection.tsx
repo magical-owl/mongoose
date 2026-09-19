@@ -150,6 +150,7 @@ export function EntryReflectionSection({
                   timeFormat={timeFormat}
                   onAddReply={onAddReflectionReply}
                   onDeleteReply={onDeleteReflectionReply}
+                  onReplyInputFocus={() => onReflectionInputFocus?.(entryId)}
                   testID={`entry-reflection-replies-${reflection.id}`}
                 />
               </View>

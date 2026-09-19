@@ -16,6 +16,7 @@ interface ReflectionReplyThreadProps {
   readonly timeFormat: TimeFormat;
   readonly onAddReply?: (entryId: string, reflectionId: string, text: string) => Promise<boolean>;
   readonly onDeleteReply?: (entryId: string, reflectionId: string, replyId: string) => void;
+  readonly onReplyInputFocus?: (entryId: string, reflectionId: string) => void;
   readonly testID?: string;
 }
 
@@ -26,6 +27,7 @@ export function ReflectionReplyThread({
   timeFormat,
   onAddReply,
   onDeleteReply,
+  onReplyInputFocus,
   testID,
 }: ReflectionReplyThreadProps): React.JSX.Element | null {
   const theme = useTheme();
@@ -91,6 +93,7 @@ export function ReflectionReplyThread({
             inputBoxStyle={styles.replyComposer}
             inputBoxTestID={testID ? `${testID}-composer` : undefined}
             submitButtonTestID={testID ? `${testID}-submit` : undefined}
+            onFocus={() => onReplyInputFocus?.(entryId, reflectionId)}
             placeholder={t('addReflectionReplyPlaceholder')}
             accessibilityLabel={t('reflectionReplyTextA11y')}
             submitAccessibilityLabel={t('reflectionReplySaveA11y')}
