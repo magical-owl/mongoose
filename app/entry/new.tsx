@@ -43,6 +43,7 @@ import { RichTextFormattingDrawer, type RichTextFormatItem } from '@/features/di
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { DiaryCoverPhotoPicker } from '@/features/diary/components/DiaryCoverPhotoPicker';
 import { DiaryPaperCanvas } from '@/features/diary/components/DiaryPaperCanvas';
+import { useGlobalKeyboardDismissHandler } from '@/shared/components/GlobalKeyboardDismissButton';
 import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/DiaryPaperBackgroundPickerModal';
 import { DiaryStylePresetPickerModal } from '@/features/diary/components/DiaryStylePresetPickerModal';
 import { EntryEditToolMenuModal } from '@/features/diary/components/EntryEditToolMenuModal';
@@ -452,6 +453,7 @@ export default function CreateEntryScreen() {
     editorRef.current?.dismissKeyboard();
     Keyboard.dismiss();
   }, []);
+  useGlobalKeyboardDismissHandler(dismissEntryKeyboard);
 
   const navigateBack = () => {
     setSelectedCalendarDate(null);
@@ -816,15 +818,6 @@ export default function CreateEntryScreen() {
             accessibilityLabel={t('entryInsertToolsA11y')}
             testID="entry-insert-tools-button"
           />
-          {keyboardHeight > 0 ? (
-            <IconCircleButton
-              icon="keyboard-close"
-              size="sm"
-              surface="transparent"
-              onPress={dismissEntryKeyboard}
-              accessibilityLabel={t('entryDismissKeyboardA11y')}
-            />
-          ) : null}
       </DiaryEntryEditorFooter>
 
       {/* Modals */}

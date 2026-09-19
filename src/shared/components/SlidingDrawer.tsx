@@ -24,6 +24,7 @@ import { Avatar } from './Avatar';
 import { AppPatternBackground } from './AppPatternBackground';
 import { IconCircleButton } from './IconCircleButton';
 import { Text } from './Text';
+import { GlobalKeyboardDismissButton } from './GlobalKeyboardDismissButton';
 import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 const DRAWER_OPEN_DURATION_MS = 220;
@@ -215,6 +216,7 @@ export function SlidingDrawer({
             {children}
           </View>
         </Reanimated.View>
+        <GlobalKeyboardDismissButton />
       </Reanimated.View>
     </Modal>
   );

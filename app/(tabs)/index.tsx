@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Image, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -11,6 +11,7 @@ import { SectionLabel } from '@shared/components/SectionLabel';
 import { APP_FOOTER_BOTTOM_OFFSET, AppFooterNavigation } from '@shared/components/AppFooterNavigation';
 import { SlidingDrawer } from '@shared/components/SlidingDrawer';
 import { AppPatternBackground } from '@shared/components/AppPatternBackground';
+import { GlobalKeyboardDismissButton } from '@/shared/components/GlobalKeyboardDismissButton';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { JournalHomeList, type JournalHomeItem } from '@/features/journal/components/JournalHomeList';
 import { JournalCreateForm } from '@/features/journal/components/JournalCreateForm';
@@ -600,8 +601,11 @@ export default function JournalsScreen(): React.JSX.Element {
       </SlidingDrawer>
 
       <Modal visible={Boolean(coverPickerJournal)} animationType="fade" transparent onRequestClose={() => setCoverPickerJournal(null)}>
-        <View style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}>
-          <View style={[styles.modalCard, styles.coverPickerCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
+        <Pressable style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]} onPress={() => setCoverPickerJournal(null)}>
+          <Pressable
+            style={[styles.modalCard, styles.coverPickerCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}
+            onPress={(event) => event.stopPropagation()}
+          >
             <View style={styles.coverPickerHeader}>
               <Text preset="h2" color="text" style={styles.modalTitle}>{t('journalSetCover')}</Text>
               <IconCircleButton
@@ -672,13 +676,16 @@ export default function JournalsScreen(): React.JSX.Element {
                 })}
               </View>
             </ScrollView>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       <Modal visible={showCreateModal} animationType="fade" transparent onRequestClose={() => setShowCreateModal(false)}>
-        <View style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}>
-          <View style={[styles.modalCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
+        <Pressable style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]} onPress={() => setShowCreateModal(false)}>
+          <Pressable
+            style={[styles.modalCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}
+            onPress={(event) => event.stopPropagation()}
+          >
             <Text preset="h2" color="text" style={styles.modalTitle}>{t('journalCreate')}</Text>
             {showCreateModal ? (
               <JournalCreateForm
@@ -691,13 +698,17 @@ export default function JournalsScreen(): React.JSX.Element {
                 onSubmit={(input) => { void handleCreateJournal(input); }}
               />
             ) : null}
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
+        <GlobalKeyboardDismissButton />
       </Modal>
 
       <Modal visible={showRenameModal} animationType="fade" transparent onRequestClose={closeRenameModal}>
-        <View style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}>
-          <View style={[styles.modalCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
+        <Pressable style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]} onPress={closeRenameModal}>
+          <Pressable
+            style={[styles.modalCard, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}
+            onPress={(event) => event.stopPropagation()}
+          >
             <Text preset="h2" color="text" style={styles.modalTitle}>{t('journalEdit')}</Text>
             {renamingJournalInitialValues ? (
               <JournalCreateForm
@@ -712,8 +723,9 @@ export default function JournalsScreen(): React.JSX.Element {
                 onSubmit={(input) => { void handleRenameJournal(input); }}
               />
             ) : null}
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
+        <GlobalKeyboardDismissButton />
       </Modal>
     </AppPatternBackground>
   );

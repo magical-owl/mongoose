@@ -14,7 +14,6 @@ interface EntryEditFooterToolsProps {
   readonly wordCount: number;
   readonly stickerCount: number;
   readonly showFormattingTools: boolean;
-  readonly showKeyboardDismiss: boolean;
   readonly onOpenMetadata: () => void;
   readonly onOpenFormatting: () => void;
   readonly onOpenTemplatePicker: () => void;
@@ -23,7 +22,6 @@ interface EntryEditFooterToolsProps {
   readonly onAddPhotoSticker: () => void;
   readonly onAddTextSticker: () => void;
   readonly onOpenStickerPicker: () => void;
-  readonly onDismissKeyboard: () => void;
 }
 
 export function EntryEditFooterTools({
@@ -31,7 +29,6 @@ export function EntryEditFooterTools({
   wordCount,
   stickerCount,
   showFormattingTools,
-  showKeyboardDismiss,
   onOpenMetadata,
   onOpenFormatting,
   onOpenTemplatePicker,
@@ -40,7 +37,6 @@ export function EntryEditFooterTools({
   onAddPhotoSticker,
   onAddTextSticker,
   onOpenStickerPicker,
-  onDismissKeyboard,
 }: EntryEditFooterToolsProps) {
   const theme = useTheme();
   const t = useTranslation();
@@ -88,15 +84,6 @@ export function EntryEditFooterTools({
           accessibilityLabel={t('entryInsertToolsA11y')}
           testID="entry-edit-insert-tools-button"
         />
-        {showKeyboardDismiss ? (
-          <IconCircleButton
-            icon="keyboard-close"
-            size="sm"
-            surface="transparent"
-            onPress={onDismissKeyboard}
-            accessibilityLabel={t('entryDismissKeyboardA11y')}
-          />
-        ) : null}
       </DiaryEntryEditorFooter>
       <EntryEditToolMenuModal
         visible={showCustomizeTools}

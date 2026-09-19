@@ -173,7 +173,6 @@ export function EntryReflectionSection({
           inputBoxTestID={isFeed ? 'entry-feed-reflection-input' : 'entry-timeline-reflection-input'}
           photoPreviewTestID={isFeed ? 'entry-feed-reflection-photo-preview' : 'entry-timeline-reflection-photo-preview'}
           selectedPhotoTestID={isFeed ? 'entry-feed-selected-reflection-photo' : 'entry-timeline-selected-reflection-photo'}
-          showKeyboardDismissButton
           submitSurface="subtle"
           minHeight={Math.max(42, theme.fontSizes.sm * 2.9)}
           backgroundColor={isFeed ? theme.colors.surface : theme.colors.card}

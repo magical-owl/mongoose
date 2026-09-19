@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';
 import { useTranslation } from '@/localization/i18n';
+import { GlobalKeyboardDismissButton } from '@/shared/components/GlobalKeyboardDismissButton';
 
 export interface ModalProps {
   readonly visible: boolean;
@@ -134,6 +135,7 @@ export function Modal({
             </View>
           )}
         </Animated.View>
+        <GlobalKeyboardDismissButton />
       </View>
     </RNModal>
   );

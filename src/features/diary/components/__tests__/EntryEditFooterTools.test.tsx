@@ -29,7 +29,6 @@ describe('EntryEditFooterTools', () => {
         wordCount={42}
         stickerCount={3}
         showFormattingTools={false}
-        showKeyboardDismiss={false}
         onOpenMetadata={onOpenMetadata}
         onOpenFormatting={jest.fn()}
         onOpenTemplatePicker={jest.fn()}
@@ -38,7 +37,6 @@ describe('EntryEditFooterTools', () => {
         onAddPhotoSticker={jest.fn()}
         onAddTextSticker={jest.fn()}
         onOpenStickerPicker={jest.fn()}
-        onDismissKeyboard={jest.fn()}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );

@@ -48,6 +48,7 @@ import { EntryViewBodyContent } from '@/features/diary/components/EntryViewBodyC
 import { DiaryPaperCanvas } from '@/features/diary/components/DiaryPaperCanvas';
 import { DiaryStylePresetPickerModal } from '@/features/diary/components/DiaryStylePresetPickerModal';
 import { EntryDetailModals } from '@/features/diary/components/EntryDetailModals';
+import { useGlobalKeyboardDismissHandler } from '@/shared/components/GlobalKeyboardDismissButton';
 import { EntryMetaRow } from '@/features/diary/components/EntryMetaRow';
 import { EntryViewHistoryModal } from '@/features/diary/components/EntryViewHistoryModal';
 import { closeMemoryReactionPanels } from '@/features/diary/components/MemoryReactionPanelRegistry';
@@ -189,6 +190,7 @@ export default function EntryDetailScreen() {
     openFormattingTools,
     resetTransientUi,
   } = useEntryDetailUiState({ editorRef });
+  useGlobalKeyboardDismissHandler(dismissEntryKeyboard);
   const {
     bodyLayout,
     setBodyLayout,
@@ -624,7 +626,6 @@ export default function EntryDetailScreen() {
           wordCount={wordCount}
           stickerCount={editStickers.length}
           showFormattingTools={showFormattingTools}
-          showKeyboardDismiss={keyboardHeight > 0}
           onOpenMetadata={() => setShowEntryMetadata(true)}
           onOpenFormatting={openFormattingTools}
           onOpenTemplatePicker={() => setShowTemplatePicker(true)}
@@ -636,7 +637,6 @@ export default function EntryDetailScreen() {
             setShowStickerPicker(true);
             revealStickerBounds();
           }}
-          onDismissKeyboard={dismissEntryKeyboard}
         />
       )}
 

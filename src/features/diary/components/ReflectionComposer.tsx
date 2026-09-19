@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Image,
-  Keyboard,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -29,7 +28,6 @@ interface ReflectionComposerProps {
   readonly photoPreviewTestID?: string;
   readonly removePhotoButtonTestID?: string;
   readonly selectedPhotoTestID?: string;
-  readonly showKeyboardDismissButton?: boolean;
   readonly submitSurface?: 'solid' | 'subtle';
   readonly minHeight?: number;
   readonly inputHeight?: number;
@@ -52,7 +50,6 @@ export function ReflectionComposer({
   photoPreviewTestID,
   removePhotoButtonTestID,
   selectedPhotoTestID,
-  showKeyboardDismissButton = false,
   submitSurface = 'solid',
   minHeight,
   inputHeight,
@@ -198,16 +195,6 @@ export function ReflectionComposer({
           }}
           accessibilityLabel={accessibilityLabel ?? t('reflectionTextA11y')}
         />
-        {showKeyboardDismissButton && isFocused ? (
-          <TouchableOpacity
-            onPress={Keyboard.dismiss}
-            style={styles.iconButton}
-            accessibilityRole="button"
-            accessibilityLabel={t('entryDismissKeyboardA11y')}
-          >
-            <MaterialCommunityIcons name="chevron-down" size={18} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
-        ) : null}
         <TouchableOpacity
           onPress={() => { void handleSubmit(); }}
           disabled={!isSubmitActive}
