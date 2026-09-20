@@ -320,8 +320,8 @@ export function DiaryEntryView({
                     styles.feedContentPanel,
                     entry.coverPhoto && styles.feedContentPanelMerged,
                     {
-                      backgroundColor: entry.coverPhoto ? 'transparent' : theme.colors.card,
-                      borderColor: entry.coverPhoto ? 'transparent' : theme.colors.border,
+                      backgroundColor: 'transparent',
+                      borderColor: 'transparent',
                     },
                   ]}
                   testID="entry-feed-content-panel"
