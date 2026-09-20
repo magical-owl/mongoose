@@ -33,6 +33,7 @@ function createEntry(): DiaryEntry {
         uri: 'file:///photo.jpg',
       }),
     ],
+    momentPhotoLayout: 'feature',
   });
 }
 
@@ -44,6 +45,7 @@ function DraftHarness({ sourceEntry }: { readonly sourceEntry: DiaryEntry }) {
       <Text testID="draft-title">{draft.editTitle}</Text>
       <Text testID="draft-tags">{draft.editTags.join(',')}</Text>
       <Text testID="draft-sticker-count">{draft.editStickers.length}</Text>
+      <Text testID="draft-moment-layout">{draft.editMomentPhotoLayout}</Text>
       <TouchableOpacity testID="hydrate-draft" onPress={() => draft.hydrateEditDraft(sourceEntry)}>
         <Text>Hydrate</Text>
       </TouchableOpacity>
@@ -89,6 +91,7 @@ describe('useEntryEditDraft', () => {
     });
     expect(getByTestId('draft-tags').props.children).toBe('daily,weekend');
     expect(getByTestId('draft-sticker-count').props.children).toBe(0);
+    expect(getByTestId('draft-moment-layout').props.children).toBe('feature');
 
     await act(async () => {
       await fireEvent.press(getByTestId('edit-and-build'));

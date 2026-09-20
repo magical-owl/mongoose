@@ -5,7 +5,7 @@ import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { MomentPhotoGrid } from '@/features/diary/components/MomentPhotoGrid';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
-import type { DiaryEntryType, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
+import type { DiaryEntryType, DiaryPhoto, MomentPhotoLayout } from '@/features/diary/domain/DiaryEntry';
 import type { DiaryBodyFontFamily, DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import type { StickerCanvasLayout } from '@/features/diary/hooks/useEntryStickerEditing';
 import { RichTextEditor, type RichTextEditorHandle } from '@shared/components/RichTextEditor';
@@ -29,6 +29,8 @@ interface EntryEditBodyFormProps {
   readonly editEntryType: DiaryEntryType;
   readonly onChangeEntryType: (entryType: DiaryEntryType) => void;
   readonly editPhotos: readonly DiaryPhoto[];
+  readonly editMomentPhotoLayout: MomentPhotoLayout;
+  readonly onChangeMomentPhotoLayout: (layout: MomentPhotoLayout) => void;
   readonly onAddMomentPhotos: () => void;
   readonly onRemoveMomentPhoto: (photoId: string) => void;
   readonly editContent: string;
@@ -56,6 +58,8 @@ export function EntryEditBodyForm({
   editEntryType,
   onChangeEntryType,
   editPhotos,
+  editMomentPhotoLayout,
+  onChangeMomentPhotoLayout,
   onAddMomentPhotos,
   onRemoveMomentPhoto,
   editContent,
@@ -128,6 +132,8 @@ export function EntryEditBodyForm({
         <MomentPhotoGrid
           photos={editPhotos}
           editable
+          layout={editMomentPhotoLayout}
+          onChangeLayout={onChangeMomentPhotoLayout}
           onAddPhoto={onAddMomentPhotos}
           onRemovePhoto={onRemoveMomentPhoto}
           testID="entry-edit-moment-photo-grid"

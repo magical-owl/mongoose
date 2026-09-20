@@ -155,6 +155,8 @@ export default function EntryDetailScreen() {
     setEditCoverPhoto,
     editPhotos,
     setEditPhotos,
+    editMomentPhotoLayout,
+    setEditMomentPhotoLayout,
     editPaperBackgroundId,
     setEditPaperBackgroundId,
     editBodyFontFamily,
@@ -596,6 +598,8 @@ export default function EntryDetailScreen() {
                 editEntryType={editEntryType}
                 onChangeEntryType={setEditEntryType}
                 editPhotos={editPhotos}
+                editMomentPhotoLayout={editMomentPhotoLayout}
+                onChangeMomentPhotoLayout={setEditMomentPhotoLayout}
                 onAddMomentPhotos={handleAddMomentPhotos}
                 onRemoveMomentPhoto={handleRemoveMomentPhoto}
                 editContent={editContent}

@@ -40,10 +40,12 @@ import {
   ManualMoodWeather,
   WritingMode,
   getPrimaryManualMood,
+  DEFAULT_MOMENT_PHOTO_LAYOUT,
   MOMENT_ENTRY_PHOTO_LIMIT,
   normalizeManualMoods,
   normalizeMomentEntryPhotos,
   type DiaryEntryType,
+  type MomentPhotoLayout,
 } from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
@@ -176,6 +178,7 @@ export default function CreateEntryScreen() {
   const [stickers, setStickers] = useState<PlacedSticker[]>([]);
   const [coverPhoto, setCoverPhoto] = useState<DiaryPhoto | undefined>();
   const [momentPhotos, setMomentPhotos] = useState<DiaryPhoto[]>([]);
+  const [momentPhotoLayout, setMomentPhotoLayout] = useState<MomentPhotoLayout>(DEFAULT_MOMENT_PHOTO_LAYOUT);
   const [paperBackgroundId, setPaperBackgroundId] = useState<string>(initialStylePreset.paperBackgroundId);
   const [bodyFontFamily, setBodyFontFamily] = useState<DiaryBodyFontFamily>(initialStylePreset.bodyFontFamily ?? DIARY_BODY_DEFAULT_FONT_FAMILY);
   const [bodyTextColor, setBodyTextColor] = useState<DiaryBodyTextColor | undefined>(initialStylePreset.bodyTextColor);
@@ -227,6 +230,7 @@ export default function CreateEntryScreen() {
       setContent(draft.content);
       setCoverPhoto(draft.coverPhoto);
       setMomentPhotos(normalizeMomentEntryPhotos(draft.photos));
+      setMomentPhotoLayout(draft.momentPhotoLayout ?? DEFAULT_MOMENT_PHOTO_LAYOUT);
       setPaperBackgroundId(draft.paperBackgroundId);
       setBodyFontFamily(draft.bodyFontFamily);
       setBodyTextColor(draft.bodyTextColor);
@@ -268,6 +272,7 @@ export default function CreateEntryScreen() {
         bodyFontFamily,
         bodyTextColor,
         photos: momentPhotos,
+        momentPhotoLayout,
         tags: selectedTags,
         manualMood: getPrimaryManualMood(manualMoods),
         manualMoods,
@@ -279,7 +284,7 @@ export default function CreateEntryScreen() {
       });
     }, 700);
     return () => clearTimeout(timer);
-  }, [title, entryType, content, isoDate, stickers, coverPhoto, momentPhotos, paperBackgroundId, bodyFontFamily, bodyTextColor, selectedTags, manualMoods, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
+  }, [title, entryType, content, isoDate, stickers, coverPhoto, momentPhotos, momentPhotoLayout, paperBackgroundId, bodyFontFamily, bodyTextColor, selectedTags, manualMoods, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
 
   useEffect(() => () => {
     if (stickerBoundsTimer.current) clearTimeout(stickerBoundsTimer.current);
@@ -548,6 +553,7 @@ export default function CreateEntryScreen() {
       stickers,
       coverPhoto,
       photos: entryType === 'moment' ? momentPhotos : [],
+      momentPhotoLayout: entryType === 'moment' ? momentPhotoLayout : DEFAULT_MOMENT_PHOTO_LAYOUT,
       companion: DEFAULT_COMPANION,
       isFavorite,
       viewCount: 0,
@@ -762,6 +768,8 @@ export default function CreateEntryScreen() {
               <MomentPhotoGrid
                 photos={momentPhotos}
                 editable
+                layout={momentPhotoLayout}
+                onChangeLayout={setMomentPhotoLayout}
                 onAddPhoto={handleAddMomentPhotos}
                 onRemovePhoto={handleRemoveMomentPhoto}
                 testID="entry-create-moment-photo-grid"

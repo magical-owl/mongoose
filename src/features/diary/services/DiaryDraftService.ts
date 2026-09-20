@@ -3,7 +3,18 @@ import { secureStorageKeys } from '@/constants/secureStorageKeys';
 import { normalizeHtmlContent } from '@/shared/utils/html';
 import type { CompanionType } from '../domain/Companion';
 import type { PlacedSticker } from '../domain/Sticker';
-import { getPrimaryManualMood, normalizeManualMoods, type DiaryEntryType, type DiaryPhoto, type ManualMood, type ManualMoodWeather, type SensoryDetails, type WritingMode } from '../domain/DiaryEntry';
+import {
+  DEFAULT_MOMENT_PHOTO_LAYOUT,
+  getPrimaryManualMood,
+  normalizeManualMoods,
+  type DiaryEntryType,
+  type DiaryPhoto,
+  type ManualMood,
+  type ManualMoodWeather,
+  type MomentPhotoLayout,
+  type SensoryDetails,
+  type WritingMode,
+} from '../domain/DiaryEntry';
 import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '../domain/DiaryBodyStyle';
 
 export interface DiaryDraft {
@@ -18,6 +29,7 @@ export interface DiaryDraft {
   readonly bodyFontFamily: DiaryBodyFontFamily;
   readonly bodyTextColor?: DiaryBodyTextColor;
   readonly photos: DiaryPhoto[];
+  readonly momentPhotoLayout: MomentPhotoLayout;
   readonly tags: string[];
   readonly manualMoodWeather: ManualMoodWeather;
   readonly manualMood?: ManualMood;
@@ -44,6 +56,7 @@ export class DiaryDraftService {
       return {
         entryType: 'diary',
         photos: [],
+        momentPhotoLayout: DEFAULT_MOMENT_PHOTO_LAYOUT,
         paperBackgroundId: 'vintage-parchment',
         tags: [],
         manualMoodWeather: 'neutral',

@@ -1,15 +1,25 @@
 import { Image, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/providers/ThemeProvider';
-import type { DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
-import { MOMENT_ENTRY_PHOTO_LIMIT } from '@/features/diary/domain/DiaryEntry';
+import type { DiaryPhoto, MomentPhotoLayout } from '@/features/diary/domain/DiaryEntry';
+import { DEFAULT_MOMENT_PHOTO_LAYOUT, MOMENT_ENTRY_PHOTO_LIMIT, MOMENT_PHOTO_LAYOUT_OPTIONS } from '@/features/diary/domain/DiaryEntry';
 import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
 import { Text } from '@/shared/components/Text';
-import { useTranslation } from '@/localization/i18n';
+import { useTranslation, type TranslationKey } from '@/localization/i18n';
+
+const MOMENT_PHOTO_LAYOUT_LABEL_KEYS: Readonly<Record<MomentPhotoLayout, TranslationKey>> = {
+  auto: 'entryMomentLayoutAuto',
+  grid: 'entryMomentLayoutGrid',
+  feature: 'entryMomentLayoutFeature',
+  mosaic: 'entryMomentLayoutMosaic',
+  stacked: 'entryMomentLayoutStacked',
+};
 
 interface MomentPhotoGridProps {
   readonly photos: readonly DiaryPhoto[];
   readonly editable?: boolean;
+  readonly layout?: MomentPhotoLayout;
+  readonly onChangeLayout?: (layout: MomentPhotoLayout) => void;
   readonly onAddPhoto?: () => void;
   readonly onRemovePhoto?: (photoId: string) => void;
   readonly compact?: boolean;
@@ -20,6 +30,8 @@ interface MomentPhotoGridProps {
 export function MomentPhotoGrid({
   photos,
   editable = false,
+  layout = DEFAULT_MOMENT_PHOTO_LAYOUT,
+  onChangeLayout,
   onAddPhoto,
   onRemovePhoto,
   compact = false,
@@ -29,10 +41,7 @@ export function MomentPhotoGrid({
   const theme = useTheme();
   const t = useTranslation();
   const canAddPhoto = editable && photos.length < MOMENT_ENTRY_PHOTO_LIMIT && Boolean(onAddPhoto);
-  const photoRows = [];
-  for (let index = 0; index < photos.length; index += 2) {
-    photoRows.push(photos.slice(index, index + 2));
-  }
+  const photoRows = getMomentPhotoRows(photos, layout);
 
   if (!editable && photos.length === 0) return null;
 
@@ -48,9 +57,36 @@ export function MomentPhotoGrid({
           </Text>
         </View>
       ) : null}
+      {editable && onChangeLayout ? (
+        <View style={styles.layoutSelector} testID={`${testID}-layout-selector`}>
+          {MOMENT_PHOTO_LAYOUT_OPTIONS.map((option) => {
+            const selected = layout === option;
+            return (
+              <Pressable
+                key={option}
+                onPress={() => onChangeLayout(option)}
+                style={[
+                  styles.layoutOption,
+                  {
+                    backgroundColor: selected ? theme.colors.tint : theme.colors.card,
+                    borderColor: selected ? theme.colors.tint : theme.colors.border,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                testID={`${testID}-layout-${option}`}
+              >
+                <Text style={[styles.layoutOptionText, { color: selected ? theme.colors.background : theme.colors.text }]}>
+                  {t(MOMENT_PHOTO_LAYOUT_LABEL_KEYS[option])}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
       <View style={[styles.grid, !editable && styles.collageGrid]}>
         {photoRows.map((row, rowIndex) => (
-          <View key={`row-${rowIndex}`} style={styles.photoRow}>
+          <View key={`row-${rowIndex}`} style={styles.photoRow} testID={`${testID}-row-${rowIndex}`}>
             {row.map((photo, columnIndex) => {
               const index = rowIndex * 2 + columnIndex;
               const source = getDiaryPhotoImageSource(photo.uri);
@@ -112,6 +148,35 @@ export function MomentPhotoGrid({
   );
 }
 
+function getMomentPhotoRows(
+  photos: readonly DiaryPhoto[],
+  layout: MomentPhotoLayout,
+): DiaryPhoto[][] {
+  if (layout === 'stacked') return photos.map((photo) => [photo]);
+
+  if (layout === 'feature' && photos.length > 0) {
+    return [photos.slice(0, 1), ...pairRows(photos.slice(1))];
+  }
+
+  if (layout === 'mosaic' && photos.length > 2) {
+    return [
+      photos.slice(0, 2),
+      photos.slice(2, 3),
+      ...pairRows(photos.slice(3)),
+    ];
+  }
+
+  return pairRows(photos);
+}
+
+function pairRows(photos: readonly DiaryPhoto[]): DiaryPhoto[][] {
+  const rows: DiaryPhoto[][] = [];
+  for (let index = 0; index < photos.length; index += 2) {
+    rows.push(photos.slice(index, index + 2));
+  }
+  return rows;
+}
+
 const styles = StyleSheet.create({
   root: {
     gap: 10,
@@ -134,6 +199,21 @@ const styles = StyleSheet.create({
   countText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  layoutSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  layoutOption: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+  },
+  layoutOptionText: {
+    fontSize: 11,
+    fontWeight: '800',
   },
   grid: {
     gap: 8,

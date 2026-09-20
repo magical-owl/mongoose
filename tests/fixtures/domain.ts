@@ -64,6 +64,7 @@ export function buildDiaryEntry(overrides: Partial<DiaryEntry> = {}): DiaryEntry
     collectionIds: [],
     journalIds: [],
     photos: [],
+    momentPhotoLayout: 'auto',
     reflections: [],
     ...overrides,
   };
@@ -80,6 +81,7 @@ export function buildDiaryDraft(overrides: Partial<DiaryDraft> = {}): DiaryDraft
     paperBackgroundId: 'blank',
     bodyFontFamily: 'system',
     photos: [],
+    momentPhotoLayout: 'auto',
     tags: [],
     manualMoodWeather: 'neutral',
     manualMood: 'neutral',

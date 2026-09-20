@@ -3,12 +3,14 @@ import {
   getEntryManualMoods,
   getDiaryEntryType,
   getPrimaryManualMood,
+  DEFAULT_MOMENT_PHOTO_LAYOUT,
   normalizeMomentEntryPhotos,
   type DiaryEntry,
   type DiaryEntryType,
   type DiaryPhoto,
   type ManualMood,
   type ManualMoodWeather,
+  type MomentPhotoLayout,
   type WritingMode,
 } from '@/features/diary/domain/DiaryEntry';
 import type { CompanionType } from '@/features/diary/domain/Companion';
@@ -47,6 +49,7 @@ export function useEntryEditDraft() {
   const [editStickers, setEditStickers] = useState<PlacedSticker[]>([]);
   const [editCoverPhoto, setEditCoverPhoto] = useState<DiaryPhoto | undefined>();
   const [editPhotos, setEditPhotos] = useState<DiaryPhoto[]>([]);
+  const [editMomentPhotoLayout, setEditMomentPhotoLayout] = useState<MomentPhotoLayout>(DEFAULT_MOMENT_PHOTO_LAYOUT);
   const [editPaperBackgroundId, setEditPaperBackgroundId] = useState<string>(DEFAULT_DIARY_PAPER_BACKGROUND_ID);
   const [editBodyFontFamily, setEditBodyFontFamily] = useState<DiaryBodyFontFamily>(DIARY_BODY_DEFAULT_FONT_FAMILY);
   const [editBodyTextColor, setEditBodyTextColor] = useState<DiaryBodyTextColor | undefined>();
@@ -80,6 +83,7 @@ export function useEntryEditDraft() {
     setEditPaperBackgroundId(sourceEntry.paperBackgroundId ?? DEFAULT_DIARY_PAPER_BACKGROUND_ID);
     resetEditableBodyStyle(sourceEntry);
     setEditPhotos(normalizeMomentEntryPhotos(sourceEntry.photos));
+    setEditMomentPhotoLayout(sourceEntry.momentPhotoLayout ?? DEFAULT_MOMENT_PHOTO_LAYOUT);
     setEditStickers(sourceEntry.stickers);
     setEditCompanion(sourceEntry.companion);
     setEditFavorite(sourceEntry.isFavorite);
@@ -110,6 +114,7 @@ export function useEntryEditDraft() {
     stickers: editStickers,
     coverPhoto: editCoverPhoto,
     photos: editEntryType === 'moment' ? editPhotos : [],
+    momentPhotoLayout: editEntryType === 'moment' ? editMomentPhotoLayout : DEFAULT_MOMENT_PHOTO_LAYOUT,
     companion: editCompanion,
     isFavorite: editFavorite,
     tags: editTags,
@@ -145,6 +150,7 @@ export function useEntryEditDraft() {
     editJournalIds,
     editLocation,
     editLockbox,
+    editMomentPhotoLayout,
     editMoodWeather,
     editMoods,
     editPaperBackgroundId,
@@ -173,6 +179,8 @@ export function useEntryEditDraft() {
     setEditCoverPhoto,
     editPhotos,
     setEditPhotos,
+    editMomentPhotoLayout,
+    setEditMomentPhotoLayout,
     editPaperBackgroundId,
     setEditPaperBackgroundId,
     editBodyFontFamily,

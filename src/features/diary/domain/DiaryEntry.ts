@@ -112,6 +112,10 @@ export type DiaryPhoto = z.infer<typeof DiaryPhotoSchema>;
 export const DiaryEntryTypeSchema = z.enum(['diary', 'moment']);
 export type DiaryEntryType = z.infer<typeof DiaryEntryTypeSchema>;
 export const MOMENT_ENTRY_PHOTO_LIMIT = 6;
+export const MomentPhotoLayoutSchema = z.enum(['auto', 'grid', 'feature', 'mosaic', 'stacked']);
+export type MomentPhotoLayout = z.infer<typeof MomentPhotoLayoutSchema>;
+export const DEFAULT_MOMENT_PHOTO_LAYOUT: MomentPhotoLayout = 'auto';
+export const MOMENT_PHOTO_LAYOUT_OPTIONS: readonly MomentPhotoLayout[] = ['auto', 'grid', 'feature', 'mosaic', 'stacked'];
 
 export function getDiaryEntryType(entry: { readonly entryType?: DiaryEntryType }): DiaryEntryType {
   return entry.entryType ?? 'diary';
@@ -179,6 +183,7 @@ export const DiaryEntrySchema = z.object({
   journalIds: z.array(z.string().uuid()).default([]),
   coverPhoto: DiaryPhotoSchema.optional(),
   photos: z.array(DiaryPhotoSchema).max(MOMENT_ENTRY_PHOTO_LIMIT).default([]),
+  momentPhotoLayout: MomentPhotoLayoutSchema.default(DEFAULT_MOMENT_PHOTO_LAYOUT),
   reflections: z.array(DiaryReflectionSchema).default([]),
 }).superRefine((entry, context) => {
   if (entry.entryType === 'diary' && !entry.title.trim()) {
