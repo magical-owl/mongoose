@@ -25,6 +25,10 @@ Related references:
 - [ ] No asset resembles a protected character, mascot, franchise, platform emoji, or known sticker collection.
 - [ ] No asset uses a named living artist, studio, company, franchise, or brand style target.
 - [ ] Asset dimensions are appropriate for in-app use.
+- [ ] `npm run audit:assets` has been run after the latest asset additions or replacements.
+- [ ] Opaque cover/background/paper assets use optimized JPEG unless transparency is required.
+- [ ] App-rendered assets meet the target dimensions and file-size expectations from [`../agents/original-asset-generation.md`](../agents/original-asset-generation.md).
+- [ ] Human-generated replacement assets have final export dimensions and actual file sizes recorded in [`ASSET_REGISTER.md`](ASSET_REGISTER.md).
 - [ ] Transparent assets have clean edges with no halos, fringe pixels, or background remnants.
 - [ ] Assets remain readable at their actual in-app display size.
 - [ ] Light mode and dark mode readability have been checked where the asset appears behind UI/text.
@@ -35,6 +39,7 @@ Related references:
 Use this before creating a new asset group, especially when the concept overlaps with physical products, brands, common marketplace art, or recognizable visual formats.
 
 - [ ] Asset purpose, intended display size, and output dimensions are defined.
+- [ ] Export format and maximum bundled file size are defined.
 - [ ] Pack name and individual asset names use generic language, not brand-adjacent terms.
 - [ ] Web research was used only to identify common visual risks and forbidden cues.
 - [ ] Third-party reference images were not uploaded into a generator unless ownership or commercial-use rights are documented.
@@ -50,23 +55,23 @@ Use this before creating a new asset group, especially when the concept overlaps
 
 ## Review Queue
 
-| Asset group | Paths | Visual quality | IP/style risk | App fit | Status | Notes |
-| --- | --- | --- | --- | --- | --- | --- |
-| App icon and splash | `assets/icon.png`, `assets/favicon.png`, `assets/splash-icon.png`, `assets/splash-logo.png`, `assets/splash-placeholder.png` | Pending | Pending | Pending | Pending | Temporary until final app name and brand direction are chosen. |
-| Android adaptive icon | `assets/android-icon-background.png`, `assets/android-icon-foreground.png`, `assets/android-icon-monochrome.png` | Pending | Pending | Pending | Pending | Review after final app identity is chosen. |
-| Journal cover backgrounds | `assets/journal-backgrounds/*.png` | Pending | Pending | Pending | Pending | Check scenery consistency, no recognizable real locations, no artifacts, readable cover overlays. |
-| Diary paper backgrounds | `assets/diary-paper/*.png` | Pending | Pending | Pending | Pending | Check body text readability, dark-mode behavior, and repeated/tiling artifacts. |
-| App pattern backgrounds | `assets/patterns/*.png`, `assets/patterns/motifs/*.png` | Pending | Pending | Pending | Pending | Check seamless repeat, motif size, background contrast, and visual noise. |
-| Memory reaction icons | `assets/reactions/*.png` | Pending | Pending | Pending | Pending | Check icon clarity at 24-42 px and no emoji/platform lookalike risk. |
-| Sticker pack: Cat | `assets/stickers/cat/*.png` | Pending | Pending | Pending | Pending | Check all six stickers at picker size and placed-sticker size. |
-| Sticker pack: School | `assets/stickers/school/*.png` | Pending | Pending | Pending | Pending | Re-check pencil and backpack extraction after latest cleanup. |
-| Premium sticker pack: Summer | `assets/stickers/summer/*.png` | Pending | Pending | Pending | Pending | Confirm premium lock behavior and small-size readability. |
-| Sticker pack: Scribble Art | `assets/stickers/scribble/*.png` | Pending | Pending | Pending | Pending | Check that scribble assets look intentional, not malformed. |
-| Premium sticker pack: Memory Frames | `assets/stickers/frames/*.png` | Pending | Pending | Pending | Pending | Check frame cutout behavior, transparent-edge specks, trade-dress risk, and whether frames work over user photos. |
-| Premium sticker pack: Winter | `assets/stickers/winter/*.png` | Pending | Pending | Pending | Pending | Check seasonal consistency and small-size readability. |
-| Premium sticker pack: Spring | `assets/stickers/spring/*.png` | Pending | Pending | Pending | Pending | Check bee/butterfly are generic and not mascot-like. |
-| Premium sticker pack: Fall | `assets/stickers/fall/*.png` | Pending | Pending | Pending | Pending | Check mushroom/apple/pie for clean edges and generic design. |
-| Source sheets | `assets/stickers/source-sheets/*.png` | Pending | Pending | Pending | Pending | Keep for provenance; not directly surfaced in app UI. |
+| Asset group | Paths | Target dimensions / format | Visual quality | IP/style risk | App fit | Status | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| App icon and splash | `assets/icon.png`, `assets/favicon.png`, `assets/splash-icon.png`, `assets/splash-logo.png`, `assets/splash-placeholder.png` | Platform-specific PNG exports | Pending | Pending | Pending | Pending | Temporary until final app name and brand direction are chosen. |
+| Android adaptive icon | `assets/android-icon-background.png`, `assets/android-icon-foreground.png`, `assets/android-icon-monochrome.png` | Platform-specific PNG exports | Pending | Pending | Pending | Pending | Review after final app identity is chosen. |
+| Journal cover backgrounds | `assets/journal-backgrounds/*.jpg` | `1280x720` optimized JPEG; target under `300 KB` each | Pending | Pending | Pending | Pending | Check scenery consistency, no recognizable real locations, no artifacts, readable cover overlays. |
+| Diary paper backgrounds | `assets/diary-paper/*.jpg` | `768x768` optimized JPEG; target under `250 KB` each | Pending | Pending | Pending | Pending | Check body text readability, dark-mode behavior, and repeated/tiling artifacts. |
+| App pattern backgrounds | `assets/patterns/*.png`, `assets/patterns/motifs/*.png` | Final tiles `768x768` transparent PNG; target under `150 KB` each | Pending | Pending | Pending | Pending | Check seamless repeat, motif size, background contrast, and visual noise. |
+| Memory reaction icons | `assets/reactions/*.png` | `256x256` transparent PNG; target under `80 KB` each | Pending | Pending | Pending | Pending | Check icon clarity at 24-42 px and no emoji/platform lookalike risk. |
+| Sticker pack: Cat | `assets/stickers/cat/*.png` | `360x360` transparent PNG bundled exports | Pending | Pending | Pending | Pending | Check all six stickers at picker size and placed-sticker size. |
+| Sticker pack: School | `assets/stickers/school/*.png` | `360x360` transparent PNG bundled exports | Pending | Pending | Pending | Pending | Re-check pencil and backpack extraction after latest cleanup. |
+| Premium sticker pack: Summer | `assets/stickers/summer/*.png` | `360x360` transparent PNG bundled exports | Pending | Pending | Pending | Pending | Confirm premium lock behavior and small-size readability. |
+| Sticker pack: Scribble Art | `assets/stickers/scribble/*.png` | `360x360` transparent PNG bundled exports | Pending | Pending | Pending | Pending | Check that scribble assets look intentional, not malformed. |
+| Premium sticker pack: Memory Frames | `assets/stickers/frames/*.png` | `360x360` transparent PNG bundled exports | Pending | Pending | Pending | Pending | Check frame cutout behavior, transparent-edge specks, trade-dress risk, and whether frames work over user photos. |
+| Premium sticker pack: Winter | `assets/stickers/winter/*.png` | `360x360` transparent PNG bundled exports | Pending | Pending | Pending | Pending | Check seasonal consistency and small-size readability. |
+| Premium sticker pack: Spring | `assets/stickers/spring/*.png` | `360x360` transparent PNG bundled exports | Pending | Pending | Pending | Pending | Check bee/butterfly are generic and not mascot-like. |
+| Premium sticker pack: Fall | `assets/stickers/fall/*.png` | `360x360` transparent PNG bundled exports | Pending | Pending | Pending | Pending | Check mushroom/apple/pie for clean edges and generic design. |
+| Source sheets | `assets/stickers/source-sheets/*.png` | Provenance files only; not app-rendered | Pending | Pending | Pending | Pending | Keep for provenance; not directly surfaced in app UI. |
 
 ## Per-Asset Notes Template
 
@@ -80,6 +85,7 @@ Date:
 Visual quality:
 IP/style risk:
 App fit:
+Dimensions / format / file size:
 Decision:
 Required changes:
 Follow-up owner:

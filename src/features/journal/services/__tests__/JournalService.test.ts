@@ -40,8 +40,8 @@ describe('JournalService', () => {
       title: '  Summer Trip  ',
       description: '  Family photos and daily notes.  ',
       coverImageUri: 'builtin://journal-background/summer',
-      coverImageWidth: 1672,
-      coverImageHeight: 941,
+      coverImageWidth: 1280,
+      coverImageHeight: 720,
     });
 
     expect(result.success).toBe(true);
@@ -50,8 +50,8 @@ describe('JournalService', () => {
       description: 'Family photos and daily notes.',
       color: '#4ECDC4',
       coverImageUri: 'builtin://journal-background/summer',
-      coverImageWidth: 1672,
-      coverImageHeight: 941,
+      coverImageWidth: 1280,
+      coverImageHeight: 720,
     }));
   });
 

@@ -789,7 +789,7 @@ export default function CreateEntryScreen() {
       >
           <View>
             <IconCircleButton
-              icon="fountain-pen-tip"
+              icon="format-letter-case"
               size="sm"
               active={showFormattingTools}
               surface="transparent"

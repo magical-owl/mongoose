@@ -84,8 +84,8 @@ const journal = buildJournal({
   title: 'Stress Journal',
   description: 'Synthetic data',
   coverImageUri: 'builtin://journal-background/summer',
-  coverImageWidth: 1672,
-  coverImageHeight: 941,
+  coverImageWidth: 1280,
+  coverImageHeight: 720,
   createdAt: '2026-08-31T00:00:00.000Z',
   updatedAt: '2026-08-31T00:00:00.000Z',
 });
@@ -106,8 +106,8 @@ const entry = buildDiaryEntry({
   coverPhoto: buildDiaryPhoto({
     id: '33333333-0000-4000-8000-000000000001',
     uri: 'builtin://journal-background/summer',
-    width: 1672,
-    height: 941,
+    width: 1280,
+    height: 720,
     createdAt: '2026-05-01T08:00:00.000Z',
   }),
 });

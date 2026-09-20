@@ -137,8 +137,9 @@ describe('EntryReflectionSection', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    const replyButton = getByTestId('entry-reflection-replies-22222222-2222-4222-8222-222222222222-add-button');
-    expect(StyleSheet.flatten(replyButton.props.style).alignSelf).toBe('flex-end');
+    const replyButton = getByTestId('entry-reflection-reaction-22222222-2222-4222-8222-222222222222-reply-button');
+    const footer = getByTestId('entry-reflection-reaction-22222222-2222-4222-8222-222222222222');
+    expect(footer.children.length).toBeGreaterThan(0);
 
     await fireEvent.press(replyButton);
     await fireEvent(getByLabelText('Reflection reply text'), 'focus');

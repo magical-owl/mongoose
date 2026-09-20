@@ -44,6 +44,7 @@ export function EntryReflectionsModal({
   const theme = useTheme();
   const t = useTranslation();
   const [openReactionReflectionId, setOpenReactionReflectionId] = useState<string | null>(null);
+  const [openReplyReflectionId, setOpenReplyReflectionId] = useState<string | null>(null);
   const friendlyTimestampLabels = useMemo(
     () => ({
       today: t('timeToday'),
@@ -106,7 +107,7 @@ export function EntryReflectionsModal({
                         testID="entry-reflection-photo"
                       />
                     ) : null}
-                    {onToggleReflectionMemoryReaction ? (
+                    {onToggleReflectionMemoryReaction || onAddReflectionReply ? (
                       <ReflectionReactionFooter
                         entryId={entry.id}
                         reflectionId={reflection.id}
@@ -114,9 +115,13 @@ export function EntryReflectionsModal({
                         isPickerVisible={openReactionReflectionId === reflection.id}
                         onOpenPicker={() => setOpenReactionReflectionId(reflection.id)}
                         onDismissPicker={() => setOpenReactionReflectionId(null)}
-                        onToggleReaction={(targetEntryId, targetReflectionId, reaction) => {
-                          void onToggleReflectionMemoryReaction(targetEntryId, targetReflectionId, reaction);
-                        }}
+                        onToggleReaction={onToggleReflectionMemoryReaction
+                          ? (targetEntryId, targetReflectionId, reaction) => {
+                            void onToggleReflectionMemoryReaction(targetEntryId, targetReflectionId, reaction);
+                          }
+                          : undefined}
+                        onPressReply={onAddReflectionReply ? () => setOpenReplyReflectionId(reflection.id) : undefined}
+                        isReplyActive={openReplyReflectionId === reflection.id}
                         testID={`entry-modal-reflection-reaction-${reflection.id}`}
                       />
                     ) : null}
@@ -127,6 +132,9 @@ export function EntryReflectionsModal({
                       timeFormat={timeFormat}
                       onAddReply={onAddReflectionReply}
                       onDeleteReply={onDeleteReflectionReply}
+                      isComposerVisible={openReplyReflectionId === reflection.id}
+                      onComposerVisibleChange={(visible) => setOpenReplyReflectionId(visible ? reflection.id : null)}
+                      showAddButton={false}
                       testID={`entry-modal-reflection-replies-${reflection.id}`}
                     />
                   </View>

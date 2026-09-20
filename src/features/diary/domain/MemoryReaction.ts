@@ -6,9 +6,9 @@ export type MemoryReaction = z.infer<typeof MemoryReactionSchema>;
 export const MEMORY_REACTION_OPTIONS: readonly MemoryReaction[] = [
   'cherish',
   'treasure',
+  'tender',
   'smile',
   'heavy',
-  'tender',
   'stormy',
 ];
 

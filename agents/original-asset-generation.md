@@ -19,8 +19,9 @@ AI-generated output may be committed as draft evidence or temporary development 
 
 - Asset purpose: sticker, pattern background, journal cover, app icon, splash, or other.
 - Subject: ordinary generic object, scene, or motif.
-- Output format: transparent PNG for stickers/pattern motifs; opaque PNG for covers/icons unless specified.
+- Output format: transparent PNG for stickers/pattern motifs/reaction icons; optimized JPEG for opaque cover images and paper textures unless transparency is required.
 - Size target and usage surface.
+- Intended display size and maximum acceptable bundled file size.
 - Provenance notes: generation prompt, script, source date, and any reference ownership/license.
 - Draft/final status: concept draft, redraw source, human-polished final, or release candidate.
 - Human handoff intent: what the designer should preserve and what they should change.
@@ -59,6 +60,9 @@ Draft or final:
 Subject:
 Usage surface:
 Dimensions:
+Intended display size:
+Export format:
+Maximum bundled file size:
 Background:
 Palette:
 Style DNA:
@@ -69,20 +73,28 @@ Review owner:
 
 For multi-asset sets, define shared rules once and list each asset ID separately. Keep subject prompts generic and concrete.
 
-## Right-Sized Output Targets
+## Right-Sized Output And Optimization Targets
 
 Do not overestimate image generation size. Generate each asset only large enough for its actual in-app purpose, with a modest scale buffer for high-density screens. Oversized source files slow builds, increase app size, and can make tiny UI assets look over-detailed or muddy after downscaling.
 
 Use these defaults unless a specific screen needs more:
 
-- Stickers: transparent square PNG, `512x512` default. Use `768x768` only for stickers designed to be placed very large on the diary canvas. Avoid `1024x1024` or larger for ordinary stickers.
-- Memory reaction/emote icons: transparent square PNG, `256x256` default. Use `384x384` only if the icon has a larger button state or needs extra edge cleanup. Keep the silhouette bold and simple.
-- Pattern background tiles: transparent or low-contrast tile PNG, `768x768` default. Use `1024x1024` only when the repeat needs larger spacing. Test the tile as a 2-by-2 repeat before approving it.
-- Diary paper backgrounds: texture PNG, `1024x1024` default unless the implementation requires a different repeat/crop behavior. Keep texture subtle and compressible.
-- Journal cover images: wide opaque PNG, `1280x720` default for app use. Use `1600x900` when the cover is shown full-width on large devices. Avoid larger exports unless the asset is also used for marketing.
+- Stickers: transparent square PNG, `512x512` default. Use `768x768` only for stickers designed to be placed very large on the diary canvas. Avoid `1024x1024` or larger for ordinary stickers. Target bundled file size: under `250 KB` per sticker, lower when possible.
+- Memory reaction/emote icons: transparent square PNG, `256x256` default. Use `384x384` only if the icon has a larger button state or needs extra edge cleanup. Keep the silhouette bold and simple. Target bundled file size: under `80 KB` per icon.
+- Pattern background tiles: transparent or low-contrast tile PNG, `768x768` default. Use `1024x1024` only when the repeat needs larger spacing. Test the tile as a 2-by-2 repeat before approving it. Target bundled file size: under `150 KB` per final tile.
+- Diary paper backgrounds: optimized opaque JPEG, `768x768` default for app use. Use PNG only when transparency is required. Keep texture subtle and compressible. Target bundled file size: under `250 KB` per paper.
+- Journal cover images: optimized opaque JPEG, `1280x720` default for app use. Use `1600x900` only when the cover is shown full-width on large devices or reused for marketing. Avoid larger exports unless documented. Target bundled file size: under `300 KB` per cover.
 - App icon and splash assets: follow platform-required dimensions exactly. Do not invent larger drafts beyond the required export target.
 
-Every generated asset packet must include both `Dimensions` and `Intended display size`. If the generated size is larger than these defaults, document why.
+Every generated asset packet must include `Dimensions`, `Intended display size`, `Export format`, and `Maximum bundled file size`. If the generated size is larger than these defaults, document why.
+
+After adding or regenerating assets:
+
+1. Run `npm run audit:assets`.
+2. Confirm the generated dimensions and file sizes match this section.
+3. Record dimensions, intended display size, and optimization notes in `assets/ASSET_REGISTER.md`.
+4. Add or update the asset group in `assets/ASSET_REVIEW_CHECKLIST.md` so a human reviewer can verify visual quality and app fit.
+5. Do not leave oversized draft/source files in app-rendered asset folders. Keep source sheets only in clearly named provenance folders, such as `assets/stickers/source-sheets/`, and avoid requiring them from app code.
 
 ## Current Art Direction Layer
 

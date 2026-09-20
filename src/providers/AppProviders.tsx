@@ -17,6 +17,7 @@ import { NetworkProvider } from './NetworkProvider';
 import { assertValidConfig } from '@/config/ConfigService';
 import { useSubscriptionStore } from '@/stores/useSubscriptionStore';
 import { releaseFeatures } from '@/config/releaseFeatures';
+import { preloadStaticVisualAssets } from '@/services/StaticVisualAssetPreloadService';
 
 /**
  * App providers composition.
@@ -30,6 +31,10 @@ export function AppProviders({
 }): React.JSX.Element {
   assertValidConfig();
   const setEntitlement = useSubscriptionStore((state) => state.setEntitlement);
+
+  useEffect(() => {
+    preloadStaticVisualAssets();
+  }, []);
 
   useEffect(() => {
     if (!releaseFeatures.monetization) return;

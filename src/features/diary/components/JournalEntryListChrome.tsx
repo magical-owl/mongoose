@@ -8,10 +8,9 @@ import {
 
 import { useTheme } from '@providers/ThemeProvider';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
-import { SegmentedControl } from '@shared/components/SegmentedControl';
 import { Text } from '@shared/components/Text';
 import type { EntryHierarchyMode, HomeViewMode } from '@/stores/useAppStore';
-import { homeViewModeLabel, useTranslation } from '@/localization/i18n';
+import { useTranslation } from '@/localization/i18n';
 import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 import {
@@ -19,6 +18,7 @@ import {
   type JournalEntryDrawerPanel,
   type JournalEntryFilterOptions,
 } from './JournalEntryListDrawer';
+import { JournalViewModeToggle } from './JournalViewModeToggle';
 
 export type { JournalEntryDrawerPanel, JournalEntryFilterOptions } from './JournalEntryListDrawer';
 
@@ -27,8 +27,6 @@ export const JOURNAL_COVER_COLLAPSED_EXTRA_HEIGHT = 12;
 export const JOURNAL_HEADER_TOP_PADDING = 16;
 export const JOURNAL_HEADER_ROW_HEIGHT = 44;
 export const JOURNAL_HEADER_BOTTOM_GAP = 14;
-
-const JOURNAL_VIEW_PILL_HEIGHT = JOURNAL_HEADER_ROW_HEIGHT;
 
 interface DrawerProfile {
   readonly displayName: string;
@@ -207,29 +205,16 @@ export function JournalEntryListChrome({
           <View style={[styles.headerSide, styles.headerSideLeft]}>
             <IconCircleButton icon="chevron-left" onPress={onNavigateBack} accessibilityLabel={t('entryBackA11y')} surface={hasJournalCover ? 'overlay' : 'surface'} />
           </View>
-          <SegmentedControl
-            segments={selectableViewModes.map((mode) => homeViewModeLabel(mode, t))}
-            selectedIndex={selectedViewModeIndex}
-            onSelect={(index) => {
-              const mode = selectableViewModes[index];
-              if (mode) onSelectViewMode(index, mode);
-            }}
-            selectedTextColor={theme.colors.stickerControlText}
-            unselectedTextColor={hasJournalCover ? theme.colors.stickerControlText : theme.colors.textSecondary}
-            indicatorColor={theme.colors.tint}
-            containerStyle={[
-              styles.viewModePill,
-              {
-                backgroundColor: hasJournalCover ? 'rgba(0, 0, 0, 0.56)' : translucentSurfaceColor,
-                borderColor: hasJournalCover ? theme.colors.stickerControlText + '40' : theme.colors.border,
-              },
-            ]}
-            segmentStyle={styles.viewModeButton}
-            textStyle={styles.viewModeButtonText}
-            accessibilityLabel="Diary entry view mode"
-            testID="journal-entry-view-mode-pill"
-          />
           <View style={[styles.headerSide, styles.headerSideRight]}>
+            <JournalViewModeToggle
+              modes={selectableViewModes}
+              selectedIndex={selectedViewModeIndex}
+              hasJournalCover={hasJournalCover}
+              backgroundColor={hasJournalCover ? 'rgba(0, 0, 0, 0.56)' : translucentSurfaceColor}
+              borderColor={hasJournalCover ? theme.colors.stickerControlText + '40' : theme.colors.border}
+              onSelect={onSelectViewMode}
+              t={t}
+            />
             <IconCircleButton
               icon="plus"
               onPress={onCreateEntry}
@@ -343,29 +328,6 @@ const styles = StyleSheet.create({
   },
   headerSideRight: {
     justifyContent: 'flex-end',
-    width: 94,
-  },
-  viewModePill: {
-    alignItems: 'center',
-    alignSelf: 'center',
-    borderRadius: 999,
-    borderWidth: 1,
     flex: 1,
-    flexDirection: 'row',
-    height: JOURNAL_VIEW_PILL_HEIGHT,
-    maxWidth: 260,
-    minWidth: 0,
-    padding: 4,
-  },
-  viewModeButton: {
-    borderRadius: 999,
-    height: 34,
-    paddingHorizontal: 8,
-    paddingVertical: 0,
-  },
-  viewModeButtonText: {
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 16,
   },
 });

@@ -3,8 +3,8 @@ import type { ImageSourcePropType } from "react-native";
 export const BUILTIN_JOURNAL_COVER_PREFIX = "builtin://journal-background/";
 export const DEFAULT_JOURNAL_BACKGROUND_ID = "default-journal";
 export const DEFAULT_JOURNAL_BACKGROUND_URI = `${BUILTIN_JOURNAL_COVER_PREFIX}${DEFAULT_JOURNAL_BACKGROUND_ID}`;
-export const DEFAULT_JOURNAL_BACKGROUND_WIDTH = 1672;
-export const DEFAULT_JOURNAL_BACKGROUND_HEIGHT = 941;
+export const DEFAULT_JOURNAL_BACKGROUND_WIDTH = 1280;
+export const DEFAULT_JOURNAL_BACKGROUND_HEIGHT = 720;
 
 export interface BuiltinJournalBackground {
   readonly id: string;
@@ -24,70 +24,70 @@ export const BUILTIN_JOURNAL_BACKGROUNDS: readonly BuiltinJournalBackground[] =
       uri: DEFAULT_JOURNAL_BACKGROUND_URI,
       width: DEFAULT_JOURNAL_BACKGROUND_WIDTH,
       height: DEFAULT_JOURNAL_BACKGROUND_HEIGHT,
-      source: require("../../../../assets/journal-backgrounds/default-journal.png"),
+      source: require("../../../../assets/journal-backgrounds/default-journal.jpg"),
       accessTier: "free",
     },
     {
       id: "meadow-day",
       title: "Meadow - Day",
       uri: `${BUILTIN_JOURNAL_COVER_PREFIX}meadow-day`,
-      width: 1672,
-      height: 941,
-      source: require("../../../../assets/journal-backgrounds/meadow-day.png"),
+      width: 1280,
+      height: 720,
+      source: require("../../../../assets/journal-backgrounds/meadow-day.jpg"),
       accessTier: "free",
     },
     {
       id: "meadow-sunset",
       title: "Meadow - Sunset",
       uri: `${BUILTIN_JOURNAL_COVER_PREFIX}meadow-sunset`,
-      width: 1672,
-      height: 941,
-      source: require("../../../../assets/journal-backgrounds/meadow-sunset.png"),
+      width: 1280,
+      height: 720,
+      source: require("../../../../assets/journal-backgrounds/meadow-sunset.jpg"),
       accessTier: "premium",
     },
     {
       id: "meadow-night",
       title: "Meadow - Night",
       uri: `${BUILTIN_JOURNAL_COVER_PREFIX}meadow-night`,
-      width: 1672,
-      height: 941,
-      source: require("../../../../assets/journal-backgrounds/meadow-night.png"),
+      width: 1280,
+      height: 720,
+      source: require("../../../../assets/journal-backgrounds/meadow-night.jpg"),
       accessTier: "premium",
     },
     {
       id: "winter",
       title: "Winter",
       uri: `${BUILTIN_JOURNAL_COVER_PREFIX}winter`,
-      width: 1672,
-      height: 941,
-      source: require("../../../../assets/journal-backgrounds/winter.png"),
+      width: 1280,
+      height: 720,
+      source: require("../../../../assets/journal-backgrounds/winter.jpg"),
       accessTier: "premium",
     },
     {
       id: "summer",
       title: "Summer",
       uri: `${BUILTIN_JOURNAL_COVER_PREFIX}summer`,
-      width: 1672,
-      height: 941,
-      source: require("../../../../assets/journal-backgrounds/summer.png"),
+      width: 1280,
+      height: 720,
+      source: require("../../../../assets/journal-backgrounds/summer.jpg"),
       accessTier: "premium",
     },
     {
       id: "moonlit-lake",
       title: "Moonlit Lake",
       uri: `${BUILTIN_JOURNAL_COVER_PREFIX}moonlit-lake`,
-      width: 1672,
-      height: 941,
-      source: require("../../../../assets/journal-backgrounds/moonlit-lake.png"),
+      width: 1280,
+      height: 720,
+      source: require("../../../../assets/journal-backgrounds/moonlit-lake.jpg"),
       accessTier: "premium",
     },
     {
       id: "mountain-sunrise",
       title: "Mountain Sunrise",
       uri: `${BUILTIN_JOURNAL_COVER_PREFIX}mountain-sunrise`,
-      width: 1672,
-      height: 941,
-      source: require("../../../../assets/journal-backgrounds/mountain-sunrise.png"),
+      width: 1280,
+      height: 720,
+      source: require("../../../../assets/journal-backgrounds/mountain-sunrise.jpg"),
       accessTier: "premium",
     },
   ];
@@ -110,4 +110,8 @@ export function getJournalCoverImageSource(
     return BUILTIN_JOURNAL_BACKGROUNDS[0]?.source;
   }
   return uri ? { uri } : undefined;
+}
+
+export function getAllBuiltinJournalCoverImageSources(): ImageSourcePropType[] {
+  return BUILTIN_JOURNAL_BACKGROUNDS.map((background) => background.source);
 }

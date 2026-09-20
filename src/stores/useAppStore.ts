@@ -41,7 +41,7 @@ export type FontFamily = AppFontFamily;
 export type JournalColumnCount = 1 | 2 | 3 | 4;
 export type HomeViewMode = 'detailed' | 'timeline' | 'feed';
 export type EntryHierarchyMode = 'year-month-date' | 'month-date' | 'date' | 'none';
-export type AppLanguage = 'en' | 'ja' | 'zh' | 'de' | 'fr';
+export type AppLanguage = 'en' | 'ja' | 'zh' | 'de' | 'fr' | 'tl';
 export type SyntheticJournalId = 'all' | 'unassigned';
 
 export interface JournalCoverPreference {

@@ -241,7 +241,12 @@ export default function OnboardingScreen(): React.JSX.Element {
               {t('onboardingLanguageSubtitle')}
             </Text>
 
-            <View style={styles.languageGrid}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.languageSliderContent}
+              style={styles.languageSlider}
+            >
               {APP_LANGUAGES.map((language) => {
                 const selected = language.value === appLanguage;
                 return (
@@ -259,13 +264,21 @@ export default function OnboardingScreen(): React.JSX.Element {
                     accessibilityState={{ selected }}
                     accessibilityLabel={language.label}
                   >
-                    <Text preset="label" color={selected ? 'tint' : 'text'} style={styles.choiceText}>
-                      {language.nativeLabel}
-                    </Text>
+                    <View style={styles.languageCardCopy}>
+                      <Text preset="label" color={selected ? 'tint' : 'text'} style={styles.languageCardTitle} numberOfLines={1}>
+                        {language.nativeLabel}
+                      </Text>
+                      <Text preset="caption" color={selected ? 'tint' : 'textSecondary'} style={styles.languageCardSubtitle} numberOfLines={1}>
+                        {language.label}
+                      </Text>
+                    </View>
+                    {selected ? (
+                      <Ionicons name="checkmark-circle" size={18} color={theme.colors.tint} />
+                    ) : null}
                   </TouchableOpacity>
                 );
               })}
-            </View>
+            </ScrollView>
           </View>
         )}
 
@@ -658,22 +671,43 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     fontWeight: '700',
   },
-  languageGrid: {
+  languageSlider: {
+    height: 78,
     width: '100%',
-    marginTop: 40,
+    marginTop: 34,
+  },
+  languageSliderContent: {
+    alignItems: 'center',
+    gap: 9,
+    paddingHorizontal: 2,
+    paddingVertical: 4,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
   },
   languageCard: {
-    minHeight: 50,
-    minWidth: '30%',
-    flexGrow: 1,
+    height: 62,
+    width: 148,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 18,
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
     justifyContent: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
+  },
+  languageCardCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  languageCardTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 19,
+  },
+  languageCardSubtitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 14,
+    marginTop: 1,
   },
   stepTitle: {
     marginTop: 36,

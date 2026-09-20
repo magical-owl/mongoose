@@ -133,7 +133,11 @@ export default function EntryDetailScreen() {
     resetScrollCollapse,
   } = useScrollCollapse({ onScrollBeginDrag: handleCoverScrollBeginDrag });
 
-  const [entry, setEntry] = useState<DiaryEntry | null>(null);
+  const routeEntry = useMemo(() => (
+    id ? entries.find((item) => item.id === id) ?? null : null
+  ), [entries, id]);
+  const [hydratedEntry, setEntry] = useState<DiaryEntry | null>(() => routeEntry);
+  const entry = hydratedEntry?.id === id ? hydratedEntry : routeEntry;
   const [isEditing, setIsEditing] = useState(false);
   const {
     editTitle,
@@ -345,17 +349,15 @@ export default function EntryDetailScreen() {
 
   useEffect(() => {
     resetAdjacentEntryNavigation();
+    setShowMemoryReactionPicker(false);
     const timer = setTimeout(() => {
-      setShowMemoryReactionPicker(false);
       setShowViewHistory(false);
-      if (!id) return;
-      const found = entries.find((e) => e.id === id);
-      if (found) {
-        hydrateEntryState(found);
+      if (routeEntry) {
+        hydrateEntryState(routeEntry);
       }
     }, 0);
     return () => clearTimeout(timer);
-  }, [id, entries, hydrateEntryState, resetAdjacentEntryNavigation, setShowMemoryReactionPicker]);
+  }, [hydrateEntryState, resetAdjacentEntryNavigation, routeEntry, setShowMemoryReactionPicker]);
 
   if (!entry) {
     return (

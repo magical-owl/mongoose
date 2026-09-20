@@ -185,7 +185,7 @@ describe('EntryReflectionsModal', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    await fireEvent.press(getByTestId('entry-modal-reflection-replies-22222222-2222-4222-8222-222222222222-add-button'));
+    await fireEvent.press(getByTestId('entry-modal-reflection-reaction-22222222-2222-4222-8222-222222222222-reply-button'));
     await fireEvent.changeText(getByLabelText('Reflection reply text'), 'A modal reply');
     await act(async () => {
       await fireEvent.press(getByTestId('entry-modal-reflection-replies-22222222-2222-4222-8222-222222222222-submit'));

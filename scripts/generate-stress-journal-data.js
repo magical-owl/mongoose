@@ -13,14 +13,14 @@ const COMPANIONS = ['cat', 'dog', 'alien', 'girl', 'man'];
 const WRITING_MODES = ['free-write', 'one-line', 'five-minute', 'gratitude', 'travel', 'dream', 'evening-review'];
 const MEMORY_REACTIONS = ['cherish', 'treasure', 'smile', 'heavy', 'tender', 'stormy'];
 const COVER_IMAGES = [
-  { uri: 'builtin://journal-background/default-journal', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/meadow-day', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/meadow-sunset', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/meadow-night', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/winter', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/summer', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/moonlit-lake', width: 1672, height: 941 },
-  { uri: 'builtin://journal-background/mountain-sunrise', width: 1672, height: 941 },
+  { uri: 'builtin://journal-background/default-journal', width: 1280, height: 720 },
+  { uri: 'builtin://journal-background/meadow-day', width: 1280, height: 720 },
+  { uri: 'builtin://journal-background/meadow-sunset', width: 1280, height: 720 },
+  { uri: 'builtin://journal-background/meadow-night', width: 1280, height: 720 },
+  { uri: 'builtin://journal-background/winter', width: 1280, height: 720 },
+  { uri: 'builtin://journal-background/summer', width: 1280, height: 720 },
+  { uri: 'builtin://journal-background/moonlit-lake', width: 1280, height: 720 },
+  { uri: 'builtin://journal-background/mountain-sunrise', width: 1280, height: 720 },
 ];
 const JOURNAL_TITLES = [
   'Everyday Notes',

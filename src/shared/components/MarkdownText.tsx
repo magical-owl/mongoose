@@ -8,6 +8,7 @@
  * No native dependencies — works in Expo Go.
  */
 
+import { useMemo } from 'react';
 import { View, StyleSheet, type StyleProp, type TextStyle } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from './Text';
@@ -173,9 +174,10 @@ export function MarkdownText({ children, style, testID }: MarkdownTextProps) {
     h3: Math.round(bodyLineHeight * 1.12),
   };
 
-  const normalizedText = convertHtmlToMarkdown(children || '');
-  const lines = normalizedText.split('\n');
-  const blocks: BlockLine[] = lines.map(parseLine);
+  const blocks: BlockLine[] = useMemo(() => {
+    const normalizedText = convertHtmlToMarkdown(children || '');
+    return normalizedText.split('\n').map(parseLine);
+  }, [children]);
 
   return (
     <View testID={testID}>

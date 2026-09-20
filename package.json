@@ -20,6 +20,7 @@
     "eas-build-pre-install": "node scripts/validate-production-config.js",
     "generate:stress-data": "node scripts/generate-stress-journal-data.js",
     "generate:owned-assets": "node scripts/generate-owned-assets.js",
+    "audit:assets": "node scripts/audit-assets.js",
     "init-app": "node scripts/init-app.js",
     "eas:build": "eas build",
     "eas:update": "eas update",

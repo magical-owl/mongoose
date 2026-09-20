@@ -17,6 +17,9 @@ interface ReflectionReplyThreadProps {
   readonly onAddReply?: (entryId: string, reflectionId: string, text: string) => Promise<boolean>;
   readonly onDeleteReply?: (entryId: string, reflectionId: string, replyId: string) => void;
   readonly onReplyInputFocus?: (entryId: string, reflectionId: string) => void;
+  readonly isComposerVisible?: boolean;
+  readonly onComposerVisibleChange?: (visible: boolean) => void;
+  readonly showAddButton?: boolean;
   readonly testID?: string;
 }
 
@@ -28,15 +31,26 @@ export function ReflectionReplyThread({
   onAddReply,
   onDeleteReply,
   onReplyInputFocus,
+  isComposerVisible: controlledComposerVisible,
+  onComposerVisibleChange,
+  showAddButton = true,
   testID,
 }: ReflectionReplyThreadProps): React.JSX.Element | null {
   const theme = useTheme();
   const t = useTranslation();
-  const [isComposerVisible, setIsComposerVisible] = useState(false);
+  const [uncontrolledComposerVisible, setUncontrolledComposerVisible] = useState(false);
   const canReply = typeof onAddReply === 'function';
   const addReply = onAddReply;
+  const isComposerVisible = controlledComposerVisible ?? uncontrolledComposerVisible;
+  const setIsComposerVisible = (visible: boolean) => {
+    if (onComposerVisibleChange) {
+      onComposerVisibleChange(visible);
+      return;
+    }
+    setUncontrolledComposerVisible(visible);
+  };
 
-  if (replies.length === 0 && !canReply) return null;
+  if (replies.length === 0 && !canReply && !isComposerVisible) return null;
 
   const friendlyTimestampLabels = {
     today: t('timeToday'),
@@ -102,7 +116,7 @@ export function ReflectionReplyThread({
             inputHeight={34}
             backgroundColor={theme.colors.card}
           />
-        ) : (
+        ) : showAddButton ? (
           <TouchableOpacity
             onPress={() => setIsComposerVisible(true)}
             style={[styles.replyButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.card }]}
@@ -112,7 +126,7 @@ export function ReflectionReplyThread({
           >
             <Text preset="caption" color="textSecondary">{t('reflectionReplyAction')}</Text>
           </TouchableOpacity>
-        )
+        ) : null
       ) : null}
     </View>
   );

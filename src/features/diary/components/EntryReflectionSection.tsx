@@ -46,6 +46,7 @@ export function EntryReflectionSection({
   const hasContent = reflections.length > 0 || Boolean(onAddReflection);
   const revealProgress = useRef(new Animated.Value(0)).current;
   const [openReactionReflectionId, setOpenReactionReflectionId] = useState<string | null>(null);
+  const [openReplyReflectionId, setOpenReplyReflectionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasContent) return;
@@ -129,7 +130,7 @@ export function EntryReflectionSection({
                     testID="entry-inline-reflection-photo"
                   />
                 ) : null}
-                {onToggleReflectionMemoryReaction ? (
+                {onToggleReflectionMemoryReaction || onAddReflectionReply ? (
                   <ReflectionReactionFooter
                     entryId={entryId}
                     reflectionId={reflection.id}
@@ -137,9 +138,13 @@ export function EntryReflectionSection({
                     isPickerVisible={openReactionReflectionId === reflection.id}
                     onOpenPicker={() => setOpenReactionReflectionId(reflection.id)}
                     onDismissPicker={() => setOpenReactionReflectionId(null)}
-                    onToggleReaction={(targetEntryId, targetReflectionId, reaction) => {
-                      void onToggleReflectionMemoryReaction(targetEntryId, targetReflectionId, reaction);
-                    }}
+                    onToggleReaction={onToggleReflectionMemoryReaction
+                      ? (targetEntryId, targetReflectionId, reaction) => {
+                        void onToggleReflectionMemoryReaction(targetEntryId, targetReflectionId, reaction);
+                      }
+                      : undefined}
+                    onPressReply={onAddReflectionReply ? () => setOpenReplyReflectionId(reflection.id) : undefined}
+                    isReplyActive={openReplyReflectionId === reflection.id}
                     testID={`entry-reflection-reaction-${reflection.id}`}
                   />
                 ) : null}
@@ -151,6 +156,9 @@ export function EntryReflectionSection({
                   onAddReply={onAddReflectionReply}
                   onDeleteReply={onDeleteReflectionReply}
                   onReplyInputFocus={() => onReflectionInputFocus?.(entryId)}
+                  isComposerVisible={openReplyReflectionId === reflection.id}
+                  onComposerVisibleChange={(visible) => setOpenReplyReflectionId(visible ? reflection.id : null)}
+                  showAddButton={false}
                   testID={`entry-reflection-replies-${reflection.id}`}
                 />
               </View>

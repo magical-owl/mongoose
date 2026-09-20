@@ -60,7 +60,7 @@ export function EntryEditFooterTools({
         )}
       >
         <IconCircleButton
-          icon="fountain-pen-tip"
+          icon="format-letter-case"
           size="sm"
           active={showFormattingTools}
           surface="transparent"

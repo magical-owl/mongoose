@@ -53,18 +53,17 @@ const baseProps = {
 };
 
 describe('JournalEntryListChrome', () => {
-  it('switches view modes through the header pill', async () => {
+  it('cycles view modes through the header toggle', async () => {
     const onSelectViewMode = jest.fn();
-    const { getAllByLabelText } = await renderWithProviders(
+    const { getByLabelText, getByTestId } = await renderWithProviders(
       <JournalEntryListChrome {...baseProps} onSelectViewMode={onSelectViewMode} />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    const feedControls = getAllByLabelText('Feed');
-    expect(feedControls.length).toBeGreaterThan(0);
-    await fireEvent.press(feedControls[0]!);
+    expect(getByTestId('journal-entry-view-mode-toggle')).toBeTruthy();
+    await fireEvent.press(getByLabelText('Diary entry view mode, Timeline. Tap to switch to Card.'));
 
-    expect(onSelectViewMode).toHaveBeenCalledWith(2, 'feed');
+    expect(onSelectViewMode).toHaveBeenCalledWith(1, 'detailed');
   });
 
   it('routes drawer actions through explicit callbacks', async () => {

@@ -25,7 +25,8 @@ Use this reference when adding or changing assets, fonts, icons, illustrations, 
 - Any protected-style shorthand has been converted into neutral medium, texture, composition, palette, and mood language before generation or approval.
 - App names, product names, and marks have human owner review before release.
 - Third-party logos, brand marks, celebrity likenesses, and copyrighted characters are not used without authorization.
-- Asset dimensions and file size are suitable for mobile.
+- Asset dimensions, file format, and file size are suitable for mobile and match `agents/original-asset-generation.md` right-sized output targets.
+- `npm run audit:assets` has been run after adding or replacing bundled images, and any oversized app-rendered assets are either optimized or explicitly justified.
 - Accessibility text is provided for meaningful images.
 
 ## Web Reference Review
@@ -63,6 +64,9 @@ License:
 Attribution:
 Generated/edited:
 Draft/final status:
+Dimensions:
+Intended display size:
+File format and size:
 Prompt/source notes:
 Reference inputs:
 Web search/review notes:

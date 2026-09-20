@@ -1,4 +1,10 @@
-import { insightsMetricUnitLabel, translate, type TranslationKey } from '../i18n';
+import {
+  APP_LANGUAGES,
+  SUPPORTED_TRANSLATIONS,
+  insightsMetricUnitLabel,
+  translate,
+  type TranslationKey,
+} from '../i18n';
 
 const t = (key: TranslationKey) => translate('en', key);
 
@@ -17,5 +23,30 @@ describe('i18n insight metric labels', () => {
     expect(insightsMetricUnitLabel('sticker', 0, t)).toBe('stickers');
     expect(insightsMetricUnitLabel('writingDay', 3, t)).toBe('writing days');
     expect(insightsMetricUnitLabel('reflection', 0, t)).toBe('reflections');
+  });
+});
+
+describe('i18n Filipino language support', () => {
+  it('has complete key coverage for every supported language', () => {
+    const englishKeys = Object.keys(SUPPORTED_TRANSLATIONS.en).sort();
+
+    APP_LANGUAGES.forEach(({ value }) => {
+      expect(Object.keys(SUPPORTED_TRANSLATIONS[value]).sort()).toEqual(englishKeys);
+    });
+  });
+
+  it('lists Filipino as a selectable app language', () => {
+    expect(APP_LANGUAGES).toContainEqual({
+      value: 'tl',
+      label: 'Filipino',
+      nativeLabel: 'Filipino',
+    });
+  });
+
+  it('uses Filipino overrides for high-visibility writing UI', () => {
+    expect(translate('tl', 'tabsCalendar')).toBe('Kalendaryo');
+    expect(translate('tl', 'onboardingGetStarted')).toBe('Magsimula');
+    expect(translate('tl', 'entryCreateContentPlaceholder')).toBe('Ano ang nasa isip mo ngayon? Malayang magsulat...');
+    expect(translate('tl', 'entryEditContentPlaceholder')).toBe('Ano ang nasa isip mo ngayon?');
   });
 });
