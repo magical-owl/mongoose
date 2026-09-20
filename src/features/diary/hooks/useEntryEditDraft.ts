@@ -1,8 +1,11 @@
 import { useCallback, useState } from 'react';
 import {
   getEntryManualMoods,
+  getDiaryEntryType,
   getPrimaryManualMood,
+  normalizeMomentEntryPhotos,
   type DiaryEntry,
+  type DiaryEntryType,
   type DiaryPhoto,
   type ManualMood,
   type ManualMoodWeather,
@@ -10,7 +13,6 @@ import {
 } from '@/features/diary/domain/DiaryEntry';
 import type { CompanionType } from '@/features/diary/domain/Companion';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
-import { createPlacedPhotoSticker } from '@/features/diary/services/DiaryPhotoService';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import {
   DIARY_BODY_DEFAULT_FONT_FAMILY,
@@ -39,10 +41,12 @@ export function appendTemplateToEntryContent(content: string, templateContent: s
 
 export function useEntryEditDraft() {
   const [editTitle, setEditTitle] = useState('');
+  const [editEntryType, setEditEntryType] = useState<DiaryEntryType>('diary');
   const [editContent, setEditContent] = useState('');
   const [editDate, setEditDate] = useState(new Date());
   const [editStickers, setEditStickers] = useState<PlacedSticker[]>([]);
   const [editCoverPhoto, setEditCoverPhoto] = useState<DiaryPhoto | undefined>();
+  const [editPhotos, setEditPhotos] = useState<DiaryPhoto[]>([]);
   const [editPaperBackgroundId, setEditPaperBackgroundId] = useState<string>(DEFAULT_DIARY_PAPER_BACKGROUND_ID);
   const [editBodyFontFamily, setEditBodyFontFamily] = useState<DiaryBodyFontFamily>(DIARY_BODY_DEFAULT_FONT_FAMILY);
   const [editBodyTextColor, setEditBodyTextColor] = useState<DiaryBodyTextColor | undefined>();
@@ -69,15 +73,14 @@ export function useEntryEditDraft() {
 
   const hydrateEditDraft = useCallback((sourceEntry: DiaryEntry) => {
     setEditTitle(sourceEntry.title);
+    setEditEntryType(getDiaryEntryType(sourceEntry));
     setEditContent(sourceEntry.content);
     setEditDate(entryDate(sourceEntry.date));
     setEditCoverPhoto(sourceEntry.coverPhoto);
     setEditPaperBackgroundId(sourceEntry.paperBackgroundId ?? DEFAULT_DIARY_PAPER_BACKGROUND_ID);
     resetEditableBodyStyle(sourceEntry);
-    setEditStickers([
-      ...sourceEntry.stickers,
-      ...sourceEntry.photos.map((photo, index) => createPlacedPhotoSticker(photo, sourceEntry.stickers.length + index)),
-    ]);
+    setEditPhotos(normalizeMomentEntryPhotos(sourceEntry.photos));
+    setEditStickers(sourceEntry.stickers);
     setEditCompanion(sourceEntry.companion);
     setEditFavorite(sourceEntry.isFavorite);
     setEditJournalIds(sourceEntry.journalIds ?? sourceEntry.collectionIds);
@@ -97,15 +100,16 @@ export function useEntryEditDraft() {
 
   const buildUpdatedEntry = useCallback((sourceEntry: DiaryEntry): DiaryEntry => ({
     ...sourceEntry,
-    title: editTitle.trim(),
-    content: editContent.trim(),
+    title: editEntryType === 'moment' ? '' : editTitle.trim(),
+    entryType: editEntryType,
+    content: editEntryType === 'moment' ? '' : editContent.trim(),
     date: formatEntryDate(editDate),
     paperBackgroundId: editPaperBackgroundId,
     bodyFontFamily: editBodyFontFamily,
     bodyTextColor: editBodyTextColor,
     stickers: editStickers,
     coverPhoto: editCoverPhoto,
-    photos: [],
+    photos: editEntryType === 'moment' ? editPhotos : [],
     companion: editCompanion,
     isFavorite: editFavorite,
     tags: editTags,
@@ -134,6 +138,7 @@ export function useEntryEditDraft() {
     editContent,
     editCoverPhoto,
     editDate,
+    editEntryType,
     editEnergy,
     editExpiresAt,
     editFavorite,
@@ -143,6 +148,7 @@ export function useEntryEditDraft() {
     editMoodWeather,
     editMoods,
     editPaperBackgroundId,
+    editPhotos,
     editSmells,
     editSounds,
     editStickers,
@@ -155,6 +161,8 @@ export function useEntryEditDraft() {
   return {
     editTitle,
     setEditTitle,
+    editEntryType,
+    setEditEntryType,
     editContent,
     setEditContent,
     editDate,
@@ -163,6 +171,8 @@ export function useEntryEditDraft() {
     setEditStickers,
     editCoverPhoto,
     setEditCoverPhoto,
+    editPhotos,
+    setEditPhotos,
     editPaperBackgroundId,
     setEditPaperBackgroundId,
     editBodyFontFamily,

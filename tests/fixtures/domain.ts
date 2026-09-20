@@ -41,6 +41,7 @@ export function buildDiaryEntry(overrides: Partial<DiaryEntry> = {}): DiaryEntry
   return {
     id: '11111111-1111-4111-8111-111111111111',
     title: 'A quiet morning',
+    entryType: 'diary',
     content: '<p>Entry body.</p>',
     date: DEFAULT_DATE,
     paperBackgroundId: 'blank',
@@ -71,6 +72,7 @@ export function buildDiaryEntry(overrides: Partial<DiaryEntry> = {}): DiaryEntry
 export function buildDiaryDraft(overrides: Partial<DiaryDraft> = {}): DiaryDraft {
   return {
     title: '',
+    entryType: 'diary',
     content: '<p>Draft body.</p>',
     date: DEFAULT_DATE,
     companion: 'cat',

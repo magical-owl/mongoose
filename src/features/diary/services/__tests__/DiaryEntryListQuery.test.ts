@@ -20,6 +20,25 @@ describe('DiaryEntryListQuery', () => {
     expect(entries).toEqual([olderEntry, newerEntry]);
   });
 
+  it('keeps same-day entries ordered by original creation time instead of latest activity', () => {
+    const earlierEntry = buildDiaryEntry({
+      id: '11111111-1111-4111-8111-111111111111',
+      title: 'Earlier',
+      date: '2026-09-12',
+      createdAt: '2026-09-12T08:00:00.000Z',
+      updatedAt: '2026-09-12T10:00:00.000Z',
+    });
+    const laterEntry = buildDiaryEntry({
+      id: '22222222-2222-4222-8222-222222222222',
+      title: 'Later',
+      date: '2026-09-12',
+      createdAt: '2026-09-12T09:00:00.000Z',
+      updatedAt: '2026-09-12T09:00:00.000Z',
+    });
+
+    expect(sortDiaryEntriesByDateDesc([earlierEntry, laterEntry])).toEqual([laterEntry, earlierEntry]);
+  });
+
   it('builds unique sorted filter options for journal entries', () => {
     const entries = [
       buildDiaryEntry({

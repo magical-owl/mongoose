@@ -3,7 +3,7 @@ import { Image, Pressable, StyleSheet, TouchableOpacity, useWindowDimensions, Vi
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
 import { Text } from '@shared/components/Text';
-import { getEntryManualMoods, getPrimaryManualMood, type DiaryEntry, type DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
+import { getDiaryEntryType, getEntryManualMoods, getPrimaryManualMood, type DiaryEntry, type DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
 import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import { getDiaryEntryViewCount } from '@/features/diary/domain/DiaryEntryViewHistory';
 import type { Profile } from '@/features/profile/domain/Profile';
@@ -127,6 +127,8 @@ export function DiaryEntryView({
   const entryTime = formatFriendlyTimestamp(entry.createdAt, timeFormat, friendlyTimestampLabels);
   const feedEntryDateTime = entryTime;
   const viewCount = getDiaryEntryViewCount(entry);
+  const entryTitle = entry.title.trim() || t('entryTypeMoment');
+  const isMomentEntry = getDiaryEntryType(entry) === 'moment';
   const previewText = getDiaryEntryPreviewText(entry);
   const viewCountA11y = t('entryViewCountA11y').replace('{count}', String(viewCount));
   const hasInlineReflections = mode === 'timeline' || mode === 'feed';
@@ -263,7 +265,7 @@ export function DiaryEntryView({
             {entry.coverPhoto ? (
               <EntryCoverSummary
                 variant="feed"
-                title={entry.title}
+                title={entryTitle}
                 timestamp={feedTimestamp}
                 imageSource={getDiaryPhotoImageSource(entry.coverPhoto.uri)}
                 viewCount={viewCount}
@@ -301,7 +303,7 @@ export function DiaryEntryView({
                       ]}
                       numberOfLines={3}
                     >
-                      {entry.title}
+                      {entryTitle}
                     </Text>
                     {feedTimestamp ? (
                       <Text
@@ -319,6 +321,7 @@ export function DiaryEntryView({
                   style={[
                     styles.feedContentPanel,
                     entry.coverPhoto && styles.feedContentPanelMerged,
+                    isMomentEntry && styles.feedContentPanelMoment,
                     {
                       backgroundColor: 'transparent',
                       borderColor: 'transparent',
@@ -364,7 +367,7 @@ export function DiaryEntryView({
             <View style={styles.timelineHeader}>
               <View style={styles.timelineTitleGroup}>
                 <ProfileAvatar profile={profile} size={22} accessibilityLabel={t('profileAvatarA11y')} testID="entry-timeline-avatar" />
-                <Text style={[styles.timelineTitle, { color: theme.colors.text }]} numberOfLines={1}>{entry.title}</Text>
+                <Text style={[styles.timelineTitle, { color: theme.colors.text }]} numberOfLines={1}>{entryTitle}</Text>
               </View>
               <View style={styles.timelineActions}>
                 {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.timelineTime}>{entryTime}</Text> : null}
@@ -449,7 +452,7 @@ export function DiaryEntryView({
             <View style={styles.cardHeader}>
               <View style={styles.cardTitleRow}>
                 <ProfileAvatar profile={profile} size={22} accessibilityLabel={t('profileAvatarA11y')} testID="entry-card-avatar" />
-                <Text preset="h3" color="text" style={styles.title} numberOfLines={1}>{entry.title}</Text>
+                <Text preset="h3" color="text" style={styles.title} numberOfLines={1}>{entryTitle}</Text>
               </View>
               {entryTime ? <Text preset="caption" color="textTertiary" numberOfLines={1} style={styles.cardTime}>{entryTime}</Text> : null}
               <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
@@ -513,6 +516,7 @@ const styles = StyleSheet.create({
   feedCoverTitle: { marginBottom: 2 },
   feedContentPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 0, paddingHorizontal: 12, paddingVertical: 12 },
   feedContentPanelMerged: { borderWidth: 0, borderRadius: 0, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 20 },
+  feedContentPanelMoment: { paddingTop: 0, paddingBottom: 0, paddingHorizontal: 0 },
   feedDateTime: { flexShrink: 0, fontWeight: '700', marginTop: 2 },
   timelineEntry: { position: 'relative', minHeight: 82, marginBottom: 18, paddingLeft: 42, paddingRight: 20 },
   timelineSpine: { position: 'absolute', top: 0, bottom: -18, left: 6, width: 1 },

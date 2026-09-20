@@ -1,7 +1,7 @@
 import { DiaryEntryBodyView } from '@/features/diary/components/DiaryEntryBodyView';
 import { renderWithProviders } from '@tests/helpers';
 import { StyleSheet } from 'react-native';
-import { buildDiaryEntry } from '@tests/fixtures/domain';
+import { buildDiaryEntry, buildDiaryPhoto } from '@tests/fixtures/domain';
 
 const entry = buildDiaryEntry({
   title: 'Morning notes',
@@ -57,5 +57,26 @@ describe('DiaryEntryBodyView', () => {
     const headingStyle = StyleSheet.flatten(getByText('Section heading').props.style);
     expect(headingStyle?.fontSize).toBeGreaterThan(20);
     expect(getByText('Normal body.')).toBeTruthy();
+  });
+
+  it('renders moment photos in read-only view mode', async () => {
+    const momentEntry = buildDiaryEntry({
+      entryType: 'moment',
+      content: '',
+      photos: [buildDiaryPhoto()],
+    });
+    const { getByTestId } = await renderWithProviders(
+      <DiaryEntryBodyView
+        entry={momentEntry}
+        bodyCanvasHeight={160}
+        bodyFontSize={20}
+        bodyLineHeight={31}
+        stickers={[]}
+        onBodyLayout={jest.fn()}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByTestId('entry-view-moment-photo-grid')).toBeTruthy();
   });
 });

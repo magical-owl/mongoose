@@ -109,6 +109,18 @@ export const DiaryPhotoSchema = z.object({
 });
 export type DiaryPhoto = z.infer<typeof DiaryPhotoSchema>;
 
+export const DiaryEntryTypeSchema = z.enum(['diary', 'moment']);
+export type DiaryEntryType = z.infer<typeof DiaryEntryTypeSchema>;
+export const MOMENT_ENTRY_PHOTO_LIMIT = 6;
+
+export function getDiaryEntryType(entry: { readonly entryType?: DiaryEntryType }): DiaryEntryType {
+  return entry.entryType ?? 'diary';
+}
+
+export function normalizeMomentEntryPhotos(photos: readonly DiaryPhoto[] = []): DiaryPhoto[] {
+  return photos.slice(0, MOMENT_ENTRY_PHOTO_LIMIT);
+}
+
 export const DiaryReflectionReplySchema = z.object({
   id: z.string().uuid(),
   text: z.string().min(1).max(2000),
@@ -135,8 +147,9 @@ export type DiaryEntryViewEvent = z.infer<typeof DiaryEntryViewEventSchema>;
 
 export const DiaryEntrySchema = z.object({
   id: z.string().uuid(),
-  title: z.string().min(1, 'Title is required').max(150),
-  content: z.string().min(1, 'Content cannot be empty'),
+  title: z.string().max(150),
+  entryType: DiaryEntryTypeSchema.default('diary'),
+  content: z.string().max(50000),
   date: z.string(),                                      // YYYY-MM-DD
   paperBackgroundId: z.string().default('vintage-parchment'),
   bodyFontFamily: DiaryBodyFontFamilySchema.default('system'),
@@ -165,8 +178,30 @@ export const DiaryEntrySchema = z.object({
   collectionIds: z.array(z.string().uuid()).default([]),
   journalIds: z.array(z.string().uuid()).default([]),
   coverPhoto: DiaryPhotoSchema.optional(),
-  photos: z.array(DiaryPhotoSchema).default([]),
+  photos: z.array(DiaryPhotoSchema).max(MOMENT_ENTRY_PHOTO_LIMIT).default([]),
   reflections: z.array(DiaryReflectionSchema).default([]),
+}).superRefine((entry, context) => {
+  if (entry.entryType === 'diary' && !entry.title.trim()) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['title'],
+      message: 'Title is required',
+    });
+  }
+  if (entry.entryType === 'diary' && !entry.content.trim()) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['content'],
+      message: 'Content cannot be empty',
+    });
+  }
+  if (entry.entryType === 'moment' && entry.photos.length === 0 && !entry.content.trim()) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['photos'],
+      message: 'Moment entries need at least one photo or note',
+    });
+  }
 });
 
 export type DiaryEntry = z.infer<typeof DiaryEntrySchema>;

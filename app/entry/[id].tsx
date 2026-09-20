@@ -36,7 +36,7 @@ import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import type { RichTextEditorHandle } from '@shared/components/RichTextEditor';
-import { DiaryEntry, getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
+import { DiaryEntry, MOMENT_ENTRY_PHOTO_LIMIT, normalizeMomentEntryPhotos, getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
 import { getDiaryEntryViewCount } from '@/features/diary/domain/DiaryEntryViewHistory';
 import { getDiaryStylePreset, type DiaryStylePresetId } from '@/features/diary/domain/DiaryStylePreset';
 import { Template } from '@/features/diary/domain/Template';
@@ -53,7 +53,8 @@ import { EntryMetaRow } from '@/features/diary/components/EntryMetaRow';
 import { EntryViewHistoryModal } from '@/features/diary/components/EntryViewHistoryModal';
 import { closeMemoryReactionPanels } from '@/features/diary/components/MemoryReactionPanelRegistry';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
-import { createPlacedPhotoSticker } from '@/features/diary/services/DiaryPhotoService';
+import { diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
+import { chooseDiaryPhotos } from '@/features/diary/services/DiaryPhotoPickerService';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { useTranslation } from '@/localization/i18n';
@@ -142,6 +143,8 @@ export default function EntryDetailScreen() {
   const {
     editTitle,
     setEditTitle,
+    editEntryType,
+    setEditEntryType,
     editContent,
     setEditContent,
     editDate,
@@ -150,6 +153,8 @@ export default function EntryDetailScreen() {
     setEditStickers,
     editCoverPhoto,
     setEditCoverPhoto,
+    editPhotos,
+    setEditPhotos,
     editPaperBackgroundId,
     setEditPaperBackgroundId,
     editBodyFontFamily,
@@ -232,6 +237,29 @@ export default function EntryDetailScreen() {
     onLibraryPermissionDenied: () => Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage')),
     onPhotoImportFailed: () => Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage')),
   });
+  const handleAddMomentPhotos = useCallback(async () => {
+    const result = await chooseDiaryPhotos();
+    if (!result.success) {
+      if (result.error === 'native-module-missing') {
+        Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
+      } else {
+        Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage'));
+      }
+      return;
+    }
+    if (result.assets.length === 0) return;
+    try {
+      const remainingSlots = Math.max(0, MOMENT_ENTRY_PHOTO_LIMIT - editPhotos.length);
+      const imported = await Promise.all(result.assets.slice(0, remainingSlots).map((asset) => diaryPhotoService.importAsset(asset)));
+      setEditPhotos((current) => normalizeMomentEntryPhotos([...current, ...imported]));
+      setEditEntryType('moment');
+    } catch {
+      Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
+    }
+  }, [editPhotos.length, setEditEntryType, setEditPhotos, t]);
+  const handleRemoveMomentPhoto = useCallback((photoId: string) => {
+    setEditPhotos((current) => current.filter((photo) => photo.id !== photoId));
+  }, [setEditPhotos]);
   const hydrateEntryState = useCallback((sourceEntry: DiaryEntry) => {
     setEntry(sourceEntry);
     hydrateEditDraft(sourceEntry);
@@ -374,13 +402,12 @@ export default function EntryDetailScreen() {
     );
   }
 
-  const displayStickers = isEditing
-    ? editStickers
-    : [...entry.stickers, ...entry.photos.map((photo, index) => createPlacedPhotoSticker(photo, entry.stickers.length + index))];
+  const displayStickers = isEditing ? editStickers : entry.stickers;
   const behindDisplayStickers = displayStickers.filter((sticker) => sticker.behindText);
   const foregroundDisplayStickers = displayStickers.filter((sticker) => !sticker.behindText);
   const wordCount = countWords(isEditing ? editContent : entry.content);
   const viewMoods = getEntryManualMoods(entry);
+  const viewTitle = entry.title.trim() || t('entryTypeMoment');
   const hasViewCoverPhoto = Boolean(entry.coverPhoto);
   const friendlyTimestampLabels = {
     today: t('timeToday'),
@@ -473,7 +500,7 @@ export default function EntryDetailScreen() {
         coverScrollY={coverScrollY}
         viewEntryOpacity={viewEntryOpacity}
         viewCoverOverlayOpacity={viewCoverOverlayOpacity}
-        entryTitle={entry.title}
+        entryTitle={viewTitle}
         viewDateTime={viewDateTime}
         viewCount={getDiaryEntryViewCount(entry)}
         viewMoods={viewMoods}
@@ -566,6 +593,11 @@ export default function EntryDetailScreen() {
                 onChangeDate={setEditDate}
                 editTitle={editTitle}
                 onChangeTitle={setEditTitle}
+                editEntryType={editEntryType}
+                onChangeEntryType={setEditEntryType}
+                editPhotos={editPhotos}
+                onAddMomentPhotos={handleAddMomentPhotos}
+                onRemoveMomentPhoto={handleRemoveMomentPhoto}
                 editContent={editContent}
                 onChangeContent={setEditContent}
                 editBodyFontFamily={editBodyFontFamily}
@@ -585,6 +617,7 @@ export default function EntryDetailScreen() {
               /* ── View mode ──────────────────────────────────────────────── */
               <EntryViewBodyContent
                 entry={entry}
+                title={viewTitle}
                 hasCoverPhoto={hasViewCoverPhoto}
                 timestamp={viewDateTime}
                 loadingEntryDirection={loadingEntryDirection}
@@ -592,6 +625,7 @@ export default function EntryDetailScreen() {
                 bodyCanvasHeight={bodyCanvasHeight}
                 stickers={displayStickers}
                 initialCanvasWidth={Math.max(1, windowWidth - theme.spacing.lg * 2)}
+                momentPhotoBleedHorizontal={theme.spacing.lg}
                 onChangeBodyLayout={setBodyLayout}
                 onUpdateSticker={handleUpdateSticker}
                 onDeleteSticker={handleDeleteSticker}

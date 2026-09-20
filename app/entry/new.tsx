@@ -17,6 +17,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   Keyboard,
+  Pressable,
   TextInput as NativeTextInput,
   StyleSheet,
   useWindowDimensions,
@@ -28,10 +29,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AccentPillButton } from '@shared/components/AccentPillButton';
 import { IconCircleButton } from '@shared/components/IconCircleButton';
 import { RichTextEditor, type RichTextEditorHandle } from '@shared/components/RichTextEditor';
+import { Text } from '@shared/components/Text';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { useAppStore } from '@/stores/useAppStore';
-import { DiaryEntry, DiaryPhoto, ManualMood, ManualMoodWeather, WritingMode, getPrimaryManualMood, normalizeManualMoods } from '@/features/diary/domain/DiaryEntry';
+import {
+  DiaryEntry,
+  DiaryPhoto,
+  ManualMood,
+  ManualMoodWeather,
+  WritingMode,
+  getPrimaryManualMood,
+  MOMENT_ENTRY_PHOTO_LIMIT,
+  normalizeManualMoods,
+  normalizeMomentEntryPhotos,
+  type DiaryEntryType,
+} from '@/features/diary/domain/DiaryEntry';
 import { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { StickerPickerModal } from '@/features/diary/components/StickerPickerModal';
@@ -48,11 +61,12 @@ import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/Dia
 import { DiaryStylePresetPickerModal } from '@/features/diary/components/DiaryStylePresetPickerModal';
 import { EntryEditToolMenuModal } from '@/features/diary/components/EntryEditToolMenuModal';
 import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataModal';
+import { MomentPhotoGrid } from '@/features/diary/components/MomentPhotoGrid';
 import { DIARY_BODY_DEFAULT_FONT_FAMILY, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import { getDiaryStylePreset, type DiaryStylePresetId } from '@/features/diary/domain/DiaryStylePreset';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { shouldPromptForEntryMetadataBeforeSave } from '@/features/diary/services/EntryMetadataSavePrompt';
-import { chooseDiaryPhoto, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
+import { chooseDiaryPhoto, chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
@@ -149,6 +163,7 @@ export default function CreateEntryScreen() {
   } = useScrollCollapse({ onScrollBeginDrag: handleCoverScrollBeginDrag });
 
   const [title, setTitle] = useState('');
+  const [entryType, setEntryType] = useState<DiaryEntryType>('diary');
   const [content, setContent] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const target = paramDate || selectedCalendarDate;
@@ -160,6 +175,7 @@ export default function CreateEntryScreen() {
   });
   const [stickers, setStickers] = useState<PlacedSticker[]>([]);
   const [coverPhoto, setCoverPhoto] = useState<DiaryPhoto | undefined>();
+  const [momentPhotos, setMomentPhotos] = useState<DiaryPhoto[]>([]);
   const [paperBackgroundId, setPaperBackgroundId] = useState<string>(initialStylePreset.paperBackgroundId);
   const [bodyFontFamily, setBodyFontFamily] = useState<DiaryBodyFontFamily>(initialStylePreset.bodyFontFamily ?? DIARY_BODY_DEFAULT_FONT_FAMILY);
   const [bodyTextColor, setBodyTextColor] = useState<DiaryBodyTextColor | undefined>(initialStylePreset.bodyTextColor);
@@ -207,8 +223,10 @@ export default function CreateEntryScreen() {
         return;
       }
       setTitle(draft.title);
+      setEntryType(draft.entryType);
       setContent(draft.content);
       setCoverPhoto(draft.coverPhoto);
+      setMomentPhotos(normalizeMomentEntryPhotos(draft.photos));
       setPaperBackgroundId(draft.paperBackgroundId);
       setBodyFontFamily(draft.bodyFontFamily);
       setBodyTextColor(draft.bodyTextColor);
@@ -236,10 +254,11 @@ export default function CreateEntryScreen() {
   }, []);
 
   useEffect(() => {
-    if (isHydratingDraft.current || (!title.trim() && !content.trim())) return;
+    if (isHydratingDraft.current || (!title.trim() && !content.trim() && momentPhotos.length === 0)) return;
     const timer = setTimeout(() => {
       void diaryDraftService.save({
         title,
+        entryType,
         content,
         date: isoDate,
         companion: DEFAULT_COMPANION,
@@ -248,7 +267,7 @@ export default function CreateEntryScreen() {
         paperBackgroundId,
         bodyFontFamily,
         bodyTextColor,
-        photos: [],
+        photos: momentPhotos,
         tags: selectedTags,
         manualMood: getPrimaryManualMood(manualMoods),
         manualMoods,
@@ -260,7 +279,7 @@ export default function CreateEntryScreen() {
       });
     }, 700);
     return () => clearTimeout(timer);
-  }, [title, content, isoDate, stickers, coverPhoto, paperBackgroundId, bodyFontFamily, bodyTextColor, selectedTags, manualMoods, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
+  }, [title, entryType, content, isoDate, stickers, coverPhoto, momentPhotos, paperBackgroundId, bodyFontFamily, bodyTextColor, selectedTags, manualMoods, manualMoodWeather, writingMode, locationLabel, sounds, smells, energyLevel, bodyState, isLockbox, timeCapsuleUnlockAt, expiresAt]);
 
   useEffect(() => () => {
     if (stickerBoundsTimer.current) clearTimeout(stickerBoundsTimer.current);
@@ -420,6 +439,31 @@ export default function CreateEntryScreen() {
     }
   }, [getVisibleStickerPosition, revealStickerBounds, t]);
 
+  const handleAddMomentPhotos = useCallback(async () => {
+    const result = await chooseDiaryPhotos();
+    if (!result.success) {
+      if (result.error === 'native-module-missing') {
+        Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
+      } else {
+        Alert.alert(t('entryPhotoPermissionTitle'), t('entryPhotoLibraryPermissionMessage'));
+      }
+      return;
+    }
+    if (result.assets.length === 0) return;
+    try {
+      const remainingSlots = Math.max(0, MOMENT_ENTRY_PHOTO_LIMIT - momentPhotos.length);
+      const imported = await Promise.all(result.assets.slice(0, remainingSlots).map((asset) => diaryPhotoService.importAsset(asset)));
+      setMomentPhotos((current) => normalizeMomentEntryPhotos([...current, ...imported]));
+      setEntryType('moment');
+    } catch {
+      Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
+    }
+  }, [momentPhotos.length, t]);
+
+  const handleRemoveMomentPhoto = useCallback((photoId: string) => {
+    setMomentPhotos((current) => current.filter((photo) => photo.id !== photoId));
+  }, []);
+
   const clearSelectedStickerFromCanvas = useCallback((event: GestureResponderEvent) => {
     if (event.target === event.currentTarget) {
       setSelectedStickerId(undefined);
@@ -472,12 +516,16 @@ export default function CreateEntryScreen() {
   }, []);
 
   const handleSave = async (options: { readonly skipMetadataPrompt?: boolean } = {}) => {
-    if (!title.trim()) {
+    if (entryType === 'diary' && !title.trim()) {
       Alert.alert(t('entryTitleRequiredTitle'), t('entryCreateTitleRequiredMessage'));
       return;
     }
-    if (!content.trim()) {
+    if (entryType === 'diary' && !content.trim()) {
       Alert.alert(t('entryContentRequiredTitle'), t('entryContentRequiredMessage'));
+      return;
+    }
+    if (entryType === 'moment' && momentPhotos.length === 0 && !content.trim()) {
+      Alert.alert(t('entryMomentNeedsPhotoOrNoteTitle'), t('entryMomentNeedsPhotoOrNoteMessage'));
       return;
     }
     if (!options.skipMetadataPrompt && shouldPromptForEntryMetadataBeforeSave({ moods: manualMoods, tags: selectedTags })) {
@@ -490,15 +538,16 @@ export default function CreateEntryScreen() {
     setIsSaving(true);
     const newEntry: DiaryEntry = {
       id: generateUUID(),
-      title: title.trim(),
-      content: content.trim(),
+      title: entryType === 'moment' ? '' : title.trim(),
+      entryType,
+      content: entryType === 'moment' ? '' : content.trim(),
       date: isoDate,
       paperBackgroundId,
       bodyFontFamily,
       bodyTextColor,
       stickers,
       coverPhoto,
-      photos: [],
+      photos: entryType === 'moment' ? momentPhotos : [],
       companion: DEFAULT_COMPANION,
       isFavorite,
       viewCount: 0,
@@ -683,91 +732,130 @@ export default function CreateEntryScreen() {
         >
           <View style={styles.entryContentLayer}>
             <DiaryDatePicker value={selectedDate} onChange={setSelectedDate} maximumDate={new Date()} variant="entryHero" />
-
-            {/* Title */}
-            <NativeTextInput
-              value={title}
-              onChangeText={setTitle}
-              placeholder={t('entryTitlePlaceholder')}
-              placeholderTextColor={entryPlaceholderColor}
-              style={[styles.titleInput, { color: theme.colors.text }]}
-              multiline
-              returnKeyType="next"
-              accessibilityLabel={t('entryTitleA11y')}
-              accessibilityHint={t('entryTitleHint')}
-            />
-
-            <View style={styles.titleBodyGap} />
-
-            <View
-              style={[
-                styles.bodyStickerCanvas,
-                { minHeight: bodyCanvasHeight },
-                showBodyStickerBounds && [
-                  styles.bodyStickerCanvasOutlined,
-                  { borderColor: theme.colors.tint + '99', backgroundColor: theme.colors.tint + '08' },
-                ],
-              ]}
-              onLayout={(event) => {
-                const { y, width, height } = event.nativeEvent.layout;
-                setBodyLayout((current) => (
-                  current.y === y && current.width === width && current.height === height
-                    ? current
-                    : { y, width, height }
-                ));
-              }}
-              onStartShouldSetResponder={clearSelectedStickerFromCanvas}
-            >
-              {behindStickers.map((sticker) => (
-                <StickerCanvasItem
-                  key={sticker.id}
-                  sticker={sticker}
-                  onUpdate={handleUpdateSticker}
-                  onDelete={handleDeleteSticker}
-                  isSelected={selectedStickerId === sticker.id}
-                  onSelect={setSelectedStickerId}
-                  onDeselect={() => setSelectedStickerId(undefined)}
-                  onDragStateChange={setIsStickerDragging}
-                  bounds={bodyLayout}
-                  allowBottomOverflow
-                  horizontalEdgeAllowanceRatio={EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO}
-                />
-              ))}
-              <View style={[styles.entryBodyLayer, textAvoidanceInsets]}>
-                {/* Rich content editor — toolbar hidden, controlled from floating bar */}
-                <RichTextEditor
-                  ref={editorRef}
-                  value={content}
-                  onChangeText={setContent}
-                  onHeightChange={(height) => setBodyContentHeight(Math.max(ENTRY_BODY_MIN_HEIGHT, height))}
-                  placeholder={t('entryCreateContentPlaceholder')}
-                  placeholderColor={entryPlaceholderColor}
-                  textColor={bodyTextColor}
-                  fontFamily={resolveAppFontFamilyForWebContent(bodyFontFamily)}
-                  fontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
-                  lineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
-                  fontWeight="600"
-                  minHeight={bodyCanvasHeight}
-                  showToolbar={false}
-                  accessibilityLabel={t('entryContentA11y')}
-                />
-              </View>
-              {foregroundStickers.map((sticker) => (
-                <StickerCanvasItem
-                  key={sticker.id}
-                  sticker={sticker}
-                  onUpdate={handleUpdateSticker}
-                  onDelete={handleDeleteSticker}
-                  isSelected={selectedStickerId === sticker.id}
-                  onSelect={setSelectedStickerId}
-                  onDeselect={() => setSelectedStickerId(undefined)}
-                  onDragStateChange={setIsStickerDragging}
-                  bounds={bodyLayout}
-                  allowBottomOverflow
-                  horizontalEdgeAllowanceRatio={EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO}
-                />
-              ))}
+            <View style={styles.entryTypeSelector} testID="entry-type-selector">
+              {(['diary', 'moment'] as const).map((type) => {
+                const selected = entryType === type;
+                return (
+                  <Pressable
+                    key={type}
+                    onPress={() => setEntryType(type)}
+                    style={[
+                      styles.entryTypeButton,
+                      {
+                        backgroundColor: selected ? theme.colors.tint : theme.colors.card,
+                        borderColor: selected ? theme.colors.tint : theme.colors.border,
+                      },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    testID={`entry-type-${type}`}
+                  >
+                    <Text style={[styles.entryTypeButtonText, { color: selected ? theme.colors.background : theme.colors.text }]}>
+                      {type === 'diary' ? t('entryTypeDiary') : t('entryTypeMoment')}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
+
+            {entryType === 'moment' ? (
+              <MomentPhotoGrid
+                photos={momentPhotos}
+                editable
+                onAddPhoto={handleAddMomentPhotos}
+                onRemovePhoto={handleRemoveMomentPhoto}
+                testID="entry-create-moment-photo-grid"
+              />
+            ) : null}
+
+            {entryType === 'diary' ? (
+              <>
+                {/* Title */}
+                <NativeTextInput
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder={t('entryTitlePlaceholder')}
+                  placeholderTextColor={entryPlaceholderColor}
+                  style={[styles.titleInput, { color: theme.colors.text }]}
+                  multiline
+                  returnKeyType="next"
+                  accessibilityLabel={t('entryTitleA11y')}
+                  accessibilityHint={t('entryTitleHint')}
+                />
+
+                <View style={styles.titleBodyGap} />
+
+                <View
+                  style={[
+                    styles.bodyStickerCanvas,
+                    { minHeight: bodyCanvasHeight },
+                    showBodyStickerBounds && [
+                      styles.bodyStickerCanvasOutlined,
+                      { borderColor: theme.colors.tint + '99', backgroundColor: theme.colors.tint + '08' },
+                    ],
+                  ]}
+                  onLayout={(event) => {
+                    const { y, width, height } = event.nativeEvent.layout;
+                    setBodyLayout((current) => (
+                      current.y === y && current.width === width && current.height === height
+                        ? current
+                        : { y, width, height }
+                    ));
+                  }}
+                  onStartShouldSetResponder={clearSelectedStickerFromCanvas}
+                >
+                  {behindStickers.map((sticker) => (
+                    <StickerCanvasItem
+                      key={sticker.id}
+                      sticker={sticker}
+                      onUpdate={handleUpdateSticker}
+                      onDelete={handleDeleteSticker}
+                      isSelected={selectedStickerId === sticker.id}
+                      onSelect={setSelectedStickerId}
+                      onDeselect={() => setSelectedStickerId(undefined)}
+                      onDragStateChange={setIsStickerDragging}
+                      bounds={bodyLayout}
+                      allowBottomOverflow
+                      horizontalEdgeAllowanceRatio={EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO}
+                    />
+                  ))}
+                  <View style={[styles.entryBodyLayer, textAvoidanceInsets]}>
+                    {/* Rich content editor — toolbar hidden, controlled from floating bar */}
+                    <RichTextEditor
+                      ref={editorRef}
+                      value={content}
+                      onChangeText={setContent}
+                      onHeightChange={(height) => setBodyContentHeight(Math.max(ENTRY_BODY_MIN_HEIGHT, height))}
+                      placeholder={t('entryCreateContentPlaceholder')}
+                      placeholderColor={entryPlaceholderColor}
+                      textColor={bodyTextColor}
+                      fontFamily={resolveAppFontFamilyForWebContent(bodyFontFamily)}
+                      fontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
+                      lineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
+                      fontWeight="600"
+                      minHeight={bodyCanvasHeight}
+                      showToolbar={false}
+                      accessibilityLabel={t('entryContentA11y')}
+                    />
+                  </View>
+                  {foregroundStickers.map((sticker) => (
+                    <StickerCanvasItem
+                      key={sticker.id}
+                      sticker={sticker}
+                      onUpdate={handleUpdateSticker}
+                      onDelete={handleDeleteSticker}
+                      isSelected={selectedStickerId === sticker.id}
+                      onSelect={setSelectedStickerId}
+                      onDeselect={() => setSelectedStickerId(undefined)}
+                      onDragStateChange={setIsStickerDragging}
+                      bounds={bodyLayout}
+                      allowBottomOverflow
+                      horizontalEdgeAllowanceRatio={EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO}
+                    />
+                  ))}
+                </View>
+              </>
+            ) : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -1004,6 +1092,22 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 2,
     elevation: 2,
+  },
+  entryTypeSelector: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  entryTypeButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  entryTypeButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
   entryPaperBackdropFrame: {
     position: 'absolute',

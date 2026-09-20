@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { diaryService } from '../services/DiaryService';
 import type { DiaryEntry, DiaryPhoto } from '../domain/DiaryEntry';
+import { sortDiaryEntriesChronologicallyDesc } from '../domain/DiaryEntryOrdering';
 import type { MemoryReaction } from '../domain/MemoryReaction';
 import { getCachedDiaryEntries, setCachedDiaryEntries } from '../services/DiaryEntryCache';
 import { useAppStore } from '@/stores/useAppStore';
@@ -36,9 +37,7 @@ export function useDiary() {
     setDeletedEntries(nextDeletedEntries);
   }, []);
 
-  const sortEntriesByDateDesc = useCallback((items: readonly DiaryEntry[]) => (
-    [...items].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  ), []);
+  const sortEntriesByDateDesc = useCallback(sortDiaryEntriesChronologicallyDesc, []);
 
   const fetchEntries = useCallback(async () => {
     const entriesResult = await diaryService.getEntries();
@@ -143,10 +142,7 @@ export function useDiary() {
     const result = await diaryService.addReflection(entryId, text, photo);
     if (result.success) {
       commitDiaryEntries(
-        sortEntriesByDateDesc([
-          result.data,
-          ...entriesRef.current.filter((entry) => entry.id !== entryId),
-        ]),
+        replaceDiaryEntryPreservingOrder(entriesRef.current, result.data),
         deletedEntriesRef.current,
       );
     }
@@ -157,10 +153,7 @@ export function useDiary() {
     const result = await diaryService.deleteReflection(entryId, reflectionId);
     if (result.success) {
       commitDiaryEntries(
-        sortEntriesByDateDesc([
-          result.data,
-          ...entriesRef.current.filter((entry) => entry.id !== entryId),
-        ]),
+        replaceDiaryEntryPreservingOrder(entriesRef.current, result.data),
         deletedEntriesRef.current,
       );
     }

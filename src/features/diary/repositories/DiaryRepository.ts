@@ -8,6 +8,7 @@ import {
 import { secureStorageKeys } from '@/constants/secureStorageKeys';
 import { IDiaryRepository } from './IDiaryRepository';
 import { DiaryEntry, DiaryEntrySchema, getEntryManualMoods, getPrimaryManualMood } from '../domain/DiaryEntry';
+import { sortDiaryEntriesChronologicallyDesc } from '../domain/DiaryEntryOrdering';
 import { CURRENT_DIARY_SCHEMA_VERSION, migrateDiaryStorage, type DiaryStorageEnvelope } from '../domain/DiaryMigrations';
 
 export class DiaryRepository implements IDiaryRepository {
@@ -52,7 +53,7 @@ export class DiaryRepository implements IDiaryRepository {
   }
 
   private sortEntriesByDateDesc(entries: DiaryEntry[]): DiaryEntry[] {
-    return entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return sortDiaryEntriesChronologicallyDesc(entries);
   }
 
   private normalizeEntryMoods(entry: DiaryEntry): DiaryEntry {

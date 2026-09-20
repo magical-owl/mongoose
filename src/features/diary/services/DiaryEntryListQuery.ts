@@ -1,5 +1,6 @@
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
+import { sortDiaryEntriesChronologicallyDesc } from '@/features/diary/domain/DiaryEntryOrdering';
 
 export interface DiaryEntryFilterOptionSet {
   readonly year: readonly string[];
@@ -10,7 +11,7 @@ export interface DiaryEntryFilterOptionSet {
 }
 
 export function sortDiaryEntriesByDateDesc(entries: readonly DiaryEntry[]): DiaryEntry[] {
-  return [...entries].sort((a, b) => b.date.localeCompare(a.date));
+  return sortDiaryEntriesChronologicallyDesc(entries);
 }
 
 export function getDiaryEntryFilterOptions(entries: readonly DiaryEntry[]): DiaryEntryFilterOptionSet {

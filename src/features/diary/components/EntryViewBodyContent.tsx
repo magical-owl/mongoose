@@ -12,6 +12,7 @@ import {
 
 interface EntryViewBodyContentProps {
   readonly entry: DiaryEntry;
+  readonly title: string;
   readonly hasCoverPhoto: boolean;
   readonly timestamp: string;
   readonly loadingEntryDirection: 'previous' | 'next' | null;
@@ -19,6 +20,7 @@ interface EntryViewBodyContentProps {
   readonly bodyCanvasHeight: number;
   readonly stickers: readonly PlacedSticker[];
   readonly initialCanvasWidth?: number;
+  readonly momentPhotoBleedHorizontal?: number;
   readonly onChangeBodyLayout: React.Dispatch<React.SetStateAction<StickerCanvasLayout>>;
   readonly onUpdateSticker: (sticker: PlacedSticker) => void;
   readonly onDeleteSticker: (stickerId: string) => void;
@@ -27,6 +29,7 @@ interface EntryViewBodyContentProps {
 
 export function EntryViewBodyContent({
   entry,
+  title,
   hasCoverPhoto,
   timestamp,
   loadingEntryDirection,
@@ -34,6 +37,7 @@ export function EntryViewBodyContent({
   bodyCanvasHeight,
   stickers,
   initialCanvasWidth,
+  momentPhotoBleedHorizontal,
   onChangeBodyLayout,
   onUpdateSticker,
   onDeleteSticker,
@@ -55,7 +59,7 @@ export function EntryViewBodyContent({
             style={[styles.coverTitle, { color: theme.colors.stickerControlText }]}
             numberOfLines={2}
           >
-            {entry.title}
+            {title}
           </Text>
           <Text
             preset="caption"
@@ -74,6 +78,7 @@ export function EntryViewBodyContent({
           bodyLineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
           stickers={stickers}
           initialCanvasWidth={initialCanvasWidth}
+          momentPhotoBleedHorizontal={momentPhotoBleedHorizontal}
           onBodyLayout={(layout) => {
             onChangeBodyLayout((current) => (
               current.y === layout.y && current.width === layout.width && current.height === layout.height

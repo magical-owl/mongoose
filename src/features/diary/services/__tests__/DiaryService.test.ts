@@ -144,6 +144,34 @@ describe('DiaryService', () => {
     }
   });
 
+  it('keeps chronological entry order after adding a reflection to an older same-day entry', async () => {
+    const olderEntry = buildDiaryEntry({
+      id: '123e4567-e89b-12d3-a456-426614174021',
+      title: 'Morning',
+      date: '2026-08-29',
+      createdAt: '2026-08-29T08:00:00.000Z',
+      updatedAt: '2026-08-29T08:00:00.000Z',
+    });
+    const newerEntry = buildDiaryEntry({
+      id: '123e4567-e89b-12d3-a456-426614174022',
+      title: 'Evening',
+      date: '2026-08-29',
+      createdAt: '2026-08-29T20:00:00.000Z',
+      updatedAt: '2026-08-29T20:00:00.000Z',
+    });
+    await service.saveEntry(olderEntry, { isPro: true });
+    await service.saveEntry(newerEntry, { isPro: true });
+
+    const addResult = await service.addReflection(olderEntry.id, 'A later reflection.');
+    const entriesResult = await service.getEntries();
+
+    expect(addResult.success).toBe(true);
+    expect(entriesResult.success).toBe(true);
+    if (entriesResult.success) {
+      expect(entriesResult.data.map((entry) => entry.id)).toEqual([newerEntry.id, olderEntry.id]);
+    }
+  });
+
   it('should save and clean up one attached photo per reflection', async () => {
     await service.saveEntry(mockEntry);
     const photo = buildDiaryPhoto({

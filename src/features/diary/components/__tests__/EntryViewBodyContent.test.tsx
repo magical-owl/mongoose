@@ -26,6 +26,7 @@ describe('EntryViewBodyContent', () => {
     const { getByTestId, getByText } = await renderWithProviders(
       <EntryViewBodyContent
         entry={entry}
+        title="A quiet morning"
         hasCoverPhoto={false}
         timestamp="Yesterday at 08:33"
         loadingEntryDirection={null}
@@ -57,6 +58,7 @@ describe('EntryViewBodyContent', () => {
     const { queryByTestId, getByTestId } = await renderWithProviders(
       <EntryViewBodyContent
         entry={entry}
+        title="A quiet morning"
         hasCoverPhoto
         timestamp="Yesterday at 08:33"
         loadingEntryDirection={null}
@@ -78,6 +80,7 @@ describe('EntryViewBodyContent', () => {
     const previous = await renderWithProviders(
       <EntryViewBodyContent
         entry={entry}
+        title="A quiet morning"
         hasCoverPhoto
         timestamp="Yesterday at 08:33"
         loadingEntryDirection="previous"
@@ -97,6 +100,7 @@ describe('EntryViewBodyContent', () => {
     const next = await renderWithProviders(
       <EntryViewBodyContent
         entry={entry}
+        title="A quiet morning"
         hasCoverPhoto
         timestamp="Yesterday at 08:33"
         loadingEntryDirection="next"
@@ -119,6 +123,7 @@ describe('EntryViewBodyContent', () => {
     const { getByTestId } = await renderWithProviders(
       <EntryViewBodyContent
         entry={entry}
+        title="A quiet morning"
         hasCoverPhoto
         timestamp="Yesterday at 08:33"
         loadingEntryDirection="next"
@@ -137,5 +142,26 @@ describe('EntryViewBodyContent', () => {
 
     expect(fadeLayerStyle.opacity).toBeDefined();
     expect(getByTestId('entry-view-next-loader')).toBeTruthy();
+  });
+
+  it('uses the provided display title when the raw entry title is empty', async () => {
+    const { getByText } = await renderWithProviders(
+      <EntryViewBodyContent
+        entry={buildDiaryEntry({ entryType: 'moment', title: '', content: '', photos: [] })}
+        title="Moment"
+        hasCoverPhoto={false}
+        timestamp="Yesterday at 08:33"
+        loadingEntryDirection={null}
+        bodyCanvasHeight={260}
+        stickers={[]}
+        onChangeBodyLayout={jest.fn()}
+        onUpdateSticker={jest.fn()}
+        onDeleteSticker={jest.fn()}
+        onStickerDragStateChange={jest.fn()}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByText('Moment')).toBeTruthy();
   });
 });

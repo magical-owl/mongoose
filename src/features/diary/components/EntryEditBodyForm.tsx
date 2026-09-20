@@ -1,12 +1,15 @@
 import { useCallback, useMemo, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
-import { StyleSheet, TextInput as NativeTextInput, View, type GestureResponderEvent } from 'react-native';
+import { Pressable, StyleSheet, TextInput as NativeTextInput, View, type GestureResponderEvent } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
+import { MomentPhotoGrid } from '@/features/diary/components/MomentPhotoGrid';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
+import type { DiaryEntryType, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
 import type { DiaryBodyFontFamily, DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import type { StickerCanvasLayout } from '@/features/diary/hooks/useEntryStickerEditing';
 import { RichTextEditor, type RichTextEditorHandle } from '@shared/components/RichTextEditor';
+import { Text } from '@/shared/components/Text';
 import { useTranslation } from '@/localization/i18n';
 import { resolveAppFontFamilyForWebContent } from '@/theme/fonts';
 import {
@@ -23,6 +26,11 @@ interface EntryEditBodyFormProps {
   readonly onChangeDate: (date: Date) => void;
   readonly editTitle: string;
   readonly onChangeTitle: (title: string) => void;
+  readonly editEntryType: DiaryEntryType;
+  readonly onChangeEntryType: (entryType: DiaryEntryType) => void;
+  readonly editPhotos: readonly DiaryPhoto[];
+  readonly onAddMomentPhotos: () => void;
+  readonly onRemoveMomentPhoto: (photoId: string) => void;
   readonly editContent: string;
   readonly onChangeContent: (content: string) => void;
   readonly editBodyFontFamily: DiaryBodyFontFamily;
@@ -45,6 +53,11 @@ export function EntryEditBodyForm({
   onChangeDate,
   editTitle,
   onChangeTitle,
+  editEntryType,
+  onChangeEntryType,
+  editPhotos,
+  onAddMomentPhotos,
+  onRemoveMomentPhoto,
   editContent,
   onChangeContent,
   editBodyFontFamily,
@@ -86,90 +99,128 @@ export function EntryEditBodyForm({
   return (
     <>
       <DiaryDatePicker value={editDate} onChange={onChangeDate} maximumDate={new Date()} variant="entryHero" />
-      <NativeTextInput
-        value={editTitle}
-        onChangeText={onChangeTitle}
-        placeholder={t('entryTitlePlaceholder')}
-        placeholderTextColor={placeholderColor}
-        style={[styles.titleInput, { color: theme.colors.text }]}
-        multiline
-        returnKeyType="next"
-        accessibilityLabel={t('entryTitleA11y')}
-      />
-      <View style={styles.titleBodyGap} />
-      <View
-        testID="entry-edit-body-sticker-canvas"
-        style={[
-          styles.bodyStickerCanvas,
-          { minHeight: bodyCanvasHeight },
-          showBodyStickerBounds && [
-            styles.bodyStickerCanvasOutlined,
-            { borderColor: theme.colors.tint + '99', backgroundColor: theme.colors.tint + '08' },
-          ],
-        ]}
-        onLayout={(event) => {
-          const { y, width, height } = event.nativeEvent.layout;
-          onChangeBodyLayout((current) => (
-            current.y === y && current.width === width && current.height === height
-              ? current
-              : { y, width, height }
-          ));
-        }}
-        onStartShouldSetResponder={clearSelectedStickerFromCanvas}
-      >
-        {behindStickers.map((sticker) => (
-          <StickerCanvasItem
-            key={sticker.id}
-            sticker={sticker}
-            onUpdate={onUpdateSticker}
-            onDelete={handleDeleteSticker}
-            isEditable
-            isSelected={selectedStickerId === sticker.id}
-            onSelect={setSelectedStickerId}
-            onDeselect={() => setSelectedStickerId(undefined)}
-            onDragStateChange={onStickerDragStateChange}
-            bounds={bodyLayout}
-            allowBottomOverflow
-            horizontalEdgeAllowanceRatio={ENTRY_DETAIL_EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO}
-            testID={`entry-edit-sticker-${sticker.id}`}
-          />
-        ))}
-        <View style={[styles.entryBodyLayer, textAvoidanceInsets]}>
-          <RichTextEditor
-            ref={editorRef}
-            value={editContent}
-            onChangeText={onChangeContent}
-            onHeightChange={(height) => onChangeBodyContentHeight(Math.max(ENTRY_EDITOR_BODY_MIN_HEIGHT, height))}
-            placeholder={t('entryEditContentPlaceholder')}
-            placeholderColor={placeholderColor}
-            textColor={editBodyTextColor}
-            fontFamily={resolveAppFontFamilyForWebContent(editBodyFontFamily)}
-            fontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
-            lineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
-            fontWeight="600"
-            minHeight={bodyCanvasHeight}
-            showToolbar={false}
-            accessibilityLabel={t('entryContentA11y')}
-          />
-        </View>
-        {foregroundStickers.map((sticker) => (
-          <StickerCanvasItem
-            key={sticker.id}
-            sticker={sticker}
-            onUpdate={onUpdateSticker}
-            onDelete={handleDeleteSticker}
-            isEditable
-            isSelected={selectedStickerId === sticker.id}
-            onSelect={setSelectedStickerId}
-            onDeselect={() => setSelectedStickerId(undefined)}
-            onDragStateChange={onStickerDragStateChange}
-            bounds={bodyLayout}
-            allowBottomOverflow
-            horizontalEdgeAllowanceRatio={ENTRY_DETAIL_EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO}
-            testID={`entry-edit-sticker-${sticker.id}`}
-          />
-        ))}
+      <View style={styles.entryTypeSelector} testID="entry-edit-type-selector">
+        {(['diary', 'moment'] as const).map((type) => {
+          const selected = editEntryType === type;
+          return (
+            <Pressable
+              key={type}
+              onPress={() => onChangeEntryType(type)}
+              style={[
+                styles.entryTypeButton,
+                {
+                  backgroundColor: selected ? theme.colors.tint : theme.colors.card,
+                  borderColor: selected ? theme.colors.tint : theme.colors.border,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              testID={`entry-edit-type-${type}`}
+            >
+              <Text style={[styles.entryTypeButtonText, { color: selected ? theme.colors.background : theme.colors.text }]}>
+                {type === 'diary' ? t('entryTypeDiary') : t('entryTypeMoment')}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
+      {editEntryType === 'moment' ? (
+        <MomentPhotoGrid
+          photos={editPhotos}
+          editable
+          onAddPhoto={onAddMomentPhotos}
+          onRemovePhoto={onRemoveMomentPhoto}
+          testID="entry-edit-moment-photo-grid"
+        />
+      ) : null}
+      {editEntryType === 'diary' ? (
+        <>
+          <NativeTextInput
+            value={editTitle}
+            onChangeText={onChangeTitle}
+            placeholder={t('entryTitlePlaceholder')}
+            placeholderTextColor={placeholderColor}
+            style={[styles.titleInput, { color: theme.colors.text }]}
+            multiline
+            returnKeyType="next"
+            accessibilityLabel={t('entryTitleA11y')}
+          />
+          <View style={styles.titleBodyGap} />
+          <View
+            testID="entry-edit-body-sticker-canvas"
+            style={[
+              styles.bodyStickerCanvas,
+              { minHeight: bodyCanvasHeight },
+              showBodyStickerBounds && [
+                styles.bodyStickerCanvasOutlined,
+                { borderColor: theme.colors.tint + '99', backgroundColor: theme.colors.tint + '08' },
+              ],
+            ]}
+            onLayout={(event) => {
+              const { y, width, height } = event.nativeEvent.layout;
+              onChangeBodyLayout((current) => (
+                current.y === y && current.width === width && current.height === height
+                  ? current
+                  : { y, width, height }
+              ));
+            }}
+            onStartShouldSetResponder={clearSelectedStickerFromCanvas}
+          >
+            {behindStickers.map((sticker) => (
+              <StickerCanvasItem
+                key={sticker.id}
+                sticker={sticker}
+                onUpdate={onUpdateSticker}
+                onDelete={handleDeleteSticker}
+                isEditable
+                isSelected={selectedStickerId === sticker.id}
+                onSelect={setSelectedStickerId}
+                onDeselect={() => setSelectedStickerId(undefined)}
+                onDragStateChange={onStickerDragStateChange}
+                bounds={bodyLayout}
+                allowBottomOverflow
+                horizontalEdgeAllowanceRatio={ENTRY_DETAIL_EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO}
+                testID={`entry-edit-sticker-${sticker.id}`}
+              />
+            ))}
+            <View style={[styles.entryBodyLayer, textAvoidanceInsets]}>
+              <RichTextEditor
+                ref={editorRef}
+                value={editContent}
+                onChangeText={onChangeContent}
+                onHeightChange={(height) => onChangeBodyContentHeight(Math.max(ENTRY_EDITOR_BODY_MIN_HEIGHT, height))}
+                placeholder={t('entryEditContentPlaceholder')}
+                placeholderColor={placeholderColor}
+                textColor={editBodyTextColor}
+                fontFamily={resolveAppFontFamilyForWebContent(editBodyFontFamily)}
+                fontSize={ENTRY_EDITOR_BODY_FONT_SIZE}
+                lineHeight={ENTRY_EDITOR_BODY_LINE_HEIGHT}
+                fontWeight="600"
+                minHeight={bodyCanvasHeight}
+                showToolbar={false}
+                accessibilityLabel={t('entryContentA11y')}
+              />
+            </View>
+            {foregroundStickers.map((sticker) => (
+              <StickerCanvasItem
+                key={sticker.id}
+                sticker={sticker}
+                onUpdate={onUpdateSticker}
+                onDelete={handleDeleteSticker}
+                isEditable
+                isSelected={selectedStickerId === sticker.id}
+                onSelect={setSelectedStickerId}
+                onDeselect={() => setSelectedStickerId(undefined)}
+                onDragStateChange={onStickerDragStateChange}
+                bounds={bodyLayout}
+                allowBottomOverflow
+                horizontalEdgeAllowanceRatio={ENTRY_DETAIL_EDITABLE_STICKER_HORIZONTAL_EDGE_ALLOWANCE_RATIO}
+                testID={`entry-edit-sticker-${sticker.id}`}
+              />
+            ))}
+          </View>
+        </>
+      ) : null}
     </>
   );
 }
@@ -197,6 +248,22 @@ const styles = StyleSheet.create({
     lineHeight: 40,
     padding: 0,
     marginBottom: 2,
+  },
+  entryTypeSelector: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  entryTypeButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  entryTypeButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
   titleBodyGap: {
     height: StyleSheet.hairlineWidth,

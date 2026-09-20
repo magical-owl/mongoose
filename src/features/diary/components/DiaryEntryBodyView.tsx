@@ -3,10 +3,11 @@ import { StyleSheet, View } from 'react-native';
 import { MarkdownText } from '@shared/components/MarkdownText';
 import { useTheme } from '@/providers/ThemeProvider';
 import { normalizeHtmlContent } from '@/shared/utils/html';
-import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import { getDiaryEntryType, type DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
+import { MomentPhotoGrid } from '@/features/diary/components/MomentPhotoGrid';
 import { resolveAppFontFamily } from '@/theme/fonts';
 import { getStickerTextAvoidanceInsets } from '@/features/diary/domain/StickerLayout';
 
@@ -17,6 +18,7 @@ interface DiaryEntryBodyViewProps {
   readonly bodyLineHeight: number;
   readonly stickers: readonly PlacedSticker[];
   readonly initialCanvasWidth?: number;
+  readonly momentPhotoBleedHorizontal?: number;
   readonly onBodyLayout: (layout: { readonly y: number; readonly width: number; readonly height: number }) => void;
   readonly onUpdateSticker?: (sticker: PlacedSticker) => void;
   readonly onDeleteSticker?: (stickerId: string) => void;
@@ -40,6 +42,7 @@ export function DiaryEntryBodyView({
   bodyLineHeight,
   stickers,
   initialCanvasWidth = 0,
+  momentPhotoBleedHorizontal = 0,
   onBodyLayout,
   onUpdateSticker,
   onDeleteSticker,
@@ -55,6 +58,7 @@ export function DiaryEntryBodyView({
   const handleUpdateSticker = onUpdateSticker ?? (() => {});
   const handleDeleteSticker = onDeleteSticker ?? (() => {});
   const sanitizedContent = useMemo(() => sanitizeRichBodyHtml(normalizeHtmlContent(entry.content)), [entry.content]);
+  const showMomentPhotos = getDiaryEntryType(entry) === 'moment' && entry.photos.length > 0;
   const [bodyLayout, setBodyLayout] = useState({ width: initialCanvasWidth, height: contentHeight });
   const textAvoidanceInsets = useMemo(
     () => {
@@ -67,7 +71,14 @@ export function DiaryEntryBodyView({
   return (
     <View
       testID="diary-entry-body-view"
-      style={[styles.bodyStickerCanvas, { minHeight: contentHeight }]}
+      style={[
+        styles.bodyStickerCanvas,
+        { minHeight: contentHeight },
+        showMomentPhotos && momentPhotoBleedHorizontal > 0 ? {
+          marginHorizontal: -momentPhotoBleedHorizontal,
+          marginTop: -momentPhotoBleedHorizontal,
+        } : undefined,
+      ]}
       onLayout={(event) => {
         const { y, width, height } = event.nativeEvent.layout;
         setBodyLayout((current) => (
@@ -86,6 +97,12 @@ export function DiaryEntryBodyView({
           onDragStateChange={onStickerDragStateChange}
         />
       ))}
+      {showMomentPhotos ? (
+        <MomentPhotoGrid
+          photos={entry.photos}
+          testID="entry-view-moment-photo-grid"
+        />
+      ) : null}
       <View style={[styles.entryBodyLayer, textAvoidanceInsets]}>
         <MarkdownText
           style={[

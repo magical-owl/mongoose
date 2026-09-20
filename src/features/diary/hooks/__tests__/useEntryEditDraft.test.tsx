@@ -4,21 +4,6 @@ import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { appendTemplateToEntryContent, useEntryEditDraft } from '@/features/diary/hooks/useEntryEditDraft';
 import { buildDiaryEntry, buildDiaryPhoto } from '@tests/fixtures/domain';
 
-jest.mock('@/features/diary/services/DiaryPhotoService', () => ({
-  createPlacedPhotoSticker: (photo: { id: string }, index: number) => ({
-    id: `photo-sticker-${photo.id}`,
-    stickerId: photo.id,
-    category: 'photo',
-    x: 12 + index,
-    y: 18 + index,
-    scale: 1,
-    rotation: 0,
-    zIndex: index + 1,
-    behindText: false,
-    photo,
-  }),
-}));
-
 function createEntry(): DiaryEntry {
   return buildDiaryEntry({
     title: 'Original title',
@@ -103,7 +88,7 @@ describe('useEntryEditDraft', () => {
       expect(getByTestId('draft-title').props.children).toBe('Original title');
     });
     expect(getByTestId('draft-tags').props.children).toBe('daily,weekend');
-    expect(getByTestId('draft-sticker-count').props.children).toBe(1);
+    expect(getByTestId('draft-sticker-count').props.children).toBe(0);
 
     await act(async () => {
       await fireEvent.press(getByTestId('edit-and-build'));

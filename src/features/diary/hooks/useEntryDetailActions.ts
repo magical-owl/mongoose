@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
-import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
+import { getDiaryEntryType, type DiaryEntry, type DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
 import type { MemoryReaction } from '@/features/diary/domain/MemoryReaction';
 import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimitService';
 import type { useDiary } from '@/features/diary/hooks/useDiary';
@@ -59,13 +59,17 @@ export function useEntryDetailActions({
 }: UseEntryDetailActionsOptions) {
   const handleSaveEdit = useCallback(async () => {
     if (!entry) return;
-    if (!editTitle.trim()) {
+    const updated = buildUpdatedEntry(entry);
+    if (getDiaryEntryType(updated) === 'diary' && !editTitle.trim()) {
       Alert.alert(t('entryTitleRequiredTitle'), t('entryEditTitleRequiredMessage'));
+      return;
+    }
+    if (getDiaryEntryType(updated) === 'moment' && updated.photos.length === 0 && !updated.content.trim()) {
+      Alert.alert(t('entryMomentNeedsPhotoOrNoteTitle'), t('entryMomentNeedsPhotoOrNoteMessage'));
       return;
     }
 
     setIsSaving(true);
-    const updated = buildUpdatedEntry(entry);
     const result = await saveDiaryEntry(updated);
     setIsSaving(false);
 

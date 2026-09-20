@@ -3,11 +3,12 @@ import { secureStorageKeys } from '@/constants/secureStorageKeys';
 import { normalizeHtmlContent } from '@/shared/utils/html';
 import type { CompanionType } from '../domain/Companion';
 import type { PlacedSticker } from '../domain/Sticker';
-import { getPrimaryManualMood, normalizeManualMoods, type DiaryPhoto, type ManualMood, type ManualMoodWeather, type SensoryDetails, type WritingMode } from '../domain/DiaryEntry';
+import { getPrimaryManualMood, normalizeManualMoods, type DiaryEntryType, type DiaryPhoto, type ManualMood, type ManualMoodWeather, type SensoryDetails, type WritingMode } from '../domain/DiaryEntry';
 import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '../domain/DiaryBodyStyle';
 
 export interface DiaryDraft {
   readonly title: string;
+  readonly entryType: DiaryEntryType;
   readonly content: string;
   readonly date: string;
   readonly companion: CompanionType;
@@ -41,6 +42,7 @@ export class DiaryDraftService {
       const legacyDraft = parsed as Partial<DiaryDraft>;
       const manualMoods = normalizeManualMoods(legacyDraft.manualMoods, legacyDraft.manualMood ?? 'neutral');
       return {
+        entryType: 'diary',
         photos: [],
         paperBackgroundId: 'vintage-parchment',
         tags: [],

@@ -4,12 +4,13 @@ import { StyleSheet, View } from 'react-native';
 import { MarkdownText } from '@shared/components/MarkdownText';
 import { useTheme } from '@providers/ThemeProvider';
 import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
-import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
+import { getDiaryEntryType, type DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { getStickerTextAvoidanceInsets } from '@/features/diary/domain/StickerLayout';
 import { resolveAppFontFamily } from '@/theme/fonts';
 
 import { StickerCanvasItem } from './StickerCanvasItem';
+import { MomentPhotoGrid } from './MomentPhotoGrid';
 
 interface DiaryEntryBodyPreviewProps {
   readonly entry: DiaryEntry;
@@ -48,6 +49,7 @@ export function DiaryEntryBodyPreview({
   const foregroundStickers = useMemo(() => scaledStickers.filter((sticker) => !sticker.behindText), [scaledStickers]);
   const contentHeight = Math.max(1, bodyCanvasHeight);
   const [bodyLayout, setBodyLayout] = useState({ width: initialCanvasWidth, height: contentHeight });
+  const showMomentPhotos = getDiaryEntryType(entry) === 'moment' && entry.photos.length > 0;
   const textAvoidanceInsets = useMemo(
     () => {
       const insets = getStickerTextAvoidanceInsets(scaledStickers, bodyLayout);
@@ -77,6 +79,9 @@ export function DiaryEntryBodyPreview({
           isEditable={false}
         />
       ))}
+      {showMomentPhotos ? (
+        <MomentPhotoGrid photos={entry.photos} compact testID="entry-preview-moment-photo-grid" />
+      ) : null}
       <View style={[styles.textLayer, textAvoidanceInsets]} testID="diary-entry-body-preview-text-layer">
         <MarkdownText
           style={[
