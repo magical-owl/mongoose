@@ -358,6 +358,7 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
     return (
       <FlatList
         ref={ref}
+        testID="virtualized-diary-entry-list"
         data={totalEntryCount === 0 ? [] : rows}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
@@ -372,7 +373,7 @@ export const VirtualizedDiaryEntryList = forwardRef<VirtualizedDiaryEntryListRef
         initialNumToRender={9}
         maxToRenderPerBatch={9}
         windowSize={7}
-        removeClippedSubviews
+        removeClippedSubviews={false}
       />
     );
   },

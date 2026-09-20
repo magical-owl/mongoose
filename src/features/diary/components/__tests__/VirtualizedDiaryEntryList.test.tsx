@@ -60,6 +60,20 @@ describe('VirtualizedDiaryEntryList', () => {
     expect(onToggleYear).toHaveBeenCalledWith('2026');
   });
 
+  it('keeps clipped subviews disabled to avoid blank rows after returning from detail screens', async () => {
+    const entry = createEntry('11111111-1111-4111-8111-111111111111', 'First', '2026-08-29');
+
+    const { getByTestId } = await renderWithProviders(
+      <VirtualizedDiaryEntryList
+        {...baseProps}
+        entries={[entry]}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByTestId('virtualized-diary-entry-list').props.removeClippedSubviews).toBe(false);
+  });
+
   it('renders the search empty state when no entries match', async () => {
     const { getByText } = await renderWithProviders(
       <VirtualizedDiaryEntryList
