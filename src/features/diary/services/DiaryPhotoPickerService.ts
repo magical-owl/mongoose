@@ -29,8 +29,11 @@ export async function takeDiaryPhoto(): Promise<DiaryPhotoPickerResult> {
   return result.canceled ? { success: true, assets: [] } : { success: true, assets: result.assets };
 }
 
-export function getDiaryPhotoLibraryPickerOptions(mode: DiaryPhotoLibrarySelectionMode): ImagePickerOptions {
-  return {
+export function getDiaryPhotoLibraryPickerOptions(
+  mode: DiaryPhotoLibrarySelectionMode,
+  selectionLimit?: number,
+): ImagePickerOptions {
+  const options: ImagePickerOptions = {
     mediaTypes: ['images'],
     quality: 0.85,
     allowsEditing: false,
@@ -38,18 +41,22 @@ export function getDiaryPhotoLibraryPickerOptions(mode: DiaryPhotoLibrarySelecti
     preferredAssetRepresentationMode: 'compatible' as ImagePickerOptions['preferredAssetRepresentationMode'],
     exif: false,
   };
+  if (mode === 'multiple' && typeof selectionLimit === 'number' && selectionLimit > 0) {
+    options.selectionLimit = selectionLimit;
+  }
+  return options;
 }
 
 export function getSingleDiaryPhotoAsset(assets: readonly ImagePickerAsset[]): ImagePickerAsset[] {
   return assets.slice(0, 1);
 }
 
-export async function chooseDiaryPhotos(): Promise<DiaryPhotoPickerResult> {
+export async function chooseDiaryPhotos(selectionLimit?: number): Promise<DiaryPhotoPickerResult> {
   const ImagePicker = await loadImagePicker();
   if (!ImagePicker) return { success: false, error: 'native-module-missing' };
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync(false);
   if (!permission.granted) return { success: false, error: 'library-permission-denied' };
-  const result = await ImagePicker.launchImageLibraryAsync(getDiaryPhotoLibraryPickerOptions('multiple'));
+  const result = await ImagePicker.launchImageLibraryAsync(getDiaryPhotoLibraryPickerOptions('multiple', selectionLimit));
   return result.canceled ? { success: true, assets: [] } : { success: true, assets: result.assets };
 }
 

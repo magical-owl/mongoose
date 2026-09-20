@@ -27,6 +27,18 @@ describe('DiaryPhotoPickerService', () => {
     });
   });
 
+  it('caps multi-photo selection when a remaining slot limit is provided', () => {
+    expect(getDiaryPhotoLibraryPickerOptions('multiple', 2)).toEqual({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      allowsEditing: false,
+      allowsMultipleSelection: true,
+      preferredAssetRepresentationMode: 'compatible',
+      exif: false,
+      selectionLimit: 2,
+    });
+  });
+
   it('defensively keeps only the first asset for single-photo flows', () => {
     const firstAsset = { uri: 'file:///one.jpg' } as ImagePickerAsset;
     const secondAsset = { uri: 'file:///two.jpg' } as ImagePickerAsset;

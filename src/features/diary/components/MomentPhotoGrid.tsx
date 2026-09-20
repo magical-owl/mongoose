@@ -42,6 +42,7 @@ export function MomentPhotoGrid({
   const t = useTranslation();
   const canAddPhoto = editable && photos.length < MOMENT_ENTRY_PHOTO_LIMIT && Boolean(onAddPhoto);
   const photoRows = getMomentPhotoRows(photos, layout);
+  const usesStrictGrid = layout === 'grid';
 
   if (!editable && photos.length === 0) return null;
 
@@ -90,7 +91,7 @@ export function MomentPhotoGrid({
             {row.map((photo, columnIndex) => {
               const index = rowIndex * 2 + columnIndex;
               const source = getDiaryPhotoImageSource(photo.uri);
-              const isFullWidth = row.length === 1;
+              const isFullWidth = row.length === 1 && !usesStrictGrid;
               return (
                 <View
                   key={`${photo.id}-${index}`}
@@ -125,6 +126,12 @@ export function MomentPhotoGrid({
                 </View>
               );
             })}
+            {usesStrictGrid && row.length === 1 ? (
+              <View
+                style={styles.gridSpacer}
+                testID={`${testID}-spacer-${rowIndex}`}
+              />
+            ) : null}
           </View>
         ))}
         {canAddPhoto ? (
@@ -243,6 +250,10 @@ const styles = StyleSheet.create({
   },
   photoFrameFullWidth: {
     aspectRatio: 1.35,
+  },
+  gridSpacer: {
+    aspectRatio: 1,
+    flex: 1,
   },
   photo: {
     height: '100%',

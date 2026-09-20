@@ -29,7 +29,7 @@ describe('MomentPhotoGrid', () => {
   });
 
   it('renders feature layouts with the first photo full width', async () => {
-    const { getByTestId } = await renderWithProviders(
+    const { getByTestId, queryByTestId } = await renderWithProviders(
       <MomentPhotoGrid
         photos={photos(3)}
         layout="feature"
@@ -37,7 +37,21 @@ describe('MomentPhotoGrid', () => {
       />,
     );
 
-    expect(getByTestId('moment-grid-row-0').props.children).toHaveLength(1);
+    expect(getByTestId('moment-grid-photo-0')).toBeTruthy();
+    expect(getByTestId('moment-grid-photo-2')).toBeTruthy();
+    expect(queryByTestId('moment-grid-spacer-0')).toBeNull();
+  });
+
+  it('keeps odd grid rows at the same tile height', async () => {
+    const { getByTestId } = await renderWithProviders(
+      <MomentPhotoGrid
+        photos={photos(3)}
+        layout="grid"
+        testID="moment-grid"
+      />,
+    );
+
     expect(getByTestId('moment-grid-row-1').props.children).toHaveLength(2);
+    expect(getByTestId('moment-grid-spacer-1')).toBeTruthy();
   });
 });

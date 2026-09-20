@@ -50,6 +50,7 @@ export function DiaryEntryBodyPreview({
   const contentHeight = Math.max(1, bodyCanvasHeight);
   const [bodyLayout, setBodyLayout] = useState({ width: initialCanvasWidth, height: contentHeight });
   const showMomentPhotos = getDiaryEntryType(entry) === 'moment' && entry.photos.length > 0;
+  const showBodyText = entry.content.trim().length > 0;
   const textAvoidanceInsets = useMemo(
     () => {
       const insets = getStickerTextAvoidanceInsets(scaledStickers, bodyLayout);
@@ -80,23 +81,31 @@ export function DiaryEntryBodyPreview({
         />
       ))}
       {showMomentPhotos ? (
-        <MomentPhotoGrid photos={entry.photos} compact testID="entry-preview-moment-photo-grid" />
+        <MomentPhotoGrid
+          photos={entry.photos}
+          layout={entry.momentPhotoLayout}
+          compact
+          style={!showBodyText ? styles.momentGridFlush : undefined}
+          testID="entry-preview-moment-photo-grid"
+        />
       ) : null}
-      <View style={[styles.textLayer, textAvoidanceInsets]} testID="diary-entry-body-preview-text-layer">
-        <MarkdownText
-          style={[
-            styles.text,
-            {
-              color: bodyTextColor,
-              fontFamily: bodyFontFamily,
-              fontSize: bodyFontSize,
-              lineHeight: bodyLineHeight,
-            },
-          ]}
-        >
-          {entry.content}
-        </MarkdownText>
-      </View>
+      {showBodyText ? (
+        <View style={[styles.textLayer, textAvoidanceInsets]} testID="diary-entry-body-preview-text-layer">
+          <MarkdownText
+            style={[
+              styles.text,
+              {
+                color: bodyTextColor,
+                fontFamily: bodyFontFamily,
+                fontSize: bodyFontSize,
+                lineHeight: bodyLineHeight,
+              },
+            ]}
+          >
+            {entry.content}
+          </MarkdownText>
+        </View>
+      ) : null}
       {foregroundStickers.map((sticker) => (
         <StickerCanvasItem
           key={sticker.id}
@@ -119,6 +128,9 @@ const styles = StyleSheet.create({
     elevation: 2,
     position: 'relative',
     zIndex: 2,
+  },
+  momentGridFlush: {
+    marginBottom: 0,
   },
   text: {
     fontWeight: '600',

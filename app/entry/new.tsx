@@ -445,7 +445,9 @@ export default function CreateEntryScreen() {
   }, [getVisibleStickerPosition, revealStickerBounds, t]);
 
   const handleAddMomentPhotos = useCallback(async () => {
-    const result = await chooseDiaryPhotos();
+    const remainingSlots = Math.max(0, MOMENT_ENTRY_PHOTO_LIMIT - momentPhotos.length);
+    if (remainingSlots === 0) return;
+    const result = await chooseDiaryPhotos(remainingSlots);
     if (!result.success) {
       if (result.error === 'native-module-missing') {
         Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
@@ -456,7 +458,6 @@ export default function CreateEntryScreen() {
     }
     if (result.assets.length === 0) return;
     try {
-      const remainingSlots = Math.max(0, MOMENT_ENTRY_PHOTO_LIMIT - momentPhotos.length);
       const imported = await Promise.all(result.assets.slice(0, remainingSlots).map((asset) => diaryPhotoService.importAsset(asset)));
       setMomentPhotos((current) => normalizeMomentEntryPhotos([...current, ...imported]));
       setEntryType('moment');

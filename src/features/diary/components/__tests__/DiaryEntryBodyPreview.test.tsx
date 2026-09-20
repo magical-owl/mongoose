@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { DiaryEntryBodyPreview } from '@/features/diary/components/DiaryEntryBodyPreview';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
-import { buildDiaryEntry } from '@tests/fixtures/domain';
+import { buildDiaryEntry, buildDiaryPhoto } from '@tests/fixtures/domain';
 import { renderWithProviders } from '@tests/helpers';
 
 jest.mock('@/features/diary/components/StickerCanvasItem', () => {
@@ -93,5 +93,30 @@ describe('DiaryEntryBodyPreview', () => {
     const textLayerStyle = StyleSheet.flatten(getByTestId('diary-entry-body-preview-text-layer').props.style);
 
     expect(textLayerStyle.paddingLeft).toBeGreaterThan(0);
+  });
+
+  it('does not reserve empty body text space under moment photos', async () => {
+    const entry = buildDiaryEntry({
+      entryType: 'moment',
+      content: '',
+      photos: [buildDiaryPhoto()],
+    });
+
+    const { getByTestId, queryByTestId } = await renderWithProviders(
+      <DiaryEntryBodyPreview
+        entry={entry}
+        bodyCanvasHeight={1}
+        bodyFontSize={16}
+        bodyLineHeight={24}
+        stickers={[]}
+        onBodyLayout={jest.fn()}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    const momentGridStyle = StyleSheet.flatten(getByTestId('entry-preview-moment-photo-grid').props.style);
+
+    expect(queryByTestId('diary-entry-body-preview-text-layer')).toBeNull();
+    expect(momentGridStyle.marginBottom).toBe(0);
   });
 });
