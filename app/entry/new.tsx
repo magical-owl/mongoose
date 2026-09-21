@@ -69,7 +69,7 @@ import { getDiaryStylePreset, type DiaryStylePresetId } from '@/features/diary/d
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { shouldPromptForEntryMetadataBeforeSave } from '@/features/diary/services/EntryMetadataSavePrompt';
 import { chooseDiaryPhoto, chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
-import { createPlacedPhotoSticker, diaryPhotoService, mergePlacedStickersWithMomentPhotoStickers } from '@/features/diary/services/DiaryPhotoService';
+import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { applyMomentPhotoImport, getMomentPhotoImportSelectionLimit } from '@/features/diary/services/MomentPhotoImportService';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
@@ -242,7 +242,7 @@ export default function CreateEntryScreen() {
       setPaperBackgroundId(draft.paperBackgroundId);
       setBodyFontFamily(draft.bodyFontFamily);
       setBodyTextColor(draft.bodyTextColor);
-      setStickers(mergePlacedStickersWithMomentPhotoStickers(draft.stickers, draft.photos));
+      setStickers(draft.stickers);
       setSelectedTags(normalizeDiaryTags(draft.tags));
       setManualMoodWeather(draft.manualMoodWeather);
       setManualMoods(normalizeManualMoods(draft.manualMoods, draft.manualMood ?? 'neutral'));

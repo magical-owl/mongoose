@@ -100,7 +100,7 @@ export function MomentPhotoGrid({
       ) : null}
       {usesAlbum ? (
         <View
-          style={styles.albumFrame}
+          style={[styles.albumFrame, editable && photos.length === 0 && styles.albumFrameEmpty]}
           onLayout={(event) => setAlbumWidth(event.nativeEvent.layout.width)}
           testID={`${testID}-album`}
         >
@@ -163,6 +163,21 @@ export function MomentPhotoGrid({
                 </Pressable>
               );
             })}
+            {canAddPhoto ? (
+              <Pressable
+                style={[
+                  styles.albumAddPage,
+                  { width: albumWidth || undefined, borderColor: theme.colors.tint, backgroundColor: theme.colors.card },
+                ]}
+                onPress={onAddPhoto}
+                accessibilityRole="button"
+                accessibilityLabel={t('entryMomentAddPhotosA11y')}
+                testID={`${testID}-add`}
+              >
+                <Ionicons name="images-outline" size={22} color={theme.colors.tint} />
+                <Text style={[styles.addText, { color: theme.colors.tint }]}>{t('entryMomentAddPhotos')}</Text>
+              </Pressable>
+            ) : null}
           </ScrollView>
           {photos.length > 0 ? (
             <View
@@ -174,21 +189,6 @@ export function MomentPhotoGrid({
                 {`${albumIndex + 1}/${photos.length}`}
               </Text>
             </View>
-          ) : null}
-          {canAddPhoto ? (
-            <Pressable
-              style={[
-                styles.albumAddButton,
-                { borderColor: theme.colors.tint, backgroundColor: theme.colors.card },
-              ]}
-              onPress={onAddPhoto}
-              accessibilityRole="button"
-              accessibilityLabel={t('entryMomentAddPhotosA11y')}
-              testID={`${testID}-add`}
-            >
-              <Ionicons name="images-outline" size={18} color={theme.colors.tint} />
-              <Text style={[styles.addText, { color: theme.colors.tint }]}>{t('entryMomentAddPhotos')}</Text>
-            </Pressable>
           ) : null}
         </View>
       ) : (
@@ -405,23 +405,24 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: '100%',
   },
+  albumFrameEmpty: {
+    aspectRatio: 1.2,
+  },
   albumPage: {
     aspectRatio: 1.2,
     overflow: 'hidden',
     position: 'relative',
   },
-  albumAddButton: {
+  albumAddPage: {
     alignItems: 'center',
-    borderRadius: 999,
+    aspectRatio: 1.2,
     borderStyle: 'dashed',
     borderWidth: 1,
-    bottom: 10,
-    flexDirection: 'row',
+    borderRadius: 10,
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    position: 'absolute',
-    right: 10,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
   },
   albumCountBadge: {
     alignItems: 'center',

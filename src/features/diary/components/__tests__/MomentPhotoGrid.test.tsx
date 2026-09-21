@@ -126,4 +126,25 @@ describe('MomentPhotoGrid', () => {
     expect(getByTestId('moment-grid-photo-0-preview-indicator')).toBeTruthy();
     expect(queryByTestId('moment-grid-row-0')).toBeNull();
   });
+
+  it('keeps the add button visible when an editable album is empty', async () => {
+    const onAddPhoto = jest.fn();
+    const { getByTestId } = await renderWithProviders(
+      <MomentPhotoGrid
+        photos={[]}
+        editable
+        layout="album"
+        onAddPhoto={onAddPhoto}
+        testID="moment-grid"
+      />,
+    );
+
+    const albumStyle = StyleSheet.flatten(getByTestId('moment-grid-album').props.style);
+    const addStyle = StyleSheet.flatten(getByTestId('moment-grid-add').props.style);
+
+    expect(albumStyle.aspectRatio).toBe(1.2);
+    expect(addStyle.aspectRatio).toBe(1.2);
+    expect(addStyle.borderStyle).toBe('dashed');
+    expect(getByTestId('moment-grid-add')).toBeTruthy();
+  });
 });
