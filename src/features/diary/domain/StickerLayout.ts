@@ -68,6 +68,30 @@ export function getStickerPreviewHeight(sticker: PlacedSticker): number {
   return getStickerVisualSize(sticker).height;
 }
 
+function getCenteredScaledStickerBounds(
+  sticker: Pick<PlacedSticker, 'x' | 'y' | 'scale'>,
+  visualSize: StickerSize,
+): {
+  readonly left: number;
+  readonly right: number;
+  readonly bottom: number;
+  readonly horizontalOutset: number;
+  readonly verticalOutset: number;
+} {
+  const scaledWidth = visualSize.width * sticker.scale;
+  const scaledHeight = visualSize.height * sticker.scale;
+  const horizontalOutset = Math.max(0, (scaledWidth - visualSize.width) / 2);
+  const verticalOutset = Math.max(0, (scaledHeight - visualSize.height) / 2);
+
+  return {
+    left: sticker.x - horizontalOutset,
+    right: sticker.x + visualSize.width + horizontalOutset,
+    bottom: sticker.y + visualSize.height + verticalOutset,
+    horizontalOutset,
+    verticalOutset,
+  };
+}
+
 export function mapStickerToBodyPreview(
   sticker: PlacedSticker,
   coordinateScale = 1,
@@ -104,12 +128,21 @@ export function clampStickerPosition(
   const verticalEdgeAllowance = sticker.text === undefined && !sticker.imageUri
     ? DIARY_STICKER_BASE_SIZE * scale * DIARY_IMAGE_STICKER_EDGE_ALLOWANCE_RATIO
     : 0;
-  const minX = horizontalEdgeAllowance > 0 ? -horizontalEdgeAllowance : 0;
-  const minY = verticalEdgeAllowance > 0 ? -verticalEdgeAllowance : 0;
-  const maxX = Math.max(minX, bounds.width - visualSize.width * scale + horizontalEdgeAllowance);
+  const scaledBounds = getCenteredScaledStickerBounds({ ...sticker, scale }, visualSize);
+  const minX = scaledBounds.horizontalOutset - horizontalEdgeAllowance;
+  const minY = verticalEdgeAllowance > 0
+    ? scaledBounds.verticalOutset - verticalEdgeAllowance
+    : scaledBounds.verticalOutset;
+  const maxX = Math.max(
+    minX,
+    bounds.width + horizontalEdgeAllowance - visualSize.width - scaledBounds.horizontalOutset,
+  );
   const maxY = options.allowBottomOverflow
     ? Number.POSITIVE_INFINITY
-    : Math.max(minY, bounds.height - visualSize.height * scale + verticalEdgeAllowance);
+    : Math.max(
+      minY,
+      bounds.height + verticalEdgeAllowance - visualSize.height - scaledBounds.verticalOutset,
+    );
 
   return {
     x: Math.max(minX, Math.min(maxX, position.x)),
@@ -135,12 +168,11 @@ export function getStickerTextAvoidanceInsets(
     if (!sticker.wrapText) continue;
 
     const visualSize = getStickerVisualSize(sticker);
-    const scaledWidth = visualSize.width * sticker.scale;
-    const scaledHeight = visualSize.height * sticker.scale;
-    const stickerLeft = sticker.x;
-    const stickerRight = sticker.x + scaledWidth;
-    const stickerBottom = sticker.y + scaledHeight;
-    const stickerCenter = stickerLeft + scaledWidth / 2;
+    const stickerBounds = getCenteredScaledStickerBounds(sticker, visualSize);
+    const stickerLeft = stickerBounds.left;
+    const stickerRight = stickerBounds.right;
+    const stickerBottom = stickerBounds.bottom;
+    const stickerCenter = stickerLeft + (stickerRight - stickerLeft) / 2;
     const leftInset = Math.max(0, stickerRight + gutter);
     const rightInset = Math.max(0, bounds.width - stickerLeft + gutter);
 

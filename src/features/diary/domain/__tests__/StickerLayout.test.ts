@@ -164,7 +164,34 @@ describe('StickerLayout', () => {
       { horizontalEdgeAllowanceRatio: 0.5 },
     );
 
-    expect(position.x).toBe(300 - DIARY_PHOTO_STICKER_BASE_WIDTH * 2 + DIARY_PHOTO_STICKER_BASE_WIDTH);
+    const visualSize = getStickerVisualSize(photoSticker);
+    const scaledWidth = visualSize.width * photoSticker.scale;
+    const horizontalOutset = (scaledWidth - visualSize.width) / 2;
+    const horizontalAllowance = scaledWidth * 0.5;
+
+    expect(position.x + visualSize.width + horizontalOutset).toBe(300 + horizontalAllowance);
+  });
+
+  it('applies horizontal edge allowance symmetrically for centered scaled stickers', () => {
+    const photoSticker: PlacedSticker = {
+      ...baseSticker,
+      imageUri: 'file:///album-photo.jpg',
+      imageWidth: 1200,
+      imageHeight: 800,
+      scale: 2,
+    };
+    const visualSize = getStickerVisualSize(photoSticker);
+    const scaledWidth = visualSize.width * photoSticker.scale;
+    const horizontalOutset = (scaledWidth - visualSize.width) / 2;
+    const horizontalAllowance = scaledWidth * 0.25;
+    const bounds = { width: 300, height: 320 };
+    const options = { horizontalEdgeAllowanceRatio: 0.25 };
+
+    const leftPosition = clampStickerPosition({ x: -999, y: 48 }, photoSticker, bounds, 2, options);
+    const rightPosition = clampStickerPosition({ x: 999, y: 48 }, photoSticker, bounds, 2, options);
+
+    expect(leftPosition.x - horizontalOutset).toBe(-horizontalAllowance);
+    expect(rightPosition.x + visualSize.width + horizontalOutset).toBe(bounds.width + horizontalAllowance);
   });
 
   it('does not add text avoidance without wrapped stickers', () => {
@@ -209,7 +236,12 @@ describe('StickerLayout', () => {
 
     expect(insets.paddingLeft).toBe(0);
     expect(insets.paddingRight).toBe(0);
-    expect(insets.paddingTop).toBe(48 + DIARY_STICKER_BASE_SIZE * 4 + DIARY_STICKER_TEXT_WRAP_GUTTER);
+    expect(insets.paddingTop).toBe(
+      48
+      + DIARY_STICKER_BASE_SIZE
+      + ((DIARY_STICKER_BASE_SIZE * 4 - DIARY_STICKER_BASE_SIZE) / 2)
+      + DIARY_STICKER_TEXT_WRAP_GUTTER,
+    );
   });
 
 });
