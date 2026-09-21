@@ -53,6 +53,8 @@ const STICKER_CONTROL_SIZE = 34;
 const STICKER_CONTROL_GAP = 4;
 const STICKER_CONTROL_OFFSET = 46;
 const STICKER_CONTROL_EDGE_SPACE = 12;
+const STICKER_MIN_SCALE = 0.4;
+const STICKER_MAX_SCALE = 6;
 const PHOTO_STICKER_SHAPES: readonly PhotoStickerShape[] = ['rectangle', 'rounded', 'circle', 'oval'];
 
 function getPhotoStickerBorderRadius(shape: PhotoStickerShape, width: number, height: number): number {
@@ -339,7 +341,7 @@ export const StickerCanvasItem: React.FC<StickerCanvasItemProps> = ({
       const horizontalDelta = gesture.dx * horizontalMultiplier;
       const verticalDelta = gesture.dy * verticalMultiplier;
       const delta = Math.abs(horizontalDelta) > Math.abs(verticalDelta) ? horizontalDelta : verticalDelta;
-      const next = Math.max(0.4, Math.min(3, resizeGestureStart.current.scale + delta / 140));
+      const next = Math.max(STICKER_MIN_SCALE, Math.min(STICKER_MAX_SCALE, resizeGestureStart.current.scale + delta / 140));
       scaleRef.current = next;
       setCurrentScale(next);
     },
