@@ -129,6 +129,15 @@ export function MomentPhotoGrid({
                       accessibilityIgnoresInvertColors
                     />
                   ) : null}
+                  {previewable ? (
+                    <View
+                      pointerEvents="none"
+                      style={[styles.previewIndicator, { backgroundColor: theme.colors.overlay }]}
+                      testID={`${testID}-photo-${index}-preview-indicator`}
+                    >
+                      <Ionicons name="expand-outline" size={14} color={theme.colors.stickerControlText} />
+                    </View>
+                  ) : null}
                   {editable && onRemovePhoto ? (
                     <Pressable
                       style={[styles.removeButton, { backgroundColor: theme.colors.overlay }]}
@@ -293,6 +302,16 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   removeButton: {
+    alignItems: 'center',
+    borderRadius: 12,
+    height: 24,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 6,
+    top: 6,
+    width: 24,
+  },
+  previewIndicator: {
     alignItems: 'center',
     borderRadius: 12,
     height: 24,

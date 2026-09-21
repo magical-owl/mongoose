@@ -81,6 +81,8 @@ describe('MomentPhotoGrid', () => {
 
     await fireEvent.press(getByTestId('moment-grid-photo-0'));
 
+    expect(getByTestId('moment-grid-photo-0-preview-indicator')).toBeTruthy();
+
     await waitFor(() => {
       expect(getByTestId('moment-grid-photo-viewer-image').props.source).toEqual({
         uri: 'file:///moment-0.jpg',
