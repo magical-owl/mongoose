@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Image, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/providers/ThemeProvider';
 import type { DiaryPhoto, MomentPhotoLayout } from '@/features/diary/domain/DiaryEntry';
@@ -15,6 +15,7 @@ const MOMENT_PHOTO_LAYOUT_LABEL_KEYS: Readonly<Record<MomentPhotoLayout, Transla
   feature: 'entryMomentLayoutFeature',
   mosaic: 'entryMomentLayoutMosaic',
   stacked: 'entryMomentLayoutStacked',
+  album: 'entryMomentLayoutAlbum',
 };
 
 interface MomentPhotoGridProps {
@@ -45,9 +46,12 @@ export function MomentPhotoGrid({
   const theme = useTheme();
   const t = useTranslation();
   const [previewPhoto, setPreviewPhoto] = useState<DiaryPhoto | null>(null);
+  const [albumWidth, setAlbumWidth] = useState(0);
+  const [albumIndex, setAlbumIndex] = useState(0);
   const canAddPhoto = editable && photos.length < MOMENT_ENTRY_PHOTO_LIMIT && Boolean(onAddPhoto);
   const photoRows = getMomentPhotoRows(photos, layout);
   const usesStrictGrid = layout === 'grid';
+  const usesAlbum = layout === 'album';
   const previewSource = useMemo(
     () => previewPhoto ? getDiaryPhotoImageSource(previewPhoto.uri) : null,
     [previewPhoto],
@@ -94,28 +98,35 @@ export function MomentPhotoGrid({
           })}
         </View>
       ) : null}
-      <View style={[styles.grid, !editable && styles.collageGrid]}>
-        {photoRows.map((row, rowIndex) => (
-          <View
-            key={`row-${rowIndex}`}
-            style={[styles.photoRow, editable && styles.editablePhotoRow]}
-            testID={`${testID}-row-${rowIndex}`}
+      {usesAlbum ? (
+        <View
+          style={styles.albumFrame}
+          onLayout={(event) => setAlbumWidth(event.nativeEvent.layout.width)}
+          testID={`${testID}-album`}
+        >
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            decelerationRate="fast"
+            onScroll={(event) => {
+              if (albumWidth <= 0) return;
+              const nextIndex = Math.round(event.nativeEvent.contentOffset.x / albumWidth);
+              setAlbumIndex(Math.max(0, Math.min(photos.length - 1, nextIndex)));
+            }}
+            scrollEventThrottle={16}
+            testID={`${testID}-album-scroll`}
           >
-            {row.map((photo, columnIndex) => {
-              const index = rowIndex * 2 + columnIndex;
+            {photos.map((photo, index) => {
               const source = getDiaryPhotoImageSource(photo.uri);
-              const isFullWidth = row.length === 1 && !usesStrictGrid;
               return (
                 <Pressable
                   key={`${photo.id}-${index}`}
                   disabled={!previewable}
                   onPress={previewable ? () => setPreviewPhoto(photo) : undefined}
                   style={[
-                    styles.photoFrame,
-                    compact && styles.photoFrameCompact,
-                    isFullWidth && styles.photoFrameFullWidth,
-                    !editable && styles.collagePhotoFrame,
-                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                    styles.albumPage,
+                    { width: albumWidth || undefined, backgroundColor: theme.colors.card },
                   ]}
                   accessibilityRole={previewable ? 'button' : undefined}
                   accessibilityLabel={previewable ? t('reflectionOpenPhotoA11y') : undefined}
@@ -152,31 +163,119 @@ export function MomentPhotoGrid({
                 </Pressable>
               );
             })}
-            {usesStrictGrid && row.length === 1 ? (
-              <View
-                style={styles.gridSpacer}
-                testID={`${testID}-spacer-${rowIndex}`}
-              />
-            ) : null}
-          </View>
-        ))}
-        {canAddPhoto ? (
-          <Pressable
-            style={[
-              styles.addFrame,
-              compact && styles.photoFrameCompact,
-              { borderColor: theme.colors.tint, backgroundColor: theme.colors.card },
-            ]}
-            onPress={onAddPhoto}
-            accessibilityRole="button"
-            accessibilityLabel={t('entryMomentAddPhotosA11y')}
-            testID={`${testID}-add`}
-          >
-            <Ionicons name="images-outline" size={22} color={theme.colors.tint} />
-            <Text style={[styles.addText, { color: theme.colors.tint }]}>{t('entryMomentAddPhotos')}</Text>
-          </Pressable>
-        ) : null}
-      </View>
+          </ScrollView>
+          {photos.length > 0 ? (
+            <View
+              pointerEvents="none"
+              style={[styles.albumCountBadge, { backgroundColor: theme.colors.overlay }]}
+              testID={`${testID}-album-count`}
+            >
+              <Text style={[styles.albumCountText, { color: theme.colors.stickerControlText }]}>
+                {`${albumIndex + 1}/${photos.length}`}
+              </Text>
+            </View>
+          ) : null}
+          {canAddPhoto ? (
+            <Pressable
+              style={[
+                styles.albumAddButton,
+                { borderColor: theme.colors.tint, backgroundColor: theme.colors.card },
+              ]}
+              onPress={onAddPhoto}
+              accessibilityRole="button"
+              accessibilityLabel={t('entryMomentAddPhotosA11y')}
+              testID={`${testID}-add`}
+            >
+              <Ionicons name="images-outline" size={18} color={theme.colors.tint} />
+              <Text style={[styles.addText, { color: theme.colors.tint }]}>{t('entryMomentAddPhotos')}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : (
+        <View style={[styles.grid, !editable && styles.collageGrid]}>
+          {photoRows.map((row, rowIndex) => (
+            <View
+              key={`row-${rowIndex}`}
+              style={[styles.photoRow, editable && styles.editablePhotoRow]}
+              testID={`${testID}-row-${rowIndex}`}
+            >
+              {row.map((photo, columnIndex) => {
+                const index = rowIndex * 2 + columnIndex;
+                const source = getDiaryPhotoImageSource(photo.uri);
+                const isFullWidth = row.length === 1 && !usesStrictGrid;
+                return (
+                  <Pressable
+                    key={`${photo.id}-${index}`}
+                    disabled={!previewable}
+                    onPress={previewable ? () => setPreviewPhoto(photo) : undefined}
+                    style={[
+                      styles.photoFrame,
+                      compact && styles.photoFrameCompact,
+                      isFullWidth && styles.photoFrameFullWidth,
+                      !editable && styles.collagePhotoFrame,
+                      { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                    ]}
+                    accessibilityRole={previewable ? 'button' : undefined}
+                    accessibilityLabel={previewable ? t('reflectionOpenPhotoA11y') : undefined}
+                    testID={`${testID}-photo-${index}`}
+                  >
+                    {source ? (
+                      <Image
+                        source={source}
+                        style={styles.photo}
+                        resizeMode="cover"
+                        accessibilityIgnoresInvertColors
+                      />
+                    ) : null}
+                    {previewable ? (
+                      <View
+                        pointerEvents="none"
+                        style={[styles.previewIndicator, { backgroundColor: theme.colors.overlay }]}
+                        testID={`${testID}-photo-${index}-preview-indicator`}
+                      >
+                        <Ionicons name="expand-outline" size={14} color={theme.colors.stickerControlText} />
+                      </View>
+                    ) : null}
+                    {editable && onRemovePhoto ? (
+                      <Pressable
+                        style={[styles.removeButton, { backgroundColor: theme.colors.overlay }]}
+                        onPress={() => onRemovePhoto(photo.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('entryMomentRemovePhotoA11y')}
+                        testID={`${testID}-remove-${index}`}
+                      >
+                        <Ionicons name="close" size={14} color={theme.colors.text} />
+                      </Pressable>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+              {usesStrictGrid && row.length === 1 ? (
+                <View
+                  style={styles.gridSpacer}
+                  testID={`${testID}-spacer-${rowIndex}`}
+                />
+              ) : null}
+            </View>
+          ))}
+          {canAddPhoto ? (
+            <Pressable
+              style={[
+                styles.addFrame,
+                compact && styles.photoFrameCompact,
+                { borderColor: theme.colors.tint, backgroundColor: theme.colors.card },
+              ]}
+              onPress={onAddPhoto}
+              accessibilityRole="button"
+              accessibilityLabel={t('entryMomentAddPhotosA11y')}
+              testID={`${testID}-add`}
+            >
+              <Ionicons name="images-outline" size={22} color={theme.colors.tint} />
+              <Text style={[styles.addText, { color: theme.colors.tint }]}>{t('entryMomentAddPhotos')}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      )}
       {previewPhoto && previewSource ? (
         <ImagePreviewModal
           visible
@@ -300,6 +399,45 @@ const styles = StyleSheet.create({
   photo: {
     height: '100%',
     width: '100%',
+  },
+  albumFrame: {
+    overflow: 'hidden',
+    position: 'relative',
+    width: '100%',
+  },
+  albumPage: {
+    aspectRatio: 1.2,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  albumAddButton: {
+    alignItems: 'center',
+    borderRadius: 999,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    bottom: 10,
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    position: 'absolute',
+    right: 10,
+  },
+  albumCountBadge: {
+    alignItems: 'center',
+    borderRadius: 999,
+    bottom: 10,
+    justifyContent: 'center',
+    left: 10,
+    minWidth: 42,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    position: 'absolute',
+  },
+  albumCountText: {
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0,
   },
   removeButton: {
     alignItems: 'center',

@@ -25,10 +25,28 @@ describe('MomentPhotoGrid', () => {
     );
 
     expect(queryByTestId('moment-grid-layout-auto')).toBeNull();
+    expect(getByTestId('moment-grid-layout-album')).toBeTruthy();
 
     await fireEvent.press(getByTestId('moment-grid-layout-feature'));
 
     expect(onChangeLayout).toHaveBeenCalledWith('feature');
+  });
+
+  it('lets users choose album after stacked', async () => {
+    const onChangeLayout = jest.fn();
+    const { getByTestId } = await renderWithProviders(
+      <MomentPhotoGrid
+        photos={photos(3)}
+        editable
+        layout="grid"
+        onChangeLayout={onChangeLayout}
+        testID="moment-grid"
+      />,
+    );
+
+    await fireEvent.press(getByTestId('moment-grid-layout-album'));
+
+    expect(onChangeLayout).toHaveBeenCalledWith('album');
   });
 
   it('renders feature layouts with the first photo full width', async () => {
@@ -90,5 +108,22 @@ describe('MomentPhotoGrid', () => {
         uri: 'file:///moment-0.jpg',
       });
     });
+  });
+
+  it('renders album layouts in a horizontal pager', async () => {
+    const { getByTestId, queryByTestId } = await renderWithProviders(
+      <MomentPhotoGrid
+        photos={photos(2)}
+        layout="album"
+        previewable
+        testID="moment-grid"
+      />,
+    );
+
+    expect(getByTestId('moment-grid-album')).toBeTruthy();
+    expect(getByTestId('moment-grid-album-scroll')).toBeTruthy();
+    expect(getByTestId('moment-grid-album-count').props.children.props.children).toBe('1/2');
+    expect(getByTestId('moment-grid-photo-0-preview-indicator')).toBeTruthy();
+    expect(queryByTestId('moment-grid-row-0')).toBeNull();
   });
 });
