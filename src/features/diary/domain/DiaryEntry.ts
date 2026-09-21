@@ -114,8 +114,8 @@ export type DiaryEntryType = z.infer<typeof DiaryEntryTypeSchema>;
 export const MOMENT_ENTRY_PHOTO_LIMIT = 6;
 export const MomentPhotoLayoutSchema = z.enum(['auto', 'grid', 'feature', 'mosaic', 'stacked']);
 export type MomentPhotoLayout = z.infer<typeof MomentPhotoLayoutSchema>;
-export const DEFAULT_MOMENT_PHOTO_LAYOUT: MomentPhotoLayout = 'auto';
-export const MOMENT_PHOTO_LAYOUT_OPTIONS: readonly MomentPhotoLayout[] = ['auto', 'grid', 'feature', 'mosaic', 'stacked'];
+export const DEFAULT_MOMENT_PHOTO_LAYOUT: MomentPhotoLayout = 'grid';
+export const MOMENT_PHOTO_LAYOUT_OPTIONS: readonly MomentPhotoLayout[] = ['grid', 'feature', 'mosaic', 'stacked'];
 
 export function getDiaryEntryType(entry: { readonly entryType?: DiaryEntryType }): DiaryEntryType {
   return entry.entryType ?? 'diary';

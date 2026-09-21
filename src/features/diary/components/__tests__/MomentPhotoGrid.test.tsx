@@ -14,15 +14,17 @@ function photos(count: number) {
 describe('MomentPhotoGrid', () => {
   it('lets users choose a moment photo layout while editing', async () => {
     const onChangeLayout = jest.fn();
-    const { getByTestId } = await renderWithProviders(
+    const { getByTestId, queryByTestId } = await renderWithProviders(
       <MomentPhotoGrid
         photos={photos(3)}
         editable
-        layout="auto"
+        layout="grid"
         onChangeLayout={onChangeLayout}
         testID="moment-grid"
       />,
     );
+
+    expect(queryByTestId('moment-grid-layout-auto')).toBeNull();
 
     await fireEvent.press(getByTestId('moment-grid-layout-feature'));
 
@@ -61,7 +63,7 @@ describe('MomentPhotoGrid', () => {
       <MomentPhotoGrid
         photos={photos(2)}
         editable
-        layout="auto"
+        layout="grid"
         testID="moment-grid"
       />,
     );
