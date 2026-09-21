@@ -101,6 +101,7 @@ export function DiaryEntryBodyView({
         <MomentPhotoGrid
           photos={entry.photos}
           layout={entry.momentPhotoLayout}
+          previewable
           testID="entry-view-moment-photo-grid"
         />
       ) : null}

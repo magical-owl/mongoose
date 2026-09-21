@@ -24,4 +24,12 @@ describe('useAppStore', () => {
 
     expect(useAppStore.getState().diaryStylePresetId).toBe('kraft');
   });
+
+  it('remembers the last created entry type', () => {
+    expect(useAppStore.getState().lastEntryType).toBe('diary');
+
+    useAppStore.getState().setLastEntryType('moment');
+
+    expect(useAppStore.getState().lastEntryType).toBe('moment');
+  });
 });

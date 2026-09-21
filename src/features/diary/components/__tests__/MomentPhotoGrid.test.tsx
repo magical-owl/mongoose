@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { fireEvent } from '@testing-library/react-native';
+import { fireEvent, waitFor } from '@testing-library/react-native';
 import { MomentPhotoGrid } from '@/features/diary/components/MomentPhotoGrid';
 import { buildDiaryPhoto } from '@tests/fixtures/domain';
 import { renderWithProviders } from '@tests/helpers';
@@ -67,5 +67,24 @@ describe('MomentPhotoGrid', () => {
     );
 
     expect(StyleSheet.flatten(getByTestId('moment-grid-row-0').props.style).gap).toBe(8);
+  });
+
+  it('opens read-only moment photos in a centered preview', async () => {
+    const { getByTestId } = await renderWithProviders(
+      <MomentPhotoGrid
+        photos={photos(2)}
+        layout="auto"
+        previewable
+        testID="moment-grid"
+      />,
+    );
+
+    await fireEvent.press(getByTestId('moment-grid-photo-0'));
+
+    await waitFor(() => {
+      expect(getByTestId('moment-grid-photo-viewer-image').props.source).toEqual({
+        uri: 'file:///moment-0.jpg',
+      });
+    });
   });
 });

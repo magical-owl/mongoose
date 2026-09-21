@@ -85,6 +85,7 @@ export function DiaryEntryBodyPreview({
           photos={entry.photos}
           layout={entry.momentPhotoLayout}
           compact
+          previewable
           style={!showBodyText ? styles.momentGridFlush : undefined}
           testID="entry-preview-moment-photo-grid"
         />

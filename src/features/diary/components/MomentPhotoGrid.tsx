@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { Image, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -6,6 +7,7 @@ import { DEFAULT_MOMENT_PHOTO_LAYOUT, MOMENT_ENTRY_PHOTO_LIMIT, MOMENT_PHOTO_LAY
 import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
 import { Text } from '@/shared/components/Text';
 import { useTranslation, type TranslationKey } from '@/localization/i18n';
+import { ImagePreviewModal } from '@/shared/components/ImagePreviewModal';
 
 const MOMENT_PHOTO_LAYOUT_LABEL_KEYS: Readonly<Record<MomentPhotoLayout, TranslationKey>> = {
   auto: 'entryMomentLayoutAuto',
@@ -23,6 +25,7 @@ interface MomentPhotoGridProps {
   readonly onAddPhoto?: () => void;
   readonly onRemovePhoto?: (photoId: string) => void;
   readonly compact?: boolean;
+  readonly previewable?: boolean;
   readonly style?: StyleProp<ViewStyle>;
   readonly testID?: string;
 }
@@ -35,14 +38,20 @@ export function MomentPhotoGrid({
   onAddPhoto,
   onRemovePhoto,
   compact = false,
+  previewable = false,
   style,
   testID = 'moment-photo-grid',
 }: MomentPhotoGridProps): React.JSX.Element | null {
   const theme = useTheme();
   const t = useTranslation();
+  const [previewPhoto, setPreviewPhoto] = useState<DiaryPhoto | null>(null);
   const canAddPhoto = editable && photos.length < MOMENT_ENTRY_PHOTO_LIMIT && Boolean(onAddPhoto);
   const photoRows = getMomentPhotoRows(photos, layout);
   const usesStrictGrid = layout === 'grid';
+  const previewSource = useMemo(
+    () => previewPhoto ? getDiaryPhotoImageSource(previewPhoto.uri) : null,
+    [previewPhoto],
+  );
 
   if (!editable && photos.length === 0) return null;
 
@@ -97,8 +106,10 @@ export function MomentPhotoGrid({
               const source = getDiaryPhotoImageSource(photo.uri);
               const isFullWidth = row.length === 1 && !usesStrictGrid;
               return (
-                <View
+                <Pressable
                   key={`${photo.id}-${index}`}
+                  disabled={!previewable}
+                  onPress={previewable ? () => setPreviewPhoto(photo) : undefined}
                   style={[
                     styles.photoFrame,
                     compact && styles.photoFrameCompact,
@@ -106,6 +117,8 @@ export function MomentPhotoGrid({
                     !editable && styles.collagePhotoFrame,
                     { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
                   ]}
+                  accessibilityRole={previewable ? 'button' : undefined}
+                  accessibilityLabel={previewable ? t('reflectionOpenPhotoA11y') : undefined}
                   testID={`${testID}-photo-${index}`}
                 >
                   {source ? (
@@ -127,7 +140,7 @@ export function MomentPhotoGrid({
                       <Ionicons name="close" size={14} color={theme.colors.text} />
                     </Pressable>
                   ) : null}
-                </View>
+                </Pressable>
               );
             })}
             {usesStrictGrid && row.length === 1 ? (
@@ -155,6 +168,19 @@ export function MomentPhotoGrid({
           </Pressable>
         ) : null}
       </View>
+      {previewPhoto && previewSource ? (
+        <ImagePreviewModal
+          visible
+          source={previewSource}
+          imageWidth={previewPhoto.width}
+          imageHeight={previewPhoto.height}
+          onDismiss={() => setPreviewPhoto(null)}
+          imageAccessibilityLabel={t('reflectionPhotoA11y')}
+          viewerAccessibilityLabel={t('reflectionPhotoViewerA11y')}
+          closeAccessibilityLabel={t('reflectionClosePhotoA11y')}
+          testID={`${testID}-photo-viewer`}
+        />
+      ) : null}
     </View>
   );
 }

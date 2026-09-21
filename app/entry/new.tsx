@@ -150,6 +150,8 @@ export default function CreateEntryScreen() {
   const setSelectedCalendarDate = useAppStore((state) => state.setSelectedCalendarDate);
   const diaryStylePresetId = useAppStore((state) => state.diaryStylePresetId);
   const setDiaryStylePresetId = useAppStore((state) => state.setDiaryStylePresetId);
+  const lastEntryType = useAppStore((state) => state.lastEntryType);
+  const setLastEntryType = useAppStore((state) => state.setLastEntryType);
   const initialStylePreset = getDiaryStylePreset(diaryStylePresetId);
   const editorRef = useRef<RichTextEditorHandle>(null);
   const isHydratingDraft = useRef(true);
@@ -166,7 +168,7 @@ export default function CreateEntryScreen() {
   } = useScrollCollapse({ onScrollBeginDrag: handleCoverScrollBeginDrag });
 
   const [title, setTitle] = useState('');
-  const [entryType, setEntryType] = useState<DiaryEntryType>('diary');
+  const [entryType, setEntryType] = useState<DiaryEntryType>(lastEntryType);
   const [content, setContent] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const target = paramDate || selectedCalendarDate;
@@ -218,6 +220,11 @@ export default function CreateEntryScreen() {
     height: ENTRY_BODY_MIN_HEIGHT,
   });
   const isoDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+
+  const handleChangeEntryType = useCallback((nextEntryType: DiaryEntryType) => {
+    setEntryType(nextEntryType);
+    setLastEntryType(nextEntryType);
+  }, [setLastEntryType]);
 
   useEffect(() => {
     let active = true;
@@ -467,11 +474,11 @@ export default function CreateEntryScreen() {
       });
       setCoverPhoto(nextImport.coverPhoto);
       setMomentPhotos(nextImport.momentPhotos);
-      setEntryType('moment');
+      handleChangeEntryType('moment');
     } catch {
       Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
     }
-  }, [coverPhoto, momentPhotos, t]);
+  }, [coverPhoto, handleChangeEntryType, momentPhotos, t]);
 
   const handleRemoveMomentPhoto = useCallback((photoId: string) => {
     setMomentPhotos((current) => current.filter((photo) => photo.id !== photoId));
@@ -754,7 +761,7 @@ export default function CreateEntryScreen() {
                 return (
                   <Pressable
                     key={type}
-                    onPress={() => setEntryType(type)}
+                    onPress={() => handleChangeEntryType(type)}
                     style={[
                       styles.entryTypeButton,
                       {
