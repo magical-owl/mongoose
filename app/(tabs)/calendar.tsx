@@ -116,6 +116,10 @@ export default function CalendarScreen() {
     setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1));
     handleSelectDate(todayKey);
   };
+  const handleCreateEntryForSelectedDate = useCallback(() => {
+    router.push({ pathname: '/entry/new', params: { date: selectedDateStr } });
+  }, [router, selectedDateStr]);
+
   const closeCalendarMenu = useCallback(() => {
     setShowCalendarMenu(false);
   }, []);
@@ -326,6 +330,13 @@ export default function CalendarScreen() {
               style={styles.todayButton}
               labelStyle={styles.todayButtonText}
             />
+            <IconCircleButton
+              icon="plus"
+              onPress={handleCreateEntryForSelectedDate}
+              accessibilityLabel={t('calendarCreateEntryA11y')}
+              size="md"
+              surface="overlay"
+            />
           </View>
         </View>
         <Animated.View style={[styles.calendarCollapseWrap, { height: calendarHeight, opacity: calendarOpacity }]}>
@@ -445,8 +456,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   headerNavRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerSide: { width: 44, flexDirection: 'row', alignItems: 'center' },
-  headerSideRight: { width: 96, justifyContent: 'flex-end' },
+  headerSide: { width: 142, flexDirection: 'row', alignItems: 'center' },
+  headerSideRight: { width: 142, justifyContent: 'flex-end', gap: 8 },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, lineHeight: 22, fontWeight: '800' },
   calendarCollapseWrap: { overflow: 'hidden', marginTop: 10 },
   todayButton: {

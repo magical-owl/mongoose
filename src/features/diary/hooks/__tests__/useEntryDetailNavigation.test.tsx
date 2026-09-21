@@ -71,7 +71,7 @@ function NavigationHarness({
           navigation.markViewScrollStarted();
           navigation.handleViewScroll({
             nativeEvent: {
-              contentOffset: { y: 664 },
+              contentOffset: { y: 772 },
               contentSize: { height: 1200, width: 390 },
               layoutMeasurement: { height: 500, width: 390 },
             },
@@ -79,6 +79,21 @@ function NavigationHarness({
         }}
       >
         <Text>Scroll</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="bottom-edge-scroll"
+        onPress={() => {
+          navigation.markViewScrollStarted();
+          navigation.handleViewScroll({
+            nativeEvent: {
+              contentOffset: { y: 700 },
+              contentSize: { height: 1200, width: 390 },
+              layoutMeasurement: { height: 500, width: 390 },
+            },
+          } as never);
+        }}
+      >
+        <Text>Bottom edge scroll</Text>
       </TouchableOpacity>
     </>
   );
@@ -119,6 +134,28 @@ describe('useEntryDetailNavigation', () => {
 
     await waitFor(() => expect(getByTestId('current-entry').props.children).toBe('second'));
     expect(onRouteEntryChange).toHaveBeenCalledWith('second');
+  });
+
+  it('does not load the next entry at the bottom edge before the overdrag allowance', async () => {
+    const first = createEntry('first');
+    const second = createEntry('second');
+    const onRouteEntryChange = jest.fn();
+    const { getByTestId } = await render(
+      <NavigationHarness
+        initialEntry={first}
+        entries={[first, second]}
+        onRouteEntryChange={onRouteEntryChange}
+      />,
+    );
+
+    await act(async () => {
+      await fireEvent.press(getByTestId('bottom-edge-scroll'));
+      await Promise.resolve();
+      await jest.runOnlyPendingTimersAsync();
+    });
+
+    expect(getByTestId('current-entry').props.children).toBe('first');
+    expect(onRouteEntryChange).not.toHaveBeenCalled();
   });
 
   it('wraps previous entry from first to last', async () => {

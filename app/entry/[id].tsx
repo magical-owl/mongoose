@@ -36,7 +36,7 @@ import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import type { RichTextEditorHandle } from '@shared/components/RichTextEditor';
-import { DiaryEntry, MOMENT_ENTRY_PHOTO_LIMIT, normalizeMomentEntryPhotos, getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
+import { DiaryEntry, MOMENT_ENTRY_PHOTO_LIMIT, normalizeMomentEntryPhotos, getDiaryEntryType, getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
 import { getDiaryEntryViewCount } from '@/features/diary/domain/DiaryEntryViewHistory';
 import { getDiaryStylePreset, type DiaryStylePresetId } from '@/features/diary/domain/DiaryStylePreset';
 import { Template } from '@/features/diary/domain/Template';
@@ -412,6 +412,8 @@ export default function EntryDetailScreen() {
   const viewMoods = getEntryManualMoods(entry);
   const viewTitle = entry.title.trim() || t('entryTypeMoment');
   const hasViewCoverPhoto = Boolean(entry.coverPhoto);
+  const shouldReserveViewCoverArea = !isEditing;
+  const activeEntryType = isEditing ? editEntryType : getDiaryEntryType(entry);
   const friendlyTimestampLabels = {
     today: t('timeToday'),
     yesterday: t('timeYesterday'),
@@ -425,8 +427,8 @@ export default function EntryDetailScreen() {
   const renderViewFooterMoodAndTags = () => (
     <EntryMetaRow
       variant="viewFooter"
-      moods={hasViewCoverPhoto ? [] : viewMoods}
-      tags={hasViewCoverPhoto ? [] : entry.tags}
+      moods={[]}
+      tags={[]}
       memoryReactions={entry.memoryReactions}
       isMemoryReactionPickerVisible={showMemoryReactionPicker}
       onOpenMemoryReactionPicker={() => setShowMemoryReactionPicker(true)}
@@ -458,7 +460,7 @@ export default function EntryDetailScreen() {
     topInset: insets.top,
     isEditing,
     hasEditCoverPhoto,
-    hasViewCoverPhoto,
+    hasViewCoverPhoto: shouldReserveViewCoverArea,
     bodyContentHeight,
     displayStickers,
     showStickerPicker,
@@ -478,7 +480,7 @@ export default function EntryDetailScreen() {
           extrapolate: 'clamp',
         })
       : 0
-    : hasViewCoverPhoto
+    : shouldReserveViewCoverArea
       ? coverScrollY.interpolate({
           inputRange: [0, 120],
           outputRange: [ENTRY_DETAIL_VIEW_COVER_EXPANDED_HEIGHT, 0],
@@ -524,21 +526,23 @@ export default function EntryDetailScreen() {
         onViewCountPress={() => setShowViewHistory(true)}
       />
 
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.entryPaperBackdropFrame,
-          { top: paperBackdropTop },
-        ]}
-      >
-        <View style={styles.entryPaperBackdrop}>
-          <DiaryPaperCanvas
-            paperBackgroundId={isEditing ? editPaperBackgroundId : entry.paperBackgroundId}
-            style={styles.entryPaperBackdrop}
-            testID={isEditing ? 'entry-edit-paper-canvas' : 'entry-view-paper-canvas'}
-          />
-        </View>
-      </Animated.View>
+      {activeEntryType !== 'moment' ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.entryPaperBackdropFrame,
+            { top: paperBackdropTop },
+          ]}
+        >
+          <View style={styles.entryPaperBackdrop}>
+            <DiaryPaperCanvas
+              paperBackgroundId={isEditing ? editPaperBackgroundId : entry.paperBackgroundId}
+              style={styles.entryPaperBackdrop}
+              testID={isEditing ? 'entry-edit-paper-canvas' : 'entry-view-paper-canvas'}
+            />
+          </View>
+        </Animated.View>
+      ) : null}
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
       <KeyboardAvoidingView
@@ -555,7 +559,7 @@ export default function EntryDetailScreen() {
             styles.scrollContent,
             {
               paddingHorizontal: isEditing ? entryHorizontalPadding : theme.spacing.lg,
-              minHeight: windowHeight + (isEditing ? editCoverExpandedHeight : hasViewCoverPhoto ? ENTRY_DETAIL_VIEW_COVER_EXPANDED_HEIGHT : 0),
+              minHeight: windowHeight + (isEditing ? editCoverExpandedHeight : ENTRY_DETAIL_VIEW_COVER_EXPANDED_HEIGHT),
               paddingTop: headerOverlayHeight,
               paddingBottom: getEntryEditorScrollBottomPadding(insets.bottom, theme.spacing.xl),
             },
@@ -622,9 +626,6 @@ export default function EntryDetailScreen() {
               /* ── View mode ──────────────────────────────────────────────── */
               <EntryViewBodyContent
                 entry={entry}
-                title={viewTitle}
-                hasCoverPhoto={hasViewCoverPhoto}
-                timestamp={viewDateTime}
                 loadingEntryDirection={loadingEntryDirection}
                 bodyOpacity={viewEntryOpacity}
                 bodyCanvasHeight={bodyCanvasHeight}

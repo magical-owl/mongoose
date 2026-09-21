@@ -63,7 +63,7 @@ function DraftHarness({ sourceEntry }: { readonly sourceEntry: DiaryEntry }) {
         testID="build-entry"
         onPress={() => {
           const updated = draft.buildUpdatedEntry(sourceEntry);
-          draft.setEditTitle(`${updated.title}|${updated.content}|${updated.sensory.energyLevel}|${updated.photos.length}`);
+          draft.setEditTitle(`${updated.title}|${updated.content}|${updated.sensory.energyLevel}|${updated.photos.length}|${updated.momentPhotoLayout}`);
         }}
       >
         <Text>Build</Text>
@@ -101,7 +101,24 @@ describe('useEntryEditDraft', () => {
     });
 
     await waitFor(() => {
-      expect(getByTestId('draft-title').props.children).toBe('Updated title|<p>Updated body.</p>|10|0');
+      expect(getByTestId('draft-title').props.children).toBe('Updated title|<p>Updated body.</p>|10|1|feature');
+    });
+  });
+
+  it('preserves moment photos when the active side is switched to diary', async () => {
+    const sourceEntry = createEntry();
+    const { getByTestId } = await render(<DraftHarness sourceEntry={sourceEntry} />);
+
+    await fireEvent.press(getByTestId('hydrate-draft'));
+    await act(async () => {
+      await fireEvent.press(getByTestId('edit-and-build'));
+    });
+    await act(async () => {
+      await fireEvent.press(getByTestId('build-entry'));
+    });
+
+    await waitFor(() => {
+      expect(getByTestId('draft-title').props.children).toContain('|1|feature');
     });
   });
 });

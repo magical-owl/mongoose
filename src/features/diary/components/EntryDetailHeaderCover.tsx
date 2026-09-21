@@ -82,6 +82,39 @@ export function EntryDetailHeaderCover({
 }: EntryDetailHeaderCoverProps) {
   const theme = useTheme();
   const t = useTranslation();
+  const viewCoverOverlay = (
+    <>
+      <Animated.View style={[styles.coverEntryOverlay, { opacity: viewCoverOverlayOpacity }]}>
+        <Text preset="h2" numberOfLines={2} style={[styles.coverTitle, { color: theme.colors.stickerControlText }]}>
+          {entryTitle}
+        </Text>
+        <Text preset="caption" numberOfLines={1} style={[styles.coverDateTime, { color: theme.colors.stickerControlText }]}>
+          {viewDateTime}
+        </Text>
+      </Animated.View>
+      <Animated.View style={[styles.coverMetaOverlay, { opacity: viewCoverOverlayOpacity }]}>
+        <EntryMetaRow
+          variant="cover"
+          moods={viewMoods}
+          tags={viewTags}
+          style={styles.coverMetaBadges}
+          testID={hasViewCoverPhoto ? 'entry-view-cover-meta-row' : 'entry-view-no-cover-meta-row'}
+          moodTestID={hasViewCoverPhoto ? 'entry-view-cover-mood' : 'entry-view-no-cover-mood'}
+          tagTestID={hasViewCoverPhoto ? 'entry-view-cover-tags' : 'entry-view-no-cover-tags'}
+        />
+        <EntryViewCountBadge
+          count={viewCount}
+          accessibilityLabel={t('entryViewCountA11y').replace('{count}', String(viewCount))}
+          height={26}
+          minWidth={44}
+          iconSize={15}
+          onPress={onViewCountPress}
+          style={styles.coverViewCountBadge}
+          testID="entry-view-count"
+        />
+      </Animated.View>
+    </>
+  );
 
   return (
     <>
@@ -186,37 +219,21 @@ export function EntryDetailHeaderCover({
                 containerStyle={styles.viewCoverPicker}
                 transitionMode="replace"
               >
-                <Animated.View style={[styles.coverEntryOverlay, { opacity: viewCoverOverlayOpacity }]}>
-                  <Text preset="h2" numberOfLines={2} style={[styles.coverTitle, { color: theme.colors.stickerControlText }]}>
-                    {entryTitle}
-                  </Text>
-                  <Text preset="caption" numberOfLines={1} style={[styles.coverDateTime, { color: theme.colors.stickerControlText }]}>
-                    {viewDateTime}
-                  </Text>
-                </Animated.View>
-                <Animated.View style={[styles.coverMetaOverlay, { opacity: viewCoverOverlayOpacity }]}>
-                  <EntryMetaRow
-                    variant="cover"
-                    moods={viewMoods}
-                    tags={viewTags}
-                    style={styles.coverMetaBadges}
-                    testID="entry-view-cover-meta-row"
-                    moodTestID="entry-view-cover-mood"
-                    tagTestID="entry-view-cover-tags"
-                  />
-                  <EntryViewCountBadge
-                    count={viewCount}
-                    accessibilityLabel={t('entryViewCountA11y').replace('{count}', String(viewCount))}
-                    height={26}
-                    minWidth={44}
-                    iconSize={15}
-                    onPress={onViewCountPress}
-                    style={styles.coverViewCountBadge}
-                    testID="entry-view-count"
-                  />
-                </Animated.View>
+                {viewCoverOverlay}
               </DiaryCoverPhotoPicker>
             )}
+          </Animated.View>
+        </View>
+      ) : !isEditing ? (
+        <View
+          style={[styles.coverHeader, styles.coverHeaderFullBleed, styles.blankViewCover]}
+          testID="entry-view-no-cover-summary"
+        >
+          <Animated.View
+            style={[styles.blankViewCoverContent, { opacity: viewEntryOpacity }]}
+            testID="entry-view-no-cover-summary-content"
+          >
+            {viewCoverOverlay}
           </Animated.View>
         </View>
       ) : null}
@@ -259,6 +276,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingTop: 0,
     backgroundColor: 'transparent',
+  },
+  blankViewCover: {
+    height: ENTRY_DETAIL_VIEW_COVER_EXPANDED_HEIGHT,
+  },
+  blankViewCoverContent: {
+    height: '100%',
+    position: 'relative',
   },
   viewCoverPicker: {
     borderWidth: 0,

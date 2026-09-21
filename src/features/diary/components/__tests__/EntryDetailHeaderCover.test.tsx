@@ -100,6 +100,42 @@ describe('EntryDetailHeaderCover', () => {
     expect(onViewCountPress).toHaveBeenCalled();
   });
 
+  it('renders the no-cover view summary with the same title, timestamp, meta, and view count layout', async () => {
+    const onViewCountPress = jest.fn();
+    const { getByText, getByTestId, getByLabelText } = await renderHeaderCover({
+      hasViewCoverPhoto: false,
+      viewCoverPhoto: undefined,
+      viewMoods: ['happy', 'sad'],
+      viewTags: ['daily', 'work'],
+      onViewCountPress,
+    });
+
+    const summaryStyle = StyleSheet.flatten(getByTestId('entry-view-no-cover-summary').props.style);
+    const summaryContentStyle = StyleSheet.flatten(getByTestId('entry-view-no-cover-summary-content').props.style);
+    const titleStyle = StyleSheet.flatten(getByText('A quiet morning').props.style);
+
+    expect(summaryStyle.height).toBe(270);
+    expect(summaryStyle.top).toBe(0);
+    expect(summaryContentStyle.height).toBe('100%');
+    expect(getByText('A quiet morning')).toBeTruthy();
+    expect(getByText('Yesterday at 08:33')).toBeTruthy();
+    expect(getByTestId('entry-view-no-cover-meta-row')).toBeTruthy();
+    expect(getByTestId('entry-view-no-cover-mood-happy')).toBeTruthy();
+    expect(getByTestId('entry-view-no-cover-tags-daily')).toBeTruthy();
+    expect(getByTestId('entry-view-count')).toBeTruthy();
+    expect(titleStyle).toEqual(
+      expect.objectContaining({
+        fontSize: 30,
+        fontStyle: 'italic',
+        fontWeight: '600',
+        lineHeight: 40,
+      }),
+    );
+
+    await fireEvent.press(getByLabelText('Viewed 7 times.'));
+    expect(onViewCountPress).toHaveBeenCalled();
+  });
+
   it('renders edit header controls and cover picker', async () => {
     const onSaveEdit = jest.fn();
     const onChooseCoverPhoto = jest.fn();

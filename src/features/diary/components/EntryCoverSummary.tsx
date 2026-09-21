@@ -9,11 +9,14 @@ import { EntryMetaRow } from './EntryMetaRow';
 
 type EntryCoverSummaryVariant = 'feed' | 'memory' | 'memoryFeatured';
 
+export const ENTRY_COVER_SUMMARY_FEED_MIN_HEIGHT = 168;
+
 interface EntryCoverSummaryProps {
   readonly variant: EntryCoverSummaryVariant;
   readonly title: string;
   readonly timestamp?: string;
   readonly imageSource?: ImageSourcePropType;
+  readonly hidePlaceholderIcon?: boolean;
   readonly isFavorite?: boolean;
   readonly viewCount?: number;
   readonly viewCountAccessibilityLabel?: string;
@@ -37,6 +40,7 @@ export function EntryCoverSummary({
   title,
   timestamp,
   imageSource,
+  hidePlaceholderIcon = false,
   isFavorite = false,
   viewCount,
   viewCountAccessibilityLabel,
@@ -80,7 +84,7 @@ export function EntryCoverSummary({
           accessibilityIgnoresInvertColors
           testID={imageTestID}
         />
-      ) : (
+      ) : hidePlaceholderIcon ? null : (
         <Ionicons name="book-outline" size={isFeatured ? 36 : 26} color={theme.colors.tint} />
       )}
       <View pointerEvents="none" style={[styles.scrim, { backgroundColor: theme.colors.overlay }]} />
@@ -165,7 +169,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   feedFrame: {
-    minHeight: 168,
+    minHeight: ENTRY_COVER_SUMMARY_FEED_MIN_HEIGHT,
   },
   memoryFrame: {
     height: 116,

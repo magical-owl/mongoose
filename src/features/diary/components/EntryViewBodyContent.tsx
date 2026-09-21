@@ -1,5 +1,4 @@
 import { ActivityIndicator, Animated, StyleSheet, View } from 'react-native';
-import { Text } from '@shared/components/Text';
 import { useTheme } from '@/providers/ThemeProvider';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
@@ -12,9 +11,6 @@ import {
 
 interface EntryViewBodyContentProps {
   readonly entry: DiaryEntry;
-  readonly title: string;
-  readonly hasCoverPhoto: boolean;
-  readonly timestamp: string;
   readonly loadingEntryDirection: 'previous' | 'next' | null;
   readonly bodyOpacity?: Animated.Value;
   readonly bodyCanvasHeight: number;
@@ -29,9 +25,6 @@ interface EntryViewBodyContentProps {
 
 export function EntryViewBodyContent({
   entry,
-  title,
-  hasCoverPhoto,
-  timestamp,
   loadingEntryDirection,
   bodyOpacity,
   bodyCanvasHeight,
@@ -52,24 +45,6 @@ export function EntryViewBodyContent({
           <ActivityIndicator color={theme.colors.tint} />
         </View>
       ) : null}
-      {hasCoverPhoto ? null : (
-        <View style={styles.noCoverHeader} testID="entry-view-no-cover-header">
-          <Text
-            preset="h2"
-            style={[styles.coverTitle, { color: theme.colors.stickerControlText }]}
-            numberOfLines={2}
-          >
-            {title}
-          </Text>
-          <Text
-            preset="caption"
-            style={[styles.coverDateTime, { color: theme.colors.stickerControlText }]}
-            numberOfLines={1}
-          >
-            {timestamp}
-          </Text>
-        </View>
-      )}
       <Animated.View style={bodyOpacity ? { opacity: bodyOpacity } : undefined} testID="entry-view-body-fade-layer">
         <DiaryEntryBodyView
           entry={entry}
@@ -105,20 +80,5 @@ const styles = StyleSheet.create({
     minHeight: 72,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  noCoverHeader: {
-    paddingTop: 2,
-    paddingBottom: 12,
-  },
-  coverDateTime: {
-    fontWeight: '700',
-    flexShrink: 0,
-  },
-  coverTitle: {
-    fontSize: 30,
-    fontStyle: 'italic',
-    fontWeight: '600',
-    lineHeight: 40,
-    marginBottom: 8,
   },
 });

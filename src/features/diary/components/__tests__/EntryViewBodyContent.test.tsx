@@ -22,13 +22,10 @@ const entry = buildDiaryEntry({
 });
 
 describe('EntryViewBodyContent', () => {
-  it('shows the no-cover header above the diary body', async () => {
-    const { getByTestId, getByText } = await renderWithProviders(
+  it('renders the diary body without owning the no-cover header layout', async () => {
+    const { getByTestId, queryByTestId } = await renderWithProviders(
       <EntryViewBodyContent
         entry={entry}
-        title="A quiet morning"
-        hasCoverPhoto={false}
-        timestamp="Yesterday at 08:33"
         loadingEntryDirection={null}
         bodyCanvasHeight={260}
         stickers={[]}
@@ -40,27 +37,14 @@ describe('EntryViewBodyContent', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    expect(getByTestId('entry-view-no-cover-header')).toBeTruthy();
-    expect(getByText('A quiet morning')).toBeTruthy();
-    expect(getByText('Yesterday at 08:33')).toBeTruthy();
+    expect(queryByTestId('entry-view-no-cover-header')).toBeNull();
     expect(getByTestId('mock-diary-entry-body-view')).toBeTruthy();
-    expect(StyleSheet.flatten(getByText('A quiet morning').props.style)).toEqual(
-      expect.objectContaining({
-        fontSize: 30,
-        fontStyle: 'italic',
-        fontWeight: '600',
-        lineHeight: 40,
-      }),
-    );
   });
 
   it('hides the no-cover header when a cover photo is present', async () => {
     const { queryByTestId, getByTestId } = await renderWithProviders(
       <EntryViewBodyContent
         entry={entry}
-        title="A quiet morning"
-        hasCoverPhoto
-        timestamp="Yesterday at 08:33"
         loadingEntryDirection={null}
         bodyCanvasHeight={260}
         stickers={[]}
@@ -80,9 +64,6 @@ describe('EntryViewBodyContent', () => {
     const previous = await renderWithProviders(
       <EntryViewBodyContent
         entry={entry}
-        title="A quiet morning"
-        hasCoverPhoto
-        timestamp="Yesterday at 08:33"
         loadingEntryDirection="previous"
         bodyCanvasHeight={260}
         stickers={[]}
@@ -100,9 +81,6 @@ describe('EntryViewBodyContent', () => {
     const next = await renderWithProviders(
       <EntryViewBodyContent
         entry={entry}
-        title="A quiet morning"
-        hasCoverPhoto
-        timestamp="Yesterday at 08:33"
         loadingEntryDirection="next"
         bodyCanvasHeight={260}
         stickers={[]}
@@ -123,9 +101,6 @@ describe('EntryViewBodyContent', () => {
     const { getByTestId } = await renderWithProviders(
       <EntryViewBodyContent
         entry={entry}
-        title="A quiet morning"
-        hasCoverPhoto
-        timestamp="Yesterday at 08:33"
         loadingEntryDirection="next"
         bodyOpacity={bodyOpacity}
         bodyCanvasHeight={260}
@@ -144,24 +119,4 @@ describe('EntryViewBodyContent', () => {
     expect(getByTestId('entry-view-next-loader')).toBeTruthy();
   });
 
-  it('uses the provided display title when the raw entry title is empty', async () => {
-    const { getByText } = await renderWithProviders(
-      <EntryViewBodyContent
-        entry={buildDiaryEntry({ entryType: 'moment', title: '', content: '', photos: [] })}
-        title="Moment"
-        hasCoverPhoto={false}
-        timestamp="Yesterday at 08:33"
-        loadingEntryDirection={null}
-        bodyCanvasHeight={260}
-        stickers={[]}
-        onChangeBodyLayout={jest.fn()}
-        onUpdateSticker={jest.fn()}
-        onDeleteSticker={jest.fn()}
-        onStickerDragStateChange={jest.fn()}
-      />,
-      { wrapperOptions: { initialThemeMode: 'dark' } },
-    );
-
-    expect(getByText('Moment')).toBeTruthy();
-  });
 });

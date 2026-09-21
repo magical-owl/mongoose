@@ -12,7 +12,7 @@ import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoSe
 
 type AdjacentEntryDirection = 'previous' | 'next';
 
-const NEXT_ENTRY_SCROLL_THRESHOLD = 36;
+const NEXT_ENTRY_SCROLL_THRESHOLD = -72;
 const NEXT_ENTRY_LOAD_DELAY_MS = 550;
 const NEXT_ENTRY_FADE_OUT_MS = 420;
 const NEXT_ENTRY_FADE_IN_MS = 520;

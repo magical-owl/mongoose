@@ -203,12 +203,8 @@ export default function JournalsScreen(): React.JSX.Element {
       },
     ] : [];
 
-    if (unassignedEntries.length === 0) return [...permanentItems, ...assignedItems];
-
-    return [
-      ...permanentItems,
-      ...assignedItems,
-      ...(showPermanentJournals ? [{
+    const unassignedItems: JournalHomeItem[] = unassignedEntries.length > 0 && showPermanentJournals ? [
+      {
         id: UNASSIGNED_JOURNAL_ID,
         title: t('journalUnassignedTitle'),
         count: unassignedEntries.length,
@@ -216,7 +212,13 @@ export default function JournalsScreen(): React.JSX.Element {
         coverImageUri: syntheticJournalCovers.unassigned?.coverImageUri ?? DEFAULT_SYNTHETIC_JOURNAL_COVER.coverImageUri,
         coverImageWidth: syntheticJournalCovers.unassigned?.coverImageWidth ?? DEFAULT_SYNTHETIC_JOURNAL_COVER.coverImageWidth,
         coverImageHeight: syntheticJournalCovers.unassigned?.coverImageHeight ?? DEFAULT_SYNTHETIC_JOURNAL_COVER.coverImageHeight,
-      }] : []),
+      },
+    ] : [];
+
+    return [
+      ...permanentItems,
+      ...unassignedItems,
+      ...assignedItems,
     ];
   }, [entryCountsByJournalId, journals, showPermanentJournals, syntheticJournalCovers, t, unassignedEntries.length, visibleEntries.length]);
   const filteredJournalItems = useMemo(() => {

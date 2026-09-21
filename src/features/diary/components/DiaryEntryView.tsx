@@ -223,12 +223,11 @@ export function DiaryEntryView({
 
   if (mode === 'feed') {
     const feedTimestamp = feedEntryDateTime;
-    const feedHasCoverPhoto = Boolean(entry.coverPhoto);
     const feedFooterMeta = (
       <EntryMetaRow
         variant="feed"
-        moods={feedHasCoverPhoto ? [] : entryMoods}
-        tags={feedHasCoverPhoto ? [] : entry.tags}
+        moods={[]}
+        tags={[]}
         {...memoryReactionRowProps}
         reflectionCount={showInlineReflectionAction ? entry.reflections.length : showReflectionSummaryAction ? entry.reflections.length : undefined}
         onReflectionPress={
@@ -246,6 +245,53 @@ export function DiaryEntryView({
         reflectionTestID="entry-feed-reflection-button"
       />
     );
+    const feedHeader = (
+      <EntryCoverSummary
+        variant="feed"
+        title={entryTitle}
+        timestamp={feedTimestamp}
+        imageSource={entry.coverPhoto ? getDiaryPhotoImageSource(entry.coverPhoto.uri) : undefined}
+        hidePlaceholderIcon={!entry.coverPhoto}
+        viewCount={viewCount}
+        viewCountAccessibilityLabel={viewCountA11y}
+        onViewCountPress={() => setIsViewHistoryVisible(true)}
+        moods={entryMoods}
+        tags={entry.tags}
+        viewCountTestID={entry.coverPhoto ? 'entry-feed-view-count' : 'entry-feed-no-cover-view-count'}
+        timestampTestID={entry.coverPhoto ? 'entry-feed-cover-timestamp' : 'entry-feed-timestamp'}
+        moodTestID={entry.coverPhoto ? 'entry-feed-cover-mood' : 'entry-feed-no-cover-mood'}
+        tagTestID={entry.coverPhoto ? 'entry-feed-cover-tags' : 'entry-feed-no-cover-tags'}
+        testID={entry.coverPhoto ? undefined : 'entry-feed-no-cover-summary'}
+      />
+    );
+    const feedEntryContent = (
+      <View style={styles.feedTextLayer}>
+        {entry.coverPhoto ? null : feedHeader}
+        <View
+          style={[
+            styles.feedContentPanel,
+            entry.coverPhoto && styles.feedContentPanelMerged,
+            isMomentEntry && styles.feedContentPanelMoment,
+            {
+              backgroundColor: 'transparent',
+              borderColor: 'transparent',
+            },
+          ]}
+          testID="entry-feed-content-panel"
+        >
+          <DiaryEntryBodyPreview
+            entry={entry}
+            bodyCanvasHeight={feedStickerCanvasHeight}
+            bodyFontSize={16}
+            bodyLineHeight={24}
+            stickers={entry.stickers}
+            coordinateScale={feedCoordinateScale}
+            initialCanvasWidth={measuredFeedCanvasWidth}
+            onBodyLayout={(layout) => setFeedCanvasWidth(layout.width)}
+          />
+        </View>
+      </View>
+    );
     return (
       <>
         <View style={[styles.feedCard, fullWidthEntryFrame]} testID="entry-feed-card">
@@ -262,86 +308,31 @@ export function DiaryEntryView({
               },
             ]}
           >
-            {entry.coverPhoto ? (
-              <EntryCoverSummary
-                variant="feed"
-                title={entryTitle}
-                timestamp={feedTimestamp}
-                imageSource={getDiaryPhotoImageSource(entry.coverPhoto.uri)}
-                viewCount={viewCount}
-                viewCountAccessibilityLabel={viewCountA11y}
-                onViewCountPress={() => setIsViewHistoryVisible(true)}
-                moods={entryMoods}
-                tags={entry.tags}
-                viewCountTestID="entry-feed-view-count"
-                timestampTestID="entry-feed-cover-timestamp"
-                moodTestID="entry-feed-cover-mood"
-                tagTestID="entry-feed-cover-tags"
-              />
-            ) : null}
-            <DiaryPaperCanvas
-              paperBackgroundId={entry.paperBackgroundId}
-              onLayout={(event) => setFeedCanvasWidth(event.nativeEvent.layout.width)}
-              style={[
-                styles.feedCanvas,
-                feedStickerCanvasHeight > 0 && { minHeight: feedStickerCanvasHeight },
-              ]}
-              testID="entry-feed-paper-canvas"
-            >
-              <View style={styles.feedTextLayer}>
-                {entry.coverPhoto ? null : (
-                  <View style={styles.feedCoverContent}>
-                    <Text
-                      style={[
-                        styles.feedTitle,
-                        styles.feedCoverTitle,
-                        {
-                          color: theme.colors.text,
-                          fontSize: theme.fontSizes.xxxl,
-                          lineHeight: theme.fontSizes.xxxl * 1.25,
-                        },
-                      ]}
-                      numberOfLines={3}
-                    >
-                      {entryTitle}
-                    </Text>
-                    {feedTimestamp ? (
-                      <Text
-                        preset="caption"
-                        style={[styles.feedDateTime, { color: theme.colors.text }]}
-                        numberOfLines={1}
-                        testID="entry-feed-timestamp"
-                      >
-                        {feedTimestamp}
-                      </Text>
-                    ) : null}
-                  </View>
-                )}
-                <View
-                  style={[
-                    styles.feedContentPanel,
-                    entry.coverPhoto && styles.feedContentPanelMerged,
-                    isMomentEntry && styles.feedContentPanelMoment,
-                    {
-                      backgroundColor: 'transparent',
-                      borderColor: 'transparent',
-                    },
-                  ]}
-                  testID="entry-feed-content-panel"
-                >
-                  <DiaryEntryBodyPreview
-                    entry={entry}
-                    bodyCanvasHeight={feedStickerCanvasHeight}
-                    bodyFontSize={16}
-                    bodyLineHeight={24}
-                    stickers={entry.stickers}
-                    coordinateScale={feedCoordinateScale}
-                    initialCanvasWidth={measuredFeedCanvasWidth}
-                    onBodyLayout={(layout) => setFeedCanvasWidth(layout.width)}
-                  />
-                </View>
+            {entry.coverPhoto ? feedHeader : null}
+            {isMomentEntry ? (
+              <View
+                onLayout={(event) => setFeedCanvasWidth(event.nativeEvent.layout.width)}
+                style={[
+                  styles.feedCanvas,
+                  feedStickerCanvasHeight > 0 && { minHeight: feedStickerCanvasHeight },
+                ]}
+                testID="entry-feed-moment-canvas"
+              >
+                {feedEntryContent}
               </View>
-            </DiaryPaperCanvas>
+            ) : (
+              <DiaryPaperCanvas
+                paperBackgroundId={entry.paperBackgroundId}
+                onLayout={(event) => setFeedCanvasWidth(event.nativeEvent.layout.width)}
+                style={[
+                  styles.feedCanvas,
+                  feedStickerCanvasHeight > 0 && { minHeight: feedStickerCanvasHeight },
+                ]}
+                testID="entry-feed-paper-canvas"
+              >
+                {feedEntryContent}
+              </DiaryPaperCanvas>
+            )}
           </TouchableOpacity>
           {feedFooterMeta}
           {renderInlineReflectionSection('feed')}
@@ -511,13 +502,9 @@ const styles = StyleSheet.create({
   feedEntrySurface: { borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   feedCanvas: { position: 'relative', overflow: 'visible' },
   feedTextLayer: { position: 'relative', zIndex: 2 },
-  feedTitle: { flex: 1, fontWeight: '700' },
-  feedCoverContent: { paddingLeft: 20, paddingRight: 78, paddingTop: 42, paddingBottom: 12 },
-  feedCoverTitle: { marginBottom: 2 },
   feedContentPanel: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 0, paddingHorizontal: 12, paddingVertical: 12 },
   feedContentPanelMerged: { borderWidth: 0, borderRadius: 0, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 20 },
   feedContentPanelMoment: { paddingTop: 0, paddingBottom: 0, paddingHorizontal: 0 },
-  feedDateTime: { flexShrink: 0, fontWeight: '700', marginTop: 2 },
   timelineEntry: { position: 'relative', minHeight: 82, marginBottom: 18, paddingLeft: 42, paddingRight: 20 },
   timelineSpine: { position: 'absolute', top: 0, bottom: -18, left: 6, width: 1 },
   timelineDot: { position: 'absolute', top: 13, left: 1, width: 11, height: 11, borderRadius: 6, borderWidth: 2 },

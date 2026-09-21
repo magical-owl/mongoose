@@ -37,7 +37,10 @@ export function useDiary() {
     setDeletedEntries(nextDeletedEntries);
   }, []);
 
-  const sortEntriesByDateDesc = useCallback(sortDiaryEntriesChronologicallyDesc, []);
+  const sortEntriesByDateDesc = useCallback(
+    (nextEntries: readonly DiaryEntry[]) => sortDiaryEntriesChronologicallyDesc(nextEntries),
+    [],
+  );
 
   const fetchEntries = useCallback(async () => {
     const entriesResult = await diaryService.getEntries();

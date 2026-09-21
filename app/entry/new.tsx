@@ -544,17 +544,17 @@ export default function CreateEntryScreen() {
     setIsSaving(true);
     const newEntry: DiaryEntry = {
       id: generateUUID(),
-      title: entryType === 'moment' ? '' : title.trim(),
+      title: title.trim(),
       entryType,
-      content: entryType === 'moment' ? '' : content.trim(),
+      content: content.trim(),
       date: isoDate,
       paperBackgroundId,
       bodyFontFamily,
       bodyTextColor,
       stickers,
       coverPhoto,
-      photos: entryType === 'moment' ? momentPhotos : [],
-      momentPhotoLayout: entryType === 'moment' ? momentPhotoLayout : DEFAULT_MOMENT_PHOTO_LAYOUT,
+      photos: momentPhotos,
+      momentPhotoLayout,
       companion: DEFAULT_COMPANION,
       isFavorite,
       viewCount: 0,
@@ -695,13 +695,15 @@ export default function CreateEntryScreen() {
         />
       </View>
 
-      <Animated.View pointerEvents="none" style={[styles.entryPaperBackdropFrame, { top: paperBackdropTop }]}>
-        <DiaryPaperCanvas
-          paperBackgroundId={paperBackgroundId}
-          style={styles.entryPaperBackdrop}
-          testID="entry-create-paper-canvas"
-        />
-      </Animated.View>
+      {entryType !== 'moment' ? (
+        <Animated.View pointerEvents="none" style={[styles.entryPaperBackdropFrame, { top: paperBackdropTop }]}>
+          <DiaryPaperCanvas
+            paperBackgroundId={paperBackgroundId}
+            style={styles.entryPaperBackdrop}
+            testID="entry-create-paper-canvas"
+          />
+        </Animated.View>
+      ) : null}
 
       {/* ── Journal body ─────────────────────────────────────────────────── */}
       <KeyboardAvoidingView

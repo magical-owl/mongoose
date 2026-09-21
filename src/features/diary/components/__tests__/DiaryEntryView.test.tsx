@@ -2,6 +2,7 @@ import { fireEvent, waitFor } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DiaryEntryView } from '@/features/diary/components/DiaryEntryView';
+import { ENTRY_COVER_SUMMARY_FEED_MIN_HEIGHT } from '@/features/diary/components/EntryCoverSummary';
 import type { DiaryEntry } from '@/features/diary/domain/DiaryEntry';
 import { renderWithProviders } from '@tests/helpers';
 import { accentColors } from '@theme/accents';
@@ -342,7 +343,7 @@ describe('DiaryEntryView', () => {
     expect(previewStyle.fontFamily).not.toBe('Merriweather_400Regular');
   });
 
-  it('renders feed view without cover using bottom mood and tag metadata', async () => {
+  it('renders feed view without cover using the cover summary metadata layout', async () => {
     const entryWithMultipleMeta: DiaryEntry = {
       ...baseEntry,
       tags: ['daily', 'work', 'family'],
@@ -359,24 +360,28 @@ describe('DiaryEntryView', () => {
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
-    const moodChipStyle = StyleSheet.flatten(getByTestId('entry-feed-mood-calm').props.style);
+    const coverSummaryStyle = StyleSheet.flatten(getByTestId('entry-feed-no-cover-summary').props.style);
+    const moodChipStyle = StyleSheet.flatten(getByTestId('entry-feed-no-cover-mood-calm').props.style);
     const footerMetaStyle = StyleSheet.flatten(getByTestId('entry-feed-footer-meta').props.style);
     const feedCardStyle = StyleSheet.flatten(getByTestId('entry-feed-card').props.style);
 
+    expect(coverSummaryStyle.minHeight).toBe(ENTRY_COVER_SUMMARY_FEED_MIN_HEIGHT);
     expect(getByTestId('entry-feed-paper-canvas-image')).toBeTruthy();
     expect(getByTestId('diary-entry-body-preview')).toBeTruthy();
     expect(queryByTestId('diary-entry-body-webview')).toBeNull();
     expect(queryByTestId('entry-feed-author-row')).toBeNull();
     expect(queryByTestId('entry-feed-author-avatar')).toBeNull();
     expect(getByTestId('entry-feed-timestamp')).toBeTruthy();
+    expect(getByTestId('entry-feed-no-cover-view-count')).toBeTruthy();
     expect(getByTestId('entry-feed-footer-meta')).toBeTruthy();
     expect(getByTestId('entry-feed-memory-reaction')).toBeTruthy();
     expect(getByTestId('entry-feed-footer-meta').children[0]).toBe(getByTestId('entry-feed-memory-reaction').parent);
-    expect(getByTestId('entry-feed-tags-daily')).toBeTruthy();
+    expect(getByTestId('entry-feed-no-cover-tags-daily')).toBeTruthy();
     expect(getByText('Calm +2')).toBeTruthy();
     expect(getByText('#daily +2')).toBeTruthy();
-    expect(queryByTestId('entry-feed-tags-work')).toBeNull();
-    expect(moodChipStyle.borderRadius).toBe(13);
+    expect(queryByTestId('entry-feed-tags-daily')).toBeNull();
+    expect(queryByTestId('entry-feed-no-cover-tags-work')).toBeNull();
+    expect(moodChipStyle.borderRadius).toBe(11);
     expect(moodChipStyle.borderWidth).toBe(1);
     expect(footerMetaStyle.flexDirection).toBe('row');
     expect(footerMetaStyle.borderTopWidth).toBe(StyleSheet.hairlineWidth);
@@ -386,6 +391,38 @@ describe('DiaryEntryView', () => {
     expect(feedCardStyle.marginBottom).toBe(0);
     expect(feedCardStyle.marginHorizontal).toBe(-20);
     expect(typeof feedCardStyle.width).toBe('number');
+  });
+
+  it('renders feed moment entries without inheriting the diary paper background', async () => {
+    const momentEntry: DiaryEntry = {
+      ...baseEntry,
+      entryType: 'moment',
+      title: '',
+      content: '',
+      coverPhoto: undefined,
+      photos: [
+        buildDiaryPhoto({
+          uri: 'file:///moment-photo.jpg',
+          createdAt: '2026-08-29T01:50:00.000Z',
+        }),
+      ],
+    };
+    const { getByTestId, queryByTestId } = await renderWithProviders(
+      <DiaryEntryView
+        entry={momentEntry}
+        mode="feed"
+        profile={profile}
+        onPress={jest.fn()}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByTestId('entry-feed-moment-canvas')).toBeTruthy();
+    expect(StyleSheet.flatten(getByTestId('entry-feed-no-cover-summary').props.style).minHeight).toBe(ENTRY_COVER_SUMMARY_FEED_MIN_HEIGHT);
+    expect(getByTestId('entry-feed-no-cover-view-count')).toBeTruthy();
+    expect(queryByTestId('entry-feed-paper-canvas')).toBeNull();
+    expect(queryByTestId('entry-feed-paper-canvas-image')).toBeNull();
+    expect(getByTestId('entry-preview-moment-photo-grid')).toBeTruthy();
   });
 
   it('renders feed view with stronger cover and reflection structure', async () => {
