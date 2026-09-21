@@ -36,7 +36,7 @@ import { useDiary } from '@/features/diary/hooks/useDiary';
 import { useJournals } from '@/features/journal/hooks/useJournals';
 import { useProfileForm } from '@/features/profile/hooks/useProfileForm';
 import type { RichTextEditorHandle } from '@shared/components/RichTextEditor';
-import { DiaryEntry, MOMENT_ENTRY_PHOTO_LIMIT, normalizeMomentEntryPhotos, getDiaryEntryType, getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
+import { DiaryEntry, getDiaryEntryType, getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
 import { getDiaryEntryViewCount } from '@/features/diary/domain/DiaryEntryViewHistory';
 import { getDiaryStylePreset, type DiaryStylePresetId } from '@/features/diary/domain/DiaryStylePreset';
 import { Template } from '@/features/diary/domain/Template';
@@ -55,6 +55,7 @@ import { closeMemoryReactionPanels } from '@/features/diary/components/MemoryRea
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
 import { chooseDiaryPhotos } from '@/features/diary/services/DiaryPhotoPickerService';
+import { applyMomentPhotoImport, getMomentPhotoImportSelectionLimit } from '@/features/diary/services/MomentPhotoImportService';
 import { formatFriendlyTimestamp } from '@shared/utils/timeFormat';
 import { useAppStore } from '@/stores/useAppStore';
 import { useTranslation } from '@/localization/i18n';
@@ -240,9 +241,9 @@ export default function EntryDetailScreen() {
     onPhotoImportFailed: () => Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage')),
   });
   const handleAddMomentPhotos = useCallback(async () => {
-    const remainingSlots = Math.max(0, MOMENT_ENTRY_PHOTO_LIMIT - editPhotos.length);
-    if (remainingSlots === 0) return;
-    const result = await chooseDiaryPhotos(remainingSlots);
+    const selectionLimit = getMomentPhotoImportSelectionLimit(editCoverPhoto, editPhotos.length);
+    if (selectionLimit === 0) return;
+    const result = await chooseDiaryPhotos(selectionLimit);
     if (!result.success) {
       if (result.error === 'native-module-missing') {
         Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
@@ -253,13 +254,19 @@ export default function EntryDetailScreen() {
     }
     if (result.assets.length === 0) return;
     try {
-      const imported = await Promise.all(result.assets.slice(0, remainingSlots).map((asset) => diaryPhotoService.importAsset(asset)));
-      setEditPhotos((current) => normalizeMomentEntryPhotos([...current, ...imported]));
+      const imported = await Promise.all(result.assets.slice(0, selectionLimit).map((asset) => diaryPhotoService.importAsset(asset)));
+      const nextImport = applyMomentPhotoImport({
+        currentCoverPhoto: editCoverPhoto,
+        currentMomentPhotos: editPhotos,
+        importedPhotos: imported,
+      });
+      setEditCoverPhoto(nextImport.coverPhoto);
+      setEditPhotos(nextImport.momentPhotos);
       setEditEntryType('moment');
     } catch {
       Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
     }
-  }, [editPhotos.length, setEditEntryType, setEditPhotos, t]);
+  }, [editCoverPhoto, editPhotos, setEditCoverPhoto, setEditEntryType, setEditPhotos, t]);
   const handleRemoveMomentPhoto = useCallback((photoId: string) => {
     setEditPhotos((current) => current.filter((photo) => photo.id !== photoId));
   }, [setEditPhotos]);

@@ -41,7 +41,6 @@ import {
   WritingMode,
   getPrimaryManualMood,
   DEFAULT_MOMENT_PHOTO_LAYOUT,
-  MOMENT_ENTRY_PHOTO_LIMIT,
   normalizeManualMoods,
   normalizeMomentEntryPhotos,
   type DiaryEntryType,
@@ -70,6 +69,7 @@ import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { shouldPromptForEntryMetadataBeforeSave } from '@/features/diary/services/EntryMetadataSavePrompt';
 import { chooseDiaryPhoto, chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
 import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
+import { applyMomentPhotoImport, getMomentPhotoImportSelectionLimit } from '@/features/diary/services/MomentPhotoImportService';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
 import { isPlanLimitErrorCode } from '@/features/subscription/services/PlanLimitService';
@@ -445,9 +445,9 @@ export default function CreateEntryScreen() {
   }, [getVisibleStickerPosition, revealStickerBounds, t]);
 
   const handleAddMomentPhotos = useCallback(async () => {
-    const remainingSlots = Math.max(0, MOMENT_ENTRY_PHOTO_LIMIT - momentPhotos.length);
-    if (remainingSlots === 0) return;
-    const result = await chooseDiaryPhotos(remainingSlots);
+    const selectionLimit = getMomentPhotoImportSelectionLimit(coverPhoto, momentPhotos.length);
+    if (selectionLimit === 0) return;
+    const result = await chooseDiaryPhotos(selectionLimit);
     if (!result.success) {
       if (result.error === 'native-module-missing') {
         Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoNativeModuleMissingMessage'));
@@ -458,13 +458,19 @@ export default function CreateEntryScreen() {
     }
     if (result.assets.length === 0) return;
     try {
-      const imported = await Promise.all(result.assets.slice(0, remainingSlots).map((asset) => diaryPhotoService.importAsset(asset)));
-      setMomentPhotos((current) => normalizeMomentEntryPhotos([...current, ...imported]));
+      const imported = await Promise.all(result.assets.slice(0, selectionLimit).map((asset) => diaryPhotoService.importAsset(asset)));
+      const nextImport = applyMomentPhotoImport({
+        currentCoverPhoto: coverPhoto,
+        currentMomentPhotos: momentPhotos,
+        importedPhotos: imported,
+      });
+      setCoverPhoto(nextImport.coverPhoto);
+      setMomentPhotos(nextImport.momentPhotos);
       setEntryType('moment');
     } catch {
       Alert.alert(t('entryPhotoImportFailedTitle'), t('entryPhotoImportFailedMessage'));
     }
-  }, [momentPhotos.length, t]);
+  }, [coverPhoto, momentPhotos, t]);
 
   const handleRemoveMomentPhoto = useCallback((photoId: string) => {
     setMomentPhotos((current) => current.filter((photo) => photo.id !== photoId));

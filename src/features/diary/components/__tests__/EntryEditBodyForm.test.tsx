@@ -129,4 +129,48 @@ describe('EntryEditBodyForm', () => {
     expect(getByTestId('entry-edit-sticker-22222222-2222-4222-8222-222222222222')).toBeTruthy();
     expect(getByTestId('entry-edit-sticker-33333333-3333-4333-8333-333333333333')).toBeTruthy();
   });
+
+  it('shows the cover-photo hint for moment entries only', async () => {
+    const editorRef = createRef<RichTextEditorHandle>();
+    const props = {
+      editorRef,
+      editDate: new Date(2026, 7, 29),
+      onChangeDate: jest.fn(),
+      editTitle: 'Original title',
+      onChangeTitle: jest.fn(),
+      editEntryType: 'moment' as const,
+      onChangeEntryType: jest.fn(),
+      editPhotos: [],
+      editMomentPhotoLayout: 'auto' as const,
+      onChangeMomentPhotoLayout: jest.fn(),
+      onAddMomentPhotos: jest.fn(),
+      onRemoveMomentPhoto: jest.fn(),
+      editContent: '<p>Original body.</p>',
+      onChangeContent: jest.fn(),
+      editBodyFontFamily: 'system' as const,
+      editBodyTextColor: undefined,
+      bodyCanvasHeight: 260,
+      showBodyStickerBounds: false,
+      bodyLayout: { y: 0, width: 390, height: 260 },
+      onChangeBodyLayout: jest.fn(),
+      onChangeBodyContentHeight: jest.fn(),
+      behindStickers: [],
+      foregroundStickers: [],
+      onUpdateSticker: jest.fn(),
+      onDeleteSticker: jest.fn(),
+      onStickerDragStateChange: jest.fn(),
+    };
+
+    const { getByTestId, queryByTestId, rerender } = await renderWithProviders(
+      <EntryEditBodyForm {...props} />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByTestId('entry-edit-moment-cover-hint')).toBeTruthy();
+    expect(getByTestId('entry-edit-moment-cover-hint').props.children).toBeTruthy();
+
+    await rerender(<EntryEditBodyForm {...props} editEntryType="diary" />);
+
+    expect(queryByTestId('entry-edit-moment-cover-hint')).toBeNull();
+  });
 });

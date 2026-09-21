@@ -129,15 +129,34 @@ export function EntryEditBodyForm({
         })}
       </View>
       {editEntryType === 'moment' ? (
-        <MomentPhotoGrid
-          photos={editPhotos}
-          editable
-          layout={editMomentPhotoLayout}
-          onChangeLayout={onChangeMomentPhotoLayout}
-          onAddPhoto={onAddMomentPhotos}
-          onRemovePhoto={onRemoveMomentPhoto}
-          testID="entry-edit-moment-photo-grid"
-        />
+        <>
+          <View
+            style={[
+              styles.momentPhotoHint,
+              {
+                backgroundColor: theme.colors.card + 'CC',
+                borderColor: theme.colors.tint + '66',
+              },
+            ]}
+            testID="entry-edit-moment-cover-hint"
+          >
+            <Text style={[styles.momentPhotoHintKicker, { color: theme.colors.tint }]}>
+              {t('commonTip')}
+            </Text>
+            <Text style={[styles.momentPhotoHintText, { color: theme.colors.text }]}>
+              {t('entryMomentCoverPhotoHint')}
+            </Text>
+          </View>
+          <MomentPhotoGrid
+            photos={editPhotos}
+            editable
+            layout={editMomentPhotoLayout}
+            onChangeLayout={onChangeMomentPhotoLayout}
+            onAddPhoto={onAddMomentPhotos}
+            onRemovePhoto={onRemoveMomentPhoto}
+            testID="entry-edit-moment-photo-grid"
+          />
+        </>
       ) : null}
       {editEntryType === 'diary' ? (
         <>
@@ -270,6 +289,25 @@ const styles = StyleSheet.create({
   entryTypeButtonText: {
     fontSize: 13,
     fontWeight: '800',
+  },
+  momentPhotoHint: {
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  momentPhotoHintKicker: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  momentPhotoHintText: {
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
   },
   titleBodyGap: {
     height: StyleSheet.hairlineWidth,
