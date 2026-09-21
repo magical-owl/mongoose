@@ -82,6 +82,8 @@ export interface AppState {
   appLanguage: AppLanguage;
   premiumOnboardingPromptShown: boolean;
   premiumPromptDismissedAt: string | null;
+  showTips: boolean;
+  tipDismissNoticeShown: boolean;
 
   // Actions
   setThemeMode: (mode: ThemeMode) => void;
@@ -110,6 +112,8 @@ export interface AppState {
   setAppLanguage: (language: AppLanguage) => void;
   markPremiumOnboardingPromptShown: (shownAt: string) => void;
   markPremiumPromptDismissed: (dismissedAt: string) => void;
+  setShowTips: (showTips: boolean) => void;
+  markTipDismissNoticeShown: () => void;
   reset: () => void;
 }
 
@@ -142,6 +146,8 @@ const initialState: Pick<
   | 'appLanguage'
   | 'premiumOnboardingPromptShown'
   | 'premiumPromptDismissedAt'
+  | 'showTips'
+  | 'tipDismissNoticeShown'
 > = {
   themeMode: 'dark',
   accentColor: 'blue',
@@ -170,6 +176,8 @@ const initialState: Pick<
   appLanguage: 'en',
   premiumOnboardingPromptShown: false,
   premiumPromptDismissedAt: null,
+  showTips: true,
+  tipDismissNoticeShown: false,
 };
 
 /**
@@ -220,6 +228,8 @@ export const useAppStore = create<AppState>()(
         premiumPromptDismissedAt: shownAt,
       }),
       markPremiumPromptDismissed: (dismissedAt: string) => set({ premiumPromptDismissedAt: dismissedAt }),
+      setShowTips: (showTips: boolean) => set({ showTips }),
+      markTipDismissNoticeShown: () => set({ tipDismissNoticeShown: true }),
 
       setOnboardingStatus: (onboardingStatus: OnboardingStatus) =>
         set({
@@ -263,6 +273,8 @@ export const useAppStore = create<AppState>()(
         appLanguage: state.appLanguage,
         premiumOnboardingPromptShown: state.premiumOnboardingPromptShown,
         premiumPromptDismissedAt: state.premiumPromptDismissedAt,
+        showTips: state.showTips,
+        tipDismissNoticeShown: state.tipDismissNoticeShown,
       }),
     }
   )

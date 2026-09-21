@@ -87,7 +87,11 @@ export function MomentPhotoGrid({
       ) : null}
       <View style={[styles.grid, !editable && styles.collageGrid]}>
         {photoRows.map((row, rowIndex) => (
-          <View key={`row-${rowIndex}`} style={styles.photoRow} testID={`${testID}-row-${rowIndex}`}>
+          <View
+            key={`row-${rowIndex}`}
+            style={[styles.photoRow, editable && styles.editablePhotoRow]}
+            testID={`${testID}-row-${rowIndex}`}
+          >
             {row.map((photo, columnIndex) => {
               const index = rowIndex * 2 + columnIndex;
               const source = getDiaryPhotoImageSource(photo.uri);
@@ -233,6 +237,9 @@ const styles = StyleSheet.create({
   photoRow: {
     flexDirection: 'row',
     width: '100%',
+  },
+  editablePhotoRow: {
+    gap: 8,
   },
   photoFrame: {
     aspectRatio: 1,

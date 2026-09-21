@@ -168,3 +168,30 @@ export function createPlacedPhotoSticker(photo: DiaryPhoto, index: number): Plac
     behindText: false,
   };
 }
+
+export function mergePlacedStickersWithMomentPhotoStickers(
+  stickers: readonly PlacedSticker[],
+  photos: readonly DiaryPhoto[],
+): PlacedSticker[] {
+  const mergedStickers: PlacedSticker[] = [];
+  const seenStickerIds = new Set<string>();
+  const seenPhotoStickerIds = new Set<string>();
+
+  stickers.forEach((sticker) => {
+    if (seenStickerIds.has(sticker.id)) return;
+    mergedStickers.push(sticker);
+    seenStickerIds.add(sticker.id);
+    seenPhotoStickerIds.add(sticker.stickerId);
+  });
+
+  photos.forEach((photo) => {
+    const photoStickerId = `photo:${photo.id}`;
+    if (seenStickerIds.has(photo.id) || seenPhotoStickerIds.has(photoStickerId)) return;
+    const sticker = createPlacedPhotoSticker(photo, mergedStickers.length);
+    mergedStickers.push(sticker);
+    seenStickerIds.add(sticker.id);
+    seenPhotoStickerIds.add(sticker.stickerId);
+  });
+
+  return mergedStickers;
+}

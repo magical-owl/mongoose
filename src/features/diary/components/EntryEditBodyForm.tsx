@@ -4,6 +4,7 @@ import { useTheme } from '@providers/ThemeProvider';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
 import { MomentPhotoGrid } from '@/features/diary/components/MomentPhotoGrid';
+import { MomentCoverPhotoHint } from '@/features/diary/components/MomentCoverPhotoHint';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import type { DiaryEntryType, DiaryPhoto, MomentPhotoLayout } from '@/features/diary/domain/DiaryEntry';
 import type { DiaryBodyFontFamily, DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
@@ -130,23 +131,7 @@ export function EntryEditBodyForm({
       </View>
       {editEntryType === 'moment' ? (
         <>
-          <View
-            style={[
-              styles.momentPhotoHint,
-              {
-                backgroundColor: theme.colors.card + 'CC',
-                borderColor: theme.colors.tint + '66',
-              },
-            ]}
-            testID="entry-edit-moment-cover-hint"
-          >
-            <Text style={[styles.momentPhotoHintKicker, { color: theme.colors.tint }]}>
-              {t('commonTip')}
-            </Text>
-            <Text style={[styles.momentPhotoHintText, { color: theme.colors.text }]}>
-              {t('entryMomentCoverPhotoHint')}
-            </Text>
-          </View>
+          <MomentCoverPhotoHint testID="entry-edit-moment-cover-hint" />
           <MomentPhotoGrid
             photos={editPhotos}
             editable
@@ -289,25 +274,6 @@ const styles = StyleSheet.create({
   entryTypeButtonText: {
     fontSize: 13,
     fontWeight: '800',
-  },
-  momentPhotoHint: {
-    borderRadius: 14,
-    borderWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  momentPhotoHintKicker: {
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0,
-    marginBottom: 4,
-    textTransform: 'uppercase',
-  },
-  momentPhotoHintText: {
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 18,
   },
   titleBodyGap: {
     height: StyleSheet.hairlineWidth,

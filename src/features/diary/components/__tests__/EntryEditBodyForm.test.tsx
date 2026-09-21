@@ -1,8 +1,9 @@
 import { createRef } from 'react';
-import { fireEvent } from '@testing-library/react-native';
+import { act, fireEvent } from '@testing-library/react-native';
 import { EntryEditBodyForm } from '@/features/diary/components/EntryEditBodyForm';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import type { RichTextEditorHandle } from '@shared/components/RichTextEditor';
+import { useAppStore } from '@/stores/useAppStore';
 import { renderWithProviders } from '@tests/helpers';
 
 jest.mock('@shared/components/RichTextEditor', () => {
@@ -81,6 +82,10 @@ function createSticker(overrides: Partial<PlacedSticker> = {}): PlacedSticker {
 }
 
 describe('EntryEditBodyForm', () => {
+  beforeEach(() => {
+    useAppStore.getState().reset();
+  });
+
   it('renders editable entry fields and routes body changes upward', async () => {
     const editorRef = createRef<RichTextEditorHandle>();
     const onChangeTitle = jest.fn();
@@ -172,5 +177,53 @@ describe('EntryEditBodyForm', () => {
     await rerender(<EntryEditBodyForm {...props} editEntryType="diary" />);
 
     expect(queryByTestId('entry-edit-moment-cover-hint')).toBeNull();
+  });
+
+  it('re-shows the moment cover hint when tips are enabled again', async () => {
+    const editorRef = createRef<RichTextEditorHandle>();
+
+    useAppStore.getState().setShowTips(false);
+
+    const props = {
+      editorRef,
+      editDate: new Date(2026, 7, 29),
+      onChangeDate: jest.fn(),
+      editTitle: 'Original title',
+      onChangeTitle: jest.fn(),
+      editEntryType: 'moment' as const,
+      onChangeEntryType: jest.fn(),
+      editPhotos: [],
+      editMomentPhotoLayout: 'auto' as const,
+      onChangeMomentPhotoLayout: jest.fn(),
+      onAddMomentPhotos: jest.fn(),
+      onRemoveMomentPhoto: jest.fn(),
+      editContent: '<p>Original body.</p>',
+      onChangeContent: jest.fn(),
+      editBodyFontFamily: 'system' as const,
+      editBodyTextColor: undefined,
+      bodyCanvasHeight: 260,
+      showBodyStickerBounds: false,
+      bodyLayout: { y: 0, width: 390, height: 260 },
+      onChangeBodyLayout: jest.fn(),
+      onChangeBodyContentHeight: jest.fn(),
+      behindStickers: [],
+      foregroundStickers: [],
+      onUpdateSticker: jest.fn(),
+      onDeleteSticker: jest.fn(),
+      onStickerDragStateChange: jest.fn(),
+    };
+
+    const { getByTestId, queryByTestId } = await renderWithProviders(
+      <EntryEditBodyForm {...props} />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(queryByTestId('entry-edit-moment-cover-hint')).toBeNull();
+
+    await act(async () => {
+      useAppStore.getState().setShowTips(true);
+    });
+
+    expect(getByTestId('entry-edit-moment-cover-hint')).toBeTruthy();
   });
 });

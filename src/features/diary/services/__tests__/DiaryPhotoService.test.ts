@@ -3,12 +3,15 @@ import { secureStorageKeys } from '@/constants/secureStorageKeys';
 import type { ISecureStorageDataSource } from '@/database/SecureStorageDataSource';
 import {
   clearDiaryPhotoImageSourceCache,
+  createPlacedPhotoSticker,
   DiaryPhotoService,
   diaryPhotoService,
   getDiaryPhotoImageSource,
+  mergePlacedStickersWithMomentPhotoStickers,
   resolveImportedDiaryPhotoUri,
 } from '@/features/diary/services/DiaryPhotoService';
 import { EncryptedMediaStorageService } from '@/services/EncryptedMediaStorageService';
+import { buildDiaryPhoto } from '@tests/fixtures/domain';
 
 describe('DiaryPhotoService', () => {
   afterEach(() => {
@@ -70,5 +73,37 @@ describe('DiaryPhotoService', () => {
     const currentContainerUri = 'file:///document/diary-photos/photo-1.jpg';
 
     expect(getDiaryPhotoImageSource(oldContainerUri)).toBe(getDiaryPhotoImageSource(currentContainerUri));
+  });
+
+  it('does not duplicate generated moment photo stickers when hydrating drafts', () => {
+    const photo = buildDiaryPhoto({
+      id: '33333333-3333-4333-8333-333333333301',
+      uri: 'file:///document/diary-photos/photo-1.jpg',
+    });
+    const existingPhotoSticker = createPlacedPhotoSticker(photo, 0);
+
+    const merged = mergePlacedStickersWithMomentPhotoStickers([existingPhotoSticker], [photo]);
+
+    expect(merged).toEqual([existingPhotoSticker]);
+  });
+
+  it('drops duplicate sticker ids before adding missing moment photo stickers', () => {
+    const firstPhoto = buildDiaryPhoto({
+      id: '33333333-3333-4333-8333-333333333301',
+      uri: 'file:///document/diary-photos/photo-1.jpg',
+    });
+    const secondPhoto = buildDiaryPhoto({
+      id: '33333333-3333-4333-8333-333333333302',
+      uri: 'file:///document/diary-photos/photo-2.jpg',
+    });
+    const duplicateSticker = createPlacedPhotoSticker(firstPhoto, 0);
+    const duplicateStickerCopy = { ...duplicateSticker, x: duplicateSticker.x + 40 };
+
+    const merged = mergePlacedStickersWithMomentPhotoStickers(
+      [duplicateSticker, duplicateStickerCopy],
+      [firstPhoto, secondPhoto],
+    );
+
+    expect(merged.map((sticker) => sticker.id)).toEqual([firstPhoto.id, secondPhoto.id]);
   });
 });

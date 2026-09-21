@@ -101,6 +101,7 @@ export default function SettingsScreen() {
   const fontFamily = useAppStore((state) => state.fontFamily);
   const patternBackgroundVariant = useAppStore((state) => state.patternBackgroundVariant);
   const appLanguage = useAppStore((state) => state.appLanguage);
+  const showTips = useAppStore((state) => state.showTips);
   const {
     isPro,
     activeTier,
@@ -112,6 +113,7 @@ export default function SettingsScreen() {
   const setFontFamily = useAppStore((state) => state.setFontFamily);
   const setPatternBackgroundVariant = useAppStore((state) => state.setPatternBackgroundVariant);
   const setAppLanguage = useAppStore((state) => state.setAppLanguage);
+  const setShowTips = useAppStore((state) => state.setShowTips);
   const setOnboardingStatus = useAppStore((state) => state.setOnboardingStatus);
   const setBiometricLockEnabled = useAppStore((state) => state.setBiometricLockEnabled);
   const setPasscodeLockEnabled = useAppStore((state) => state.setPasscodeLockEnabled);
@@ -895,6 +897,28 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        <SectionLabel style={styles.displaySectionLabel}>{t('settingsTipsSection')}</SectionLabel>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => setShowTips(!showTips)}
+          style={[styles.modalRow, { borderBottomColor: theme.colors.border }]}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: showTips }}
+          testID="settings-show-tips-row"
+        >
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <Text preset="label" color="text" style={{ fontSize: 16, fontWeight: '600' }}>{t('settingsShowTipsTitle')}</Text>
+            <Text preset="caption" color="textSecondary" style={{ marginTop: 2 }}>{t('settingsShowTipsHint')}</Text>
+          </View>
+          <Switch
+            value={showTips}
+            onValueChange={setShowTips}
+            trackColor={{ false: theme.colors.border, true: theme.colors.tint }}
+            thumbColor={theme.colors.card}
+            testID="settings-show-tips-switch"
+          />
+        </TouchableOpacity>
 
       </Modal>
 

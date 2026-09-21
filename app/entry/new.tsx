@@ -63,12 +63,13 @@ import { DiaryStylePresetPickerModal } from '@/features/diary/components/DiarySt
 import { EntryEditToolMenuModal } from '@/features/diary/components/EntryEditToolMenuModal';
 import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataModal';
 import { MomentPhotoGrid } from '@/features/diary/components/MomentPhotoGrid';
+import { MomentCoverPhotoHint } from '@/features/diary/components/MomentCoverPhotoHint';
 import { DIARY_BODY_DEFAULT_FONT_FAMILY, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import { getDiaryStylePreset, type DiaryStylePresetId } from '@/features/diary/domain/DiaryStylePreset';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { shouldPromptForEntryMetadataBeforeSave } from '@/features/diary/services/EntryMetadataSavePrompt';
 import { chooseDiaryPhoto, chooseDiaryPhotos, takeDiaryPhoto } from '@/features/diary/services/DiaryPhotoPickerService';
-import { createPlacedPhotoSticker, diaryPhotoService } from '@/features/diary/services/DiaryPhotoService';
+import { createPlacedPhotoSticker, diaryPhotoService, mergePlacedStickersWithMomentPhotoStickers } from '@/features/diary/services/DiaryPhotoService';
 import { applyMomentPhotoImport, getMomentPhotoImportSelectionLimit } from '@/features/diary/services/MomentPhotoImportService';
 import { premiumPaywallTitle, useTranslation } from '@/localization/i18n';
 import { PaywallModal } from '@/shared/components/PaywallModal';
@@ -234,7 +235,7 @@ export default function CreateEntryScreen() {
       setPaperBackgroundId(draft.paperBackgroundId);
       setBodyFontFamily(draft.bodyFontFamily);
       setBodyTextColor(draft.bodyTextColor);
-      setStickers([...draft.stickers, ...draft.photos.map((photo, index) => createPlacedPhotoSticker(photo, draft.stickers.length + index))]);
+      setStickers(mergePlacedStickersWithMomentPhotoStickers(draft.stickers, draft.photos));
       setSelectedTags(normalizeDiaryTags(draft.tags));
       setManualMoodWeather(draft.manualMoodWeather);
       setManualMoods(normalizeManualMoods(draft.manualMoods, draft.manualMood ?? 'neutral'));
@@ -774,15 +775,18 @@ export default function CreateEntryScreen() {
             </View>
 
             {entryType === 'moment' ? (
-              <MomentPhotoGrid
-                photos={momentPhotos}
-                editable
-                layout={momentPhotoLayout}
-                onChangeLayout={setMomentPhotoLayout}
-                onAddPhoto={handleAddMomentPhotos}
-                onRemovePhoto={handleRemoveMomentPhoto}
-                testID="entry-create-moment-photo-grid"
-              />
+              <>
+                <MomentCoverPhotoHint testID="entry-create-moment-cover-hint" />
+                <MomentPhotoGrid
+                  photos={momentPhotos}
+                  editable
+                  layout={momentPhotoLayout}
+                  onChangeLayout={setMomentPhotoLayout}
+                  onAddPhoto={handleAddMomentPhotos}
+                  onRemovePhoto={handleRemoveMomentPhoto}
+                  testID="entry-create-moment-photo-grid"
+                />
+              </>
             ) : null}
 
             {entryType === 'diary' ? (

@@ -1,3 +1,4 @@
+import { StyleSheet } from 'react-native';
 import { fireEvent } from '@testing-library/react-native';
 import { MomentPhotoGrid } from '@/features/diary/components/MomentPhotoGrid';
 import { buildDiaryPhoto } from '@tests/fixtures/domain';
@@ -53,5 +54,18 @@ describe('MomentPhotoGrid', () => {
 
     expect(getByTestId('moment-grid-row-1').props.children).toHaveLength(2);
     expect(getByTestId('moment-grid-spacer-1')).toBeTruthy();
+  });
+
+  it('adds space between photos while editing', async () => {
+    const { getByTestId } = await renderWithProviders(
+      <MomentPhotoGrid
+        photos={photos(2)}
+        editable
+        layout="auto"
+        testID="moment-grid"
+      />,
+    );
+
+    expect(StyleSheet.flatten(getByTestId('moment-grid-row-0').props.style).gap).toBe(8);
   });
 });
