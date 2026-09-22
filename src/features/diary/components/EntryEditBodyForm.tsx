@@ -80,7 +80,7 @@ export function EntryEditBodyForm({
 }: EntryEditBodyFormProps) {
   const theme = useTheme();
   const t = useTranslation();
-  const placeholderColor = theme.colors.stickerControlText;
+  const placeholderColor = theme.colors.textTertiary;
   const [selectedStickerId, setSelectedStickerId] = useState<string | undefined>(undefined);
   const clearSelectedStickerFromCanvas = useCallback((event: GestureResponderEvent) => {
     if (event.target === event.currentTarget) {

@@ -61,7 +61,7 @@ export function DiaryDatePicker({
     backgroundColor: theme.colors.surface,
   };
   const accessibilityLabel = label ? `${label}: ${dateText}` : dateText;
-  const entryHeroTextColor = theme.colors.stickerControlText;
+  const entryHeroTextColor = theme.colors.text;
   const nativePickerTextColor = theme.colors.text;
   const nativePickerThemeVariant = theme.isDark ? 'dark' : 'light';
 

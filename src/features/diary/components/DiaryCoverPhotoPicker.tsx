@@ -177,7 +177,7 @@ export function DiaryCoverPhotoPicker({
           </View>
           <Text
             preset="bodySmall"
-            color={isEntryHero ? theme.colors.stickerControlText : 'text'}
+            color="text"
             style={[styles.emptyLabel, isEntryHero && styles.entryHeroEmptyLabel]}
           >
             {t('entryCoverPhotoTitle')}

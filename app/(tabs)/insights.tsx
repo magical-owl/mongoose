@@ -329,7 +329,7 @@ export default function InsightsScreen() {
                 accessibilityState={{ selected }}
                 accessibilityLabel={rangeLabel(value)}
               >
-                <Text preset="caption" style={[styles.rangePillText, { color: selected ? "#fff" : theme.colors.textSecondary }]}>
+                <Text preset="caption" style={[styles.rangePillText, { color: selected ? theme.colors.background : theme.colors.textSecondary }]}>
                   {rangeLabel(value)}
                 </Text>
               </TouchableOpacity>

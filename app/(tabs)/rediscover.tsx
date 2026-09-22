@@ -11,7 +11,7 @@ import { AppPatternBackground } from '@shared/components/AppPatternBackground';
 import { EntryCoverSummary } from '@/features/diary/components/EntryCoverSummary';
 import { EntryViewHistoryModal } from '@/features/diary/components/EntryViewHistoryModal';
 import type { DiaryEntry, DiaryPhoto } from '@/features/diary/domain/DiaryEntry';
-import { getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
+import { getDiaryEntryType, getEntryManualMoods } from '@/features/diary/domain/DiaryEntry';
 import { getDiaryEntryViewCount } from '@/features/diary/domain/DiaryEntryViewHistory';
 import { useDiary } from '@/features/diary/hooks/useDiary';
 import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
@@ -28,6 +28,20 @@ import { getTranslucentSurfaceColor } from '@/theme/surfaces';
 
 function getEntryDisplayPhoto(entry: DiaryEntry): DiaryPhoto | undefined {
   return entry.coverPhoto ?? entry.photos[0];
+}
+
+function getRediscoverPreviewText(entry: DiaryEntry, t: ReturnType<typeof useTranslation>): string {
+  const previewText = getDiaryEntryPreviewText(entry);
+  if (previewText.trim()) return previewText;
+
+  if (getDiaryEntryType(entry) === 'moment' && entry.photos.length > 0) {
+    const key = entry.photos.length === 1
+      ? 'rediscoverMomentPhotoPreviewOne'
+      : 'rediscoverMomentPhotoPreviewMany';
+    return t(key).replace('{count}', String(entry.photos.length));
+  }
+
+  return '';
 }
 
 interface MemoryCardProps {
@@ -48,6 +62,7 @@ function MemoryCard({ entry, variant = 'compact', onPress, onShuffle }: MemoryCa
   const viewCount = getDiaryEntryViewCount(entry);
   const viewCountA11y = t('entryViewCountA11y').replace('{count}', String(viewCount));
   const [isViewHistoryVisible, setIsViewHistoryVisible] = useState(false);
+  const previewText = getRediscoverPreviewText(entry, t);
 
   return (
     <>
@@ -78,9 +93,11 @@ function MemoryCard({ entry, variant = 'compact', onPress, onShuffle }: MemoryCa
           viewCountTestID="rediscover-entry-view-count"
         />
         <View style={[styles.memoryCopy, isFeatured ? styles.featuredMemoryCopy : styles.compactMemoryCopy]}>
-          <Text preset="bodySmall" color="textSecondary" numberOfLines={isFeatured ? 3 : 2}>
-            {getDiaryEntryPreviewText(entry)}
-          </Text>
+          {previewText ? (
+            <Text preset="bodySmall" color="textSecondary" numberOfLines={isFeatured ? 3 : 2}>
+              {previewText}
+            </Text>
+          ) : null}
         </View>
       </TouchableOpacity>
       {isViewHistoryVisible ? (

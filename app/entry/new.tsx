@@ -634,7 +634,7 @@ export default function CreateEntryScreen() {
       })
     : 0;
   const coverTopOffset = hasCreateCoverPhoto ? 0 : headerOnlyHeight + ENTRY_COVER_TOP_GAP;
-  const entryPlaceholderColor = theme.colors.stickerControlText;
+  const entryPlaceholderColor = theme.colors.textTertiary;
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
@@ -644,14 +644,14 @@ export default function CreateEntryScreen() {
         topInset={insets.top}
         horizontalPadding={entryHorizontalPadding}
         title={t('entryCreateTitle')}
-        onCover
+        onCover={hasCreateCoverPhoto}
         left={(
           <IconCircleButton
             icon="close-circle-outline"
             onPress={navigateBack}
             accessibilityLabel={t('entryCancelA11y')}
             iconSize={25}
-            surface="overlay"
+            surface={hasCreateCoverPhoto ? 'overlay' : 'surface'}
           />
         )}
         actions={(
@@ -664,7 +664,7 @@ export default function CreateEntryScreen() {
             accessibilityLabel={t('entryBringStickersForwardA11y')}
             iconSize={20}
             size="sm"
-            surface="overlay"
+            surface={hasCreateCoverPhoto ? 'overlay' : 'surface'}
           />
           )}
 
@@ -675,7 +675,7 @@ export default function CreateEntryScreen() {
             active={isFavorite}
             tone="warning"
             iconSize={24}
-            surface="overlay"
+            surface={hasCreateCoverPhoto ? 'overlay' : 'surface'}
           />
 
           <AccentPillButton
