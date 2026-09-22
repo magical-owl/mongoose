@@ -59,6 +59,12 @@ export function DiaryEntryBodyView({
   const handleDeleteSticker = onDeleteSticker ?? (() => {});
   const sanitizedContent = useMemo(() => sanitizeRichBodyHtml(normalizeHtmlContent(entry.content)), [entry.content]);
   const showMomentPhotos = getDiaryEntryType(entry) === 'moment' && entry.photos.length > 0;
+  const momentBodyBleedStyle = showMomentPhotos && momentPhotoBleedHorizontal > 0
+    ? {
+        marginHorizontal: -momentPhotoBleedHorizontal,
+        marginTop: -momentPhotoBleedHorizontal,
+      }
+    : undefined;
   const [bodyLayout, setBodyLayout] = useState({ width: initialCanvasWidth, height: contentHeight });
   const textAvoidanceInsets = useMemo(
     () => {
@@ -74,6 +80,7 @@ export function DiaryEntryBodyView({
       style={[
         styles.bodyStickerCanvas,
         { minHeight: contentHeight },
+        momentBodyBleedStyle,
       ]}
       onLayout={(event) => {
         const { y, width, height } = event.nativeEvent.layout;
@@ -98,7 +105,6 @@ export function DiaryEntryBodyView({
           photos={entry.photos}
           layout={entry.momentPhotoLayout}
           previewable
-          bleedHorizontal={momentPhotoBleedHorizontal}
           testID="entry-view-moment-photo-grid"
         />
       ) : null}

@@ -72,11 +72,15 @@ describe('DiaryEntryBodyView', () => {
         bodyFontSize={20}
         bodyLineHeight={31}
         stickers={[]}
+        momentPhotoBleedHorizontal={16}
         onBodyLayout={jest.fn()}
       />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
     expect(getByTestId('entry-view-moment-photo-grid')).toBeTruthy();
+    const bodyStyle = StyleSheet.flatten(getByTestId('diary-entry-body-view').props.style);
+    expect(bodyStyle.marginHorizontal).toBe(-16);
+    expect(bodyStyle.marginTop).toBe(-16);
   });
 });
