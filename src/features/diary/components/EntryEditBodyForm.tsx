@@ -7,7 +7,7 @@ import { MomentMediaBlock } from '@/features/diary/components/MomentMediaBlock';
 import { MomentCoverPhotoHint } from '@/features/diary/components/MomentCoverPhotoHint';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import type { DiaryEntryType, DiaryPhoto, MomentPhotoLayout } from '@/features/diary/domain/DiaryEntry';
-import type { DiaryBodyFontFamily, DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
+import { getDiaryBodyPlaceholderColor, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import type { StickerCanvasLayout } from '@/features/diary/hooks/useEntryStickerEditing';
 import { RichTextEditor, type RichTextEditorHandle } from '@shared/components/RichTextEditor';
 import { Text } from '@/shared/components/Text';
@@ -80,7 +80,7 @@ export function EntryEditBodyForm({
 }: EntryEditBodyFormProps) {
   const theme = useTheme();
   const t = useTranslation();
-  const placeholderColor = theme.colors.textTertiary;
+  const placeholderColor = getDiaryBodyPlaceholderColor(editBodyTextColor);
   const [selectedStickerId, setSelectedStickerId] = useState<string | undefined>(undefined);
   const clearSelectedStickerFromCanvas = useCallback((event: GestureResponderEvent) => {
     if (event.target === event.currentTarget) {

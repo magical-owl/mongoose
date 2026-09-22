@@ -16,6 +16,8 @@ export const DIARY_BODY_TEXT_COLORS = [
 
 export type DiaryBodyTextColor = (typeof DIARY_BODY_TEXT_COLORS)[number]['value'];
 
+export const DIARY_BODY_DEFAULT_PLACEHOLDER_COLOR = '#6B4E3D';
+
 export const DiaryBodyTextColorSchema = z.enum([
   '#FFF7E6',
   '#2F2A24',
@@ -33,4 +35,8 @@ export function normalizeDiaryBodyFontFamily(value: unknown): DiaryBodyFontFamil
 export function normalizeDiaryBodyTextColor(value: unknown): DiaryBodyTextColor | undefined {
   const parsed = DiaryBodyTextColorSchema.safeParse(value);
   return parsed.success ? parsed.data : undefined;
+}
+
+export function getDiaryBodyPlaceholderColor(textColor: DiaryBodyTextColor | undefined): string {
+  return textColor ?? DIARY_BODY_DEFAULT_PLACEHOLDER_COLOR;
 }

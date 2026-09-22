@@ -64,7 +64,12 @@ import { EntryEditToolMenuModal } from '@/features/diary/components/EntryEditToo
 import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataModal';
 import { MomentMediaBlock } from '@/features/diary/components/MomentMediaBlock';
 import { MomentCoverPhotoHint } from '@/features/diary/components/MomentCoverPhotoHint';
-import { DIARY_BODY_DEFAULT_FONT_FAMILY, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
+import {
+  DIARY_BODY_DEFAULT_FONT_FAMILY,
+  getDiaryBodyPlaceholderColor,
+  type DiaryBodyFontFamily,
+  type DiaryBodyTextColor,
+} from '@/features/diary/domain/DiaryBodyStyle';
 import { getDiaryStylePreset, type DiaryStylePresetId } from '@/features/diary/domain/DiaryStylePreset';
 import { normalizeDiaryTags } from '@/features/diary/services/DiaryTagService';
 import { shouldPromptForEntryMetadataBeforeSave } from '@/features/diary/services/EntryMetadataSavePrompt';
@@ -634,7 +639,7 @@ export default function CreateEntryScreen() {
       })
     : 0;
   const coverTopOffset = hasCreateCoverPhoto ? 0 : headerOnlyHeight + ENTRY_COVER_TOP_GAP;
-  const entryPlaceholderColor = theme.colors.textTertiary;
+  const entryPlaceholderColor = getDiaryBodyPlaceholderColor(bodyTextColor);
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>

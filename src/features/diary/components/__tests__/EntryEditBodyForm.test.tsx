@@ -12,6 +12,7 @@ jest.mock('@shared/components/RichTextEditor', () => {
   const MockRichTextEditor = React.forwardRef((props: {
     readonly onChangeText: (text: string) => void;
     readonly onHeightChange?: (height: number) => void;
+    readonly placeholderColor?: string;
   }, ref: React.Ref<unknown>) => {
     React.useImperativeHandle(ref, () => ({
       applyFormat: jest.fn(),
@@ -25,6 +26,7 @@ jest.mock('@shared/components/RichTextEditor', () => {
     return (
       <TouchableOpacity
         testID="mock-entry-edit-rich-text-editor"
+        accessibilityValue={{ text: props.placeholderColor }}
         onPress={() => {
           props.onChangeText('<p>Updated body.</p>');
           props.onHeightChange?.(240);
@@ -133,6 +135,44 @@ describe('EntryEditBodyForm', () => {
     expect(getByTestId('entry-edit-body-sticker-canvas')).toBeTruthy();
     expect(getByTestId('entry-edit-sticker-22222222-2222-4222-8222-222222222222')).toBeTruthy();
     expect(getByTestId('entry-edit-sticker-33333333-3333-4333-8333-333333333333')).toBeTruthy();
+  });
+
+  it('uses a diary-readable placeholder color instead of theme tertiary text', async () => {
+    const editorRef = createRef<RichTextEditorHandle>();
+    const { getByPlaceholderText, getByTestId } = await renderWithProviders(
+      <EntryEditBodyForm
+        editorRef={editorRef}
+        editDate={new Date(2026, 7, 29)}
+        onChangeDate={jest.fn()}
+        editTitle=""
+        onChangeTitle={jest.fn()}
+        editEntryType="diary"
+        onChangeEntryType={jest.fn()}
+        editPhotos={[]}
+        editMomentPhotoLayout="auto"
+        onChangeMomentPhotoLayout={jest.fn()}
+        onAddMomentPhotos={jest.fn()}
+        onRemoveMomentPhoto={jest.fn()}
+        editContent=""
+        onChangeContent={jest.fn()}
+        editBodyFontFamily="system"
+        editBodyTextColor={undefined}
+        bodyCanvasHeight={260}
+        showBodyStickerBounds={false}
+        bodyLayout={{ y: 0, width: 390, height: 260 }}
+        onChangeBodyLayout={jest.fn()}
+        onChangeBodyContentHeight={jest.fn()}
+        behindStickers={[]}
+        foregroundStickers={[]}
+        onUpdateSticker={jest.fn()}
+        onDeleteSticker={jest.fn()}
+        onStickerDragStateChange={jest.fn()}
+      />,
+      { wrapperOptions: { initialThemeMode: 'dark' } },
+    );
+
+    expect(getByPlaceholderText('Entry title...').props.placeholderTextColor).toBe('#6B4E3D');
+    expect(getByTestId('mock-entry-edit-rich-text-editor').props.accessibilityValue.text).toBe('#6B4E3D');
   });
 
   it('shows the cover-photo hint for moment entries only', async () => {
