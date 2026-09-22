@@ -7,7 +7,7 @@ import { getDiaryEntryType, type DiaryEntry } from '@/features/diary/domain/Diar
 import { normalizeDiaryBodyFontFamily, normalizeDiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
-import { MomentPhotoGrid } from '@/features/diary/components/MomentPhotoGrid';
+import { MomentMediaBlock } from '@/features/diary/components/MomentMediaBlock';
 import { resolveAppFontFamily } from '@/theme/fonts';
 import { getStickerTextAvoidanceInsets } from '@/features/diary/domain/StickerLayout';
 
@@ -74,10 +74,6 @@ export function DiaryEntryBodyView({
       style={[
         styles.bodyStickerCanvas,
         { minHeight: contentHeight },
-        showMomentPhotos && momentPhotoBleedHorizontal > 0 ? {
-          marginHorizontal: -momentPhotoBleedHorizontal,
-          marginTop: -momentPhotoBleedHorizontal,
-        } : undefined,
       ]}
       onLayout={(event) => {
         const { y, width, height } = event.nativeEvent.layout;
@@ -98,10 +94,11 @@ export function DiaryEntryBodyView({
         />
       ))}
       {showMomentPhotos ? (
-        <MomentPhotoGrid
+        <MomentMediaBlock
           photos={entry.photos}
           layout={entry.momentPhotoLayout}
           previewable
+          bleedHorizontal={momentPhotoBleedHorizontal}
           testID="entry-view-moment-photo-grid"
         />
       ) : null}

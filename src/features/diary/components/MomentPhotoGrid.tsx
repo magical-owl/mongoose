@@ -3,14 +3,19 @@ import { Image, Pressable, ScrollView, StyleSheet, View, type StyleProp, type Vi
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/providers/ThemeProvider';
 import type { DiaryPhoto, MomentPhotoLayout } from '@/features/diary/domain/DiaryEntry';
-import { DEFAULT_MOMENT_PHOTO_LAYOUT, MOMENT_ENTRY_PHOTO_LIMIT, MOMENT_PHOTO_LAYOUT_OPTIONS } from '@/features/diary/domain/DiaryEntry';
+import {
+  DEFAULT_MOMENT_PHOTO_LAYOUT,
+  MOMENT_ENTRY_PHOTO_LIMIT,
+  MOMENT_PHOTO_LAYOUT_OPTIONS,
+  normalizeMomentPhotoLayout,
+} from '@/features/diary/domain/DiaryEntry';
 import { getDiaryPhotoImageSource } from '@/features/diary/services/DiaryPhotoService';
 import { Text } from '@/shared/components/Text';
 import { useTranslation, type TranslationKey } from '@/localization/i18n';
 import { ImagePreviewModal } from '@/shared/components/ImagePreviewModal';
 
 const MOMENT_PHOTO_LAYOUT_LABEL_KEYS: Readonly<Record<MomentPhotoLayout, TranslationKey>> = {
-  auto: 'entryMomentLayoutAuto',
+  auto: 'entryMomentLayoutGrid',
   grid: 'entryMomentLayoutGrid',
   feature: 'entryMomentLayoutFeature',
   mosaic: 'entryMomentLayoutMosaic',
@@ -48,10 +53,11 @@ export function MomentPhotoGrid({
   const [previewPhoto, setPreviewPhoto] = useState<DiaryPhoto | null>(null);
   const [albumWidth, setAlbumWidth] = useState(0);
   const [albumIndex, setAlbumIndex] = useState(0);
+  const resolvedLayout = normalizeMomentPhotoLayout(layout);
   const canAddPhoto = editable && photos.length < MOMENT_ENTRY_PHOTO_LIMIT && Boolean(onAddPhoto);
-  const photoRows = getMomentPhotoRows(photos, layout);
-  const usesStrictGrid = layout === 'grid';
-  const usesAlbum = layout === 'album';
+  const photoRows = getMomentPhotoRows(photos, resolvedLayout);
+  const usesStrictGrid = resolvedLayout === 'grid';
+  const usesAlbum = resolvedLayout === 'album';
   const previewSource = useMemo(
     () => previewPhoto ? getDiaryPhotoImageSource(previewPhoto.uri) : null,
     [previewPhoto],
@@ -74,7 +80,7 @@ export function MomentPhotoGrid({
       {editable && onChangeLayout ? (
         <View style={styles.layoutSelector} testID={`${testID}-layout-selector`}>
           {MOMENT_PHOTO_LAYOUT_OPTIONS.map((option) => {
-            const selected = layout === option;
+            const selected = resolvedLayout === option;
             return (
               <Pressable
                 key={option}

@@ -5,6 +5,7 @@ import {
   getPrimaryManualMood,
   DEFAULT_MOMENT_PHOTO_LAYOUT,
   normalizeMomentEntryPhotos,
+  normalizeMomentPhotoLayout,
   type DiaryEntry,
   type DiaryEntryType,
   type DiaryPhoto,
@@ -83,7 +84,7 @@ export function useEntryEditDraft() {
     setEditPaperBackgroundId(sourceEntry.paperBackgroundId ?? DEFAULT_DIARY_PAPER_BACKGROUND_ID);
     resetEditableBodyStyle(sourceEntry);
     setEditPhotos(normalizeMomentEntryPhotos(sourceEntry.photos));
-    setEditMomentPhotoLayout(sourceEntry.momentPhotoLayout ?? DEFAULT_MOMENT_PHOTO_LAYOUT);
+    setEditMomentPhotoLayout(normalizeMomentPhotoLayout(sourceEntry.momentPhotoLayout));
     setEditStickers(sourceEntry.stickers);
     setEditCompanion(sourceEntry.companion);
     setEditFavorite(sourceEntry.isFavorite);

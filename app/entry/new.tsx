@@ -62,7 +62,7 @@ import { DiaryPaperBackgroundPickerModal } from '@/features/diary/components/Dia
 import { DiaryStylePresetPickerModal } from '@/features/diary/components/DiaryStylePresetPickerModal';
 import { EntryEditToolMenuModal } from '@/features/diary/components/EntryEditToolMenuModal';
 import { EntryMetadataModal } from '@/features/diary/components/EntryMetadataModal';
-import { MomentPhotoGrid } from '@/features/diary/components/MomentPhotoGrid';
+import { MomentMediaBlock } from '@/features/diary/components/MomentMediaBlock';
 import { MomentCoverPhotoHint } from '@/features/diary/components/MomentCoverPhotoHint';
 import { DIARY_BODY_DEFAULT_FONT_FAMILY, type DiaryBodyFontFamily, type DiaryBodyTextColor } from '@/features/diary/domain/DiaryBodyStyle';
 import { getDiaryStylePreset, type DiaryStylePresetId } from '@/features/diary/domain/DiaryStylePreset';
@@ -544,7 +544,7 @@ export default function CreateEntryScreen() {
       Alert.alert(t('entryContentRequiredTitle'), t('entryContentRequiredMessage'));
       return;
     }
-    if (entryType === 'moment' && momentPhotos.length === 0 && !content.trim()) {
+    if (entryType === 'moment' && momentPhotos.length === 0) {
       Alert.alert(t('entryMomentNeedsPhotoOrNoteTitle'), t('entryMomentNeedsPhotoOrNoteMessage'));
       return;
     }
@@ -784,7 +784,7 @@ export default function CreateEntryScreen() {
             {entryType === 'moment' ? (
               <>
                 <MomentCoverPhotoHint testID="entry-create-moment-cover-hint" />
-                <MomentPhotoGrid
+                <MomentMediaBlock
                   photos={momentPhotos}
                   editable
                   layout={momentPhotoLayout}

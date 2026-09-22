@@ -36,6 +36,7 @@ const reflectionPhoto: DiaryPhoto = buildDiaryPhoto({
 function ActionsHarness({
   initialEntry = createEntry(),
   editTitle = 'Updated title',
+  updatedEntryOverride,
   saveDiaryEntry = jest.fn<ReturnType<DiaryActions['saveDiaryEntry']>, Parameters<DiaryActions['saveDiaryEntry']>>(),
   deleteDiaryEntry = jest.fn<ReturnType<DiaryActions['deleteDiaryEntry']>, Parameters<DiaryActions['deleteDiaryEntry']>>(),
   addReflection = jest.fn<ReturnType<DiaryActions['addReflection']>, Parameters<DiaryActions['addReflection']>>(),
@@ -49,6 +50,7 @@ function ActionsHarness({
 }: {
   readonly initialEntry?: DiaryEntry | null;
   readonly editTitle?: string;
+  readonly updatedEntryOverride?: DiaryEntry;
   readonly saveDiaryEntry?: DiaryActions['saveDiaryEntry'];
   readonly deleteDiaryEntry?: DiaryActions['deleteDiaryEntry'];
   readonly addReflection?: DiaryActions['addReflection'];
@@ -67,7 +69,7 @@ function ActionsHarness({
   const setShowReflections = jest.fn();
   const setShowMemoryReactionPicker = jest.fn();
   const dismissEntryKeyboard = jest.fn();
-  const updatedEntry = createEntry({ title: editTitle.trim() });
+  const updatedEntry = updatedEntryOverride ?? createEntry({ title: editTitle.trim() });
   const actions = useEntryDetailActions({
     entry: initialEntry,
     editTitle,
@@ -158,6 +160,29 @@ describe('useEntryDetailActions', () => {
 
     expect(saveDiaryEntry).not.toHaveBeenCalled();
     expect(Alert.alert).toHaveBeenCalledWith('entryTitleRequiredTitle', 'entryEditTitleRequiredMessage');
+  });
+
+  it('requires visible photos before saving a moment edit', async () => {
+    const saveDiaryEntry = jest.fn<ReturnType<DiaryActions['saveDiaryEntry']>, Parameters<DiaryActions['saveDiaryEntry']>>();
+    const momentEntry = createEntry({
+      entryType: 'moment',
+      title: '',
+      content: '<p>Hidden diary-side body.</p>',
+      photos: [],
+    });
+    const { getByTestId } = await render(
+      <ActionsHarness
+        initialEntry={momentEntry}
+        editTitle=""
+        updatedEntryOverride={momentEntry}
+        saveDiaryEntry={saveDiaryEntry}
+      />,
+    );
+
+    await fireEvent.press(getByTestId('save-entry'));
+
+    expect(saveDiaryEntry).not.toHaveBeenCalled();
+    expect(Alert.alert).toHaveBeenCalledWith('entryMomentNeedsPhotoOrNoteTitle', 'entryMomentNeedsPhotoOrNoteMessage');
   });
 
   it('adds a trimmed reflection with the selected photo', async () => {

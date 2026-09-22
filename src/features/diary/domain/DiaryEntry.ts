@@ -117,6 +117,12 @@ export type MomentPhotoLayout = z.infer<typeof MomentPhotoLayoutSchema>;
 export const DEFAULT_MOMENT_PHOTO_LAYOUT: MomentPhotoLayout = 'grid';
 export const MOMENT_PHOTO_LAYOUT_OPTIONS: readonly MomentPhotoLayout[] = ['grid', 'feature', 'mosaic', 'stacked', 'album'];
 
+export function normalizeMomentPhotoLayout(
+  layout: MomentPhotoLayout | undefined,
+): MomentPhotoLayout {
+  return layout === 'auto' || layout === undefined ? DEFAULT_MOMENT_PHOTO_LAYOUT : layout;
+}
+
 export function getDiaryEntryType(entry: { readonly entryType?: DiaryEntryType }): DiaryEntryType {
   return entry.entryType ?? 'diary';
 }
@@ -200,11 +206,11 @@ export const DiaryEntrySchema = z.object({
       message: 'Content cannot be empty',
     });
   }
-  if (entry.entryType === 'moment' && entry.photos.length === 0 && !entry.content.trim()) {
+  if (entry.entryType === 'moment' && entry.photos.length === 0) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['photos'],
-      message: 'Moment entries need at least one photo or note',
+      message: 'Moment entries need at least one photo',
     });
   }
 });

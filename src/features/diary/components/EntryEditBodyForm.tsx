@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, TextInput as NativeTextInput, View, type Gesture
 import { useTheme } from '@providers/ThemeProvider';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker';
 import { StickerCanvasItem } from '@/features/diary/components/StickerCanvasItem';
-import { MomentPhotoGrid } from '@/features/diary/components/MomentPhotoGrid';
+import { MomentMediaBlock } from '@/features/diary/components/MomentMediaBlock';
 import { MomentCoverPhotoHint } from '@/features/diary/components/MomentCoverPhotoHint';
 import type { PlacedSticker } from '@/features/diary/domain/Sticker';
 import type { DiaryEntryType, DiaryPhoto, MomentPhotoLayout } from '@/features/diary/domain/DiaryEntry';
@@ -132,7 +132,7 @@ export function EntryEditBodyForm({
       {editEntryType === 'moment' ? (
         <>
           <MomentCoverPhotoHint testID="entry-edit-moment-cover-hint" />
-          <MomentPhotoGrid
+          <MomentMediaBlock
             photos={editPhotos}
             editable
             layout={editMomentPhotoLayout}

@@ -121,4 +121,18 @@ describe('useEntryEditDraft', () => {
       expect(getByTestId('draft-title').props.children).toContain('|1|feature');
     });
   });
+
+  it('normalizes legacy auto moment layout while hydrating edit state', async () => {
+    const sourceEntry = buildDiaryEntry({
+      ...createEntry(),
+      momentPhotoLayout: 'auto',
+    });
+    const { getByTestId } = await render(<DraftHarness sourceEntry={sourceEntry} />);
+
+    await fireEvent.press(getByTestId('hydrate-draft'));
+
+    await waitFor(() => {
+      expect(getByTestId('draft-moment-layout').props.children).toBe('grid');
+    });
+  });
 });

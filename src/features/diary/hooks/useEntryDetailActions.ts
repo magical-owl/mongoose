@@ -64,7 +64,7 @@ export function useEntryDetailActions({
       Alert.alert(t('entryTitleRequiredTitle'), t('entryEditTitleRequiredMessage'));
       return;
     }
-    if (getDiaryEntryType(updated) === 'moment' && updated.photos.length === 0 && !updated.content.trim()) {
+    if (getDiaryEntryType(updated) === 'moment' && updated.photos.length === 0) {
       Alert.alert(t('entryMomentNeedsPhotoOrNoteTitle'), t('entryMomentNeedsPhotoOrNoteMessage'));
       return;
     }

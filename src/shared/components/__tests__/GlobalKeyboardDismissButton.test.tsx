@@ -1,4 +1,5 @@
-import { act, fireEvent, waitFor } from '@testing-library/react-native';
+import { act } from 'react';
+import { fireEvent, waitFor } from '@testing-library/react-native';
 import { Keyboard } from 'react-native';
 import {
   GlobalKeyboardDismissButton,
@@ -44,10 +45,16 @@ function emitKeyboardEvent(eventName: string, height = 260) {
   (keyboardListeners[eventName] ?? []).forEach((listener) => listener({ endCoordinates: { height } }));
 }
 
+function emitKeyboardEventInAct(eventName: string, height = 260) {
+  act(() => {
+    emitKeyboardEvent(eventName, height);
+  });
+}
+
 function RegisteredKeyboardDismissButton({ onDismiss }: { readonly onDismiss: () => void }) {
   useGlobalKeyboardDismissHandler(onDismiss);
 
-  return <GlobalKeyboardDismissButton />;
+  return <GlobalKeyboardDismissButton layer="root" />;
 }
 
 describe('GlobalKeyboardDismissButton', () => {
@@ -60,17 +67,15 @@ describe('GlobalKeyboardDismissButton', () => {
 
   it('appears when the keyboard opens and dismisses the keyboard', async () => {
     const onDismiss = jest.fn();
-    const { queryByTestId, getByTestId } = await renderWithProviders(
+    const { queryByTestId, getByTestId, unmount } = await renderWithProviders(
       <RegisteredKeyboardDismissButton onDismiss={onDismiss} />,
       { wrapperOptions: { initialThemeMode: 'dark' } },
     );
 
     expect(queryByTestId('global-keyboard-dismiss-button')).toBeNull();
-    await waitFor(() => expect(Keyboard.addListener).toHaveBeenCalled());
+    expect(Keyboard.addListener).toHaveBeenCalled();
 
-    await act(() => {
-      emitKeyboardEvent('keyboardDidShow');
-    });
+    emitKeyboardEventInAct('keyboardDidShow');
     await waitFor(() => expect(getByTestId('global-keyboard-dismiss-button')).toBeTruthy());
 
     fireEvent.press(getByTestId('global-keyboard-dismiss-button'));
@@ -78,9 +83,8 @@ describe('GlobalKeyboardDismissButton', () => {
     expect(onDismiss).toHaveBeenCalled();
     expect(Keyboard.dismiss).toHaveBeenCalled();
 
-    await act(() => {
-      emitKeyboardEvent('keyboardDidHide', 0);
-    });
+    emitKeyboardEventInAct('keyboardDidHide', 0);
     await waitFor(() => expect(queryByTestId('global-keyboard-dismiss-button')).toBeNull());
+    unmount();
   });
 });

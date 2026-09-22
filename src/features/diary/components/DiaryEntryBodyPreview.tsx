@@ -10,7 +10,7 @@ import { getStickerTextAvoidanceInsets } from '@/features/diary/domain/StickerLa
 import { resolveAppFontFamily } from '@/theme/fonts';
 
 import { StickerCanvasItem } from './StickerCanvasItem';
-import { MomentPhotoGrid } from './MomentPhotoGrid';
+import { MomentMediaBlock } from './MomentMediaBlock';
 
 interface DiaryEntryBodyPreviewProps {
   readonly entry: DiaryEntry;
@@ -81,12 +81,12 @@ export function DiaryEntryBodyPreview({
         />
       ))}
       {showMomentPhotos ? (
-        <MomentPhotoGrid
+        <MomentMediaBlock
           photos={entry.photos}
           layout={entry.momentPhotoLayout}
           compact
           previewable
-          style={!showBodyText ? styles.momentGridFlush : undefined}
+          flushBottom={!showBodyText}
           testID="entry-preview-moment-photo-grid"
         />
       ) : null}
@@ -129,9 +129,6 @@ const styles = StyleSheet.create({
     elevation: 2,
     position: 'relative',
     zIndex: 2,
-  },
-  momentGridFlush: {
-    marginBottom: 0,
   },
   text: {
     fontWeight: '600',
